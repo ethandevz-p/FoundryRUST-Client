@@ -27,7 +27,7 @@ class CargoIsolationTests(unittest.TestCase):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         self.top = Path(temporary.name).resolve()
-        self.checkout = self.top / "work" / "horizon" / "horizon"
+        self.checkout = self.top / "work" / "foundry" / "foundry"
         (self.checkout / ".cargo").mkdir(parents=True)
         # The repository's own configuration is allowed.
         (self.checkout / ".cargo" / "config.toml").write_text('[build]\nrustflags = ["-Zthreads=8"]\n')

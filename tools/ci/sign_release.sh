@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 # Signs a release (docs/release-flow.md, "Signed checksums"): writes SHA256SUMS for the files given, then
-# SHA256SUMS.sig beside them, one base64 Ed25519 signature per line over "horizon release <tag>\n" + SHA256SUMS,
+# SHA256SUMS.sig beside them, one base64 Ed25519 signature per line over "foundry release <tag>\n" + SHA256SUMS,
 # for every key set in RELEASE_SIGNING_KEY and RELEASE_SIGNING_KEY_NEXT (base64 PKCS#8, the `release`
 # environment's secrets). The job that runs this holds the private keys, so it runs nothing from the repository
 # but this file, which calls only the runner's sha256sum and OpenSSL; the publish job then checks the result
-# with horizon-release-sign, as launchers do.
+# with foundry-release-sign, as launchers do.
 # EPHEMERAL=yes (dry runs) signs with a throwaway key instead and writes its public key to ephemeral.pub.
-# ALSO_FOR=<tag> (Nightlies) signs the same SHA256SUMS a second time, for "horizon release <ALSO_FOR>\n", into
+# ALSO_FOR=<tag> (Nightlies) signs the same SHA256SUMS a second time, for "foundry release <ALSO_FOR>\n", into
 # SHA256SUMS.v2.sig, with the same key(s): the Nightly's own version (nightly-<date>-<commit>), which current
 # launchers require, while SHA256SUMS.sig stays signed for the channel for launchers from before (docs/security.md).
-#   tools/ci/sign_release.sh v2026.10.19 dist/horizon-linux-x86_64.tar.gz dist/horizon-windows-x64.zip ...
+#   tools/ci/sign_release.sh v2026.10.19 dist/foundry-linux-x86_64.tar.gz dist/foundry-windows-x64.zip ...
 #   ALSO_FOR=nightly-2026-10-28-0c02067 tools/ci/sign_release.sh nightly dist/...
 set -euo pipefail
 tag=$1; shift
@@ -30,9 +30,9 @@ if [[ -n "$also" && ! "$also" =~ ^nightly-[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9a-f]{7,
   echo "ALSO_FOR=$also: not a Nightly's nightly-<date>-<commit>" >&2; exit 1
 fi
 (cd "$dir" && "${sha[@]}" -- "${names[@]}") > "$dir/SHA256SUMS"
-{ printf 'horizon release %s\n' "$tag"; cat "$dir/SHA256SUMS"; } > "$work/message"
+{ printf 'foundry release %s\n' "$tag"; cat "$dir/SHA256SUMS"; } > "$work/message"
 if [[ -n "$also" ]]; then
-  { printf 'horizon release %s\n' "$also"; cat "$dir/SHA256SUMS"; } > "$work/message.v2"
+  { printf 'foundry release %s\n' "$also"; cat "$dir/SHA256SUMS"; } > "$work/message.v2"
 fi
 rm -f "$dir/SHA256SUMS.sig" "$dir/SHA256SUMS.v2.sig" "$dir/ephemeral.pub"
 

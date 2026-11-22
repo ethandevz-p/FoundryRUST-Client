@@ -69,30 +69,30 @@ class GateTests(unittest.TestCase):
 
 @unittest.skipUnless(POSIX_BASH, "needs a POSIX bash for the stub tool")
 class ReportTests(unittest.TestCase):
-    """report() against a stub horizon-stage whose behaviour each test sets."""
+    """report() against a stub foundry-stage whose behaviour each test sets."""
 
     def run_report(self, base_export=0, diff_exit=0, gate_on=False, head_export=0, diff_err="", layouts=None):
         with tempfile.TemporaryDirectory() as directory:
             work = Path(directory)
-            stub = work / "horizon-stage"
+            stub = work / "foundry-stage"
             # LF endings and a forward-slash path: bash reads a CR as part of each line, and a backslash as an escape.
             stub.write_text(f"""#!/bin/bash
 echo "$@" >> {shlex.quote(work.as_posix() + "/calls")}
 if [ "$1" = surface ]; then
-  case "$2" in *base) [ {base_export} = 0 ] || {{ echo 'unclassified: x' >&2; echo 'horizon-stage surface: unknown key `access`' >&2; exit 1; }};; esac
-  case "$2" in *head) [ {head_export} = 0 ] || {{ echo 'horizon-stage surface: a.rs: parse error' >&2; exit 1; }};; esac
+  case "$2" in *base) [ {base_export} = 0 ] || {{ echo 'unclassified: x' >&2; echo 'foundry-stage surface: unknown key `access`' >&2; exit 1; }};; esac
+  case "$2" in *head) [ {head_export} = 0 ] || {{ echo 'foundry-stage surface: a.rs: parse error' >&2; exit 1; }};; esac
   echo '{{}}' > "$3"; [ -n "$5" ] && echo '{{}}' > "$5"; exit 0
 fi
 echo "Surface: report"; [ -z "{diff_err}" ] && [ {diff_exit} != 0 ] && echo "breaking change without a change note: fn:a" >&2
-[ -n "{diff_err}" ] && echo "horizon-stage: $2: {diff_err}" >&2
+[ -n "{diff_err}" ] && echo "foundry-stage: $2: {diff_err}" >&2
 exit {diff_exit}
 """, newline="\n")
             stub.chmod(0o755)
             tool = stub
             if os.name == "nt":
                 # Windows starts programs and batch files, not a script with a shebang: a batch file hands the stub
-                # to the bash on PATH, as the real horizon-stage would be started.
-                tool = work / "horizon-stage.bat"
+                # to the bash on PATH, as the real foundry-stage would be started.
+                tool = work / "foundry-stage.bat"
                 tool.write_text(f'@"{BASH}" "{stub}" %*\n')
             (work / "base").mkdir()
             code, text = surface_report.report(str(tool), work / "base", work / "head", work, gate_on, layouts)
@@ -101,18 +101,18 @@ exit {diff_exit}
     def test_a_base_the_head_tool_cannot_read_passes_with_one_line_and_fails_the_gate(self):
         code, text, calls = self.run_report(base_export=1)
         self.assertEqual(code, 0)
-        self.assertEqual(text, "No surface report: the head's horizon-stage cannot read the base tree "
-                               "(horizon-stage surface: unknown key `access`).\n")
+        self.assertEqual(text, "No surface report: the head's foundry-stage cannot read the base tree "
+                               "(foundry-stage surface: unknown key `access`).\n")
         self.assertNotIn("surface-diff", calls)
         code, text, _ = self.run_report(base_export=1, gate_on=True)
         self.assertEqual(code, 1)
-        self.assertEqual(text, "No surface comparison: the head's horizon-stage cannot read the base tree "
-                               "(horizon-stage surface: unknown key `access`). The gate fails without one.\n")
+        self.assertEqual(text, "No surface comparison: the head's foundry-stage cannot read the base tree "
+                               "(foundry-stage surface: unknown key `access`). The gate fails without one.\n")
 
     def test_a_base_surface_of_another_schema_passes_with_one_line_and_fails_the_gate(self):
         code, text, _ = self.run_report(diff_exit=2, diff_err="surface schema 1, this tool reads 2")
         self.assertEqual(code, 0)
-        self.assertTrue(text.startswith("No surface report: the head's horizon-stage cannot read the base surface "), text)
+        self.assertTrue(text.startswith("No surface report: the head's foundry-stage cannot read the base surface "), text)
         self.assertIn("surface schema 1, this tool reads 2", text)
         code, text, _ = self.run_report(diff_exit=2, diff_err="surface schema 1, this tool reads 2", gate_on=True)
         self.assertEqual(code, 1)
@@ -122,7 +122,7 @@ exit {diff_exit}
         for base_export in (0, 1):
             code, text, calls = self.run_report(head_export=1, base_export=base_export)
             self.assertEqual(code, 1)
-            self.assertEqual(text, "The surface export of this tree failed: horizon-stage surface: a.rs: parse error.\n")
+            self.assertEqual(text, "The surface export of this tree failed: foundry-stage surface: a.rs: parse error.\n")
             self.assertNotIn("surface-diff", calls)
 
     def test_the_diff_decides_and_the_gate_is_passed_on(self):
@@ -325,9 +325,9 @@ class GateChangedTests(unittest.TestCase):
         return surface_report.gate_changed("base", run_git=git)
 
     def test_a_change_to_the_gates_code_is_flagged(self):
-        self.assertEqual(self.changed(["crates/horizon-world/src/a.rs", ".github/workflows/ci.yml"]), "")
-        for path in ["tools/ci/surface_report.py", "crates/horizon-mod-surface/src/boundary.rs",
-                     "crates/horizon-mod-api/examples/wire_layouts.rs", "tools/ci/surface.toml"]:
+        self.assertEqual(self.changed(["crates/foundry-world/src/a.rs", ".github/workflows/ci.yml"]), "")
+        for path in ["tools/ci/surface_report.py", "crates/foundry-mod-surface/src/boundary.rs",
+                     "crates/foundry-mod-api/examples/wire_layouts.rs", "tools/ci/surface.toml"]:
             with self.subTest(path=path):
                 line = self.changed(["README.md", path])
                 self.assertTrue(line.startswith(f"Warning: this pull request changes the gate's own code ({path}), "),
@@ -374,7 +374,7 @@ class MainTests(unittest.TestCase):
     def run_main(self, event="pull_request", pr="", **patches):
         with tempfile.TemporaryDirectory() as directory:
             summary_file = Path(directory) / "summary.md"
-            env = {"HORIZON_STAGE_TOOL": "/no/tool", "EVENT": event, "PR": pr,
+            env = {"FOUNDRY_STAGE_TOOL": "/no/tool", "EVENT": event, "PR": pr,
                    "GITHUB_STEP_SUMMARY": str(summary_file), "RUNNER_TEMP": directory}
             with mock.patch.dict(os.environ, env), contextlib.redirect_stdout(io.StringIO()) as out, \
                     contextlib.ExitStack() as stack:

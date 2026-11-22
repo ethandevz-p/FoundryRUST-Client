@@ -59,11 +59,11 @@ def main():
     build.mkdir(parents=True, exist_ok=True)
     report = build / 'report.json'
     report.unlink(missing_ok=True)
-    paths = ['crates/horizon-world/src/snbt_text.rs', 'crates/horizon-world/src/datafix/json.rs',
-             'crates/horizon-core/src/nbt.rs', 'crates/horizon-core/src/java_number.rs',
-             'crates/horizon-world/examples/probe/main.rs',
-             'crates/horizon-world/examples/probe/float_text_fixture.rs',
-             'mods/horizon/src/test/java/dev/horizonlab/parity/VanillaFloatTextOracle.java',
+    paths = ['crates/foundry-world/src/snbt_text.rs', 'crates/foundry-world/src/datafix/json.rs',
+             'crates/foundry-core/src/nbt.rs', 'crates/foundry-core/src/java_number.rs',
+             'crates/foundry-world/examples/probe/main.rs',
+             'crates/foundry-world/examples/probe/float_text_fixture.rs',
+             'mods/foundry/src/test/java/dev/foundrylab/parity/VanillaFloatTextOracle.java',
              'tools/test_float_text_parity.py']
     sources = [lab.ROOT / path for path in paths]
     hashes = base.source_hashes(sources)
@@ -73,8 +73,8 @@ def main():
     classes, dependencies, _ = h.compile_oracle(build, 'VanillaFloatTextOracle',
         {'client': jars['server']}, libraries, lock['minecraft']['java_major'])
     h.java_run(build, classes, dependencies, 'VanillaFloatTextOracle', [inputs, build / 'java.txt'], 'java')
-    # The release world_probe every other horizon-world harness builds, so CI reuses it.
-    h.run_logged(['cargo', 'build', '--profile', 'fast', '--locked', '-p', 'horizon-world',
+    # The release world_probe every other foundry-world harness builds, so CI reuses it.
+    h.run_logged(['cargo', 'build', '--profile', 'fast', '--locked', '-p', 'foundry-world',
                   '--example', 'world_probe'], build, 'compile-rust')
     metadata = json.loads(subprocess.check_output(
         ['cargo', 'metadata', '--no-deps', '--format-version', '1'], cwd=lab.ROOT))

@@ -16,10 +16,10 @@ from unittest import mock
 
 from tools import lab, pr_ready
 
-PACKAGES = {"horizon-core": "crates/horizon-core", "horizon-client": "crates/horizon-client",
-            "horizon-theme": "crates/horizon-theme", "xtask": "xtask"}
+PACKAGES = {"foundry-core": "crates/foundry-core", "foundry-client": "crates/foundry-client",
+            "foundry-theme": "crates/foundry-theme", "xtask": "xtask"}
 LIBRARIES = set(PACKAGES) - {"xtask"}
-DEPENDENCIES = {"horizon-client": {"horizon-core"}}
+DEPENDENCIES = {"foundry-client": {"foundry-core"}}
 MODS = ""
 CLIPPY = f'status=0\n{pr_ready.CI_CLIPPY} || status=$?\n{pr_ready.CI_CLIPPY_SERVER} || status=$?\nexit "$status"'
 # The bash on PATH: Windows' CreateProcess looks in System32 before PATH, so a bare "bash" there is WSL's
@@ -111,8 +111,8 @@ class GitChangedPathsTests(unittest.TestCase):
         self.assertIn(" dirty", header())
 
     def test_unicode_paths_select_checks_and_keep_line_counts(self):
-        tracked = "crates/horizon-core/src/caf\u00e9 edit.rs"
-        untracked = "crates/horizon-core/src/\u65b0 file.rs"
+        tracked = "crates/foundry-core/src/caf\u00e9 edit.rs"
+        untracked = "crates/foundry-core/src/\u65b0 file.rs"
         self.write(tracked, "first\n")
         self.commit()
         self.write(tracked, "first\nsecond\n")
@@ -121,10 +121,10 @@ class GitChangedPathsTests(unittest.TestCase):
         self.assertEqual(changed, {tracked, untracked})
         self.assertEqual(pr_ready.line_counts("HEAD", changed), {tracked: (1, 0), untracked: (2, 0)})
         self.assertTrue(all(pr_ready.workspace_rust(path) for path in changed))
-        self.assertEqual(pr_ready.touched_crates(changed, PACKAGES), ["horizon-core"])
+        self.assertEqual(pr_ready.touched_crates(changed, PACKAGES), ["foundry-core"])
 
     def test_renamed_rust_source_keeps_both_paths_and_counts(self):
-        before, after = "crates/horizon-core/src/moved.rs", "docs/moved.md"
+        before, after = "crates/foundry-core/src/moved.rs", "docs/moved.md"
         self.write(before, "fn moved() {\n}\n")
         self.commit()
         (self.root / "docs").mkdir()
@@ -132,12 +132,12 @@ class GitChangedPathsTests(unittest.TestCase):
         changed = pr_ready.parity.changed_files("HEAD")
         self.assertEqual(changed, {before, after})
         self.assertEqual(pr_ready.line_counts("HEAD", changed), {before: (0, 2), after: (2, 0)})
-        self.assertEqual(pr_ready.touched_crates(changed, PACKAGES), ["horizon-core"])
+        self.assertEqual(pr_ready.touched_crates(changed, PACKAGES), ["foundry-core"])
 
     @unittest.skipIf(os.name == "nt", "Windows filenames cannot contain tabs or newlines")
     def test_tabs_and_newlines_remain_in_paths(self):
-        tracked = "crates/horizon-core/src/tab\tfile.rs"
-        untracked = "crates/horizon-core/src/line\r\nfile.rs"
+        tracked = "crates/foundry-core/src/tab\tfile.rs"
+        untracked = "crates/foundry-core/src/line\r\nfile.rs"
         self.write(tracked, "first\n")
         self.commit()
         self.write(tracked, "first\nsecond\n")
@@ -175,7 +175,7 @@ class PrReadyTests(unittest.TestCase):
                 mock.patch.object(pr_ready, "ROOT", Path(directory) / "checkout/repo"), \
                 mock.patch.object(pr_ready, "git", side_effect=lambda *args: "a" * 40 if args[0] == "rev-parse" else ""), \
                 mock.patch.dict(os.environ):
-            os.environ.pop("HORIZON_TEST_RESOURCES", None)
+            os.environ.pop("FOUNDRY_TEST_RESOURCES", None)
             step = pr_ready.Step("content root tests", summary=pr_ready.tests_passed)
             step.output = "test result: ok. 3 passed; 0 failed; 0 ignored"
             step.status = "pass"
@@ -188,14 +188,14 @@ class PrReadyTests(unittest.TestCase):
             prepared.mkdir(parents=True)
             self.assertIn("data-backed tests not run: no prepared data here", render())
             (prepared / "gameplay-facts.json").write_text("{}")
-            self.assertIn("data-backed tests: horizon-client-lib mod_content::tests:: (--ignored): 3 passed", render())
+            self.assertIn("data-backed tests: foundry-client-lib mod_content::tests:: (--ignored): 3 passed", render())
             override = Path(directory) / "override"
             override.mkdir()
-            os.environ["HORIZON_TEST_RESOURCES"] = str(override)
+            os.environ["FOUNDRY_TEST_RESOURCES"] = str(override)
             self.assertIn("data-backed tests not run: no prepared data here", render())
             (override / "gameplay-facts.json").write_text("{}")
             (prepared / "gameplay-facts.json").unlink()
-            self.assertIn("data-backed tests: horizon-client-lib mod_content::tests:: (--ignored): 3 passed", render())
+            self.assertIn("data-backed tests: foundry-client-lib mod_content::tests:: (--ignored): 3 passed", render())
             step.status, step.detail = "skip", "content root untouched"
             self.assertIn("data-backed tests not run: content root untouched", render())
 
@@ -217,53 +217,53 @@ class PrReadyTests(unittest.TestCase):
         self.assertEqual(step.status, "pass")
 
     def test_paths_map_to_the_crates_that_own_them(self):
-        self.assertEqual(pr_ready.touched_crates({"crates/horizon-core/src/jmath.rs", "crates/horizon-client/build.rs",
+        self.assertEqual(pr_ready.touched_crates({"crates/foundry-core/src/jmath.rs", "crates/foundry-client/build.rs",
                                                   "xtask/src/main.rs", "tools/parity.py"}, PACKAGES),
-                         ["horizon-client", "horizon-core", "xtask"])
-        self.assertEqual(pr_ready.touched_crates({"crates/horizon-core/README.md"}, PACKAGES), [])
-        # The generated stylesheet is checked by horizon-theme's tests.
-        self.assertEqual(pr_ready.touched_crates({"crates/horizon-theme/tokens.css"}, PACKAGES), ["horizon-theme"])
+                         ["foundry-client", "foundry-core", "xtask"])
+        self.assertEqual(pr_ready.touched_crates({"crates/foundry-core/README.md"}, PACKAGES), [])
+        # The generated stylesheet is checked by foundry-theme's tests.
+        self.assertEqual(pr_ready.touched_crates({"crates/foundry-theme/tokens.css"}, PACKAGES), ["foundry-theme"])
         # A crate whose name prefixes another's directory doesn't own it.
-        self.assertEqual(pr_ready.touched_crates({"crates/horizon-core-extra/x.rs"}, PACKAGES), [])
+        self.assertEqual(pr_ready.touched_crates({"crates/foundry-core-extra/x.rs"}, PACKAGES), [])
         # The workspace manifest and lock touch every crate.
-        self.assertIsNone(pr_ready.touched_crates({"Cargo.lock", "crates/horizon-core/src/lib.rs"}, PACKAGES))
+        self.assertIsNone(pr_ready.touched_crates({"Cargo.lock", "crates/foundry-core/src/lib.rs"}, PACKAGES))
 
     def test_shared_client_sources_select_the_library_without_gameplay(self):
-        packages = {**PACKAGES, "horizon-client-lib": "crates/horizon-client-lib"}
-        for path in ["src/client_lib.rs", "src/health.rs", "src/lan/hub.rs", "src/bin/horizon-ctl/main.rs",
+        packages = {**PACKAGES, "foundry-client-lib": "crates/foundry-client-lib"}
+        for path in ["src/client_lib.rs", "src/health.rs", "src/lan/hub.rs", "src/bin/foundry-ctl/main.rs",
                      "examples/probe/main.rs", "tests/lan_bot.rs"]:
-            self.assertEqual(pr_ready.touched_crates({f"crates/horizon-client/{path}"}, packages),
-                             ["horizon-client-lib"])
+            self.assertEqual(pr_ready.touched_crates({f"crates/foundry-client/{path}"}, packages),
+                             ["foundry-client-lib"])
         for path in ["src/lib.rs", "src/main.rs", "src/entry.rs", "src/game.rs", "src/game/items/combat.rs",
                      "tests/it/mod_api_hooks.rs", "Cargo.toml", "build.rs"]:
-            self.assertEqual(pr_ready.touched_crates({f"crates/horizon-client/{path}"}, packages),
-                             ["horizon-client"])
+            self.assertEqual(pr_ready.touched_crates({f"crates/foundry-client/{path}"}, packages),
+                             ["foundry-client"])
 
     def test_which_workspace_builds_a_path(self):
-        self.assertTrue(pr_ready.workspace_rust("crates/horizon-theme/fonts/x.ttf"))
+        self.assertTrue(pr_ready.workspace_rust("crates/foundry-theme/fonts/x.ttf"))
         self.assertTrue(pr_ready.workspace_rust("Cargo.toml"))
-        self.assertFalse(pr_ready.workspace_rust("crates/horizon-client/README.md"))
+        self.assertFalse(pr_ready.workspace_rust("crates/foundry-client/README.md"))
         self.assertFalse(pr_ready.workspace_rust("launcher/src/main.rs"))
         self.assertTrue(pr_ready.launcher_rust("launcher/src/main.rs"))
         # CI's launcher job also runs for the root workspace's manifests and for its own check.
         self.assertTrue(pr_ready.launcher_rust("Cargo.lock"))
         self.assertTrue(pr_ready.launcher_rust("tools/ci/rust_changes.py"))
-        self.assertTrue(pr_ready.launcher_rust("crates/horizon-prepare/src/lib.rs"))
-        self.assertTrue(pr_ready.launcher_rust("crates/horizon-theme/src/lib.rs"))
-        self.assertTrue(pr_ready.launcher_rust("crates/horizon-system/src/lib.rs"))
-        self.assertTrue(pr_ready.launcher_rust("crates/horizon-mod-api-gen/src/injection.rs"))
+        self.assertTrue(pr_ready.launcher_rust("crates/foundry-prepare/src/lib.rs"))
+        self.assertTrue(pr_ready.launcher_rust("crates/foundry-theme/src/lib.rs"))
+        self.assertTrue(pr_ready.launcher_rust("crates/foundry-system/src/lib.rs"))
+        self.assertTrue(pr_ready.launcher_rust("crates/foundry-mod-api-gen/src/injection.rs"))
         self.assertFalse(pr_ready.launcher_rust("launcher/links.json"))
         self.assertFalse(pr_ready.launcher_rust("launcher/README.md"))
-        self.assertFalse(pr_ready.launcher_rust("crates/horizon-client/src/game.rs"))
+        self.assertFalse(pr_ready.launcher_rust("crates/foundry-client/src/game.rs"))
 
     def test_crate_checks_do_not_link_unrelated_examples(self):
         with mock.patch.object(pr_ready, "affected_here", return_value=[]):
-            steps = pr_ready.plan(args(quick=True), "origin/main", {"crates/horizon-client/src/game.rs"}, PACKAGES, LIBRARIES, DEPENDENCIES)
+            steps = pr_ready.plan(args(quick=True), "origin/main", {"crates/foundry-client/src/game.rs"}, PACKAGES, LIBRARIES, DEPENDENCIES)
         by_name = {step.name: step for step in steps}
         self.assertEqual(by_name["clippy"].command, CLIPPY)
-        self.assertEqual(by_name["tests: horizon-client"].command,
-                         "cargo test --locked -p horizon-client --tests")
-        self.assertEqual(by_name["doc tests"].command, "cargo test --locked -p horizon-client --doc")
+        self.assertEqual(by_name["tests: foundry-client"].command,
+                         "cargo test --locked -p foundry-client --tests")
+        self.assertEqual(by_name["doc tests"].command, "cargo test --locked -p foundry-client --doc")
         self.assertIsNone(by_name["doc tests"].status)
 
     def test_content_root_tests_run_only_when_what_they_load_changes(self):
@@ -271,9 +271,9 @@ class PrReadyTests(unittest.TestCase):
             with mock.patch.object(pr_ready, "affected_here", return_value=[]):
                 steps = pr_ready.plan(args(quick=True), "origin/main", {path}, PACKAGES, LIBRARIES, DEPENDENCIES)
             return {step.name: step for step in steps}["content root tests"]
-        self.assertEqual(content_step("crates/horizon-client/src/game.rs").skip, "content root untouched")
-        for path in ["crates/horizon-client/src/mod_content.rs", "crates/horizon-client/src/mod_content_tests.rs",
-                     "crates/horizon-mod-package/src/content.rs", "crates/horizon-assets/src/lib.rs", "Cargo.lock"]:
+        self.assertEqual(content_step("crates/foundry-client/src/game.rs").skip, "content root untouched")
+        for path in ["crates/foundry-client/src/mod_content.rs", "crates/foundry-client/src/mod_content_tests.rs",
+                     "crates/foundry-mod-package/src/content.rs", "crates/foundry-assets/src/lib.rs", "Cargo.lock"]:
             with self.subTest(path=path):
                 step = content_step(path)
                 self.assertIsNone(step.skip)
@@ -284,27 +284,27 @@ class PrReadyTests(unittest.TestCase):
             with mock.patch.object(pr_ready, "affected_here", return_value=[]):
                 steps = pr_ready.plan(args(quick=True), "origin/main", {path}, PACKAGES, LIBRARIES, DEPENDENCIES)
             return {step.name: step for step in steps}
-        for path in ["crates/horizon-mod-api-gen/src/lib.rs",
-                     "crates/horizon-mod-api-gen/dispatch-tests/src/lib.rs",
-                     "crates/horizon-mod-api-macros/src/lib.rs",
-                     "crates/horizon-mod-vocab/src/lib.rs",
-                     "crates/horizon-mod-vocab/src/parts/mod.rs",
-                     "crates/horizon-mod-vocab/src/hooks/block.rs"]:
+        for path in ["crates/foundry-mod-api-gen/src/lib.rs",
+                     "crates/foundry-mod-api-gen/dispatch-tests/src/lib.rs",
+                     "crates/foundry-mod-api-macros/src/lib.rs",
+                     "crates/foundry-mod-vocab/src/lib.rs",
+                     "crates/foundry-mod-vocab/src/parts/mod.rs",
+                     "crates/foundry-mod-vocab/src/hooks/block.rs"]:
             with self.subTest(path=path):
                 by_name = suite_steps(path)
                 for name in ("dispatch tests clippy", "dispatch tests tests"):
                     self.assertIsNone(by_name[name].skip)
-                self.assertIn("crates/horizon-mod-api-gen/dispatch-tests/Cargo.toml",
+                self.assertIn("crates/foundry-mod-api-gen/dispatch-tests/Cargo.toml",
                               by_name["dispatch tests clippy"].command)
                 self.assertIn("--test-threads=4", by_name["dispatch tests tests"].command)
                 self.assertEqual(by_name["mod registry tests clippy"].skip, "mod registry untouched")
-        for path in ["crates/horizon-mod-registry/src/main.rs", "crates/horizon-mod-registry/Cargo.toml"]:
+        for path in ["crates/foundry-mod-registry/src/main.rs", "crates/foundry-mod-registry/Cargo.toml"]:
             with self.subTest(path=path):
                 by_name = suite_steps(path)
                 for name in ("mod registry tests clippy", "mod registry tests tests"):
                     self.assertIsNone(by_name[name].skip)
                 self.assertEqual(by_name["dispatch tests clippy"].skip, "dispatch surface untouched")
-        by_name = suite_steps("crates/horizon-core/src/lib.rs")
+        by_name = suite_steps("crates/foundry-core/src/lib.rs")
         self.assertEqual(by_name["dispatch tests clippy"].skip, "dispatch surface untouched")
         self.assertEqual(by_name["mod registry tests tests"].skip, "mod registry untouched")
 
@@ -319,23 +319,23 @@ class PrReadyTests(unittest.TestCase):
                 self.assertEqual(by_name["doc tests"].command, "cargo test --locked --workspace --doc")
 
     def test_holder_actor_is_built_before_applicable_tests(self):
-        packages = {**PACKAGES, "horizon-mod-package": "crates/horizon-mod-package"}
+        packages = {**PACKAGES, "foundry-mod-package": "crates/foundry-mod-package"}
         for path in ("Cargo.lock", "crates/unknown/src/lib.rs",
-                     "crates/horizon-mod-package/src/holder.rs", "launcher/src/main.rs"):
+                     "crates/foundry-mod-package/src/holder.rs", "launcher/src/main.rs"):
             with self.subTest(path=path), mock.patch.object(pr_ready, "affected_here", return_value=[]):
                 steps = pr_ready.plan(args(quick=True), "origin/main", {path}, packages,
                                       LIBRARIES, DEPENDENCIES)
                 by_name = {step.name: step for step in steps}
                 actor = by_name["holder actor"]
                 self.assertIsNone(actor.skip)
-                self.assertEqual(actor.command, "cargo build --locked -p horizon-mod-package "
+                self.assertEqual(actor.command, "cargo build --locked -p foundry-mod-package "
                                  "--features runtime-process --example holder_actor")
                 # No cd, target-dir or profile override: actor() finds the sibling
                 # examples directory in the root test target, including CARGO_TARGET_DIR.
                 self.assertLess(steps.index(actor), next(i for i, step in enumerate(steps)
                                 if step.name.startswith("tests")))
                 self.assertLess(steps.index(actor), steps.index(by_name["launcher tests"]))
-        for path in ("README.md", "crates/horizon-client/src/lib.rs"):
+        for path in ("README.md", "crates/foundry-client/src/lib.rs"):
             with self.subTest(path=path), mock.patch.object(pr_ready, "affected_here", return_value=[]):
                 steps = pr_ready.plan(args(quick=True), "origin/main", {path}, packages,
                                       LIBRARIES, DEPENDENCIES)
@@ -343,34 +343,34 @@ class PrReadyTests(unittest.TestCase):
                                  "holder tests untouched")
 
     def test_tests_get_the_features_ci_s_workspace_run_gives_them(self):
-        self.assertEqual(pr_ready.mod_features(["horizon-world"]), "")
-        self.assertEqual(pr_ready.mod_features(["horizon-client"]), "")
-        self.assertEqual(pr_ready.mod_features(["horizon-mod-package"]),
-                         " --features horizon-mod-package/index")
+        self.assertEqual(pr_ready.mod_features(["foundry-world"]), "")
+        self.assertEqual(pr_ready.mod_features(["foundry-client"]), "")
+        self.assertEqual(pr_ready.mod_features(["foundry-mod-package"]),
+                         " --features foundry-mod-package/index")
         self.assertEqual(pr_ready.mod_features(None), MODS)
 
     def test_mod_api_data_inputs_build_and_test_the_consuming_crates(self):
-        packages = {**PACKAGES, "horizon-client-render": "crates/horizon-client-render",
-                    "horizon-mod-api-gen": "crates/horizon-mod-api-gen"}
-        for path in ("crates/horizon-mod-vocab/src/hooks/player.rs",):
+        packages = {**PACKAGES, "foundry-client-render": "crates/foundry-client-render",
+                    "foundry-mod-api-gen": "crates/foundry-mod-api-gen"}
+        for path in ("crates/foundry-mod-vocab/src/hooks/player.rs",):
             with self.subTest(path=path), mock.patch.object(pr_ready, "affected_here", return_value=[]):
                 steps = pr_ready.plan(args(quick=True), "origin/main", {path}, packages,
-                                      LIBRARIES | {"horizon-client-render", "horizon-mod-api-gen"}, DEPENDENCIES)
+                                      LIBRARIES | {"foundry-client-render", "foundry-mod-api-gen"}, DEPENDENCIES)
                 by_name = {step.name: step for step in steps}
                 self.assertIsNone(by_name["clippy"].skip)
                 self.assertIsNone(by_name["rustfmt"].skip)
                 self.assertEqual(by_name["rustfmt"].command, "python3 tools/ci/format_scan.py")
                 tests = next(step for step in steps if step.name.startswith("tests:"))
                 self.assertIsNone(tests.skip)
-                self.assertEqual(tests.command, "cargo test --locked -p horizon-client -p horizon-client-render "
-                                               "-p horizon-mod-api-gen --tests")
+                self.assertEqual(tests.command, "cargo test --locked -p foundry-client -p foundry-client-render "
+                                               "-p foundry-mod-api-gen --tests")
 
     def test_shared_generator_edits_run_launcher_checks(self):
         with mock.patch.object(pr_ready, "affected_here", return_value=[]):
             steps = pr_ready.plan(args(quick=True), "origin/main",
-                                  {"crates/horizon-mod-api-gen/src/injection.rs"},
-                                  {**PACKAGES, "horizon-mod-api-gen": "crates/horizon-mod-api-gen"},
-                                  LIBRARIES | {"horizon-mod-api-gen"}, DEPENDENCIES)
+                                  {"crates/foundry-mod-api-gen/src/injection.rs"},
+                                  {**PACKAGES, "foundry-mod-api-gen": "crates/foundry-mod-api-gen"},
+                                  LIBRARIES | {"foundry-mod-api-gen"}, DEPENDENCIES)
         by_name = {step.name: step for step in steps}
         for name in ("launcher rustfmt", "launcher clippy", "launcher tests"):
             self.assertIsNone(by_name[name].skip)
@@ -435,7 +435,7 @@ class PrReadyTests(unittest.TestCase):
         homes = {Path(printed.get(name, "")).parent for name in names}
         self.assertEqual(len(homes), 1, step.output)
         home = homes.pop()
-        self.assertTrue(home.name.startswith("horizon-launcher-tests-"), printed)
+        self.assertTrue(home.name.startswith("foundry-launcher-tests-"), printed)
         self.assertFalse(home.exists(), "the scratch home is removed afterwards")
 
     @unittest.skipUnless(POSIX_BASH, "needs a bash that is not WSL's")
@@ -523,7 +523,7 @@ class PrReadyTests(unittest.TestCase):
 
     def test_python_tests_always_run(self):
         with mock.patch.object(pr_ready, "affected_here", return_value=[]):
-            steps = pr_ready.plan(args(quick=True), "origin/main", {"crates/horizon-core/src/lib.rs"},
+            steps = pr_ready.plan(args(quick=True), "origin/main", {"crates/foundry-core/src/lib.rs"},
                                   PACKAGES, LIBRARIES, DEPENDENCIES)
         self.assertIsNone({step.name: step for step in steps}["Python tests"].status)
 
@@ -538,10 +538,10 @@ class PrReadyTests(unittest.TestCase):
     def test_multiple_touched_crates_share_the_same_check_scope(self):
         with mock.patch.object(pr_ready, "affected_here", return_value=[]):
             steps = pr_ready.plan(args(), "origin/main",
-                                  {"crates/horizon-core/src/lib.rs", "crates/horizon-client/examples/probe.rs"}, PACKAGES, LIBRARIES, DEPENDENCIES)
+                                  {"crates/foundry-core/src/lib.rs", "crates/foundry-client/examples/probe.rs"}, PACKAGES, LIBRARIES, DEPENDENCIES)
         for step in steps:
-            if step.name in ("tests: horizon-client, horizon-core", "doc tests"):
-                self.assertIn("-p horizon-client -p horizon-core", step.command)
+            if step.name in ("tests: foundry-client, foundry-core", "doc tests"):
+                self.assertIn("-p foundry-client -p foundry-core", step.command)
                 self.assertIsNone(step.status)
 
     def test_binary_only_crates_skip_doc_tests(self):
@@ -553,13 +553,13 @@ class PrReadyTests(unittest.TestCase):
         self.assertEqual(by_name["doc tests"].status, "skip")
         with mock.patch.object(pr_ready, "affected_here", return_value=[]):
             steps = pr_ready.plan(args(), "origin/main",
-                                  {"xtask/src/main.rs", "crates/horizon-core/src/lib.rs"}, PACKAGES, LIBRARIES, DEPENDENCIES)
+                                  {"xtask/src/main.rs", "crates/foundry-core/src/lib.rs"}, PACKAGES, LIBRARIES, DEPENDENCIES)
         by_name = {step.name: step for step in steps}
-        self.assertEqual(by_name["doc tests"].command, "cargo test --locked -p horizon-core --doc")
+        self.assertEqual(by_name["doc tests"].command, "cargo test --locked -p foundry-core --doc")
 
     def test_clippy_is_ci_s_and_the_server_build_when_the_game_is_affected(self):
-        packages = {name: f"crates/{name}" for name in ("core", "world", "horizon-client", "unrelated")}
-        dependencies = {"world": {"core"}, "horizon-client": {"world"}, "unrelated": set()}
+        packages = {name: f"crates/{name}" for name in ("core", "world", "foundry-client", "unrelated")}
+        dependencies = {"world": {"core"}, "foundry-client": {"world"}, "unrelated": set()}
         with mock.patch.object(pr_ready, "affected_here", return_value=[]):
             steps = pr_ready.plan(args(), "origin/main", {"crates/core/src/lib.rs"},
                                   packages, set(packages), dependencies)
@@ -602,11 +602,11 @@ class PrReadyTests(unittest.TestCase):
         self.assertEqual(pr_ready.dependent_crates(["core"], dependencies), ["build", "core", "dev", "optional"])
 
     def test_scope_warns_on_size_and_mixed_areas(self):
-        self.assertEqual(pr_ready.scope_warnings({"crates/horizon-client/src/game.rs", "tools/test_food_parity.py",
-                                                  "mods/horizon/src/test/java/dev/horizonlab/parity/X.java",
+        self.assertEqual(pr_ready.scope_warnings({"crates/foundry-client/src/game.rs", "tools/test_food_parity.py",
+                                                  "mods/foundry/src/test/java/dev/foundrylab/parity/X.java",
                                                   "docs/native-client.md"}, 120), [])
-        self.assertEqual(pr_ready.scope_warnings({"crates/horizon-theme/src/lib.rs", "launcher/src/theme.rs"}, 10), [])
-        warnings = pr_ready.scope_warnings({"crates/horizon-client/src/game.rs", "launcher/src/main.rs",
+        self.assertEqual(pr_ready.scope_warnings({"crates/foundry-theme/src/lib.rs", "launcher/src/theme.rs"}, 10), [])
+        warnings = pr_ready.scope_warnings({"crates/foundry-client/src/game.rs", "launcher/src/main.rs",
                                             ".github/workflows/ci.yml"}, 3200)
         self.assertEqual(len(warnings), 2)
         self.assertIn("3200 lines of code: over 3000", warnings[0])
@@ -614,11 +614,11 @@ class PrReadyTests(unittest.TestCase):
 
     def test_documentation_and_tests_are_not_counted_in_the_size(self):
         self.assertTrue(pr_ready.reviewed("tools/pr_ready.py"))
-        self.assertTrue(pr_ready.reviewed("crates/horizon-client/src/game.rs"))
+        self.assertTrue(pr_ready.reviewed("crates/foundry-client/src/game.rs"))
         self.assertFalse(pr_ready.reviewed("CONTRIBUTING.md"))
         self.assertFalse(pr_ready.reviewed("tests/test_pr_ready.py"))
         self.assertFalse(pr_ready.reviewed("tools/test_food_parity.py"))
-        self.assertFalse(pr_ready.reviewed("crates/horizon-core/tests/jmath.rs"))
+        self.assertFalse(pr_ready.reviewed("crates/foundry-core/tests/jmath.rs"))
 
     def size_skipped(self, before, after):
         """(moved, inline tests) for files given as {path: text} before and after, through a -U0 diff."""
@@ -672,15 +672,15 @@ class PrReadyTests(unittest.TestCase):
         self.assertEqual((moved, tests), (0, 5))
 
     def test_cargo_lock_changes_only_with_a_manifest(self):
-        self.assertIsNone(pr_ready.lock_problem({"crates/horizon-core/src/lib.rs"}))
-        self.assertIsNone(pr_ready.lock_problem({"Cargo.lock", "crates/horizon-client/Cargo.toml"}))
-        self.assertIsNone(pr_ready.lock_problem({"launcher/Cargo.lock", "crates/horizon-theme/Cargo.toml"}))
-        self.assertIn("Cargo.lock", pr_ready.lock_problem({"Cargo.lock", "crates/horizon-core/src/lib.rs"}))
+        self.assertIsNone(pr_ready.lock_problem({"crates/foundry-core/src/lib.rs"}))
+        self.assertIsNone(pr_ready.lock_problem({"Cargo.lock", "crates/foundry-client/Cargo.toml"}))
+        self.assertIsNone(pr_ready.lock_problem({"launcher/Cargo.lock", "crates/foundry-theme/Cargo.toml"}))
+        self.assertIn("Cargo.lock", pr_ready.lock_problem({"Cargo.lock", "crates/foundry-core/src/lib.rs"}))
 
     def test_label_follows_what_players_get(self):
         self.assertEqual(pr_ready.suggested_label({"tools/pr_ready.py", "CONTRIBUTING.md"}), "`skip-release`")
-        self.assertEqual(pr_ready.suggested_label({"crates/horizon-world/examples/probe.rs"}), "`skip-release`")
-        self.assertIn("feature", pr_ready.suggested_label({"crates/horizon-client/src/game.rs"}))
+        self.assertEqual(pr_ready.suggested_label({"crates/foundry-world/examples/probe.rs"}), "`skip-release`")
+        self.assertIn("feature", pr_ready.suggested_label({"crates/foundry-client/src/game.rs"}))
         self.assertIn("feature", pr_ready.suggested_label({"launcher/src/main.rs"}))
 
     def test_affected_harnesses_come_from_the_parity_runner(self):
@@ -690,24 +690,24 @@ class PrReadyTests(unittest.TestCase):
             root = Path(directory)
             # Exercise the real selector/SourceGraph on the records' tiny workspace, not
             # every crate in this checkout. All three selection cases share this input.
-            (root / "Cargo.toml").write_text('[workspace]\nmembers = ["crates/horizon-world"]\n')
-            crate = root / "crates/horizon-world"
+            (root / "Cargo.toml").write_text('[workspace]\nmembers = ["crates/foundry-world"]\n')
+            crate = root / "crates/foundry-world"
             (crate / "src").mkdir(parents=True)
             (crate / "Cargo.toml").write_text(
-                '[package]\nname = "horizon-world"\nversion = "0.0.0"\n')
+                '[package]\nname = "foundry-world"\nversion = "0.0.0"\n')
             (crate / "src/lib.rs").write_text('pub mod food;\npub mod datafix;\n')
             for module in ("food", "datafix"):
                 (crate / f"src/{module}.rs").write_text('pub fn run() {}\n')
             found = {name: str(root / script) for name, script in found.items()}
             with mock.patch.object(pr_ready.parity, "harnesses", return_value=found), \
                     mock.patch.object(pr_ready.parity, "load_state", return_value={"harnesses": {
-                        "food": {"dependencies": ["crates/horizon-world/src/food.rs"]},
-                        "datafix#1": {"dependencies": ["crates/horizon-world/src/datafix.rs"]},
-                        "datafix#2": {"dependencies": ["crates/horizon-world/src/datafix.rs"]}}}), \
+                        "food": {"dependencies": ["crates/foundry-world/src/food.rs"]},
+                        "datafix#1": {"dependencies": ["crates/foundry-world/src/datafix.rs"]},
+                        "datafix#2": {"dependencies": ["crates/foundry-world/src/datafix.rs"]}}}), \
                     mock.patch.object(pr_ready.parity, "ROOT", root), \
                     mock.patch.object(pr_ready.parity, "SHARED", root / "cache"), \
                     mock.patch.object(pr_ready.parity, "STATE_DIR", root / "cache"):
-                self.assertEqual(pr_ready.affected_here({"crates/horizon-world/src/datafix.rs"}), ["datafix"])
+                self.assertEqual(pr_ready.affected_here({"crates/foundry-world/src/datafix.rs"}), ["datafix"])
                 self.assertEqual(pr_ready.affected_here({"README.md"}), [])
                 self.assertEqual(pr_ready.affected_here({"Cargo.lock"}), ["food", "datafix"])
 
@@ -716,16 +716,16 @@ class PrReadyTests(unittest.TestCase):
         # not another synthetic Rust program. A narrow root avoids rebuilding the
         # whole-workspace graph whose cost this test-only change removes.
         parity = pr_ready.parity
-        probe = "crates/horizon-world/examples/probe/food_fixture.rs"
-        source = "crates/horizon-world/src/food.rs"
+        probe = "crates/foundry-world/examples/probe/food_fixture.rs"
+        source = "crates/foundry-world/src/food.rs"
         dependencies = {
-            "crates/horizon-world/examples/probe/main.rs", probe,
-            "crates/horizon-world/src/lib.rs", source,
+            "crates/foundry-world/examples/probe/main.rs", probe,
+            "crates/foundry-world/src/lib.rs", source,
         }
-        artifacts = [("example", "probe", None, ["-p", "horizon-world"])]
+        artifacts = [("example", "probe", None, ["-p", "foundry-world"])]
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            for path in dependencies | {"crates/horizon-world/Cargo.toml"}:
+            for path in dependencies | {"crates/foundry-world/Cargo.toml"}:
                 destination = root / path
                 destination.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copyfile(pr_ready.ROOT / path, destination)
@@ -736,40 +736,40 @@ class PrReadyTests(unittest.TestCase):
                           "the actual food probe must reach its food implementation")
 
     def test_harnesses_are_listed_when_they_cannot_run(self):
-        changed = {"crates/horizon-world/src/food.rs"}
+        changed = {"crates/foundry-world/src/food.rs"}
         with mock.patch.object(pr_ready, "affected_here", return_value=["food", "light"]):
-            steps = pr_ready.plan(args(quick=True), "origin/main", changed, {"horizon-world": "crates/horizon-world"}, {"horizon-world"}, {})
+            steps = pr_ready.plan(args(quick=True), "origin/main", changed, {"foundry-world": "crates/foundry-world"}, {"foundry-world"}, {})
         harness = steps[-1]
         self.assertEqual(harness.status, "list")
         self.assertIn("2 affected, to run in CI (--quick): food, light", harness.detail)
         by_name = {step.name: step for step in steps}
-        self.assertIn("tests: horizon-world", by_name)
-        # horizon-world is built into the launcher (horizon-platform's world feature), so its checks run too.
+        self.assertIn("tests: foundry-world", by_name)
+        # foundry-world is built into the launcher (foundry-platform's world feature), so its checks run too.
         self.assertIsNone(by_name["launcher clippy"].status)
         self.assertIsNone(by_name["clippy"].status)
         with mock.patch.object(pr_ready, "affected_here", return_value=["food"]):
-            steps = pr_ready.plan(args(host="macmini", harnesses=True), "origin/main", changed, {"horizon-world": "crates/horizon-world"}, {"horizon-world"}, {})
+            steps = pr_ready.plan(args(host="macmini", harnesses=True), "origin/main", changed, {"foundry-world": "crates/foundry-world"}, {"foundry-world"}, {})
         self.assertIn("--changed-files", steps[-1].command)
-        self.assertIn("crates/horizon-world/src/food.rs", steps[-1].command)
+        self.assertIn("crates/foundry-world/src/food.rs", steps[-1].command)
 
     def test_harnesses_run_only_where_ci_s_parity_job_would(self):
-        packages = {"horizon-world": "crates/horizon-world"}
-        code = {"crates/horizon-world/src/food.rs"}
+        packages = {"foundry-world": "crates/foundry-world"}
+        code = {"crates/foundry-world/src/food.rs"}
         self.assertFalse(pr_ready.runs_parity(code))
         for path in ("tools/test_food_parity.py", "tools/parity.py", "tools/lab.py", "tools/parity_hosts.json",
-                     "mods/horizon/src/test/java/dev/horizonlab/parity/VanillaFoodOracle.java",
-                     "crates/horizon-world/examples/food_probe.rs", "crates/horizon-client/src/game/sculk_fixture.rs",
+                     "mods/foundry/src/test/java/dev/foundrylab/parity/VanillaFoodOracle.java",
+                     "crates/foundry-world/examples/food_probe.rs", "crates/foundry-client/src/game/sculk_fixture.rs",
                      ".github/workflows/parity-main.yml"):
             with self.subTest(path=path):
                 self.assertTrue(pr_ready.runs_parity(code | {path}))
         with mock.patch.object(pr_ready, "affected_here", return_value=["food", "light"]):
-            steps = pr_ready.plan(args(host="macmini"), "origin/main", code, packages, {"horizon-world"}, {})
+            steps = pr_ready.plan(args(host="macmini"), "origin/main", code, packages, {"foundry-world"}, {})
             self.assertEqual(steps[-1].status, "list")
             self.assertIsNone(steps[-1].command)
             self.assertIn("2 affected, left to parity-main on main", steps[-1].detail)
             self.assertIn("--harnesses runs them here", steps[-1].detail)
             steps = pr_ready.plan(args(host="macmini"), "origin/main", code | {"tools/test_food_parity.py"}, packages,
-                                  {"horizon-world"}, {})
+                                  {"foundry-world"}, {})
             self.assertIn("--changed-files", steps[-1].command)
 
     def test_ci_s_rust_follows_the_six_week_train(self):
@@ -785,7 +785,7 @@ class PrReadyTests(unittest.TestCase):
         warning = pr_ready.old_rust((1, 97, 0), today)
         self.assertIn("1.97.0 is older than CI's stable (1.99)", warning)
         self.assertIn("`rustup update`", warning)
-        steps = pr_ready.plan(args(quick=True), "origin/main", {"crates/horizon-core/src/jmath.rs"}, PACKAGES, LIBRARIES,
+        steps = pr_ready.plan(args(quick=True), "origin/main", {"crates/foundry-core/src/jmath.rs"}, PACKAGES, LIBRARIES,
                               DEPENDENCIES)
         by_name = {step.name: step for step in steps}
         by_name["clippy"].status, by_name["clippy"].detail = "fail", "failed"
@@ -833,7 +833,7 @@ class PrReadyTests(unittest.TestCase):
                          "3 run, OK (skipped=1, expected failures=1)")
 
     def test_python_checks_run_beside_cargo_and_harnesses_after_it(self):
-        steps = pr_ready.plan(args(), "origin/main", {"crates/horizon-core/src/lib.rs"}, PACKAGES, LIBRARIES,
+        steps = pr_ready.plan(args(), "origin/main", {"crates/foundry-core/src/lib.rs"}, PACKAGES, LIBRARIES,
                               DEPENDENCIES)
         steps[0].status = "pass"
         steps[-1].where, steps[-1].command, steps[-1].status = "here", "parity", None

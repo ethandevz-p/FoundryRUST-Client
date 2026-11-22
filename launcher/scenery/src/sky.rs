@@ -13,7 +13,7 @@ use gpui::{
     canvas, div, fill, img, linear_color_stop, linear_gradient, point, prelude::*, px, rgb, size,
     Bounds, Div, Hsla, Pixels, RenderImage, Window,
 };
-use horizon_theme::night::{Land, Mood, Night, SkyArt};
+use foundry_theme::night::{Land, Mood, Night, SkyArt};
 use std::sync::{Arc, LazyLock};
 use std::time::{Duration, Instant};
 
@@ -176,8 +176,8 @@ const STAR_PERIODS: [f32; 4] = [4., 6., 8., 10.];
 
 /// How the sky moves: not at all under reduced motion (the player's choice in Settings, else the
 /// system's: Windows' "Show animations", macOS's "Reduce motion") or with
-/// `HORIZON_LAUNCHER_MOTION=off`; while the window is in front (and 10 s after); or always, with
-/// `HORIZON_LAUNCHER_MOTION=always`, for recordings.
+/// `FOUNDRY_LAUNCHER_MOTION=off`; while the window is in front (and 10 s after); or always, with
+/// `FOUNDRY_LAUNCHER_MOTION=always`, for recordings.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Motion {
     Still,
@@ -201,7 +201,7 @@ pub fn set_preference(reduce: Option<bool>) {
 pub fn motion() -> Motion {
     static FORCED: LazyLock<Option<Motion>> =
         LazyLock::new(
-            || match std::env::var("HORIZON_LAUNCHER_MOTION").as_deref() {
+            || match std::env::var("FOUNDRY_LAUNCHER_MOTION").as_deref() {
                 Ok("off" | "reduced") => Some(Motion::Still),
                 Ok("always") => Some(Motion::Always),
                 Ok("full") => Some(Motion::InFront),
@@ -565,7 +565,7 @@ fn paint_behind(mood: Mood, t: f32, b: Bounds<Pixels>, window: &mut Window) {
             }
         }
         Mood::Neon([glow, _]) => {
-            // A soft glow rising off the horizon.
+            // A soft glow rising off the foundry.
             let top = h * 0.45;
             window.paint_quad(fill(
                 Bounds::new(
@@ -686,7 +686,7 @@ fn paint_drift(mood: Mood, t: f32, keep: Keep, b: Bounds<Pixels>, window: &mut W
     }
 }
 
-/// Neon's floor over the near skyline's foot: lines across, closer together toward the horizon and
+/// Neon's floor over the near skyline's foot: lines across, closer together toward the foundry and
 /// scrolling toward the viewer, and lines running to a point under the sun. About 80 quads, no
 /// allocation.
 fn paint_grid(grid: u32, t: f32, b: Bounds<Pixels>, window: &mut Window) {
@@ -742,7 +742,7 @@ fn bands(n: &Night, h: f32) -> Vec<(f32, f32, u32)> {
         if n.dark || n.art.land != Land::Plain {
             c
         } else {
-            horizon_theme::night::over(0xffffff, MORNING, c)
+            foundry_theme::night::over(0xffffff, MORNING, c)
         }
     };
     let rows = (h / TEXEL).ceil();
@@ -761,7 +761,7 @@ fn bands(n: &Night, h: f32) -> Vec<(f32, f32, u32)> {
         let mut from = at;
         for k in 0..STEPS {
             let to = (at + span * (k + 1) as f32 / STEPS as f32).round();
-            let c = horizon_theme::night::over(next, k as f32 / STEPS as f32, n.sky[i]);
+            let c = foundry_theme::night::over(next, k as f32 / STEPS as f32, n.sky[i]);
             out.push((from * TEXEL, (to - from) * TEXEL, wash(c)));
             from = to;
         }
@@ -779,7 +779,7 @@ struct Star {
 }
 
 /// The stars, the same on every start: a fixed field wide enough for any window, thinned toward
-/// the horizon.
+/// the foundry.
 fn stars() -> &'static [Star] {
     static STARS: LazyLock<Vec<Star>> = LazyLock::new(|| {
         let mut rng = 0x2545_f491u32;
@@ -992,8 +992,8 @@ pub fn still_texels(n: &Night, w: f32, h: f32) -> (Vec<[f64; 3]>, usize, usize) 
     (out, cols, rows)
 }
 
-/// The upper half of a sun cut by the horizon, in three bands of colour, its lower half sliced by
-/// rows of sky like Horizon's mark.
+/// The upper half of a sun cut by the foundry, in three bands of colour, its lower half sliced by
+/// rows of sky like Foundry Client's mark.
 fn sun(art: &SkyArt) -> Vec<[u8; 4]> {
     let (r, w) = (SUN_RADIUS as f32, SUN_RADIUS * 2);
     let mut out = vec![[0; 4]; w * SUN_RADIUS];
@@ -1142,7 +1142,7 @@ impl gpui::Render for SkyView {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use horizon_theme::night::{DAWN, NIGHT, UNCARDED_STOPS};
+    use foundry_theme::night::{DAWN, NIGHT, UNCARDED_STOPS};
 
     /// The sky's upper bands, behind text without a plate, hold the night tokens' text colours.
     fn uncarded_bands(n: &Night, h: f32) -> Vec<u32> {
@@ -1187,7 +1187,7 @@ mod tests {
         for n in [NIGHT, DAWN] {
             for c in uncarded_bands(&n, 800.) {
                 for text in [n.ink, n.ink_soft, n.muted] {
-                    let ratio = horizon_theme::contrast(text, c);
+                    let ratio = foundry_theme::contrast(text, c);
                     assert!(ratio >= 4.5, "#{text:06x} on #{c:06x}: {ratio:.2}");
                 }
             }

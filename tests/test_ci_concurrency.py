@@ -1,4 +1,4 @@
-"""Retained Horizon CI queue policy, with the shared offline YAML parser."""
+"""Retained Foundry Client CI queue policy, with the shared offline YAML parser."""
 from pathlib import Path
 import sys
 import unittest

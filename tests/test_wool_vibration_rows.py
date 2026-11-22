@@ -42,8 +42,8 @@ class SteppedRows(unittest.TestCase):
                    'chat Test failed']
         lines = transcript(replace={30: timeout})
         vanilla, vanilla_problems = problems_of(lines)
-        horizon, horizon_problems = problems_of(lines)
-        self.assertEqual(vanilla[CASE], horizon[CASE])  # equal, so only the validation can catch it
+        foundry, foundry_problems = problems_of(lines)
+        self.assertEqual(vanilla[CASE], foundry[CASE])  # equal, so only the validation can catch it
         self.assertEqual(len(vanilla_problems), 1)
         self.assertTrue(vanilla_problems[0].startswith('t30: '), vanilla_problems)
 

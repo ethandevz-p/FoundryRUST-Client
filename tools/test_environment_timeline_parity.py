@@ -119,5 +119,5 @@ if __name__ == '__main__':
         'environment-timeline-parity', 'VanillaEnvironmentTimelineOracle', 'environment_timeline_fixture', cases,
         'EasingType and Ease, AttributeTrack codec and validatePeriod, KeyframeTrack validation, '
         'KeyframeTrackSampler segments and sampling, argumentKeyframeLerp and the modifiers',
-        sources=[lab.ROOT / 'crates/horizon-world/src/environment_attributes.rs',
-                 lab.ROOT / 'crates/horizon-world/src/environment_timeline.rs'])
+        sources=[lab.ROOT / 'crates/foundry-world/src/environment_attributes.rs',
+                 lab.ROOT / 'crates/foundry-world/src/environment_timeline.rs'])

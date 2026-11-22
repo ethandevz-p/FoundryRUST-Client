@@ -3,16 +3,16 @@
 
     mod_port_harness.py --work WORK [--resources PREPARED] [--jars DIR --deps DIR] [MOD ...]
 
-WORK is a `horizon-port-pack` work folder whose mods were carried over. With --jars the NeoForge
-oracle (tools/neoforge_oracle.py, dev-only) first exports WORK/oracle/facts.json. The Horizon side
-is crates/horizon-client/examples/mod_port_probe.rs: the content root built from WORK/mods/*/carry
+WORK is a `foundry-port-pack` work folder whose mods were carried over. With --jars the NeoForge
+oracle (tools/neoforge_oracle.py, dev-only) first exports WORK/oracle/facts.json. The Foundry Client side
+is crates/foundry-client/examples/mod_port_probe.rs: the content root built from WORK/mods/*/carry
 and what the game's loaders make of it. For every block and item the mod registers, compared:
 
-- blocks: declared in Horizon at all; per state hardness, explosion resistance, light, tool need,
+- blocks: declared in Foundry Client at all; per state hardness, explosion resistance, light, tool need,
   friction, map colour, sounds, outline and collision shapes;
 - drops: the loot of each sampled state for hand, diamond tools, shears and silk touch;
 - placement: the state the block takes when placed, against its template's in the same oracle
-  (Horizon places the template as vanilla does, which the vanilla harnesses check);
+  (Foundry Client places the template as vanilla does, which the vanilla harnesses check);
 - tags: the vanilla block tags (tool and mining tags) holding the mod's blocks;
 - recipes: each recipe's result, count and ingredients;
 - items: present, and their stack size;
@@ -20,7 +20,7 @@ and what the game's loaders make of it. For every block and item the mod registe
   items, armour slot and the textures worn armour draws (the jar's own layers), and food, from the
   oracle's 1.21.1 components with ids upgraded to 26.3's.
 
-Each mod is probed on its own, against vanilla. Writes WORK/mods/<id>/harness/{horizon,result}.json
+Each mod is probed on its own, against vanilla. Writes WORK/mods/<id>/harness/{foundry,result}.json
 per mod and prints a table. Jars, facts and results stay
 in WORK, outside the repository.
 """
@@ -85,10 +85,10 @@ class Check:
         return {'passed': self.passed, 'failed': self.failed, 'examples': self.examples}
 
 
-def sound_upgrades(oracle, horizon):
+def sound_upgrades(oracle, foundry):
     """The oracle version's vanilla sound sets → this version's, through the vanilla blocks both have."""
     out = {}
-    for name, hs in horizon.get('vanilla_sounds', {}).items():
+    for name, hs in foundry.get('vanilla_sounds', {}).items():
         ob = oracle['blocks'].get(name)
         if ob:
             os_ = ob['states'].get(ob['default']) or next(iter(ob['states'].values()))
@@ -146,7 +146,7 @@ def item_stats(oi, hi, carry_dir=None):
         yield (hi['food'] or {}).get('nutrition') == oi['food']['nutrition'], f'food {hi["food"]}'
 
 
-def compare_mod(mod, oracle, horizon, carry, upgrades, old_items, carry_dir=None):
+def compare_mod(mod, oracle, foundry, carry, upgrades, old_items, carry_dir=None):
     checks = {c: Check() for c in CHECKS}
     prefix = mod + ':'
     templates = {prefix + b: t for b, t in carry.get('blocks', {}).items()}
@@ -154,14 +154,14 @@ def compare_mod(mod, oracle, horizon, carry, upgrades, old_items, carry_dir=None
     for name, ob in oracle['blocks'].items():
         if not name.startswith(prefix):
             continue
-        hb = horizon['blocks'].get(name)
-        checks['blocks'].record(hb is not None, f'{name}: not in Horizon ({carry.get("blocks_unknown", {}).get(name[len(prefix):], "left out")})')
+        hb = foundry['blocks'].get(name)
+        checks['blocks'].record(hb is not None, f'{name}: not in Foundry Client ({carry.get("blocks_unknown", {}).get(name[len(prefix):], "left out")})')
         if hb is None:
             continue
         for k, os_ in ob['states'].items():
             hs = hb['states'].get(k)
             if hs is None:
-                checks['properties'].record(False, f'{name}[{k}]: no such state in Horizon')
+                checks['properties'].record(False, f'{name}[{k}]: no such state in Foundry Client')
                 continue
             props = [('hardness', os_['hardness'], hs['hardness']),
                      ('explosion_resistance', ob['explosion_resistance'], hs['explosion_resistance']),
@@ -191,11 +191,11 @@ def compare_mod(mod, oracle, horizon, carry, upgrades, old_items, carry_dir=None
                     f'{name} on {face}: {placed} vs {template} {theirs}')
         for tag, members in vanilla_tags.items():
             if name in members:
-                checks['tags'].record(name in horizon['block_tags'].get(tag, []), f'{name}: not in #{tag}')
+                checks['tags'].record(name in foundry['block_tags'].get(tag, []), f'{name}: not in #{tag}')
     for rid, orec in oracle['recipes'].items():
         if not rid.startswith(prefix):
             continue
-        hrec = horizon['recipes'].get(rid)
+        hrec = foundry['recipes'].get(rid)
         if hrec is None:
             checks['recipes'].record(False, f'{rid} ({orec["type"]}): not loaded')
             continue
@@ -212,7 +212,7 @@ def compare_mod(mod, oracle, horizon, carry, upgrades, old_items, carry_dir=None
     for iid, oi in oracle['items'].items():
         if not iid.startswith(prefix):
             continue
-        hi = horizon['items'].get(iid)
+        hi = foundry['items'].get(iid)
         checks['items'].record(hi is not None and hi['max_stack_size'] == oi['max_stack_size'],
                                f'{iid}: {"missing" if hi is None else "stack " + str(hi["max_stack_size"])}')
         if hi is not None and 'components' in oi and oi.get('block') is None:
@@ -247,7 +247,7 @@ def main():
         subprocess.run(command, check=True)
     if not facts.exists():
         sys.exit(f'{facts}: no oracle facts (run with --jars, or tools/neoforge_oracle.py export)')
-    subprocess.run(['cargo', 'build', '--profile', 'fast', '-q', '-p', 'horizon-client-lib', '--example', 'mod_port_probe'],
+    subprocess.run(['cargo', 'build', '--profile', 'fast', '-q', '-p', 'foundry-client-lib', '--example', 'mod_port_probe'],
                    cwd=ROOT, check=True)
     metadata = json.loads(subprocess.check_output(['cargo', 'metadata', '--no-deps', '--format-version', '1'],
                                                   cwd=ROOT, text=True))
@@ -258,13 +258,13 @@ def main():
     for mod in mods:
         # One mod at a time: each against vanilla, as a player adding it would load it (and a pack's
         # sum may pass the block states a world holds, which the probe would refuse).
-        out = work / 'mods' / mod / 'harness' / 'horizon.json'
+        out = work / 'mods' / mod / 'harness' / 'foundry.json'
         out.parent.mkdir(parents=True, exist_ok=True)
         subprocess.run([str(probe), args.resources, str(work), str(out), mod], check=True)
-        horizon = json.loads(out.read_text())
+        foundry = json.loads(out.read_text())
         carry_report = work / 'mods' / mod / 'carry-report.json'
         carry = json.loads(carry_report.read_text()) if carry_report.exists() else {}
-        rows.append(compare_mod(mod, oracle, horizon, carry, sound_upgrades(oracle, horizon), old_items,
+        rows.append(compare_mod(mod, oracle, foundry, carry, sound_upgrades(oracle, foundry), old_items,
                                 work / 'mods' / mod / 'carry'))
     print(f'{"mod":<16} {"result":<7} ' + ' '.join(f'{c:>12}' for c in CHECKS))
     for result in rows:

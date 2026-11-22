@@ -32,14 +32,14 @@ RUST_DECIDES = {"tools/ci/rust_changes.py", "tools/release_train.py"}
 # Rust files that embed it: a change to one selects what a change to those files would. Kept exact by
 # tests/test_ci_rust_changes.py, which finds every embed in the Rust sources.
 EMBEDDED = {
-    "crates/horizon-mod-api-gen/coverage-notes.md": ("crates/horizon-mod-api-gen/src/wire/host.rs",),
+    "crates/foundry-mod-api-gen/coverage-notes.md": ("crates/foundry-mod-api-gen/src/wire/host.rs",),
     "docs/media/nether.webp": ("launcher/src/glass_server_dialog.rs",),
     "docs/media/underwater.webp": ("launcher/src/glass_server_dialog.rs",),
     "docs/media/village.webp": ("launcher/src/glass_server_dialog.rs",),
-    "docs/modpacks/atm10-mods.csv": ("crates/horizon-port-pack/src/classify.rs",),
+    "docs/modpacks/atm10-mods.csv": ("crates/foundry-port-pack/src/classify.rs",),
     "docs/parity/random-chance-seeded.jsonl": (
-        "crates/horizon-client/src/advancements.rs",
-        "crates/horizon-client/src/game/interface/advancements/mod.rs",
+        "crates/foundry-client/src/advancements.rs",
+        "crates/foundry-client/src/game/interface/advancements/mod.rs",
     ),
 }
 
@@ -60,7 +60,7 @@ def needs_rust_alone(paths):
     ) for path in paths)
 
 
-# verify's second clippy, the server build (horizon-client without default features): what it checks differently from
+# verify's second clippy, the server build (foundry-client without default features): what it checks differently from
 # the first is the feature-gated code of the client crates and the features the manifests choose. ci.yml does not read
 # the answer: verify-server runs on every pull request that changes Rust, because a crate below the client can break
 # the server build without touching either, and not in the merge queue.
@@ -68,7 +68,7 @@ SERVER_BUILD_CHECK = {".github/workflows/ci.yml", "tools/ci/rust_changes.py"}
 
 
 def needs_server_build(paths):
-    return any(path.startswith("crates/horizon-client") or path.endswith("Cargo.toml") or path in ROOT_RUST
+    return any(path.startswith("crates/foundry-client") or path.endswith("Cargo.toml") or path in ROOT_RUST
                or path.startswith(".cargo/") or path in SERVER_BUILD_CHECK for path in paths)
 
 
@@ -85,7 +85,7 @@ WINDOWS_WASM_CHECK = {".github/workflows/ci.yml", "tools/ci/rust_changes.py", "t
 
 
 def needs_windows_wasm_cache(paths):
-    return any(path in WINDOWS_WASM_CHECK or path.startswith(("crates/horizon-mod-wasm/", ".cargo/"))
+    return any(path in WINDOWS_WASM_CHECK or path.startswith(("crates/foundry-mod-wasm/", ".cargo/"))
                for path in paths)
 
 
@@ -109,22 +109,22 @@ def needs_tooling(changes):
 # the generator's crates, the check itself and the surface report beside it, and what decides the set of crates it walks
 # (manifests and the lockfile; the unknown-change stand-in is Cargo.lock). The generator also reads every `#[replaceable]` function in a lower crate, so a
 # changed Rust file under crates/ that mentions the attribute, before or after, counts too (mentions_replaceable).
-# horizon-game-discovery finds the native hook files the generator reads (hook_targets.rs).
-MOD_API_PREFIXES = ("crates/horizon-client/src/game/", "crates/horizon-mod-", "crates/horizon-game-discovery/")
+# foundry-game-discovery finds the native hook files the generator reads (hook_targets.rs).
+MOD_API_PREFIXES = ("crates/foundry-client/src/game/", "crates/foundry-mod-", "crates/foundry-game-discovery/")
 # The network NBT's tag ids and limits are in the core hash every wasm mod is checked by; the other core inputs live in
-# crates/horizon-mod-*.
-MOD_API_FILES = {"crates/horizon-client/src/game.rs", "crates/horizon-client/src/entry.rs",
+# crates/foundry-mod-*.
+MOD_API_FILES = {"crates/foundry-client/src/game.rs", "crates/foundry-client/src/entry.rs",
                  "tools/check_mod_api_unchanged.py", "tools/mod_api_removed_internals.txt", "Cargo.lock",
                  ".github/workflows/ci.yml", "tools/ci/rust_changes.py", "tools/ci/surface_report.py",
-                 "tools/ci/surface.toml", "crates/horizon-core/src/nbt.rs",
+                 "tools/ci/surface.toml", "crates/foundry-core/src/nbt.rs",
                  # The toolchain the generator parses with and the layouts are compiled by.
                  "rust-toolchain", "rust-toolchain.toml", ".cargo/config.toml"}
 # The lower-crate internals a native mod may declare, one path per line (internals.json lists them): a file that
 # holds one changes the API whether or not it mentions `replaceable`.
-DECLARED_INTERNALS = "crates/horizon-mod-api-gen/internals.txt"
-# Crates whose library is built from another crate's sources: horizon-client-lib's manifest points at
-# horizon-client's (its root is src/client_lib.rs there).
-SHARED_SOURCES = {"horizon_client_lib": "horizon_client"}
+DECLARED_INTERNALS = "crates/foundry-mod-api-gen/internals.txt"
+# Crates whose library is built from another crate's sources: foundry-client-lib's manifest points at
+# foundry-client's (its root is src/client_lib.rs there).
+SHARED_SOURCES = {"foundry_client_lib": "foundry_client"}
 
 
 PATHS_PER_GREP = 200

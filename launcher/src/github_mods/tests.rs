@@ -192,11 +192,11 @@ fn write(path: &Path, text: &str) {
     fs::write(path, text).unwrap();
 }
 
-fn project(root: &Path, id: &str, horizon: &str) {
+fn project(root: &Path, id: &str, foundry: &str) {
     write(
-        &root.join("horizon-mod.toml"),
+        &root.join("foundry-mod.toml"),
         &format!(
-            "id='{id}'\nname='{id}'\nversion='0.1.0'\napi='0.2'\ncapabilities=['registries']\n[native]\ngame='26.3'\nhorizon='{horizon}'\nmixins='{SHA2}'\n"
+            "id='{id}'\nname='{id}'\nversion='0.1.0'\napi='0.2'\ncapabilities=['registries']\n[native]\ngame='26.3'\nfoundry='{foundry}'\nmixins='{SHA2}'\n"
         ),
     );
     write(
@@ -215,7 +215,7 @@ fn mod_folders_are_found_wherever_they_are_and_not_searched_inside() {
     project(&root.join(".git/x"), "hidden", SHA);
     // Stop at the mod root, not arbitrary nested crates inside its source.
     write(
-        &root.join("zoom/src/nested/horizon-mod.toml"),
+        &root.join("zoom/src/nested/foundry-mod.toml"),
         "not a package",
     );
     let ids: Vec<String> = find_mods(&root)
@@ -247,7 +247,7 @@ fn a_mod_folder_packs_into_a_bundle_the_registry_checks_accept() {
         ("zoom", "0.1.0")
     );
     assert_eq!(packed.sha256, sha256(&bytes));
-    let read = horizon_platform::mod_package::index::native::Bundle::read(&packed.file).unwrap();
+    let read = foundry_platform::mod_package::index::native::Bundle::read(&packed.file).unwrap();
     for shipped in [
         "src/zoom.rs",
         "data/zoom/a.json",
@@ -278,12 +278,12 @@ fn a_flat_hmod_keeps_its_pins_and_ships_only_selected_files() {
     let bundle = &find_mods(&root).unwrap()[0];
     assert_eq!(bundle.manifest.native.as_ref().unwrap().mixins, SHA2);
     let packed = checked(&pack(bundle).unwrap(), &tree("unpacked-out")).unwrap();
-    let read = horizon_platform::mod_package::index::native::Bundle::read(&packed.file).unwrap();
+    let read = foundry_platform::mod_package::index::native::Bundle::read(&packed.file).unwrap();
     assert_eq!(read.manifest.id, "zoom");
     assert!(read.files.contains_key("assets/zoom/lang/en_us.json"));
     let native = read.manifest.native.unwrap();
     assert_eq!(
-        (native.horizon.as_str(), native.mixins.as_str()),
+        (native.foundry.as_str(), native.mixins.as_str()),
         (SHA, SHA2)
     );
     write(&root.join("assets/minecraft/lang/en_us.json"), "{}");
@@ -292,7 +292,7 @@ fn a_flat_hmod_keeps_its_pins_and_ships_only_selected_files() {
     write(&root.join("evil.exe"), "MZ");
     let again = checked(&pack(bundle).unwrap(), &tree("unpacked-out2")).unwrap();
     assert_eq!(again.sha256, packed.sha256);
-    write(&root.join("horizon-mixin.toml"), "[mod]\nid='zoom'\n");
+    write(&root.join("foundry-mixin.toml"), "[mod]\nid='zoom'\n");
     assert!(find_mods(&root).is_err());
     fs::remove_dir_all(root).unwrap();
 }

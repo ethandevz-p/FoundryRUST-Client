@@ -1,30 +1,30 @@
 //! The mod browser's sources: search Modrinth (CurseForge support is coming soon) for what
-//! Horizon loads, say how well each result runs, and download a file only after its checksum
+//! Foundry Client loads, say how well each result runs, and download a file only after its checksum
 //! matches (docs/mod-browser.md).
 //!
-//! Offered: Java mods (Fabric, NeoForge, Forge), whose content Horizon ports and whose jar is
+//! Offered: Java mods (Fabric, NeoForge, Forge), whose content Foundry Client ports and whose jar is
 //! checked before install ([`java`]), modpacks (imported and ported), resource packs
 //! (`resourcepacks/`) and data packs (into a world, [`installed::install_datapack`]). Java code
-//! itself doesn't run in Horizon (docs/modding/src/how-to/content-mods.md).
+//! itself doesn't run in Foundry Client (docs/modding/src/how-to/content-mods.md).
 pub mod curseforge;
 pub mod details;
 pub mod download;
-pub mod horizon;
+pub mod foundry;
 pub mod images;
 pub mod installed;
 pub mod java;
 pub mod java_instance;
 pub mod modrinth;
 
-pub use horizon_platform::mod_package::install_lock::{lock_home, try_lock_home, HomeLockGuard};
+pub use foundry_platform::mod_package::install_lock::{lock_home, try_lock_home, HomeLockGuard};
 
 use serde::{Deserialize, Serialize};
 
-/// The Minecraft version Horizon plays: the pinned version, so a port's regenerated
-/// `crates/horizon-core/src/version.rs` moves it with everything else (docs/version-ports.md).
-pub const GAME: &str = horizon_platform::version::VERSION_ID;
+/// The Minecraft version Foundry Client plays: the pinned version, so a port's regenerated
+/// `crates/foundry-core/src/version.rs` moves it with everything else (docs/version-ports.md).
+pub const GAME: &str = foundry_platform::version::VERSION_ID;
 
-/// What a project is, as far as Horizon is concerned.
+/// What a project is, as far as Foundry Client is concerned.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum Kind {
@@ -32,7 +32,7 @@ pub enum Kind {
     Modpack,
     /// A Java mod: its content is ported ([`java`]).
     Mod,
-    /// A native Horizon shader pack (`.hshader`) or an Iris/OptiFine shader pack.
+    /// A native Foundry Client shader pack (`.hshader`) or an Iris/OptiFine shader pack.
     Shader,
     /// A data pack: it goes into one world's `datapacks/` (`crate::datapacks`).
     DataPack,
@@ -74,8 +74,8 @@ impl Kind {
 pub enum SourceId {
     Modrinth,
     CurseForge,
-    /// Horizon's own registry of reviewed mods, modpacks and resource packs ([`horizon`]).
-    Horizon,
+    /// Foundry Client's own registry of reviewed mods, modpacks and resource packs ([`foundry`]).
+    Foundry Client,
 }
 
 impl SourceId {
@@ -83,29 +83,29 @@ impl SourceId {
         match self {
             SourceId::Modrinth => "Modrinth",
             SourceId::CurseForge => "CurseForge",
-            SourceId::Horizon => "Horizon",
+            SourceId::Foundry Client => "Foundry Client",
         }
     }
 
     /// The source a list names after the author ("from {source}") for project `id`: Modrinth and
-    /// CurseForge always, Horizon's registry only for Horizon's own projects
-    /// ([`horizon::official`]), so a contributor's project reads "by <author>" alone.
+    /// CurseForge always, Foundry Client's registry only for Foundry Client's own projects
+    /// ([`foundry::official`]), so a contributor's project reads "by <author>" alone.
     pub fn shown_for(self, id: &str) -> Option<&'static str> {
         match self {
-            SourceId::Horizon if !horizon::is_official(id) => None,
+            SourceId::Foundry Client if !foundry::is_official(id) => None,
             _ => Some(self.label()),
         }
     }
 }
 
-/// How well a project runs in Horizon.
+/// How well a project runs in Foundry Client.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Support {
-    /// Made for the version Horizon plays, and Horizon reads everything it uses.
+    /// Made for the version Foundry Client plays, and Foundry Client reads everything it uses.
     Works,
     /// It loads, with the limit said.
     Partial(String),
-    /// It can't run in Horizon: never offered for install.
+    /// It can't run in Foundry Client: never offered for install.
     No(String),
 }
 
@@ -186,7 +186,7 @@ pub struct FileRef {
     pub name: String,
     pub size: u64,
     pub sha512: Option<String>,
-    /// What Horizon's registry lists.
+    /// What Foundry Client's registry lists.
     pub sha256: Option<String>,
     pub sha1: Option<String>,
     pub primary: bool,
@@ -288,16 +288,16 @@ pub trait Source: Send + Sync {
 
 /// What the launcher says wherever CurseForge would be.
 pub const CURSEFORGE_SOON: &str = "CurseForge support is coming soon.";
-/// What another source answers for shader packs: Horizon's own are on its registry only.
+/// What another source answers for shader packs: Foundry Client's own are on its registry only.
 pub const SHADERS_ON_HORIZON: &str =
-    "Horizon's shader packs are on Horizon's registry: pick Horizon.";
+    "Foundry Client's shader packs are on Foundry Client's registry: pick Foundry Client.";
 const SHADER_LOADERS: [&str; 2] = ["iris", "optifine"];
 
-/// The sources this launcher uses: Modrinth and Horizon's registry. CurseForge support is coming
+/// The sources this launcher uses: Modrinth and Foundry Client's registry. CurseForge support is coming
 /// soon: its API needs a paid key, so no search or install goes to it; `curseforge` is kept for
 /// then.
 pub fn sources() -> Vec<Box<dyn Source>> {
-    vec![Box::new(modrinth::Modrinth), Box::new(horizon::Registry)]
+    vec![Box::new(modrinth::Modrinth), Box::new(foundry::Registry)]
 }
 
 /// The source of that id, when this launcher can use it.
@@ -305,14 +305,14 @@ pub fn source(id: SourceId) -> Option<Box<dyn Source>> {
     sources().into_iter().find(|s| s.id() == id)
 }
 
-/// How well a project of `kind` made for `game_versions` and `loaders` runs in Horizon.
+/// How well a project of `kind` made for `game_versions` and `loaders` runs in Foundry Client.
 pub fn support(kind: Kind, game_versions: &[String], loaders: &[String]) -> Support {
-    if loaders.iter().any(|l| l == horizon::LOADER) {
-        // Made for Horizon and reviewed: it runs when it is for the version Horizon plays.
+    if loaders.iter().any(|l| l == foundry::LOADER) {
+        // Made for Foundry Client and reviewed: it runs when it is for the version Foundry Client plays.
         return match newest_release(game_versions)
             .filter(|_| !game_versions.iter().any(|v| v == GAME))
         {
-            Some(other) => Support::No(format!("Made for Horizon on {other}.")),
+            Some(other) => Support::No(format!("Made for Foundry Client on {other}.")),
             None => Support::Works,
         };
     }
@@ -331,7 +331,7 @@ pub fn support(kind: Kind, game_versions: &[String], loaders: &[String]) -> Supp
                 });
             }
             if loaders.iter().any(|l| matches!(l.as_str(), "modded" | "core-shaders")) {
-                warnings.push(tr("Core shaders or modded features in this pack may not work in Horizon.").into());
+                warnings.push(tr("Core shaders or modded features in this pack may not work in Foundry Client.").into());
             }
             if warnings.is_empty() {
                 Support::Works
@@ -340,10 +340,10 @@ pub fn support(kind: Kind, game_versions: &[String], loaders: &[String]) -> Supp
             }
         }
         Kind::Modpack => {
-            Support::Partial("Horizon runs the mods it can port, from your own downloads.".into())
+            Support::Partial("Foundry Client runs the mods it can port, from your own downloads.".into())
         }
         Kind::Shader => Support::Partial(
-            crate::i18n::tr("Horizon's shader loader can open Iris and OptiFine packs. Some effects may differ.").into(),
+            crate::i18n::tr("Foundry Client's shader loader can open Iris and OptiFine packs. Some effects may differ.").into(),
         ),
         Kind::DataPack => {
             let made_for = match newest_release(game_versions) {
@@ -359,7 +359,7 @@ pub fn support(kind: Kind, game_versions: &[String], loaders: &[String]) -> Supp
             } else if !game_versions.iter().any(|v| portable_version(v)) {
                 let newest = newest_release(game_versions).unwrap_or("an unknown version");
                 Support::No(format!(
-                    "Made for {newest}: Horizon ports mods made for 1.21 and later."
+                    "Made for {newest}: Foundry Client ports mods made for 1.21 and later."
                 ))
             } else {
                 Support::Partial(
@@ -370,11 +370,11 @@ pub fn support(kind: Kind, game_versions: &[String], loaders: &[String]) -> Supp
     }
 }
 
-/// What a data pack does in Horizon today, said before install; the install says it for the
+/// What a data pack does in Foundry Client today, said before install; the install says it for the
 /// pack's own files (`crate::datapacks::coverage`).
 pub fn datapack_support() -> &'static str {
     crate::i18n::tr(
-        "Horizon runs a data pack's functions, function tags, predicates, item modifiers, recipes, loot tables, advancements, villager trades, damage types, most tags and most worldgen (biomes, features, structures, dimensions). Other files, such as world presets, are not read yet.",
+        "Foundry Client runs a data pack's functions, function tags, predicates, item modifiers, recipes, loot tables, advancements, villager trades, damage types, most tags and most worldgen (biomes, features, structures, dimensions). Other files, such as world presets, are not read yet.",
     )
 }
 
@@ -413,7 +413,7 @@ pub fn pick(kind: Kind, versions: &[Version], everything: bool) -> Option<&Versi
         .filter(|v| v.blocked.is_none() && v.file().is_some());
     if versions
         .iter()
-        .any(|v| v.loaders.iter().any(|l| l == horizon::LOADER))
+        .any(|v| v.loaders.iter().any(|l| l == foundry::LOADER))
     {
         return usable.find(|v| v.game_versions.iter().any(|g| g == GAME));
     }

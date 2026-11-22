@@ -52,7 +52,7 @@ count_path = cwd / '.prep_count'
 n = int(count_path.read_text()) if count_path.exists() else 0
 n += 1
 count_path.write_text(str(n))
-out = cwd / '.local' / 'horizon-client' / '26.3'
+out = cwd / '.local' / 'foundry-client' / '26.3'
 out.mkdir(parents=True, exist_ok=True)
 raw = scenario['initial'][label]
 if n >= 2 and label in scenario.get('rerun', {}):
@@ -68,7 +68,7 @@ if scenario.get('unrelated_same_basename'):
     (other / 'data.txt').write_bytes(bytes.fromhex(scenario['unrelated_same_basename'][4:]))
 if scenario.get('missing_reference'):
     manifest['render_files_sha256']['absent.txt'] = ZERO_SHA
-(out / 'horizon-resources.json').write_text(json.dumps(manifest))
+(out / 'foundry-resources.json').write_text(json.dumps(manifest))
 if n >= 2 and label in scenario.get('export', []):
     print('Exporting fixture again')
 '''
@@ -129,7 +129,7 @@ class ComparePrepareContractTests(unittest.TestCase):
         self.assertEqual(proc.returncode, 0, proc.stderr)
         self.assertEqual(report['manifest_differences'], [])
         self.assertEqual(report['port_differences'], [])
-        data = (work / 'python-2/.local/horizon-client/26.3/data.txt').read_bytes()
+        data = (work / 'python-2/.local/foundry-client/26.3/data.txt').read_bytes()
         self.assertEqual(data, CANONICAL)
         self.assertEqual(hashlib.sha256(data).hexdigest(), CANONICAL_SHA)
 
@@ -142,8 +142,8 @@ class ComparePrepareContractTests(unittest.TestCase):
         self.assertTrue(any('data.txt' in field for field in report['manifest_differences']), report)
         self.assertEqual(report['rerun_resource_changes'], {'python-2': [], 'rust': []})
         self.assertEqual(report['exported_again'], {'rust over python': [], 'python over rust': []})
-        py2 = work / 'python-2/.local/horizon-client/26.3'
-        recorded = json.loads((py2 / 'horizon-resources.json').read_text())['render_files_sha256']['data.txt']
+        py2 = work / 'python-2/.local/foundry-client/26.3'
+        recorded = json.loads((py2 / 'foundry-resources.json').read_text())['render_files_sha256']['data.txt']
         self.assertEqual(recorded, ZERO_SHA)
         self.assertEqual(hashlib.sha256((py2 / 'data.txt').read_bytes()).hexdigest(), CANONICAL_SHA)
 
@@ -163,7 +163,7 @@ class ComparePrepareContractTests(unittest.TestCase):
             rerun={'rust-in-python-2': h(NOISE_B), 'python-in-rust': h(NOISE_A)})
         proc, report, _ = self.run_tool(noisy, 'noise')
         self.assertEqual(proc.returncode, 0, proc.stderr + '\n' + proc.stdout)
-        self.assertIn('horizon-client/26.3/data.txt', report['exporter_noise'])
+        self.assertIn('foundry-client/26.3/data.txt', report['exporter_noise'])
         self.assertEqual(report['manifest_differences'], [])
 
         # The integrity lookup must resolve the exact resource-dir-relative path, not a
@@ -174,7 +174,7 @@ class ComparePrepareContractTests(unittest.TestCase):
         self.assertEqual(proc.returncode, 0, proc.stderr + '\n' + proc.stdout)
         self.assertEqual(report['manifest_differences'], [])
         py2_local = work / 'python-2/.local'
-        self.assertEqual(hashlib.sha256((py2_local / 'horizon-client/26.3/data.txt').read_bytes()).hexdigest(),
+        self.assertEqual(hashlib.sha256((py2_local / 'foundry-client/26.3/data.txt').read_bytes()).hexdigest(),
                          CANONICAL_SHA)
         self.assertEqual((py2_local / 'other/data.txt').read_bytes(), UNRELATED_SAME_BASENAME)
 

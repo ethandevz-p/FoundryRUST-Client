@@ -29,7 +29,7 @@ The game puts this before your file:
 The function reads and returns linear light: 1.0 is paper white, and more is brighter where the frame can hold it. The
 alpha you return is coverage. The game supplies the vertex stage, the bindings and the conversion
 to the frame, so a file that declares a binding or an entry point is refused. Names that start with
-`horizon_` belong to the game.
+`foundry_` belong to the game.
 
 ## 2. Register the pipeline
 
@@ -128,7 +128,7 @@ event.pipelines.push(
 `example:block/charge` is `assets/example/textures/block/charge.png` as the `minecraft:blocks`
 atlas holds it, `minecraft:item/diamond` an item sprite. An animated sprite animates. A pipeline
 always samples a rectangle of the atlas, never a texture of its own. A texture file of your mod's
-own, packed into the runtime atlas's slot pool (arismoko/horizon#4438) and drawn the same way, follows once that
+own, packed into the runtime atlas's slot pool (arismoko/foundry#4438) and drawn the same way, follows once that
 pool exists.
 
 The shader then has one more function:

@@ -10,8 +10,8 @@ use gpui::{
     canvas, div, prelude::*, px, rgb, AnyElement, Bounds, Corners, Div, Pixels, RenderImage, Size,
     Window,
 };
-use horizon_theme::glass::Glass;
-use horizon_theme::night::Night;
+use foundry_theme::glass::Glass;
+use foundry_theme::night::Night;
 use std::cell::Cell;
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -339,7 +339,7 @@ pub fn backdrop(kind: Kind, radius: f32) -> AnyElement {
 fn edge() -> gpui::Hsla {
     PIECES.with_borrow(|p| match p.edge {
         Some(edge) if !p.light => rgb(edge).into(),
-        _ if p.light => gpui::Hsla::from(rgb(horizon_theme::glass::ON_LIGHT)).opacity(0.10),
+        _ if p.light => gpui::Hsla::from(rgb(foundry_theme::glass::ON_LIGHT)).opacity(0.10),
         _ => gpui::white().opacity(0.09),
     })
 }
@@ -659,7 +659,7 @@ mod tests {
         set_light(false);
         set_plain(true, None);
         set_look(look);
-        let night = horizon_theme::night::NIGHT;
+        let night = foundry_theme::night::NIGHT;
         let made = Cell::new(0);
         let texels = || {
             made.set(made.get() + 1);

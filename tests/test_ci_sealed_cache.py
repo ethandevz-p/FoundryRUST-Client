@@ -67,9 +67,9 @@ class SealedCacheTests(unittest.TestCase):
         self.archive.parent.mkdir(parents=True, exist_ok=True)
         subprocess.run(["openssl", "enc", "-e", "-aes-256-cbc", "-pbkdf2", "-iter", "600000", "-md", "sha256", "-pass",
                         f"file:{secret}", "-out", str(self.archive)], input=packed.stdout, check=True)
-        mac_key = hashlib.pbkdf2_hmac("sha256", passphrase.encode(), b"horizon-rust/horizon sealed-cache MAC key v1",
+        mac_key = hashlib.pbkdf2_hmac("sha256", passphrase.encode(), b"foundry-rust/foundry sealed-cache MAC key v1",
                                       600000)
-        message = b"horizon sealed-cache v2\0oracle\0" + key.encode() + b"\0" + self.archive.read_bytes()
+        message = b"foundry sealed-cache v2\0oracle\0" + key.encode() + b"\0" + self.archive.read_bytes()
         Path(f"{self.archive}.mac").write_text(f"{key}\n{hmac.new(mac_key, message, 'sha256').hexdigest()}\n")
 
     @staticmethod

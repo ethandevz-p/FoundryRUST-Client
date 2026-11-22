@@ -4,13 +4,13 @@
 //! `SettingRow`s ([`glass_ui::flat_rows`]).
 //!
 //! Not in the mockup, kept in its patterns: the appearance, the Home background, the data and
-//! logs folders and the applications menu (About's rows), the AI clients and the hidden developer options. The mockup's About tiles for Horizon and
+//! logs folders and the applications menu (About's rows), the AI clients and the hidden developer options. The mockup's About tiles for Foundry Client and
 //! the launcher open Updates here, beside the switches that decide how updates install. The mockup's Native mods switch is the
 //! native mods' build profile here: they are always on.
 
 use super::*;
 use crate::glass_ui::{self as ui, white};
-use horizon_theme::glass::{ink, radius};
+use foundry_theme::glass::{ink, radius};
 
 /// The list's entries: name and icon. The settings sections, in the mockup's order.
 const SECTIONS: [(&str, &str); 10] = [
@@ -32,7 +32,7 @@ const INDEX: [&[&str]; 10] = [
     &[
         "Language",
         "While playing",
-        "Show the Horizon logo at startup",
+        "Show the Foundry Client logo at startup",
     ],
     &[
         "Theme",
@@ -110,8 +110,8 @@ pub(super) struct Built {
     pub prune: Stateful<Div>,
     pub opening: Stateful<Div>,
     pub menu_entry: Stateful<Div>,
-    pub horizon: String,
-    pub horizon_action: Option<AnyElement>,
+    pub foundry: String,
+    pub foundry_action: Option<AnyElement>,
     pub launcher: String,
     pub launcher_action: Option<AnyElement>,
 }
@@ -139,7 +139,7 @@ fn section(i: usize) -> Div {
             .child(ui::icon(icon, 18., ui::color(ui::look().accent)))
             .child(
                 ui::text(17., FontWeight::SEMIBOLD, ink::FULL)
-                    .font_family(horizon_theme::glass::DISPLAY_FONT)
+                    .font_family(foundry_theme::glass::DISPLAY_FONT)
                     .child(tr(label).to_string()),
             ),
     )
@@ -397,7 +397,7 @@ impl Launcher {
                     .pr(px(48.))
                     .child(
                         ui::text(22., FontWeight::SEMIBOLD, ink::FULL)
-                            .font_family(horizon_theme::glass::DISPLAY_FONT)
+                            .font_family(foundry_theme::glass::DISPLAY_FONT)
                             .child(tr("Settings").to_string()),
                     ),
             )
@@ -517,7 +517,7 @@ impl Launcher {
         )
     }
 
-    /// The Game card's switch for registry mods' automatic updates (`horizon::auto`).
+    /// The Game card's switch for registry mods' automatic updates (`foundry::auto`).
     fn mods_auto_update_row(&mut self, cx: &mut Context<Self>) -> Div {
         let t = self.theme;
         let on = self.settings.auto_updates_mods();
@@ -526,7 +526,7 @@ impl Launcher {
             Some(
                 div()
                     .child(tr(
-                        "At start and before you play, content installed from Horizon's registry moves to its newest version for this game. Never inside a modpack. Code mods and updates that would remove blocks or items wait for you.",
+                        "At start and before you play, content installed from Foundry Client's registry moves to its newest version for this game. Never inside a modpack. Code mods and updates that would remove blocks or items wait for you.",
                     ))
                     .into_any_element(),
             ),
@@ -542,12 +542,12 @@ impl Launcher {
         )
     }
 
-    /// Updates' two tiles (the mockup's `AboutTile`s): Horizon and its update, the launcher and its
+    /// Updates' two tiles (the mockup's `AboutTile`s): Foundry Client and its update, the launcher and its
     /// own.
     fn update_tiles(
         &mut self,
-        horizon: String,
-        horizon_action: Option<AnyElement>,
+        foundry: String,
+        foundry_action: Option<AnyElement>,
         launcher: String,
         launcher_action: Option<AnyElement>,
     ) -> Div {
@@ -557,7 +557,7 @@ impl Launcher {
             .selected
             .as_deref()
             .map(|tag| self.version_name(tag));
-        let tone = if self.updates.horizon.is_some() {
+        let tone = if self.updates.foundry.is_some() {
             ui::Tone::Accent(ui::look().accent_soft)
         } else if self.update_error.is_some() {
             ui::Tone::Warn
@@ -578,7 +578,7 @@ impl Launcher {
             .text_size(px(13.))
             .text_color(ink)
             .child(ui::dot(tone))
-            .child(div().min_w_0().truncate().child(horizon));
+            .child(div().min_w_0().truncate().child(foundry));
         let launcher_mark = div()
             .flex()
             .items_center()
@@ -595,8 +595,8 @@ impl Launcher {
             .when(!wide, |d| d.flex_col())
             .gap(px(8.))
             .child(tile(
-                self.horizon_mark(42.),
-                "Horizon".into(),
+                self.foundry_mark(42.),
+                "Foundry Client".into(),
                 installed.unwrap_or_else(|| tr("Nightly").to_string()),
                 div()
                     .flex()
@@ -604,7 +604,7 @@ impl Launcher {
                     .items_start()
                     .gap(px(12.))
                     .child(status)
-                    .children(horizon_action)
+                    .children(foundry_action)
                     .into_any_element(),
             ))
             .child(tile(
@@ -621,7 +621,7 @@ impl Launcher {
         let n = 0;
         let account = section(2).child(self.glass_account(cx));
         let updates = section(3)
-            .child(self.update_tiles(b.horizon, b.horizon_action, b.launcher, b.launcher_action))
+            .child(self.update_tiles(b.foundry, b.foundry_action, b.launcher, b.launcher_action))
             .child(index_row(
                 0,
                 tr("Install new versions automatically"),
@@ -659,7 +659,7 @@ impl Launcher {
             .child(self.while_playing_row(n, cx))
             .child(index_row(
                 0,
-                tr("Show the Horizon logo at startup"),
+                tr("Show the Foundry Client logo at startup"),
                 note("Shown for a moment while the version list loads."),
                 Some(b.opening.into_any_element()),
                 &t,
@@ -706,7 +706,7 @@ impl Launcher {
                     0,
                     tr("Applications menu"),
                     note(if self.settings.desktop_entry() {
-                        "Horizon and its icon are in your desktop's menu."
+                        "Foundry Client and its icon are in your desktop's menu."
                     } else {
                         "Not in your desktop's menu."
                     }),
@@ -786,7 +786,7 @@ pub(super) fn nav_item(
         .rounded(px(radius::ROW))
         .border_1()
         .cursor_pointer()
-        .font_family(horizon_theme::glass::FONT)
+        .font_family(foundry_theme::glass::FONT)
         .text_size(px(14.))
         .active(|s| s.bg(white(0.1)));
     let d = if on {
@@ -861,7 +861,7 @@ impl Launcher {
             })
             .child(ui::back_edge(radius::ROW, 0., true))
             .cursor_text()
-            .font_family(horizon_theme::glass::FONT)
+            .font_family(foundry_theme::glass::FONT)
             .text_size(px(14.))
             .child(ui::icon(
                 "search-01",

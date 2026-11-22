@@ -1,0 +1,17 @@
+[package]
+name = "foundry-hot-paths-game"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+publish = false
+description = "The game as tools/hot_paths.py measures it: foundry-game's entry, and on request one native mod that listens to the hooks the benchmark fires"
+
+[dependencies]
+foundry-client = { path = "../foundry-client", default-features = false }
+foundry-guest-stack = { path = "../foundry-guest-stack" }
+foundry-mod-api = { path = "../foundry-mod-api" }
+foundry-mod-host = { path = "../foundry-mod-host", default-features = false }
+foundry-mod-package = { path = "../foundry-mod-package", default-features = false, features = ["index"] }
+
+[lints]
+workspace = true

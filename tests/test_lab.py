@@ -70,7 +70,7 @@ class ArtifactTests(unittest.TestCase):
                                   "server": {"sha1": lock["minecraft"]["server_sha1"]}}}
         with tempfile.TemporaryDirectory() as temp, mock.patch("urllib.request.urlopen") as request, \
                 mock.patch.dict("os.environ", {}, clear=False) as environment:
-            environment.pop("HORIZON_SERVER_JAR", None)
+            environment.pop("FOUNDRY_SERVER_JAR", None)
             launcher, cache = Path(temp) / "minecraft", Path(temp) / "cache"
             version = launcher / "versions" / "26.3"
             version.mkdir(parents=True)
@@ -176,13 +176,13 @@ class ArtifactTests(unittest.TestCase):
 class PublicationTests(unittest.TestCase):
     def test_private_paths_rejected(self):
         for path in [".local/minecraft/source.java", "decompiled/Foo.txt", "game.JAR", "capture.jfr", "source/Foo.java",
-                     "fixtures/26.3/horizon-data.bin"]:
+                     "fixtures/26.3/foundry-data.bin"]:
             self.assertTrue(check_public_tree.prohibited(path), path)
-        for path in ["tools/lab.py", "crates/horizon-core/src/lib.rs", "Cargo.lock", "docs/analysis.md",
-                     "mods/horizon/src/main/java/dev/horizonlab/HorizonLab.java",
-                     "mods/horizon-lab/src/main/java/dev/horizonlab/HorizonLab.java"]:
+        for path in ["tools/lab.py", "crates/foundry-core/src/lib.rs", "Cargo.lock", "docs/analysis.md",
+                     "mods/foundry/src/main/java/dev/foundrylab/FoundryLab.java",
+                     "mods/foundry-lab/src/main/java/dev/foundrylab/FoundryLab.java"]:
             self.assertFalse(check_public_tree.prohibited(path), path)
-        self.assertTrue(check_public_tree.prohibited("mods/horizon/src/main/java/net/minecraft/Client.java"))
+        self.assertTrue(check_public_tree.prohibited("mods/foundry/src/main/java/net/minecraft/Client.java"))
         for path in ["tools/JfrSummary.java", "tests/java/JfrFixture.java"]:
             self.assertFalse(check_public_tree.prohibited(path), path)
         for path in ["tools/Minecraft.java", "tests/java/Client.java", ".local/tools/JfrSummary.java"]:
@@ -211,7 +211,7 @@ class PublicationTests(unittest.TestCase):
             self.assertEqual(check().returncode, 0, check().stderr)
             for path, text in [("crates/a/src/items.rs", flattening), ("data/states.txt", states),
                                ("data/states.json", json.dumps(states.splitlines())),
-                               ("crates/horizon-world/src/datafix/block_state_data.txt", states + "# retired copy\n")]:
+                               ("crates/foundry-world/src/datafix/block_state_data.txt", states + "# retired copy\n")]:
                 with self.subTest(path=path):
                     commit(path, text)
                     result = check()
@@ -228,7 +228,7 @@ class PublicationTests(unittest.TestCase):
             self.assertEqual(history.returncode, 1)
             for path in ("crates/a/src/items.rs", "data/states.txt", "data/states.json"):
                 self.assertIn(path, history.stderr)
-            self.assertNotIn("crates/horizon-world/src/datafix/block_state_data.txt", history.stderr)
+            self.assertNotIn("crates/foundry-world/src/datafix/block_state_data.txt", history.stderr)
 
     def test_force_added_ignored_file_is_detected_in_index_and_history(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -387,7 +387,7 @@ class GameEnvScreenTests(unittest.TestCase):
                 os.environ.pop("DISPLAY", None)
                 env = agent_control_e2e.game_env("e2e", home=home)
                 run.assert_not_called()
-                self.assertEqual(env["HORIZON_HOME"], home)
+                self.assertEqual(env["FOUNDRY_HOME"], home)
                 self.assertNotIn("VSCREEN", env)
 
 
@@ -398,7 +398,7 @@ class ScratchCleanupTests(unittest.TestCase):
         with mock.patch.object(lab.shutil, "rmtree", side_effect=PermissionError("locked")), \
                 mock.patch.object(lab.time, "sleep"), \
                 mock.patch("sys.stderr", new_callable=io.StringIO) as stderr:
-            with lab.temp_folder("horizon-test-") as path:
+            with lab.temp_folder("foundry-test-") as path:
                 pass
             self.assertIn(path, stderr.getvalue())
             self.assertIn("locked", stderr.getvalue())

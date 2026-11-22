@@ -1,0 +1,46 @@
+[package]
+name = "foundry-mod-host"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish = false
+description = "The mod host above the engine: loading, Host implementations, registries and hook dispatch (arismoko/foundry#2534)"
+
+[dependencies]
+mod-render = { package = "foundry-mod-render", path = "../foundry-mod-render" }
+foundry-engine-slots = { path = "../foundry-engine-slots" }
+# Empty since #19576. Both SDK routes build this crate, so the dependency is what still builds and
+# ships `mod_points`, which launchers released before then link into every native mod.
+mod-points = { package = "foundry-mod-points", path = "../foundry-mod-points" }
+foundry-guest-stack = { path = "../foundry-guest-stack" }
+foundry-client = { path = "../foundry-client", default-features = false }
+
+foundry-mod-package = { path = "../foundry-mod-package", default-features = false, features = ["index"] }
+foundry-mod-wasm = { path = "../foundry-mod-wasm" }
+mod-api = { package = "foundry-mod-api", path = "../foundry-mod-api" }
+
+log = "0.4"
+libloading = "0.8"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+
+[lints]
+workspace = true
+
+[features]
+default = ["audio", "controllers", "foundry-extras"]
+audio = ["foundry-client/audio"]
+controllers = ["foundry-client/controllers"]
+foundry-extras = ["foundry-client/foundry-extras"]
+testing = ["foundry-client/testing"]
+friends = ["foundry-client/friends"]
+rng-trace = ["foundry-client/rng-trace"]
+system-allocator = ["foundry-client/system-allocator"]
+alloc-census = ["foundry-client/alloc-census"]
+windows-mimalloc = ["foundry-client/windows-mimalloc"]
+windows-segment-heap = ["foundry-client/windows-segment-heap"]
+
+[dev-dependencies]
+serde_json = "1"

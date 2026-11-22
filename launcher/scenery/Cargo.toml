@@ -1,14 +1,14 @@
 [package]
-name = "horizon-launcher-scenery"
+name = "foundry-launcher-scenery"
 version = "0.1.0"
 edition = "2021"
 license = "LGPL-3.0-or-later"
-description = "The Horizon launcher's scenery: the sunset scene, painted skies, rain and frosted glass"
+description = "The Foundry Client launcher's scenery: the sunset scene, painted skies, rain and frosted glass"
 publish = false
 
 [dependencies]
 gpui = { package = "gpui-fast", version = "0.1.13" }
-horizon-theme = { path = "../../crates/horizon-theme" }
+foundry-theme = { path = "../../crates/foundry-theme" }
 image = { version = "0.25", default-features = false }
 
 [target.'cfg(target_os = "macos")'.dependencies]

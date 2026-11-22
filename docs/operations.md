@@ -1,6 +1,6 @@
-# Operations: running Horizon by hand
+# Operations: running Foundry Client by hand
 
-How the Horizon Team and the council keep Horizon working when no AI agent is running and the maintainer's machines
+How the Foundry Client Team and the council keep Foundry Client working when no AI agent is running and the maintainer's machines
 are off. Each section says what normally happens by itself, who can do it by hand, and what to do when it breaks.
 How decisions are made is in [GOVERNANCE.md](../GOVERNANCE.md); how a change reaches players is in
 [release-flow.md](release-flow.md). This page only says how to operate them.
@@ -9,11 +9,11 @@ How decisions are made is in [GOVERNANCE.md](../GOVERNANCE.md); how a change rea
 
 | Who | Can |
 | --- | --- |
-| **Horizon Team** (GitHub team `horizon-team`, write access) | Review, label and merge pull requests; approve a fork's workflow runs; re-run failed jobs; start workflows by hand (`gh workflow run`); add `release-blocker` to an issue; merge in horizon-mods (form pull requests too) and upload its `staging` files |
+| **Foundry Client Team** (GitHub team `foundry-team`, write access) | Review, label and merge pull requests; approve a fork's workflow runs; re-run failed jobs; start workflows by hand (`gh workflow run`); add `release-blocker` to an issue; merge in foundry-mods (form pull requests too) and upload its `staging` files |
 | **Trusted reviewers** (`.github/trusted-reviewers.txt`) | `/nightly`, `/close`, `/reopen`, `/label`, `/unlabel`, `/unclaim` by comment ([release-flow.md](release-flow.md#trusted-reviewers)) |
 | **Council** (🏛️ Council on Discord) | Decide by poll (`/vote`, `/poll start`); emergency actions (GOVERNANCE.md 4.6) |
 | **Organisation owners** (Ludovic and rdbtCVS since 2026-11-11, council poll P28) | Repository variables and secrets (`SELF_HOSTED_CI`, `RELEASES_PAUSED`), branch protection, adding people to GitHub teams, merging past a missing review, the security advisories |
-| **Code owners** (`.github/CODEOWNERS`: the team `horizon-rust/council`, P35) | Approve pull requests that touch `.github/`, `tools/ci/`, the release, signing and update code |
+| **Code owners** (`.github/CODEOWNERS`: the team `foundry-rust/council`, P35) | Approve pull requests that touch `.github/`, `tools/ci/`, the release, signing and update code |
 
 The organisation has two owners since the council's poll P28, so the last two rows no longer wait for one person.
 
@@ -69,11 +69,11 @@ is waiting, and closes it once the runners are back.
 
 | Runner label | What waits | What to do |
 | --- | --- | --- |
-| `horizon-light` (bots) | Triage and claim commands, labels, overlap notes, the Mojang check | An organisation owner sets `SELF_HOSTED_CI` to `off` (Settings → Secrets and variables → Actions → Variables). Then everything runs on GitHub |
-| `horizon-checks` | `verify` of pull requests ending in 0, approved forks' included | Same switch (`off` or `light`), then re-run the waiting checks. Forks' pull requests see no repository variable, so they wait for these runners |
-| `horizon-game` | A pull request's own parity job | It isn't required: merge on `verify`, and label pull requests that touch gameplay `needs-proof` |
-| `horizon-parity-main` | parity-main on main | Nothing can be done on GitHub. Nightlies wait for the last commit it passed on |
-| `horizon-nightly`, `horizon-release` | The Nightly's and the launcher's macOS builds | Nothing can be done on GitHub. No Nightly or launcher release until the Mac is back |
+| `foundry-light` (bots) | Triage and claim commands, labels, overlap notes, the Mojang check | An organisation owner sets `SELF_HOSTED_CI` to `off` (Settings → Secrets and variables → Actions → Variables). Then everything runs on GitHub |
+| `foundry-checks` | `verify` of pull requests ending in 0, approved forks' included | Same switch (`off` or `light`), then re-run the waiting checks. Forks' pull requests see no repository variable, so they wait for these runners |
+| `foundry-game` | A pull request's own parity job | It isn't required: merge on `verify`, and label pull requests that touch gameplay `needs-proof` |
+| `foundry-parity-main` | parity-main on main | Nothing can be done on GitHub. Nightlies wait for the last commit it passed on |
+| `foundry-nightly`, `foundry-release` | The Nightly's and the launcher's macOS builds | Nothing can be done on GitHub. No Nightly or launcher release until the Mac is back |
 
 What keeps working without them: `verify` and merging, triage and labels (once `SELF_HOSTED_CI=off`), Kira, the
 website, the mods registry and its checks, the official server.
@@ -88,7 +88,7 @@ version file the game is pinned to. If its text says the jars are unchanged, a p
 from the issue into `research-lock.json` fixes it. New players can't prepare the game until a Nightly with that fix
 is out, so label that pull request `release-now` (or ask the council to) once it merged.
 
-## The mods registry (horizon-rust/horizon-mods)
+## The mods registry (foundry-rust/foundry-mods)
 
 - **Submissions from the website** arrive as pull requests authored by `ludovic111` (the registry's account). A
   Team member reviews the mod (what it does, its licence, no sign-in or token handling, no Mojang files; see
@@ -113,7 +113,7 @@ Kira runs on Railway and needs nobody's machine.
 
 ## The official server
 
-The server (play.playhorizon.dev) runs on its host's panel, not on the maintainer's machines, and keeps running the
+The server (play.playfoundry.dev) runs on its host's panel, not on the maintainer's machines, and keeps running the
 engine it has. Engine updates, backups and disk clean-ups are done by people with panel access; who has it, and the
 steps, are in the council's private notes. Players' reports go to #mod-chat as usual. If the server is down, a
 council member tells the panel holders and the host.
@@ -128,7 +128,7 @@ council member tells the panel holders and the host.
 
 ## Who to ask
 
-- Code and merges: the Horizon Team, in #horizon-team.
+- Code and merges: the Foundry Client Team, in #foundry-team.
 - Decisions: the council, by poll.
 - Accounts (GitHub organisation, Discord ownership, Railway, the server panel, domains): the account holders; the
   list is in GOVERNANCE.md section 11.

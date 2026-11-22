@@ -29,7 +29,7 @@ fn failed_launch_log_keeps_paths_but_not_argument_or_environment_secrets() {
     command
         .args(["--token", "private-argument", "--token=private-inline"])
         .current_dir(root.path())
-        .env("HORIZON_ACCOUNT_SESSIONS", "private-environment")
+        .env("FOUNDRY_ACCOUNT_SESSIONS", "private-environment")
         .env("TMPDIR", root.path());
     let error = std::io::Error::new(
         std::io::ErrorKind::NotFound,
@@ -93,16 +93,16 @@ fn killed_holder_releases_production_home_source_and_parent_leases() {
                 "run_leases::tests::lease_holder_actor",
                 "--nocapture",
             ])
-            .env("HORIZON_LEASE_ACTOR_ROOT", root.path())
-            .env("HORIZON_LAUNCHER_HOME", &data)
-            .env("HORIZON_HOME", &home)
+            .env("FOUNDRY_LEASE_ACTOR_ROOT", root.path())
+            .env("FOUNDRY_LAUNCHER_HOME", &data)
+            .env("FOUNDRY_HOME", &home)
             .env("XDG_DATA_HOME", root.path().join("xdg-data"))
             .env("XDG_CONFIG_HOME", root.path().join("xdg-config"))
-            .env("HORIZON_LAUNCHER_TRASH", root.path().join("trash"))
-            .env("HORIZON_LAUNCHER_CLIPBOARD", root.path().join("clipboard"))
-            .env("HORIZON_LAUNCHER_DESKTOP", root.path().join("desktop"))
-            .env("HORIZON_LAUNCHER_NO_SELF_UPDATE", "1")
-            .env("HORIZON_NO_AUDIO", "1")
+            .env("FOUNDRY_LAUNCHER_TRASH", root.path().join("trash"))
+            .env("FOUNDRY_LAUNCHER_CLIPBOARD", root.path().join("clipboard"))
+            .env("FOUNDRY_LAUNCHER_DESKTOP", root.path().join("desktop"))
+            .env("FOUNDRY_LAUNCHER_NO_SELF_UPDATE", "1")
+            .env("FOUNDRY_NO_AUDIO", "1")
             .current_dir(root.path())
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
@@ -139,14 +139,14 @@ fn killed_holder_releases_production_home_source_and_parent_leases() {
 
 #[test]
 fn lease_holder_actor() {
-    let Some(root) = std::env::var_os("HORIZON_LEASE_ACTOR_ROOT") else {
+    let Some(root) = std::env::var_os("FOUNDRY_LEASE_ACTOR_ROOT") else {
         return;
     };
     let root = std::path::PathBuf::from(root);
     let mut command = Command::new(std::env::current_exe().unwrap());
     command
         .current_dir(root.join("game"))
-        .env("HORIZON_HOME", root.join("home"))
+        .env("FOUNDRY_HOME", root.join("home"))
         .arg("--resources")
         .arg(root.join("base/resources"));
     mark(&mut command, &root.join("versions/native-fixture"));
@@ -194,15 +194,15 @@ fn routed_lifetime(stop: bool) {
             .env("ROUTING_STOP", if stop { "1" } else { "0" })
             // Keep actor failures visible in CI rather than only timing out on its marker.
             .env("RUST_BACKTRACE", "1")
-            .env("HORIZON_LAUNCHER_HOME", &data)
-            .env("HORIZON_HOME", &home)
+            .env("FOUNDRY_LAUNCHER_HOME", &data)
+            .env("FOUNDRY_HOME", &home)
             .env("XDG_DATA_HOME", data.join("xdg-data"))
             .env("XDG_CONFIG_HOME", data.join("xdg-config"))
-            .env("HORIZON_LAUNCHER_TRASH", data.join("trash"))
-            .env("HORIZON_LAUNCHER_CLIPBOARD", data.join("clipboard"))
-            .env("HORIZON_LAUNCHER_DESKTOP", data.join("desktop"))
-            .env("HORIZON_LAUNCHER_NO_SELF_UPDATE", "1")
-            .env("HORIZON_NO_AUDIO", "1")
+            .env("FOUNDRY_LAUNCHER_TRASH", data.join("trash"))
+            .env("FOUNDRY_LAUNCHER_CLIPBOARD", data.join("clipboard"))
+            .env("FOUNDRY_LAUNCHER_DESKTOP", data.join("desktop"))
+            .env("FOUNDRY_LAUNCHER_NO_SELF_UPDATE", "1")
+            .env("FOUNDRY_NO_AUDIO", "1")
             .stdin(Stdio::piped())
             .stdout(Stdio::inherit())
             .spawn()
@@ -270,7 +270,7 @@ fn routed_lifetime(stop: bool) {
 #[cfg(unix)]
 #[test]
 fn routing_actor() {
-    horizon_platform::mod_package::holder::enter();
+    foundry_platform::mod_package::holder::enter();
     let Some(root) = std::env::var_os("ROUTING_ROOT") else {
         return;
     };
@@ -312,13 +312,13 @@ fn routing_actor() {
             let _ = child.wait();
         }
     } else {
-        horizon_platform::mod_package::holder::enter();
+        foundry_platform::mod_package::holder::enter();
         let mut command = std::process::Command::new(std::env::current_exe().unwrap());
         command.args(std::env::args_os().skip(1));
         let selection =
-            horizon_platform::mod_package::selection::LaunchArguments::for_command(&command)
+            foundry_platform::mod_package::selection::LaunchArguments::for_command(&command)
                 .unwrap();
-        let _capture = horizon_platform::mod_package::holder::acquire(&selection);
+        let _capture = foundry_platform::mod_package::holder::acquire(&selection);
         assert!(_capture.is_some(), "game did not enter through the holder");
         // The parent may stop the game as soon as the readiness file exists.
         let pending = root.join("routed-ready.tmp");
@@ -341,13 +341,13 @@ fn data_directory_leaf_never_leases_ancestors_outside_data() {
         // Registry entry consumes an authoritative path; shared() resolves the same root.
         let data = data.canonicalize().unwrap();
         let mut command = Command::new(std::env::current_exe().unwrap());
-        command.current_dir(&data).env("HORIZON_HOME", &data);
+        command.current_dir(&data).env("FOUNDRY_HOME", &data);
         let _claims = shared(&command).unwrap();
         let registry =
-            horizon_platform::mod_package::runtime_leases::Registry::existing(&data).unwrap();
+            foundry_platform::mod_package::runtime_leases::Registry::existing(&data).unwrap();
         let parent = directory(data.parent().unwrap());
         assert!(
-            matches!(registry.lock(&parent, LockMode::Exclusive), Err(horizon_platform::mod_package::runtime_leases::Error::Io(error)) if error.kind() == std::io::ErrorKind::NotFound)
+            matches!(registry.lock(&parent, LockMode::Exclusive), Err(foundry_platform::mod_package::runtime_leases::Error::Io(error)) if error.kind() == std::io::ErrorKind::NotFound)
         );
         return;
     }
@@ -358,17 +358,17 @@ fn data_directory_leaf_never_leases_ancestors_outside_data() {
             "run_leases::tests::data_directory_leaf_never_leases_ancestors_outside_data"
         ])
         .env(ENV, root.path())
-        .env("HORIZON_LAUNCHER_HOME", root.path().join("data"))
-        .env("HORIZON_LAUNCHER_NO_SELF_UPDATE", "1")
-        .env("HORIZON_NO_AUDIO", "1")
+        .env("FOUNDRY_LAUNCHER_HOME", root.path().join("data"))
+        .env("FOUNDRY_LAUNCHER_NO_SELF_UPDATE", "1")
+        .env("FOUNDRY_NO_AUDIO", "1")
         .status()
         .unwrap()
         .success());
 }
 
 #[test]
-fn a_java_editions_command_is_not_read_as_horizons() {
-    // Minecraft: Java Edition's command, as `backend::java_game` gives it (#17950): Horizon's
+fn a_java_editions_command_is_not_read_as_foundry() {
+    // Minecraft: Java Edition's command, as `backend::java_game` gives it (#17950): Foundry Client's
     // option grammar pairs it up and finds `release` with no value.
     let root = tempfile::tempdir().unwrap();
     let mut java = Command::new("java");
@@ -384,14 +384,14 @@ fn a_java_editions_command_is_not_read_as_horizons() {
         "release",
     ])
     .current_dir(root.path())
-    .env("HORIZON_HOME", root.path().join("logs"));
+    .env("FOUNDRY_HOME", root.path().join("logs"));
     let java = crate::launch::wrap(java, &crate::launch::Launch::default()).unwrap();
     shared(&java)
         .map_err(crate::native_mods::cache_error)
         .unwrap();
     assert!(override_value(&java, GAME).is_none());
-    // Horizon's own game keeps the command its leases are read from.
-    let mut game = Command::new(root.path().join("horizon-client"));
+    // Foundry Client's own game keeps the command its leases are read from.
+    let mut game = Command::new(root.path().join("foundry-client"));
     game.current_dir(root.path());
     mark(&mut game, root.path());
     let game = crate::launch::wrap(game, &crate::launch::Launch::default()).unwrap();
@@ -404,7 +404,7 @@ fn java_edition(java: &Path, home: &Path, logs: &Path) -> Command {
     command
         .args(["-cp", "client.jar", "net.minecraft.client.main.Main"])
         .current_dir(home)
-        .env("HORIZON_HOME", logs);
+        .env("FOUNDRY_HOME", logs);
     crate::launch::wrap(command, &crate::launch::Launch::default()).unwrap()
 }
 
@@ -447,20 +447,20 @@ fn a_java_edition_launch_starts_when_its_folders_cannot_be_marked() {
         .to_string();
     let warning = guard.warning.as_deref().unwrap();
     assert!(warning.contains(&shown), "{warning}");
-    // Horizon's own game still stops on it, and the message names the folder.
+    // Foundry Client's own game still stops on it, and the message names the folder.
     let source = root.path().join("game");
     fs::create_dir_all(&source).unwrap();
-    let mut game = Command::new(source.join("horizon-client"));
-    game.current_dir(&home).env("HORIZON_HOME", &logs);
+    let mut game = Command::new(source.join("foundry-client"));
+    game.current_dir(&home).env("FOUNDRY_HOME", &logs);
     mark(&mut game, &source);
     let Err(error) = shared(&game).map_err(crate::native_mods::cache_error) else {
-        panic!("Horizon's game started with its folder unmarked");
+        panic!("Foundry Client's game started with its folder unmarked");
     };
     assert!(error.contains(&shown), "{error}");
 }
 
-/// Horizon's game command as the launcher builds it: `--resources` and the session file last.
-fn horizon_game(root: &Path) -> Command {
+/// Foundry Client's game command as the launcher builds it: `--resources` and the session file last.
+fn foundry_game(root: &Path) -> Command {
     let mut game = Command::new(root.join("game"));
     game.arg("--resources")
         .arg(root.join("resources"))
@@ -489,7 +489,7 @@ fn wrapped(mut game: Command, wrapper: &[&str]) -> Command {
 fn wrapped_game_holds_its_resources_with_any_number_of_wrapper_words() {
     let root = tempfile::tempdir().unwrap();
     for wrapper in [&["gamemoderun"][..], &["env", "A=1"], &["nice", "-n", "5"]] {
-        let paths = argument_paths(&wrapped(horizon_game(root.path()), wrapper))
+        let paths = argument_paths(&wrapped(foundry_game(root.path()), wrapper))
             .unwrap_or_else(|error| panic!("{wrapper:?}: {error}"));
         assert!(
             paths.contains(&root.path().join("resources")),
@@ -501,7 +501,7 @@ fn wrapped_game_holds_its_resources_with_any_number_of_wrapper_words() {
 #[test]
 fn unwrapped_game_holds_its_resources() {
     let root = tempfile::tempdir().unwrap();
-    let mut game = horizon_game(root.path());
+    let mut game = foundry_game(root.path());
     snapshot(&mut game);
     let paths = argument_paths(&game).unwrap();
     assert!(paths.contains(&root.path().join("resources")));
@@ -540,9 +540,9 @@ fn wrapped_game_starts_and_holds_the_wrappers_resources() {
         fs::create_dir_all(folder).unwrap();
     }
     let game = || {
-        let mut game = horizon_game(root.path());
+        let mut game = foundry_game(root.path());
         game.current_dir(&home)
-            .env("HORIZON_HOME", root.path().join("logs"));
+            .env("FOUNDRY_HOME", root.path().join("logs"));
         mark(&mut game, &source);
         game
     };

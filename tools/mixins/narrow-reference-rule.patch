@@ -1,7 +1,7 @@
-diff --git a/crates/horizon-mixins-cli/tests/cases/local_scope.rs b/crates/horizon-mixins-cli/tests/cases/local_scope.rs
+diff --git a/crates/foundry-mixins-cli/tests/cases/local_scope.rs b/crates/foundry-mixins-cli/tests/cases/local_scope.rs
 index a2ac95a..acb9e6b 100644
---- a/crates/horizon-mixins-cli/tests/cases/local_scope.rs
-+++ b/crates/horizon-mixins-cli/tests/cases/local_scope.rs
+--- a/crates/foundry-mixins-cli/tests/cases/local_scope.rs
++++ b/crates/foundry-mixins-cli/tests/cases/local_scope.rs
 @@ -129,12 +129,14 @@ fn sites_in_closures_and_other_unsupported_scopes_stay_refused() {
          &bump("values.iter().map(|x| x + 1).count()"),
      );
@@ -36,10 +36,10 @@ index a2ac95a..acb9e6b 100644
 -    reject(&f, "E_UNSUPPORTED_CONTROL_FLOW");
 +    build_plan(&f.root, &f.mods).unwrap();
  }
-diff --git a/crates/horizon-mixins-cli/tests/cases/returns.rs b/crates/horizon-mixins-cli/tests/cases/returns.rs
+diff --git a/crates/foundry-mixins-cli/tests/cases/returns.rs b/crates/foundry-mixins-cli/tests/cases/returns.rs
 index bca7938..2f2eb44 100644
---- a/crates/horizon-mixins-cli/tests/cases/returns.rs
-+++ b/crates/horizon-mixins-cli/tests/cases/returns.rs
+--- a/crates/foundry-mixins-cli/tests/cases/returns.rs
++++ b/crates/foundry-mixins-cli/tests/cases/returns.rs
 @@ -104,7 +104,7 @@ fn return_hooks_still_refuse_references_to_calls_and_closures_in_the_values_they
          let e = build_plan(&f.root, &f.mods).unwrap_err();
          assert_eq!(e.code, "E_UNSUPPORTED_CONTROL_FLOW", "{body}: {e}");
@@ -48,7 +48,7 @@ index bca7938..2f2eb44 100644
 +    // A hook that rewrites one site still refuses a site that borrows a call's result.
      let f = fixture(r#"let arg = sink(size(&Guard::new("argument", 2))); sink(arg)"#);
      f.append(
-         "mods/alpha/horizon-mixin.toml",
+         "mods/alpha/foundry-mixin.toml",
 @@ -115,13 +115,14 @@ target="fixture_game::run"
  kind="BEFORE_CALL"
  selector="sink"
@@ -84,7 +84,7 @@ index bca7938..2f2eb44 100644
 +    "#,
 +    );
 +    f.append(
-+        "mods/alpha/horizon-mixin.toml",
++        "mods/alpha/foundry-mixin.toml",
 +        r#"
 +[[injection]]
 +id="before"
@@ -138,7 +138,7 @@ index bca7938..2f2eb44 100644
 +fn statement_hooks_refuse_a_site_beneath_a_borrow() {
 +    let f = fixture(r#"let extended = &Guard::new("extended", 3); sink(size(extended))"#);
 +    f.append(
-+        "mods/alpha/horizon-mixin.toml",
++        "mods/alpha/foundry-mixin.toml",
 +        r#"
 +[[injection]]
 +id="before"
@@ -176,7 +176,7 @@ index bca7938..2f2eb44 100644
 +    )
 +    .unwrap();
 +    fs::write(
-+        f.mods.join("alpha/horizon-mixin.toml"),
++        f.mods.join("alpha/foundry-mixin.toml"),
 +        r#"
 +[mod]
 +id="alpha"
@@ -241,7 +241,7 @@ index bca7938..2f2eb44 100644
 +                ),
 +        )
 +        .unwrap();
-+        fs::write(f.mods.join("alpha/horizon-mixin.toml"), rows(ordinal)).unwrap();
++        fs::write(f.mods.join("alpha/foundry-mixin.toml"), rows(ordinal)).unwrap();
 +        fs::write(
 +            f.mods.join("alpha/before.rs"),
 +            "fn before() { crate::mark(\"before\"); }",
@@ -270,10 +270,10 @@ index bca7938..2f2eb44 100644
 +    assert_eq!(e.code, "E_UNSUPPORTED_CONTROL_FLOW", "{e}");
 +    assert!(e.message.contains("selected site contains `?`"), "{e}");
 +}
-diff --git a/crates/horizon-mixins-cli/tests/integration.rs b/crates/horizon-mixins-cli/tests/integration.rs
+diff --git a/crates/foundry-mixins-cli/tests/integration.rs b/crates/foundry-mixins-cli/tests/integration.rs
 index fcf5a46..40c84a0 100644
---- a/crates/horizon-mixins-cli/tests/integration.rs
-+++ b/crates/horizon-mixins-cli/tests/integration.rs
+--- a/crates/foundry-mixins-cli/tests/integration.rs
++++ b/crates/foundry-mixins-cli/tests/integration.rs
 @@ -697,14 +697,14 @@ fn cfg_attributes_shared_module_sources_and_shadowing_fail_closed() {
          ),
          (
@@ -293,10 +293,10 @@ index fcf5a46..40c84a0 100644
              "E_UNSUPPORTED_CONTROL_FLOW",
          ),
          (
-diff --git a/crates/horizon-mixins-core/src/plan.rs b/crates/horizon-mixins-core/src/plan.rs
+diff --git a/crates/foundry-mixins-core/src/plan.rs b/crates/foundry-mixins-core/src/plan.rs
 index 848dcc0..153c68d 100644
---- a/crates/horizon-mixins-core/src/plan.rs
-+++ b/crates/horizon-mixins-core/src/plan.rs
+--- a/crates/foundry-mixins-core/src/plan.rs
++++ b/crates/foundry-mixins-core/src/plan.rs
 @@ -633,6 +633,32 @@ pub fn build_staged(workspace: &Path, mods: &Path) -> Result<(Plan, crate::nativ
                  {
                      return Err(context(Diagnostic::new("E_UNSUPPORTED_SITE", "the selected site contains a closure, which this hook would move into generated code").file(&f.file)));
@@ -406,10 +406,10 @@ index 848dcc0..153c68d 100644
  fn contains_call(expr: &Expr) -> bool {
      struct Find(bool);
      impl<'ast> Visit<'ast> for Find {
-diff --git a/crates/horizon-mixins-core/src/sites.rs b/crates/horizon-mixins-core/src/sites.rs
+diff --git a/crates/foundry-mixins-core/src/sites.rs b/crates/foundry-mixins-core/src/sites.rs
 index 47fee7d..c79f8b0 100644
---- a/crates/horizon-mixins-core/src/sites.rs
-+++ b/crates/horizon-mixins-core/src/sites.rs
+--- a/crates/foundry-mixins-core/src/sites.rs
++++ b/crates/foundry-mixins-core/src/sites.rs
 @@ -17,6 +17,22 @@ pub fn contains_closure(expr: &Expr) -> bool {
      find.visit_expr(expr);
      find.0

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """LAN multiplayer end to end: a host opens its world to LAN and a guest joins, both real games.
 
-The host's world runs on its integrated server thread. Two Horizon clients run under horizon-ctl in scratch folders. The host
+The host's world runs on its integrated server thread. Two Foundry Client clients run under foundry-ctl in scratch folders. The host
 creates a survival world and opens it to LAN with commands allowed; the guest connects to it by
 address. The script then checks, from both sides, what a guest's game used to get wrong (#366):
 
@@ -38,7 +38,7 @@ address. The script then checks, from both sides, what a guest's game used to ge
 - arrows:    the guest and the host shoot each other with a bow; with the pvp game rule off, nothing (#484);
 - flame-arrows: an arrow the host or the guest shoots from a Flame bow burns in flight on both sides
              (Entity.DATA_SHARED_FLAGS_ID's fire flag), one from a plain bow doesn't (#7356);
-- server-profile: a guest at operator level 4 starts and stops a capture of the host's server over horizon:perf and
+- server-profile: a guest at operator level 4 starts and stops a capture of the host's server over foundry:perf and
              the host's reports/ gets the file; at level 3 it is refused and no file is written; the host's log names
              the guest at the start and the end.
 - looks:     mobs look on both sides as the server has them (their synched data): a calf is a
@@ -362,8 +362,8 @@ both sides go to --out (host-*.png, guest-*.png).
     python3 tools/lan_e2e.py --check chest --check tab
     python3 tools/lan_e2e.py --check portals
 
-Needs the prepared resources in .local/horizon-client. On Linux the games run on vscreen (the
-desktop), or headless (offscreen, no pause) where there is none; on macOS both games render offscreen. Games started here have no audio (HORIZON_NO_AUDIO=1).
+Needs the prepared resources in .local/foundry-client. On Linux the games run on vscreen (the
+desktop), or headless (offscreen, no pause) where there is none; on macOS both games render offscreen. Games started here have no audio (FOUNDRY_NO_AUDIO=1).
 """
 import argparse
 import hashlib
@@ -407,8 +407,8 @@ class Game:
     def __init__(self, name, ctl, resources):
         self.name = name
         self.work = Path(tempfile.mkdtemp(prefix=f'hzlan-{name}-'))
-        (self.work / '.local/horizon-client').mkdir(parents=True)
-        lab.link_dir(resources, self.work / '.local/horizon-client' / lab.VERSION)
+        (self.work / '.local/foundry-client').mkdir(parents=True)
+        lab.link_dir(resources, self.work / '.local/foundry-client' / lab.VERSION)
         self.socket = self.work / 'c.sock'
         env = game_env(os.environ.get('VSCREEN', 'lan-e2e'), home=self.work / 'home')
         env = game_environment(env, self.work)
@@ -419,7 +419,7 @@ class Game:
         return self.d(tool, **args)
 
     def raw(self, *words):
-        """A game command horizon-ctl has no table entry for (lan, connect): the words as typed."""
+        """A game command foundry-ctl has no table entry for (lan, connect): the words as typed."""
         result = subprocess.run(self.d.base + [str(w) for w in words], cwd=self.work, env=self.d.env,
                                 capture_output=True, text=True, timeout=600)
         lines = result.stdout.strip().splitlines()
@@ -668,7 +668,7 @@ def check_crafting(host, guest, out):
     guest.raw('wait-for', 'screen', 'inventory')
     inv = guest('inventory')
     slot = next(s['slot'] for s in inv['hotbar'] if s and s.get('item') == 'minecraft:oak_log')
-    # Horizon's slot ids (click-slot): the hotbar is 0-8, the grid 100-108, the result 200.
+    # Foundry Client's slot ids (click-slot): the hotbar is 0-8, the grid 100-108, the result 200.
     guest.raw('click-slot', slot)
     guest.raw('click-slot', 100)
     guest.wait(5)
@@ -804,7 +804,7 @@ def lan_guest(host):
 
 def check_distance(host, guest, out):
     """IntegratedServer.tickServer: the server takes the host's render distance as its view distance
-    (past 32, which Horizon's options allow) and sends it to every player (SetChunkCacheRadius)."""
+    (past 32, which Foundry Client's options allow) and sends it to every player (SetChunkCacheRadius)."""
     seen = {}
     try:
         for distance in (48, 6):
@@ -2052,7 +2052,7 @@ def check_leads(host, guest, out):
 
 
 def container_items(game):
-    """The open container's stacks by slot (Horizon's container slots are 300 and up) and its size."""
+    """The open container's stacks by slot (Foundry Client's container slots are 300 and up) and its size."""
     slots = [s for s in game('screen').get('slots', []) if s.get('slot', 0) >= 300]
     return {s['slot'] - 300: s['item'] for s in slots if s.get('item')}, len(slots)
 
@@ -2714,7 +2714,7 @@ def held(game):
 
 
 def container_of(game, n):
-    """The open container's (most) slots by container index, Horizon's slots 300 and up."""
+    """The open container's (most) slots by container index, Foundry Client's slots 300 and up."""
     return {s['slot'] - 300: (s.get('item'), s.get('count'))
             for s in game('screen').get('slots', []) if 300 <= s.get('slot', 0) < 300 + n}
 
@@ -2788,7 +2788,7 @@ def check_shift_double_click(host, guest, out):
         guest.raw('interact', *chest)
         guest.raw('wait-for', 'screen', 'container', '--timeout', 10)
         guest.wait(5)
-        # Take the 32 on the cursor, then a wait past Horizon's 250 ms double click window.
+        # Take the 32 on the cursor, then a wait past Foundry Client's 250 ms double click window.
         mouse(guest, hotbar_slot(guest, 'minecraft:diamond'))
         time.sleep(0.4)
 
@@ -5224,7 +5224,7 @@ def check_flow_push(host, guest, out):
     """A current pushes a tagged pig farther than a pool of source blocks."""
     hx, _, hz = pos_of(host)
     x, y, z = (int(hx // 16) * 16 + 8, 100, int(hz // 16) * 16 + 8)
-    tags = ('horizon_flow_test', 'horizon_still_test')
+    tags = ('foundry_flow_test', 'foundry_still_test')
     host('command', command='gamemode survival')
     try:
         clear_fluid_arena(host, x, y, z, tags)
@@ -5252,7 +5252,7 @@ def check_bubble_column(host, guest, out):
     """A bubble column lifts a tagged pig farther than an ordinary water source."""
     hx, _, hz = pos_of(host)
     x, y, z = (int(hx // 16) * 16 + 8, 100, int(hz // 16) * 16 + 8)
-    tags = ('horizon_bubble_test', 'horizon_plain_test')
+    tags = ('foundry_bubble_test', 'foundry_plain_test')
     host('command', command='gamemode survival')
     try:
         clear_fluid_arena(host, x, y, z, tags)
@@ -7173,7 +7173,7 @@ def refused_host_start(host):
 
 
 def check_server_profile(host, guest, out):
-    """A guest asks the host's server for a capture over horizon:perf: at operator level 4 it gets one in the host's
+    """A guest asks the host's server for a capture over foundry:perf: at operator level 4 it gets one in the host's
     reports/, at level 3 it is refused and no file is written, a second request while one runs is refused, and the
     host's log names the guest at the start and at the end."""
     import gzip
@@ -7408,10 +7408,10 @@ def check_raid_captain_fields(host, guest, out):
 
 def run(ctl, out, resources, checks):
     host, guest = Game('host', ctl, resources), Game('guest', ctl, resources)
-    # A headless run (HORIZON_E2E_HEADLESS, or a Linux without vscreen) has no focused window to draw
+    # A headless run (FOUNDRY_E2E_HEADLESS, or a Linux without vscreen) has no focused window to draw
     # in: the games render offscreen and never pause on the focus loss, or the world would stand still
     # (a host paused before its world loads waits at "Connecting to the server..." for ever).
-    headless = bool(os.environ.get('HORIZON_E2E_HEADLESS')) or (
+    headless = bool(os.environ.get('FOUNDRY_E2E_HEADLESS')) or (
         sys.platform.startswith('linux') and not shutil.which('vscreen'))
     launch = ['launch']
     if headless or sys.platform == 'darwin':
@@ -7478,20 +7478,20 @@ def run(ctl, out, resources, checks):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('--bin-dir', help='prebuilt horizon-client and horizon-ctl (default: build with the fast profile)')
+    parser.add_argument('--bin-dir', help='prebuilt foundry-client and foundry-ctl (default: build with the fast profile)')
     parser.add_argument('--check', action='append', choices=CHECKS, help='run only these checks (repeatable)')
     parser.add_argument('--out', default=str(ROOT / '.local/lan-e2e'), help='screenshots and game logs go here')
     args = parser.parse_args()
     if args.bin_dir:
         bins = Path(args.bin_dir).resolve()
     else:
-        subprocess.run(fast_bins.command('horizon-client', 'horizon-ctl'),
+        subprocess.run(fast_bins.command('foundry-client', 'foundry-ctl'),
                        cwd=ROOT, check=True)
         meta = json.loads(subprocess.run(['cargo', 'metadata', '--format-version', '1', '--no-deps'], cwd=ROOT,
                                          capture_output=True, text=True, check=True).stdout)
         bins = Path(meta['target_directory']) / 'fast'
     resources = lab.RESOURCES.resolve()
-    if not (resources / 'horizon-resources.json').exists():
+    if not (resources / 'foundry-resources.json').exists():
         sys.exit(f'no prepared resources in {resources}')
     try:
         require_server_reports(resources)
@@ -7501,7 +7501,7 @@ def main():
     out.mkdir(parents=True, exist_ok=True)
     # Recipes is an opt-in native mod; this check requires a game built with it.
     checks = args.check or [name for name in CHECKS if name != 'recipes-hmod']
-    results = run(lab.binary(bins, 'horizon-ctl'), out, resources, checks)
+    results = run(lab.binary(bins, 'foundry-ctl'), out, resources, checks)
     (out / 'results.json').write_text(json.dumps({'checks': results}, indent=2) + '\n')
     print(json.dumps(results, indent=1))
     sys.exit(0 if results and all(r['pass'] for r in results.values()) else 1)
@@ -7924,7 +7924,7 @@ def check_held_use(host, guest, out):
             host('command', command='kill @e[type=minecraft:trident]')
             game('command', command='item replace entity @s weapon.mainhand with minecraft:trident')
             game.wait(5)
-            # /kill finds no thrown trident (Horizon's selectors miss them): count what's new.
+            # /kill finds no thrown trident (Foundry Client's selectors miss them): count what's new.
             before = flying(game, 'trident')
             game.raw('use-item', '--hold', 1.2)
             game.wait(10)
@@ -9499,7 +9499,7 @@ def check_explorer_map(host, guest, out):
     at most one), so the next map from the same place points at another structure. Three cartographers' offers
     are made, one after the other: each adds as many new starts as the first did, none is pointed at twice."""
     x, y, z = (int(v // 1) for v in pos_of(host))
-    file = host.work / 'saves' / 'Lan' / 'data' / 'horizon_structure_references_minecraft_overworld.json'
+    file = host.work / 'saves' / 'Lan' / 'data' / 'foundry_structure_references_minecraft_overworld.json'
     host('command', command=f'fill {x - 4} {y - 1} {z - 2} {x + 4} {y - 1} {z + 2} minecraft:stone')
     host('command', command=f'fill {x - 4} {y} {z - 2} {x + 4} {y + 3} {z + 2} minecraft:air')
     guest('command', command=f'tp @s {x - 3.5} {y} {z + 0.5}')
@@ -9638,7 +9638,7 @@ def check_cure_discount(host, guest, out):
             # ZombieVillager.mobInteract: the apple starts the cure; then it is cut short.
             game.raw('interact-entity', zombie)
             game.wait(10)
-            # Horizon counts the cure down in the AI step, so NoAI goes for the last tick.
+            # Foundry Client counts the cure down in the AI step, so NoAI goes for the last tick.
             host('command', command=f'data merge entity @e[tag={tag},limit=1] {{ConversionTime:1,NoAI:0b}}')
             villager = None
             for _ in range(30):
@@ -10718,7 +10718,7 @@ def check_falling(host, guest, out):
                             f'{{Tags:["{tag}"],Item:{{id:"minecraft:diamond",count:1}},PickupDelay:32767}}')
     host('command', command=f'summon minecraft:falling_block {x + 2.5} {top} {z - 0.5} '
                             f'{{Tags:["{tag}"],BlockState:{{Name:"minecraft:sand"}},DropItem:0b}}')
-    # Horizon's selectors don't see primed TNT yet: its fuse ends it in the air, 19 blocks down.
+    # Foundry Client's selectors don't see primed TNT yet: its fuse ends it in the air, 19 blocks down.
     host('command', command=f'summon minecraft:tnt {x + 4.5} {top} {z + 0.5} {{fuse:34s}}')
     heights = {'item': [], 'falling block': [], 'primed tnt': []}
     fuses = []
@@ -11959,7 +11959,7 @@ def check_dig_sounds(host, guest, out):
 
     Vanilla plays the block's hit sound from the server's destroy progress
     level events (2019 and 2020), so the digger and the players around hear
-    the same hits. Horizon's digger heard every hit twice: once from its own
+    the same hits. Foundry Client's digger heard every hit twice: once from its own
     client and once from the server, which is what the report called a sound
     played too often.
     """
@@ -13592,12 +13592,12 @@ def prepare_recipes_hmod(*games):
             if path.is_file():
                 archive.write(path, path.relative_to(fixture).as_posix())
     for game in games:
-        mods = game.work / 'horizon-mods'
+        mods = game.work / 'foundry-mods'
         mods.mkdir()
         (mods / 'recipe_pilot.hmod').write_bytes(package.getvalue())
-        (game.work / 'horizon-mods.txt').write_text('mod.recipe_pilot:true\nmod.recipes:true\n')
+        (game.work / 'foundry-mods.txt').write_text('mod.recipe_pilot:true\nmod.recipes:true\n')
         (game.work / 'options.txt').write_text('lang:en_us\n')
-        settings = mods / '.horizon-mod-data/recipes'
+        settings = mods / '.foundry-mod-data/recipes'
         settings.mkdir(parents=True)
         (settings / 'give').write_text('false')
 
@@ -14197,7 +14197,7 @@ def set_legacy_rules(game, on):
 
 
 def check_legacy_pvp(host, guest, out):
-    """The host's legacy combat rules (crates/horizon-client/src/legacy_combat.rs) on a guest's diamond axe hits:
+    """The host's legacy combat rules (crates/foundry-client/src/legacy_combat.rs) on a guest's diamond axe hits:
     one at full charge, and one right after a hotbar swap and back, which empties the charge on the server
     (Player.tick resets attackStrengthTicker when the main hand's item changes). The stick is held a few ticks:
     the client sends a slot change from its next tick (MultiPlayerGameMode.tick), so a swap and back within one

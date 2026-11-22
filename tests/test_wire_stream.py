@@ -1,4 +1,4 @@
-"""tools/wire_stream.py cuts a capture's serverbound play stream into client ticks: the comparison of a Horizon
+"""tools/wire_stream.py cuts a capture's serverbound play stream into client ticks: the comparison of a Foundry Client
 client's packets with vanilla's (tools/test_wire_stream_parity.py) is only as good as this cut."""
 from pathlib import Path
 import importlib.util
@@ -104,10 +104,10 @@ class WireStreamTest(unittest.TestCase):
 
     def test_a_late_answer_compares_with_vanilla_s_answer_and_the_script_keeps_its_clock(self):
         tick = lambda *names: {'packets': [(n, {}) for n in names], 'frame': [], 'misplaced': []}  # noqa
-        # The server's answer (an abort) reaches vanilla in tick 1 and Horizon in tick 2; the script acts in tick 3.
+        # The server's answer (an abort) reaches vanilla in tick 1 and Foundry Client in tick 2; the script acts in tick 3.
         vanilla = [tick('punch'), tick('abort', 'punch'), tick('punch'), tick('pos'), tick()]
-        horizon = [tick('punch'), tick('punch'), tick('abort', 'punch'), tick('pos'), tick()]
-        self.assertEqual(wire_stream.compare_answered(vanilla, horizon, 4, 1, 2), [])
+        foundry = [tick('punch'), tick('punch'), tick('abort', 'punch'), tick('pos'), tick()]
+        self.assertEqual(wire_stream.compare_answered(vanilla, foundry, 4, 1, 2), [])
         # What the answer brings is compared: a new dig instead of the abort.
         restart = [tick('punch'), tick('punch'), tick('start', 'punch'), tick('pos'), tick()]
         self.assertEqual([d[0] for d in wire_stream.compare_answered(vanilla, restart, 4, 1, 2)], [1])
@@ -118,10 +118,10 @@ class WireStreamTest(unittest.TestCase):
     def test_a_late_answer_on_the_position_reminder_s_tick_keeps_the_reminder_on_the_script_s_clock(self):
         tick = lambda *names: {'packets': [(n, {}) for n in names], 'frame': [], 'misplaced': []}  # noqa
         # #14807: the reminder (sendPosition every 20 ticks) falls in tick 2 for both clients; the answer reaches
-        # vanilla in tick 1 and Horizon in tick 2, the reminder's tick.
+        # vanilla in tick 1 and Foundry Client in tick 2, the reminder's tick.
         vanilla = [tick('punch'), tick('abort', 'punch'), tick('move_player_pos'), tick()]
-        horizon = [tick('punch'), tick('punch'), tick('abort', 'punch', 'move_player_pos'), tick()]
-        self.assertEqual(wire_stream.compare_answered(vanilla, horizon, 3, 1, 2), [])
+        foundry = [tick('punch'), tick('punch'), tick('abort', 'punch', 'move_player_pos'), tick()]
+        self.assertEqual(wire_stream.compare_answered(vanilla, foundry, 3, 1, 2), [])
         # A reminder a tick early is still a difference, in either answer tick.
         early = [tick('punch'), tick('punch', 'move_player_pos'), tick('abort', 'punch'), tick()]
         self.assertEqual([d[0] for d in wire_stream.compare_answered(vanilla, early, 3, 1, 2)], [1, 2])
@@ -131,12 +131,12 @@ class WireStreamTest(unittest.TestCase):
 
     def test_a_phase_compares_from_each_client_s_answer_up_to_the_script_s_next_step(self):
         tick = lambda *names: {'packets': [(n, {}) for n in names], 'frame': [], 'misplaced': []}  # noqa
-        # The teleport reaches vanilla in tick 1 and Horizon in tick 2; the script's next step is tick 4.
+        # The teleport reaches vanilla in tick 1 and Foundry Client in tick 2; the script's next step is tick 4.
         vanilla = [tick('a'), tick('t0'), tick('t1'), tick('t2'), tick('step'), tick()]
-        horizon = [tick('a'), tick('a'), tick('t0'), tick('t1'), tick('step'), tick()]
-        self.assertEqual(wire_stream.compare_phased(vanilla, horizon, 5, 1, 2, 4), [])
+        foundry = [tick('a'), tick('a'), tick('t0'), tick('t1'), tick('step'), tick()]
+        self.assertEqual(wire_stream.compare_phased(vanilla, foundry, 5, 1, 2, 4), [])
         # On the script's clock the same streams differ from the answer on.
-        self.assertTrue(wire_stream.compare_answered(vanilla, horizon, 5, 1, 2))
+        self.assertTrue(wire_stream.compare_answered(vanilla, foundry, 5, 1, 2))
         # A difference in the phase is reported at vanilla's tick; one before the earlier answer at its own.
         moved = [tick('a'), tick('a'), tick('t0'), tick('x'), tick('step'), tick()]
         self.assertEqual([d[0] for d in wire_stream.compare_phased(vanilla, moved, 5, 1, 2, 4)], [2])
@@ -178,7 +178,7 @@ class WireStreamTest(unittest.TestCase):
         diffs = wire_stream.compare([tick(-60.0)], [tick(-60.0000001)], 0)
         self.assertEqual([d[0] for d in diffs], [0])
         self.assertEqual(wire_stream.field_diff(diffs[0][1], diffs[0][2]),
-                         ['    #0 move_player_pos.y: vanilla -60.0, Horizon -60.0000001'])
+                         ['    #0 move_player_pos.y: vanilla -60.0, Foundry Client -60.0000001'])
         self.assertEqual(wire_stream.compare([tick(-60.0)], [tick(-60.0)], 0), [])
 
     def test_field_diff_explains_packets_present_on_only_one_side(self):
@@ -187,14 +187,14 @@ class WireStreamTest(unittest.TestCase):
         h = v + [('chat_command', {'command': 'hi'})]
         self.assertEqual([d[0] for d in wire_stream.compare([{'packets': v}], [{'packets': h}], 0)], [0])
         self.assertEqual(wire_stream.field_diff(v, h),
-                         ["    #2: vanilla (no packet), Horizon chat_command {'command': 'hi'}"])
+                         ["    #2: vanilla (no packet), Foundry Client chat_command {'command': 'hi'}"])
         # The mirror case: the extra packet is on the vanilla side.
         self.assertEqual(wire_stream.field_diff(h, v),
-                         ["    #2: vanilla chat_command {'command': 'hi'}, Horizon (no packet)"])
+                         ["    #2: vanilla chat_command {'command': 'hi'}, Foundry Client (no packet)"])
         # A whole missing tick (None, as compare() can yield) still explains the surviving side's packets.
         self.assertEqual(wire_stream.field_diff(None, v),
-                         ["    #0: vanilla (no packet), Horizon move_player_pos {'x': 1.0}",
-                          "    #1: vanilla (no packet), Horizon client_tick_end {}"])
+                         ["    #0: vanilla (no packet), Foundry Client move_player_pos {'x': 1.0}",
+                          "    #1: vanilla (no packet), Foundry Client client_tick_end {}"])
 
 
 if __name__ == '__main__':

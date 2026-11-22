@@ -1,6 +1,6 @@
 """Pure-Python unit tests for tools/agent_control_e2e.py.
 
-No game, real horizon-ctl binary or resource pack is launched: Cli's subprocess.run is faked and
+No game, real foundry-ctl binary or resource pack is launched: Cli's subprocess.run is faked and
 run()'s scratch/driver/scenario factory points are monkeypatched.
 """
 import json
@@ -16,7 +16,7 @@ from tools import agent_control_e2e as e
 
 def capture_cli(tool, **kwargs):
     """Return the words Cli appends to [ctl, --socket, socket], with subprocess.run faked."""
-    cli = e.Cli('/bin/horizon-ctl', '/tmp/c.sock', Path('.'), {})
+    cli = e.Cli('/bin/foundry-ctl', '/tmp/c.sock', Path('.'), {})
     calls = []
 
     def fake_run(argv, **kw):
@@ -31,7 +31,7 @@ def capture_cli(tool, **kwargs):
 
 
 class CliArgvTest(unittest.TestCase):
-    """F4: the CLI argv must use the exact spellings declared in horizon-ctl's commands.rs."""
+    """F4: the CLI argv must use the exact spellings declared in foundry-ctl's commands.rs."""
 
     def test_hyphenated_bool_flag(self):
         self.assertEqual(capture_cli('record_start', name='x', no_world=True),
@@ -116,7 +116,7 @@ class RunCleanupTest(unittest.TestCase):
     def test_close_failure_does_not_mask_result_or_leak_scratch(self):
         class ClosingDriver(_Driver):
             def close(self):
-                raise subprocess.TimeoutExpired('horizon-ctl mcp', 30)
+                raise subprocess.TimeoutExpired('foundry-ctl mcp', 30)
 
         result, work = run_with(ClosingDriver, lambda d, out: 'ok', self.root)
         self.assertIs(result, True)
@@ -134,7 +134,7 @@ class RunCleanupTest(unittest.TestCase):
     def test_timeout_returns_false_instead_of_raising(self):
         class TimeoutDriver(_Driver):
             def __call__(self, tool, **kwargs):
-                raise subprocess.TimeoutExpired('horizon-ctl', 600)
+                raise subprocess.TimeoutExpired('foundry-ctl', 600)
 
         result, work = run_with(TimeoutDriver, lambda d, out: 'ok', self.root)
         self.assertIs(result, False)

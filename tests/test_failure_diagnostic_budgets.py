@@ -63,7 +63,7 @@ class Budgets(unittest.TestCase):
                          f'{root}/../{root.name}/{path}:2:1',
                          f'{root}/{path}:3:1',
                          f'{root}/{path}:2:0',
-                         f'{root}/crates/horizon-client/src/not_tracked.rs:1:1',
+                         f'{root}/crates/foundry-client/src/not_tracked.rs:1:1',
                          f'{root}/.local/private.rs:1:1'):
             with self.subTest(location=rejected):
                 log = self.render(f"test safe ... FAILED\nthread 'safe' panicked at {rejected}:\n"

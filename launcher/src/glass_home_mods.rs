@@ -6,8 +6,8 @@ use super::*;
 use crate::glass_ui::{self as ui, white};
 use build_mode::ModKind;
 use glass_home_lists::Listener;
-use horizon_launcher::github_mods;
-use horizon_theme::glass::{ink, radius};
+use foundry_launcher::github_mods;
+use foundry_theme::glass::{ink, radius};
 use instance_mods::ModRow;
 use servers_page::Field;
 
@@ -444,11 +444,11 @@ impl Launcher {
             return;
         }
         let home = self.mods.home();
-        let Some(_lock) = horizon_launcher::browser::try_lock_home(&home) else {
+        let Some(_lock) = foundry_launcher::browser::try_lock_home(&home) else {
             self.mods.message = Some(Err(tr("Wait for the current operation to finish.").into()));
             return;
         };
-        self.mods.message = horizon_launcher::browser::java::set_enabled(&home, &native.id, !on)
+        self.mods.message = foundry_launcher::browser::java::set_enabled(&home, &native.id, !on)
             .err()
             .map(Err);
         self.instance_mods_changed();
@@ -607,7 +607,7 @@ impl Launcher {
         let home = self.mods.home();
         let result = match (&row.native, &row.entry) {
             (Some(n), _) if n.origin.is_some() => {
-                let Some(_lock) = horizon_launcher::browser::try_lock_home(&home) else {
+                let Some(_lock) = foundry_launcher::browser::try_lock_home(&home) else {
                     self.mods.message =
                         Some(Err(tr("Wait for the current operation to finish.").into()));
                     return;
@@ -635,7 +635,7 @@ fn find_mods(cx: &mut Context<Launcher>) -> Listener<ClickEvent> {
     }))
 }
 
-/// What a Horizon mod is (Native, WebAssembly, Content), as the old look's badge says it: a
+/// What a Foundry Client mod is (Native, WebAssembly, Content), as the old look's badge says it: a
 /// native one is real code, never hidden.
 fn kind_pill(kind: ModKind) -> Div {
     div()

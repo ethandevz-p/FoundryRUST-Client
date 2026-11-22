@@ -127,7 +127,7 @@ still apply, but its backing block does not re-enter; another block notifies nor
 Entity/menu placeholder coordinates are not block notices. Explicit notices may read tentative items:
 
 ```rust,ignore
-{{#include ../../../../../crates/horizon-client/src/game/blocks/machines/contents_changed_tests.rs:contents_changed_listener}}
+{{#include ../../../../../crates/foundry-client/src/game/blocks/machines/contents_changed_tests.rs:contents_changed_listener}}
 ```
 
 ## Crop fertility and farmland hydration

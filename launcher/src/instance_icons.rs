@@ -1,14 +1,14 @@
 //! What an instance's icon shows (plan R8): its own picture (one the player chose, or its
 //! modpack's icon) first; else the block or colour chosen in its dialog; else its mark: the loader
-//! it plays with, the grass block for plain Minecraft, Horizon's own for Horizon. The letter tile
+//! it plays with, the grass block for plain Minecraft, Foundry Client's own for Foundry Client. The letter tile
 //! is the last resort. Each is decoded once per size and kept in `Instances::icons`.
 use super::*;
 use gpui::RenderImage;
-use horizon_launcher::browser::images;
-use horizon_launcher::instances::{self, Instance, Kind as InstanceKind};
+use foundry_launcher::browser::images;
+use foundry_launcher::instances::{self, Instance, Kind as InstanceKind};
 use std::sync::Arc;
 
-/// The loaders' logos as the launcher mockup on playhorizon.dev shows them, each its project's
+/// The loaders' logos as the launcher mockup on playfoundry.dev shows them, each its project's
 /// own: see THIRD_PARTY_NOTICES.md.
 const FABRIC: &[u8] = include_bytes!("../assets/logos/fabric.png");
 const QUILT: &[u8] = include_bytes!("../assets/logos/quilt.png");
@@ -16,8 +16,8 @@ const NEOFORGE: &[u8] = include_bytes!("../assets/logos/neoforge.png");
 const FORGE: &[u8] = include_bytes!("../assets/logos/forge.png");
 /// Vanilla's mark: our own grass block (`tools/launcher_grass_block.py`), not Mojang's art.
 pub(super) const GRASS: &[u8] = include_bytes!("../assets/logos/grass-block.png");
-/// Horizon's mark (`docs/media/brand/icon.svg`), as the icon theme holds it.
-const MARK: &[u8] = include_bytes!("../../packaging/icons/hicolor/256x256/apps/horizon.png");
+/// Foundry Client's mark (`docs/media/brand/icon.svg`), as the icon theme holds it.
+const MARK: &[u8] = include_bytes!("../../packaging/icons/hicolor/256x256/apps/foundry.png");
 /// The loaders a logo is drawn for.
 const LOADERS: [&str; 4] = ["fabric", "quilt", "forge", "neoforge"];
 
@@ -58,7 +58,7 @@ impl Launcher {
         if instance.java.is_some() {
             return self.grass_mark(size);
         }
-        self.icon_image("mark:horizon".into(), size, false, || Some(MARK.to_vec()))
+        self.icon_image("mark:foundry".into(), size, false, || Some(MARK.to_vec()))
     }
 
     /// Vanilla's grass block, `size` points square.
@@ -66,9 +66,9 @@ impl Launcher {
         self.icon_image("mark:grass".into(), size, false, || Some(GRASS.to_vec()))
     }
 
-    /// Horizon's own mark, `size` points square: the brand icon, its tile already rounded.
-    pub(super) fn horizon_mark(&mut self, size: f32) -> AnyElement {
-        match self.icon_image("mark:horizon".into(), size, false, || Some(MARK.to_vec())) {
+    /// Foundry Client's own mark, `size` points square: the brand icon, its tile already rounded.
+    pub(super) fn foundry_mark(&mut self, size: f32) -> AnyElement {
+        match self.icon_image("mark:foundry".into(), size, false, || Some(MARK.to_vec())) {
             Some(image) => centred(image, size, self.scale).into_any_element(),
             None => div().size(px(size)).flex_none().into_any_element(),
         }

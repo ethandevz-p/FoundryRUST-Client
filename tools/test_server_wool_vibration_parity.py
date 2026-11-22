@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Moving on wool makes no vibration on a dedicated server, against vanilla's, seen by a vanilla client.
 
-A vanilla dedicated server and Horizon's each serve a copy of one flat world. KnockbackClient, a player made of
+A vanilla dedicated server and Foundry Client's each serve a copy of one flat world. KnockbackClient, a player made of
 vanilla's protocol code, sends the positions a real client sends for a jump, a drop and a walk, sneaking or not, on
 stone (the control), wool, a wool carpet and a wool slab, and beside a hole at a block's edge; a walk runs with
 ticking frozen, one position a stepped tick (`walk`). A cow, an item and an armor stand fall on the same floors. A sculk sensor stands three blocks away, and a shrieker beside it in two cases.
@@ -10,7 +10,7 @@ After each case the sensor's `last_vibration_frequency` and phase (and the shrie
 A player hurt on each floor is the positive control: the same sensor hears it, so a silent sensor on wool is the
 dampening (VibrationSystem.User.isValidVibration) and not an occluded signal.
 
-Each case is compared on its own. KNOWN lists the cases Horizon still gets wrong and why; one that matches again is
+Each case is compared on its own. KNOWN lists the cases Foundry Client still gets wrong and why; one that matches again is
 reported, and should leave the list.
 """
 import difflib
@@ -202,7 +202,7 @@ for name, kind, nbt in (
 
 def position(server, timeout=2.0):
     """Alice's position, asked from the console, or None if no reply came in `timeout` s: the caller asks again
-    (Horizon's server left one unanswered within 120 s on a hosted run, 11-20)."""
+    (Foundry Client's server left one unanswered within 120 s on a hosted run, 11-20)."""
     start = len(server.lines)
     server.console('data get entity Alice Pos')
     deadline = time.time() + timeout
@@ -367,7 +367,7 @@ def changes(rows):
 def first_difference(want, got):
     """The first differing row of two stepped sequences and the rows beside it, on each side."""
     i = next((i for i, (a, b) in enumerate(zip(want, got)) if a != b), min(len(want), len(got)))
-    return f'first difference at row {i}: vanilla {want[max(0, i - 1):i + 2]} horizon {got[max(0, i - 1):i + 2]}'
+    return f'first difference at row {i}: vanilla {want[max(0, i - 1):i + 2]} foundry {got[max(0, i - 1):i + 2]}'
 
 
 def main():
@@ -376,40 +376,40 @@ def main():
     build.mkdir(parents=True, exist_ok=True)
     report = build / 'report.json'
     report.unlink(missing_ok=True)
-    oracle = lab.ROOT / 'mods/horizon/src/test/java/dev/horizonlab/parity/KnockbackClient.java'
+    oracle = lab.ROOT / 'mods/foundry/src/test/java/dev/foundrylab/parity/KnockbackClient.java'
     classes = build / 'classes'
     shutil.rmtree(classes, ignore_errors=True)
     classes.mkdir()
     dependencies = os.pathsep.join(map(str, [jars['server'], *libraries]))
     subprocess.run(['javac', '--release', str(lock['minecraft']['java_major']), '-proc:none', '-nowarn', '-sourcepath',
-                    lab.ROOT / 'mods/horizon/src/test/java', '-cp', dependencies, '-d', classes, oracle],
+                    lab.ROOT / 'mods/foundry/src/test/java', '-cp', dependencies, '-d', classes, oracle],
                    cwd=lab.ROOT, check=True, capture_output=True)
-    subprocess.run(fast_bins.command('horizon-client'),
+    subprocess.run(fast_bins.command('foundry-client'),
                    cwd=lab.ROOT, check=True, capture_output=True)
     metadata = json.loads(subprocess.check_output(['cargo', 'metadata', '--no-deps', '--format-version', '1'],
                                                   cwd=lab.ROOT, text=True))
-    binary = Path(metadata['target_directory']) / 'fast' / ('horizon-client.exe' if os.name == 'nt' else 'horizon-client')
+    binary = Path(metadata['target_directory']) / 'fast' / ('foundry-client.exe' if os.name == 'nt' else 'foundry-client')
     vanilla_server = ['java', '-Xmx2g', '-Duser.timezone=UTC', '-cp', dependencies, 'net.minecraft.server.Main', 'nogui']
-    horizon_server = [binary, '--resources', lab.RESOURCES, '--dedicated', '--nogui']
-    client = ['java', '-Xmx1g', '-cp', str(classes) + os.pathsep + dependencies, 'dev.horizonlab.parity.KnockbackClient']
+    foundry_server = [binary, '--resources', lab.RESOURCES, '--dedicated', '--nogui']
+    client = ['java', '-Xmx1g', '-cp', str(classes) + os.pathsep + dependencies, 'dev.foundrylab.parity.KnockbackClient']
 
     world = generate_world(vanilla_server, build)
-    vanilla_problems, horizon_problems = {}, {}
+    vanilla_problems, foundry_problems = {}, {}
     vanilla = compared(run_side('vanilla', vanilla_server, client, build, world), vanilla_problems)
-    horizon = compared(run_side('horizon', horizon_server, client, build, world), horizon_problems)
+    foundry = compared(run_side('foundry', foundry_server, client, build, world), foundry_problems)
     unusable = {side: stepped_problems(cases, problems)
                 for side, cases, problems in (('vanilla', vanilla, vanilla_problems),
-                                              ('horizon', horizon, horizon_problems))}
+                                              ('foundry', foundry, foundry_problems))}
     differ, fixed = [], []
     for case in CASES:
-        want, got = vanilla.get(case, []), horizon.get(case, [])
+        want, got = vanilla.get(case, []), foundry.get(case, [])
         bad = [f'{side} {problem}' for side in unusable for problem in unusable[side].get(case, [])]
         if bad:
             # Not compared: a row that is no observation on both sides would compare equal and hide a difference.
             differ.append(f'{case}: the stepped reads are incomplete: ' + '; '.join(bad[:4]))
             continue
         shown, other = (changes(want), changes(got)) if case in STEPPED else (want, got)
-        print(f'{"same  " if want == got else "DIFFER"} {case}: vanilla {shown}' + ('' if want == got else f' horizon {other}'))
+        print(f'{"same  " if want == got else "DIFFER"} {case}: vanilla {shown}' + ('' if want == got else f' foundry {other}'))
         if not want or any(line.startswith(('error', 'disconnected')) for line in want):
             raise AssertionError(f'{case}: vanilla recorded nothing or failed: {want}')
         if want == got:
@@ -418,16 +418,16 @@ def main():
         elif case in STEPPED and case not in KNOWN:
             differ.append(f'{case}: {first_difference(want, got)}')
         elif case not in KNOWN:
-            differ.append(f'{case}:\n' + '\n'.join(difflib.unified_diff(want, got, 'vanilla', 'horizon', n=1, lineterm='')))
+            differ.append(f'{case}:\n' + '\n'.join(difflib.unified_diff(want, got, 'vanilla', 'foundry', n=1, lineterm='')))
     if fixed:
         print('matching vanilla now, take them out of KNOWN: ' + ', '.join(fixed))
     if differ:
-        raise AssertionError(f'{len(differ)} cases differ (see {build}/vanilla.txt and horizon.txt):\n'
+        raise AssertionError(f'{len(differ)} cases differ (see {build}/vanilla.txt and foundry.txt):\n'
                              + '\n'.join(differ)[:8000])
     lab.write_json(report, dict(
         schema=1, minecraft=lock['minecraft']['version'], platform=platform.platform(),
         java=subprocess.check_output(['java', '--version'], text=True).splitlines()[0],
-        cases=len(CASES), known=sorted(KNOWN), output_sha256=lab.digest(build / 'horizon.txt', 'sha256'),
+        cases=len(CASES), known=sorted(KNOWN), output_sha256=lab.digest(build / 'foundry.txt', 'sha256'),
         scope='A sculk sensor (and a shrieker) on a dedicated server, as a vanilla-codec player jumps, drops, walks '
               'and sneaks on stone, wool, a wool carpet and a wool slab or at a block\'s edge, and as a cow, an item '
               'and an armor stand fall on the same floors.'))

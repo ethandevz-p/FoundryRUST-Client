@@ -5,7 +5,7 @@ tools/parity.py puts `java` and `javac` links to this script first on PATH.
 A run is identified by its command line, stdin when it is a file, the real
 program and the runtime behind it (runtime_digest), and the environment (see
 IGNORED: oracles take settings from it, such as VanillaChunkGenerationOracle's
-HORIZON_* variables). A call whose inputs can't all be established that way
+FOUNDRY_* variables). A call whose inputs can't all be established that way
 (UNKEYED: JVM options from the environment) is never replayed.
 After a successful run, the files it created or changed under
 the paths its arguments name (classpath and sourcepath entries included) are
@@ -61,12 +61,12 @@ PATH_OPTIONS = {"-cp", "-classpath", "--class-path", "-sourcepath", "--source-pa
 # service). Every other variable, one never seen before included, is part of the key.
 IGNORED_PREFIXES = ("PARITY_", "GITHUB_", "RUNNER_", "ACTIONS_", "BLACKSMITH_", "SSH_", "XDG_SESSION_")
 IGNORED = {"PWD", "OLDPWD", "SHLVL", "_", "TERM", "TERM_SESSION_ID", "COLUMNS", "LINES", "INVOCATION_ID",
-           "JOURNAL_STREAM", "SYSTEMD_EXEC_PID", "HORIZON_HOME", "BASE_SHA", "HEAD_SHA", "MAIN_SHA", "GH_TOKEN",
+           "JOURNAL_STREAM", "SYSTEMD_EXEC_PID", "FOUNDRY_HOME", "BASE_SHA", "HEAD_SHA", "MAIN_SHA", "GH_TOKEN",
            "HARNESSES", "SHARD", "PETNAME", "VM_ID", "TURBO_API", "TURBO_TOKEN", "GIT_MIRROR_PROXY_URL",
            "METADATA_PORT"}
 # Variables naming a file or folder an oracle reads: what is in it is part of the key, as the name stays when it
-# changes. HORIZON_ORDER's file is written from Horizon's own ticket order (tools/test_decorated_region_parity.py).
-CONTENT_VARIABLES = {"HORIZON_ORDER", "HORIZON_DATAPACKS"}
+# changes. FOUNDRY_ORDER's file is written from Foundry Client's own ticket order (tools/test_decorated_region_parity.py).
+CONTENT_VARIABLES = {"FOUNDRY_ORDER", "FOUNDRY_DATAPACKS"}
 # Variables the JVM and javac themselves read, which can name agents, argument files (@file) and class paths whose
 # bytes the key doesn't hold. While one is set, a call to either goes straight to the real program: a dependency that
 # can't be established is never reused. One list for both, as each may start the other's runtime.

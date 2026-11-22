@@ -31,7 +31,7 @@ struct Location {
 
 pub fn bootstrap_path() -> Result<PathBuf> {
     // Portable installs and tests can keep their location pointer separate from the user profile.
-    if let Some(path) = std::env::var_os("HORIZON_LAUNCHER_LOCATION_FILE").filter(|p| !p.is_empty())
+    if let Some(path) = std::env::var_os("FOUNDRY_LAUNCHER_LOCATION_FILE").filter(|p| !p.is_empty())
     {
         return pointer_path(Path::new(&path));
     }
@@ -39,12 +39,12 @@ pub fn bootstrap_path() -> Result<PathBuf> {
         return Ok(test_home().join("location.json"));
     }
     dirs::config_dir()
-        .map(|p| p.join("horizon-launcher-location").join("location.json"))
+        .map(|p| p.join("foundry-launcher-location").join("location.json"))
         .ok_or_else(|| "Cannot locate the platform configuration folder for location.json".into())
 }
 
 /// Where the library's own tests keep the launcher's and the game's data (`launcher`, `game`,
-/// `location.json` inside) unless `HORIZON_LAUNCHER_HOME` or `HORIZON_HOME` name another:
+/// `location.json` inside) unless `FOUNDRY_LAUNCHER_HOME` or `FOUNDRY_HOME` name another:
 /// never a player's install. A fixed path, not an environment change, so it holds from the
 /// first call on any thread, and a test that runs its own binary again shares it.
 ///
@@ -53,7 +53,7 @@ pub fn bootstrap_path() -> Result<PathBuf> {
 /// compares under one spelling.
 pub fn test_home() -> PathBuf {
     let temp = std::env::temp_dir();
-    crate::backend::plain(temp.canonicalize().unwrap_or(temp)).join("horizon-launcher-lib-tests")
+    crate::backend::plain(temp.canonicalize().unwrap_or(temp)).join("foundry-launcher-lib-tests")
 }
 
 fn overridden(name: &str) -> bool {
@@ -61,7 +61,7 @@ fn overridden(name: &str) -> bool {
 }
 
 fn has_override() -> bool {
-    overridden("HORIZON_LAUNCHER_HOME") || overridden("HORIZON_HOME")
+    overridden("FOUNDRY_LAUNCHER_HOME") || overridden("FOUNDRY_HOME")
 }
 
 /// Roots resolved once per process. `retry` clears it so a repaired location is read again.
@@ -95,9 +95,9 @@ pub fn configured_roots() -> Result<Option<Roots>> {
     }
     // A unit test never reaches the player's real folders: unless it points at a location file
     // of its own, its roots are this test process's, under the temporary folder.
-    if cfg!(test) && !overridden("HORIZON_LAUNCHER_LOCATION_FILE") {
+    if cfg!(test) && !overridden("FOUNDRY_LAUNCHER_LOCATION_FILE") {
         let home =
-            std::env::temp_dir().join(format!("horizon-launcher-test-{}", std::process::id()));
+            std::env::temp_dir().join(format!("foundry-launcher-test-{}", std::process::id()));
         return Ok(Some(Roots {
             launcher: home.join("launcher"),
             game: home.join("game"),
@@ -106,7 +106,7 @@ pub fn configured_roots() -> Result<Option<Roots>> {
     }
     let mut slot = location();
     if slot.is_none() {
-        let resolved = if overridden("HORIZON_LAUNCHER_HOME") && overridden("HORIZON_HOME") {
+        let resolved = if overridden("FOUNDRY_LAUNCHER_HOME") && overridden("FOUNDRY_HOME") {
             Ok(None)
         } else {
             match bootstrap_path() {
@@ -244,7 +244,7 @@ pub fn resolve_at(bootstrap: &Path) -> Result<Option<Roots>> {
 /// Hold until process exit. Workers must enter before acquiring this shared lease.
 /// Override-based isolated runs do not touch the user's bootstrap lock.
 pub fn acquire_startup_lock() -> Result<Option<File>> {
-    if overridden("HORIZON_LAUNCHER_HOME") && overridden("HORIZON_HOME") {
+    if overridden("FOUNDRY_LAUNCHER_HOME") && overridden("FOUNDRY_HOME") {
         Ok(None)
     } else {
         acquire_lock_at(&bootstrap_path()?).map(Some)
@@ -308,7 +308,7 @@ pub fn migrate_current_with_prepare(
     prepare: impl FnOnce(&Roots, &Roots) -> Result<()>,
 ) -> Result<Roots> {
     if has_override() {
-        return Err("Unset HORIZON_LAUNCHER_HOME and HORIZON_HOME before moving data".into());
+        return Err("Unset FOUNDRY_LAUNCHER_HOME and FOUNDRY_HOME before moving data".into());
     }
     let bootstrap = bootstrap_path()?;
     let deadline = Instant::now() + Duration::from_secs(10);
@@ -352,7 +352,7 @@ pub fn migrate_with_prepare(
 /// A migration's exclusive lock, released before its file closes. A child process spawned while
 /// it is held, by any thread, has a copy of the descriptor until its exec, and closing ours alone
 /// would leave the lock taken through that copy: the next migration would read "Cannot lock"
-/// (#18138). `horizon_platform::mod_package::locks::Locked` releases its locks the same way.
+/// (#18138). `foundry_platform::mod_package::locks::Locked` releases its locks the same way.
 struct MigrationLease(File);
 
 impl MigrationLease {
@@ -615,7 +615,7 @@ pub fn kept_note(dir: &Path, ours: Option<&Path>) -> Option<String> {
             .collect::<Vec<_>>()
             .join(", ");
         crate::i18n::trf(
-            "Horizon left these folders in {target} as they were: {folders}",
+            "Foundry Client left these folders in {target} as they were: {folders}",
             &[
                 ("target", &dir.display().to_string()),
                 ("folders", &folders),
@@ -667,7 +667,7 @@ fn reserve_build_folder(source: &Roots, target: &Path, bootstrap: &Path) -> Resu
             continue;
         }
         let Ok(folder) = tempfile::Builder::new()
-            .prefix("horizon-build-")
+            .prefix("foundry-build-")
             .tempdir_in(&parent)
         else {
             continue;
@@ -878,7 +878,7 @@ fn tool_safe(path: &Path) -> Result<()> {
             .is_some_and(|s| s.is_ascii() && !s.bytes().any(|b| b.is_ascii_whitespace()))
     {
         return Err(crate::i18n::trf(
-            "Windows build tools cannot use the build folder \"{path}\" because its full path contains spaces, other whitespace, or non-ASCII characters. Choose an empty destination whose full path uses English letters, numbers, underscores or hyphens, for example D:\\Horizon_Data. Check every parent folder too.",
+            "Windows build tools cannot use the build folder \"{path}\" because its full path contains spaces, other whitespace, or non-ASCII characters. Choose an empty destination whose full path uses English letters, numbers, underscores or hyphens, for example D:\\Foundry_Data. Check every parent folder too.",
             &[("path", &path.display().to_string())],
         ));
     }

@@ -13,12 +13,12 @@ from tools import check_addresses
 
 
 REL = "crates/synthetic/src/lib.rs"
-HOST = "play.playhorizon.dev"
-DECODED_URL = "https://play.playhorizon.dev/ping"
+HOST = "play.playfoundry.dev"
+DECODED_URL = "https://play.playfoundry.dev/ping"
 ESCAPED_URL = r"https://play\x2eplayhorizon\x2edev/ping"
 ERROR = [
-    "crates/synthetic/src/lib.rs: play.playhorizon.dev is a built-in address outside the address list. "
-    "A vanilla endpoint goes in 'vanilla', anything else in the Horizon layer's address home "
+    "crates/synthetic/src/lib.rs: play.playfoundry.dev is a built-in address outside the address list. "
+    "A vanilla endpoint goes in 'vanilla', anything else in the Foundry Client layer's address home "
     "(docs/layers.md#built-in-addresses)"
 ]
 CONFIG = {"homes": [], "vanilla": {}, "not_addresses": {}, "allowed": []}
@@ -45,26 +45,26 @@ class RustStringEscapeTests(unittest.TestCase):
              'const U: &str = "https://play\\x2eplayhorizon\\x2edev/ping";\n',
              [DECODED_URL], [HOST], ERROR),
             ("\\u{...} escapes",
-             'const U: &str = "https://play\\u{2e}playhorizon\\u{2e}dev/ping";\n',
+             'const U: &str = "https://play\\u{2e}playfoundry\\u{2e}dev/ping";\n',
              [DECODED_URL], [HOST], ERROR),
             ("\\u{...} with underscores between hex digits",
-             'const U: &str = "https://play\\u{00_2e}playhorizon\\u{00_2e}dev/ping";\n',
+             'const U: &str = "https://play\\u{00_2e}playfoundry\\u{00_2e}dev/ping";\n',
              [DECODED_URL], [HOST], ERROR),
             ("\\u{...} with six hex digits and several underscores",
-             'const U: &str = "https://play\\u{0_0_0_0_2_e}playhorizon.dev/ping";\n',
+             'const U: &str = "https://play\\u{0_0_0_0_2_e}playfoundry.dev/ping";\n',
              [DECODED_URL], [HOST], ERROR),
             ("\\u{...} with multiple internal underscores (rustc-valid)",
-             'const U: &str = "https://play\\u{00__2e}playhorizon.dev/ping";\n',
+             'const U: &str = "https://play\\u{00__2e}playfoundry.dev/ping";\n',
              [DECODED_URL], [HOST], ERROR),
             ("\\u{...} with a trailing underscore (rustc-valid)",
-             'const U: &str = "https://play\\u{2e_}playhorizon.dev/ping";\n',
+             'const U: &str = "https://play\\u{2e_}playfoundry.dev/ping";\n',
              [DECODED_URL], [HOST], ERROR),
             ("mixed \\xNN and \\u{...}",
              'const U: &str = "https://play\\x2eplayhorizon\\u{2e}dev/ping";\n',
              [DECODED_URL], [HOST], ERROR),
             ("backslash-newline ASCII whitespace continuation",
              'const U: &str = "https://play\\\n'
-             '    .playhorizon.dev/ping";\n',
+             '    .playfoundry.dev/ping";\n',
              [DECODED_URL], [HOST], ERROR),
             ("raw string keeps escape spellings literal",
              f'const U: &str = r"{ESCAPED_URL}";\n',
@@ -93,7 +93,7 @@ class RustStringEscapeTests(unittest.TestCase):
     def test_scan_of_files_with_only_escaped_spellings_reports_the_same_host_and_policy(self):
         """Whole-file gate: scan()'s prefilter must not skip a file whose only host spelling is escaped."""
         escaped_url = r"https\x3a\x2f\x2fplay\x2eplayhorizon\x2edev\x2fping"
-        escaped_host = r"\x70lay.playhorizon.dev"
+        escaped_host = r"\x70lay.playfoundry.dev"
         cases = [
             ("plain control", f'const U: &str = "{DECODED_URL}";', {(REL, HOST)}, ERROR),
             ("fully escaped URL, no literal :// and no plain host",

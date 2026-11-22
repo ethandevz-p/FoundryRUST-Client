@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Admission of predicate holders by the real 26.3 and Horizon servers.
+"""Admission of predicate holders by the real 26.3 and Foundry Client servers.
 
 Cases (each a fresh dedicated server, a fresh flat world and one enabled world pack `prg`):
 - `valid`: `prg:target` is a constant true check; `prg:ref` (`all_of`) references it by id. A control: the server must
@@ -237,7 +237,7 @@ def run(kind, case, parent, binary, timeout, reload=False):
     command = ([java, '-Xms256M', '-Xmx2G', '-jar', str(lab.GAME / 'jars/server.jar'), '--nogui']
                if kind == 'java' else
                [str(binary), '--resources', str(lab.RESOURCES), '--dedicated', '--nogui'])
-    env = lab.game_env(HORIZON_HOME=out / 'homes/horizon', HORIZON_LAUNCHER_HOME=out / 'homes/launcher',
+    env = lab.game_env(FOUNDRY_HOME=out / 'homes/foundry', FOUNDRY_LAUNCHER_HOME=out / 'homes/launcher',
                        XDG_DATA_HOME=out / 'homes/xdg-data', XDG_CONFIG_HOME=out / 'homes/xdg-config')
     start = time.monotonic()
     facts = dict(start_utc=datetime.datetime.now(datetime.timezone.utc).isoformat(), kind=kind, case=case,
@@ -336,11 +336,11 @@ def run_integrated(case, parent, binary, timeout):
                                 for command in SERVICE))
     result = out / 'commands-out.jsonl'
     env = lab.game_env(
-        HORIZON_HOME=out / 'homes/horizon', HORIZON_LAUNCHER_HOME=out / 'homes/launcher',
+        FOUNDRY_HOME=out / 'homes/foundry', FOUNDRY_LAUNCHER_HOME=out / 'homes/launcher',
         XDG_DATA_HOME=out / 'homes/xdg-data', XDG_CONFIG_HOME=out / 'homes/xdg-config',
-        HORIZON_COMMAND_SCRIPT=script, HORIZON_COMMAND_OUTPUT=result,
-        HORIZON_API_DISCOVERY='http://127.0.0.1:9/', HORIZON_PLAYER_NAME='PredicateProbe',
-        HORIZON_HARNESS_LOADED_FIXTURE='1', HORIZON_HARNESS_TIMEOUT=str(int(timeout)))
+        FOUNDRY_COMMAND_SCRIPT=script, FOUNDRY_COMMAND_OUTPUT=result,
+        FOUNDRY_API_DISCOVERY='http://127.0.0.1:9/', FOUNDRY_PLAYER_NAME='PredicateProbe',
+        FOUNDRY_HARNESS_LOADED_FIXTURE='1', FOUNDRY_HARNESS_TIMEOUT=str(int(timeout)))
     command = [str(binary), '--resources', str(lab.RESOURCES),
                '--world', 'prg', '--seed', '121', '--radius', '2', '--headless']
     with (out / 'server.log').open('w', encoding='utf-8') as log:

@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""horizon-server's `[proxy]` on a real server, end to end (docs/hosting.md, #16251).
+"""foundry-server's `[proxy]` on a real server, end to end (docs/hosting.md, #16251).
 
     python3 tools/server_proxy_e2e.py --bin-dir target/fast
 
-`horizon-server run` supervises Horizon's dedicated server with `[proxy] enabled = true`: the supervisor listens
+`foundry-server run` supervises Foundry Client's dedicated server with `[proxy] enabled = true`: the supervisor listens
 on the public port, the game on 127.0.0.1 behind it with Velocity forwarding. The player is a small client
 written here (the protocol of 26.3: handshake, login, configuration, play), because the check is on one TCP
-connection: a horizon-bots player cannot say whether its connection was the same one.
+connection: a foundry-bots player cannot say whether its connection was the same one.
 
 Steps, each checked:
 
@@ -22,9 +22,9 @@ Steps, each checked:
 7. A game that never comes back (the engine swapped for a program that fails) ends with the translated
    disconnect after `[proxy] hold_seconds`, not with a dropped connection.
 
-Everything runs in a fresh temporary folder with fresh HORIZON_HOME and XDG folders and no audio. Logs go to
+Everything runs in a fresh temporary folder with fresh FOUNDRY_HOME and XDG folders and no audio. Logs go to
 --out. Build first:
-    cargo build --profile fast -p horizon-client -p horizon-server
+    cargo build --profile fast -p foundry-client -p foundry-server
 """
 import argparse
 import hashlib
@@ -50,7 +50,7 @@ EXE = '.exe' if os.name == 'nt' else ''
 PROTOCOL = 777
 NAME = 'Prox'
 
-# Packet ids of protocol 777 (crates/horizon-protocol/src/ids.rs).
+# Packet ids of protocol 777 (crates/foundry-protocol/src/ids.rs).
 HANDSHAKE, LOGIN_START, LOGIN_ACK = 0, 0, 3
 CFG_FINISH, CFG_KEEP_ALIVE, CFG_PING, CFG_KNOWN_PACKS, CFG_DISCONNECT = 3, 4, 5, 15, 2
 PLAY_KEEP_ALIVE_IN, PLAY_KEEP_ALIVE_OUT, PLAY_LOGIN, PLAY_DISCONNECT, PLAY_START_CONFIG = 45, 28, 50, 32, 120
@@ -230,7 +230,7 @@ def status_motd(port):
 
 
 def cli(bins, folder, *words):
-    return subprocess.run([str(bins / f'horizon-server{EXE}'), '--dir', str(folder), *map(str, words)],
+    return subprocess.run([str(bins / f'foundry-server{EXE}'), '--dir', str(folder), *map(str, words)],
                           capture_output=True, text=True, env=lab.game_env(), timeout=120)
 
 
@@ -295,7 +295,7 @@ def scenario_restart(bins, folder, server, port, engine, player):
     old_inode = os.stat(engine).st_ino
     local, sock = player.local, player.sock
     packet_boundary = len(player.packets)
-    swap(engine, bins / f'horizon-client{EXE}')
+    swap(engine, bins / f'foundry-client{EXE}')
     check(os.stat(engine).st_ino != old_inode, 'the engine binary was swapped (a new file at the same path)')
     out = cli(bins, folder, 'cmd', 'restart')
     check(out.returncode == 0, f'/restart runs on the console ({out.stdout!r} {out.stderr!r})')
@@ -348,9 +348,9 @@ def main():
     folder.mkdir()
     port, game_port = lab.free_port(), lab.free_port()
     # The game runs from a copy, so that the run can swap it under the supervisor.
-    engine = work / 'engine' / f'horizon-client{EXE}'
+    engine = work / 'engine' / f'foundry-client{EXE}'
     engine.parent.mkdir()
-    shutil.copy2(bins / f'horizon-client{EXE}', engine)
+    shutil.copy2(bins / f'foundry-client{EXE}', engine)
     (folder / 'eula.txt').write_text('eula=true\n')
     (folder / 'server.toml').write_text(f'''[server]
 port = {port}
@@ -381,7 +381,7 @@ enabled = true
 game_port = {game_port}
 hold_seconds = 20
 ''')
-    server = Server([bins / f'horizon-server{EXE}', '--dir', folder, 'run'], folder, out / 'server.log')
+    server = Server([bins / f'foundry-server{EXE}', '--dir', folder, 'run'], folder, out / 'server.log')
     player = None
     try:
         server.wait_for(DONE, 300)

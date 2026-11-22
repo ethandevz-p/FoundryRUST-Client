@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """The locator bar on a dedicated server, against vanilla's, seen by vanilla clients.
 
-A vanilla dedicated server and Horizon's (`horizon-client --dedicated --nogui`) each serve a copy of one flat
+A vanilla dedicated server and Foundry Client's (`foundry-client --dedicated --nogui`) each serve a copy of one flat
 world vanilla generated first (players appear at its spawn), with the same server.properties (offline,
 creative, view distance 4) and two operators. LocatorBarClient, two
 players made of vanilla's protocol code (any byte vanilla would not read is an error), joins Alice and then
@@ -87,7 +87,7 @@ SCRIPT = [
 ]
 STEP_TICKS = 40
 # Vanilla's server moves a player who just joined on their own first ticks (a tiny step and back), which tracks
-# them where they spawned; Horizon does not simulate its guests. These steps compare what the bar shows at
+# them where they spawned; Foundry Client does not simulate its guests. These steps compare what the bar shows at
 # their end (Bob has moved by then) rather than every packet.
 SETTLING_STEPS = {'alice-joins', 'bob-joins'}
 
@@ -317,31 +317,31 @@ def run_side(label, server_command, client_command, build, world):
 
 
 def sides(name, binary=None):
-    """The vanilla and Horizon dedicated servers and the LocatorBarClient that joins them, built for harness
-    `name`: (lock, build directory, vanilla server, Horizon server, client) commands."""
+    """The vanilla and Foundry Client dedicated servers and the LocatorBarClient that joins them, built for harness
+    `name`: (lock, build directory, vanilla server, Foundry Client server, client) commands."""
     lock, jars, libraries = base.verify_artifacts()
     build = lab.LOCAL / name
     build.mkdir(parents=True, exist_ok=True)
     (build / 'report.json').unlink(missing_ok=True)
-    oracle = lab.ROOT / 'mods/horizon/src/test/java/dev/horizonlab/parity/LocatorBarClient.java'
+    oracle = lab.ROOT / 'mods/foundry/src/test/java/dev/foundrylab/parity/LocatorBarClient.java'
     classes = build / 'classes'
     shutil.rmtree(classes, ignore_errors=True)
     classes.mkdir()
     dependencies = os.pathsep.join(map(str, [jars['server'], *libraries]))
     subprocess.run(['javac', '--release', str(lock['minecraft']['java_major']), '-proc:none', '-nowarn', '-sourcepath',
-                    lab.ROOT / 'mods/horizon/src/test/java', '-cp', dependencies, '-d', classes, oracle],
+                    lab.ROOT / 'mods/foundry/src/test/java', '-cp', dependencies, '-d', classes, oracle],
                    cwd=lab.ROOT, check=True, capture_output=True)
     if binary is None:
-        subprocess.run(fast_bins.command('horizon-client'), cwd=lab.ROOT,
+        subprocess.run(fast_bins.command('foundry-client'), cwd=lab.ROOT,
                        check=True, capture_output=True)
         import json
         metadata = json.loads(subprocess.check_output(['cargo', 'metadata', '--no-deps', '--format-version', '1'],
                                                       cwd=lab.ROOT, text=True))
-        binary = Path(metadata['target_directory']) / 'fast' / ('horizon-client.exe' if os.name == 'nt' else 'horizon-client')
+        binary = Path(metadata['target_directory']) / 'fast' / ('foundry-client.exe' if os.name == 'nt' else 'foundry-client')
     vanilla_server = ['java', '-Xmx2g', '-Duser.timezone=UTC', '-cp', dependencies, 'net.minecraft.server.Main', 'nogui']
-    horizon_server = [binary, '--resources', lab.RESOURCES, '--dedicated', '--nogui']
-    client = ['java', '-Xmx1g', '-cp', str(classes) + os.pathsep + dependencies, 'dev.horizonlab.parity.LocatorBarClient']
-    return lock, build, vanilla_server, horizon_server, client
+    foundry_server = [binary, '--resources', lab.RESOURCES, '--dedicated', '--nogui']
+    client = ['java', '-Xmx1g', '-cp', str(classes) + os.pathsep + dependencies, 'dev.foundrylab.parity.LocatorBarClient']
+    return lock, build, vanilla_server, foundry_server, client
 
 
 # How many times one_player runs vanilla's side before giving up on a run its `check` rejects.
@@ -353,10 +353,10 @@ def one_player(name, script, shown, check, scope, step_seconds=4.0, facts=None):
     actions) that each last `step_seconds` of the server's time (20 ticks a second). The lines `shown(transcript)` keeps must match vanilla's exactly, and
     `check(vanilla's shown lines, vanilla's transcript)` returns why vanilla's run is no proof (the script did
     not run), or None. `facts(server)`, if given, gathers diagnostics from the console while Alice is still there,
-    only for the run that matters: vanilla's run `check` accepts, and Horizon's when its lines differ from vanilla's.
+    only for the run that matters: vanilla's run `check` accepts, and Foundry Client's when its lines differ from vanilla's.
     They are printed with a mismatch and can never fail or change the comparison: with `facts`, what is compared is
     the transcript the client wrote just before them."""
-    lock, build, vanilla_server, horizon_server, client = sides(name)
+    lock, build, vanilla_server, foundry_server, client = sides(name)
     ticks = round(step_seconds * 20)
 
     def sample(server, lines, expected):
@@ -413,7 +413,7 @@ def one_player(name, script, shown, check, scope, step_seconds=4.0, facts=None):
     world = generate_world(vanilla_server, build)
     # Vanilla's run is the specification only when `check` accepts it. On a loaded machine a real-time step can
     # miss its moment (a bobber that lands before the armor stand is there), so a run it rejects is made again,
-    # up to VANILLA_ATTEMPTS times, before Horizon's is compared with it; Horizon's run is never retried.
+    # up to VANILLA_ATTEMPTS times, before Foundry Client's is compared with it; Foundry Client's run is never retried.
     for attempt in range(1, VANILLA_ATTEMPTS + 1):
         vanilla_all = run('vanilla', vanilla_server, world)
         why = check(shown(vanilla_all), vanilla_all)
@@ -422,42 +422,42 @@ def one_player(name, script, shown, check, scope, step_seconds=4.0, facts=None):
         print(f'{name}: vanilla run {attempt} of {VANILLA_ATTEMPTS} is no proof ({why})', flush=True)
     else:
         raise AssertionError(f'{why}: the script did not run on vanilla in {VANILLA_ATTEMPTS} runs (see {build})')
-    horizon_all = run('horizon', horizon_server, world, expected=shown(vanilla_all))
-    errors = [l for l in vanilla_all + horizon_all if ' error ' in f' {l} ' or 'disconnected' in l]
-    vanilla, horizon = shown(vanilla_all), shown(horizon_all)
-    if errors or vanilla != horizon:
+    foundry_all = run('foundry', foundry_server, world, expected=shown(vanilla_all))
+    errors = [l for l in vanilla_all + foundry_all if ' error ' in f' {l} ' or 'disconnected' in l]
+    vanilla, foundry = shown(vanilla_all), shown(foundry_all)
+    if errors or vanilla != foundry:
         import difflib
-        diff = '\n'.join(difflib.unified_diff(vanilla, horizon, 'vanilla', 'horizon', n=1, lineterm=''))
-        raise AssertionError(f'{len(errors)} errors, transcripts differ (see {build}/vanilla.txt and horizon.txt):\n'
+        diff = '\n'.join(difflib.unified_diff(vanilla, foundry, 'vanilla', 'foundry', n=1, lineterm=''))
+        raise AssertionError(f'{len(errors)} errors, transcripts differ (see {build}/vanilla.txt and foundry.txt):\n'
                              + '\n'.join(errors[:10]) + '\n' + diff[:6000]
-                             + ''.join(f'\n{side}: {seen[side]}' for side in ('vanilla', 'horizon') if seen.get(side)))
+                             + ''.join(f'\n{side}: {seen[side]}' for side in ('vanilla', 'foundry') if seen.get(side)))
     lab.write_json(build / 'report.json', dict(
         schema=1, minecraft=lock['minecraft']['version'], platform=platform.platform(),
         java=subprocess.check_output(['java', '--version'], text=True).splitlines()[0],
-        lines=len(vanilla), output_sha256=lab.digest(build / 'horizon.txt', 'sha256'), scope=scope))
+        lines=len(vanilla), output_sha256=lab.digest(build / 'foundry.txt', 'sha256'), scope=scope))
     return vanilla
 
 
 def main():
-    lock, build, vanilla_server, horizon_server, client = sides(NAME)
+    lock, build, vanilla_server, foundry_server, client = sides(NAME)
     report = build / 'report.json'
     world = generate_world(vanilla_server, build)
     vanilla = run_side('vanilla', vanilla_server, client, build, world)
-    horizon = run_side('horizon', horizon_server, client, build, world)
-    errors = [l for l in vanilla + horizon if ' error ' in f' {l} ' or 'disconnected' in l]
-    vanilla, horizon = shown(vanilla), shown(horizon)
+    foundry = run_side('foundry', foundry_server, client, build, world)
+    errors = [l for l in vanilla + foundry if ' error ' in f' {l} ' or 'disconnected' in l]
+    vanilla, foundry = shown(vanilla), shown(foundry)
     # Each player's packets in their order; which player's line comes first in a step doesn't matter.
-    if errors or vanilla != horizon:
+    if errors or vanilla != foundry:
         import difflib
-        diff = '\n'.join(difflib.unified_diff(vanilla, horizon, 'vanilla', 'horizon', n=1, lineterm=''))
-        raise AssertionError(f'{len(errors)} errors, transcripts differ (see {build}/vanilla.txt and horizon.txt):\n'
+        diff = '\n'.join(difflib.unified_diff(vanilla, foundry, 'vanilla', 'foundry', n=1, lineterm=''))
+        raise AssertionError(f'{len(errors)} errors, transcripts differ (see {build}/vanilla.txt and foundry.txt):\n'
                              + '\n'.join(errors[:10]) + '\n' + diff[:6000])
     if len(vanilla) < 20:
         raise AssertionError(f'only {len(vanilla)} waypoint packets: the script did not run (see {build})')
     lab.write_json(report, dict(
         schema=1, minecraft=lock['minecraft']['version'], platform=platform.platform(),
         java=subprocess.check_output(['java', '--version'], text=True).splitlines()[0],
-        packets=len(vanilla), output_sha256=lab.digest(build / 'horizon.txt', 'sha256'),
+        packets=len(vanilla), output_sha256=lab.digest(build / 'foundry.txt', 'sha256'),
         scope='Locator bar waypoints (ClientboundTrackedWaypointPacket) two vanilla-codec players receive on a '
               'dedicated server: block, chunk and azimuth connections as one moves, invisibility, team colours, '
               'crouching, a carved pumpkin, the locator_bar game rule, spectator mode and leaving.'))

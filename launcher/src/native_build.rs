@@ -1,5 +1,5 @@
 use super::*;
-use horizon_launcher::native_mods::prepare_first::{self, Next, Snapshot, Waiting};
+use foundry_launcher::native_mods::prepare_first::{self, Next, Snapshot, Waiting};
 
 impl Launcher {
     /// Records why a build failed. A mod's own compile failure reads as plain words with a way
@@ -13,14 +13,14 @@ impl Launcher {
     }
 
     /// Builds the selected instance's native mods, once the player accepted the warning. The
-    /// build stays on the Horizon the instance plays (`native_mods::base_for`), unless the
-    /// warning was Update's: then it moves to that newer Horizon.
+    /// build stays on the Foundry Client the instance plays (`native_mods::base_for`), unless the
+    /// warning was Update's: then it moves to that newer Foundry Client.
     pub(super) fn build_native(&mut self) {
         self.build_native_on(None, false)
     }
 
     /// [`Self::build_native`] on `base` when given (an update's newer release or Nightly) instead
-    /// of the Horizon the instance plays; with `back_up`, the player chose to back up the worlds
+    /// of the Foundry Client the instance plays; with `back_up`, the player chose to back up the worlds
     /// saved with mods the build switches off, then build without those mods.
     pub(super) fn build_native_on(&mut self, base: Option<String>, back_up: bool) {
         if self.native_step.is_some() {
@@ -47,7 +47,7 @@ impl Launcher {
         let plays = self.version_of(&instance).cloned();
         let base = base.or_else(|| native_mods::base_for(plays.as_deref(), &self.installed, false));
         let Some(base) = base else {
-            let error = tr("Install Horizon first.").to_string();
+            let error = tr("Install Foundry Client first.").to_string();
             self.native_log_preflight(&error);
             self.native_error = Some(error);
             return;
@@ -159,9 +159,9 @@ impl Launcher {
         self.native_stopping = false;
         self.native_progress = None;
         // The first build downloads the compiler: the card says so, with its size.
-        self.first_build = horizon_launcher::rust_toolchain::installed()
+        self.first_build = foundry_launcher::rust_toolchain::installed()
             .is_none()
-            .then(|| horizon_launcher::rust_toolchain::host().map(|h| h.download_bytes()))
+            .then(|| foundry_launcher::rust_toolchain::host().map(|h| h.download_bytes()))
             .flatten();
         self.native_done = None;
         let tx = self.tx.clone();
@@ -210,7 +210,7 @@ impl Launcher {
         match self.native_prepare_first.take() {
             Some(waiting) => {
                 if waiting.started {
-                    horizon_launcher::mojang::CANCEL.store(true, Ordering::Relaxed);
+                    foundry_launcher::mojang::CANCEL.store(true, Ordering::Relaxed);
                 }
                 self.native_step = None;
                 self.native_done = Some(tr(native_mods::CANCELLED).into());

@@ -23,7 +23,7 @@ pub(crate) struct NativeSurface {
     /// query; `None` for non-Win32 surfaces.
     #[cfg(windows)]
     hdr_source: Option<crate::auxil::dxgi::hdr::DxgiHdrSource>,
-    /// Horizon: made from a Wayland surface (`acquire_on_cpu`).
+    /// Foundry Client: made from a Wayland surface (`acquire_on_cpu`).
     wayland: bool,
 }
 
@@ -46,7 +46,7 @@ impl NativeSurface {
         }
     }
 
-    /// Horizon: marks a surface made from a Wayland `wl_surface`.
+    /// Foundry Client: marks a surface made from a Wayland `wl_surface`.
     pub fn on_wayland(mut self) -> Self {
         self.wayland = true;
         self
@@ -272,7 +272,7 @@ impl Surface for NativeSurface {
         // https://github.com/gfx-rs/wgpu/issues/8354 for more details. In other present modes it
         // only adds acquire latency, see https://github.com/gfx-rs/wgpu/issues/9559.
         //
-        // Horizon: NVIDIA's driver on a Wayland surface gets it in every present mode, so the CPU
+        // Foundry Client: NVIDIA's driver on a Wayland surface gets it in every present mode, so the CPU
         // waits until the compositor has given the image back and no submission waits for that on
         // the GPU (`acquire_on_cpu`).
         let fence = if (cfg!(target_os = "windows")
@@ -522,7 +522,7 @@ impl Swapchain for NativeSwapchain {
             unsafe {
                 // The `wait_all` argument must be `true` to avoid crash on some Android devices. See https://github.com/gfx-rs/wgpu/pull/8769
                 //
-                // Horizon: the image is ours from here, so a wait that times out goes on (a
+                // Foundry Client: the image is ours from here, so a wait that times out goes on (a
                 // compositor slow to give the image back stalls this thread, never the GPU), with a
                 // warning a second, for up to five seconds; then the swapchain is given up as lost
                 // and the caller makes a new one.
@@ -985,9 +985,9 @@ impl<'a> SwapchainSubmissionSemaphoreGuard for NativeSwapchainSubmissionSemaphor
 /// the GPU on that context until the kernel's context switch timeout (Xid 109) lost the device.
 /// Only NVIDIA on a Wayland surface by default: elsewhere the fence costs frames with VSync off
 /// (#4604) for nothing. Windows keeps wgpu's own rule (a fence in FIFO only).
-/// `HORIZON_ACQUIRE_FENCE=0` or `=1` overrides the choice on any surface.
+/// `FOUNDRY_ACQUIRE_FENCE=0` or `=1` overrides the choice on any surface.
 fn acquire_on_cpu(vendor_id: u32, wayland: bool) -> bool {
-    match std::env::var("HORIZON_ACQUIRE_FENCE").as_deref() {
+    match std::env::var("FOUNDRY_ACQUIRE_FENCE").as_deref() {
         Ok("0") => false,
         Ok("1") => true,
         _ => wayland && vendor_id == crate::auxil::db::nvidia::VENDOR,

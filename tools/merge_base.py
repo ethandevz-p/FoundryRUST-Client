@@ -22,7 +22,7 @@ def lines(text):
 
 def fetch_upstream_main():
     """Fetch upstream main afresh into refs/sync/upstream-main; the errors, empty when it is there."""
-    upstream_url = os.environ.get("HORIZON_UPSTREAM_URL", "https://github.com/horizon-rust/horizon.git")
+    upstream_url = os.environ.get("FOUNDRY_UPSTREAM_URL", "https://github.com/foundry-rust/foundry.git")
     try:
         fetched = subprocess.run(
             ["git", "fetch", "--no-tags", "--filter=blob:none", upstream_url,

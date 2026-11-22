@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Save-format differential test: vanilla 26.3 world -> Horizon -> vanilla.
+"""Save-format differential test: vanilla 26.3 world -> Foundry Client -> vanilla.
 
 1. A headless vanilla server (flat world, offline) is filled with one of every block
    entity type and many entity types (tools/save_roundtrip_scene.py), a bot player
    joins so a player file exists, and the world is saved (world V0).
-2. Horizon opens a copy of V0 under a virtual screen, rewrites every resident chunk and
+2. Foundry Client opens a copy of V0 under a virtual screen, rewrites every resident chunk and
    entity section (`save-all`) and quits; this is world H.
 3. The NBT of V0 and H is compared: chunks (block states and biomes decoded, so palette
    order does not matter), block entities, entities, heightmaps, light, ticks, structure
@@ -13,12 +13,12 @@
    fails.
 4. The vanilla server loads H: its log must show no errors, upgrades or DataFixer
    activity, and `data get` of every block entity and entity must print the same
-   data as the server that loaded V0 (so vanilla reads Horizon's files as it reads its own).
+   data as the server that loaded V0 (so vanilla reads Foundry Client's files as it reads its own).
 
-  test_save_roundtrip_parity.py [--keep] [--skip-horizon] [--bin-dir DIR] [--stage gen|resave|compare|all]
-                                [--world DIR] (compare an existing V0/H pair: --vanilla DIR --horizon DIR)
+  test_save_roundtrip_parity.py [--keep] [--skip-foundry] [--bin-dir DIR] [--stage gen|resave|compare|all]
+                                [--world DIR] (compare an existing V0/H pair: --vanilla DIR --foundry DIR)
 
-Run files stay under .local/save-roundtrip/run. On Linux the Horizon client runs on the
+Run files stay under .local/save-roundtrip/run. On Linux the Foundry Client client runs on the
 virtual screen (`vscreen`), never on a real monitor, with a null ALSA device; on macOS it
 renders offscreen (`--offscreen`, no window) without audio, from the logged-in session.
 """
@@ -53,31 +53,31 @@ RESOURCES = lab.RESOURCES
 SERVER = lab.GAME / 'jars' / 'server.jar'
 RUN = LOCAL / 'save-roundtrip' / 'run'
 
-# Game rules Horizon's player changes before saving: rule -> (vanilla's value, Horizon's).
-# The new value must be in Horizon's save, and nothing else may differ (#74).
-HORIZON_RULES = {'max_entity_cramming': (24, 30)}
+# Game rules Foundry Client's player changes before saving: rule -> (vanilla's value, Foundry Client's).
+# The new value must be in Foundry Client's save, and nothing else may differ (#74).
+FOUNDRY_RULES = {'max_entity_cramming': (24, 30)}
 
 # Differences that do not change what vanilla reads: path pattern (list indices as [])
 # -> reason. Anything else is a failure.
 IGNORED = {
-    r'^chunk\.LastUpdate$': 'game time of the save (Horizon saves at its own time)',
-    r'^chunk\.InhabitedTime$': 'ticks the chunk was loaded; differs by the time Horizon ran',
+    r'^chunk\.LastUpdate$': 'game time of the save (Foundry Client saves at its own time)',
+    r'^chunk\.InhabitedTime$': 'ticks the chunk was loaded; differs by the time Foundry Client ran',
     r'^chunk\.isLightOn$': 'light is recomputed by vanilla when absent',
-    # Vanilla's server (view distance 4) leaves a border of proto chunks; Horizon's
+    # Vanilla's server (view distance 4) leaves a border of proto chunks; Foundry Client's
     # render distance 6 may finish some, as vanilla does when it loads the world at
     # that distance. Their blocks are still compared; only what a full chunk saves
     # differently (no worldgen heightmaps, entities in entities/) is accepted.
     r'^chunk\.promoted\.(Status|Heightmaps\.(OCEAN_FLOOR_WG|WORLD_SURFACE_WG)|entities)$':
-        'a proto chunk vanilla left at its view distance, finished by Horizon',
+        'a proto chunk vanilla left at its view distance, finished by Foundry Client',
     # Single player's server thread sends the chunks its player tracks (view distance 6
     # and its outer ring), as vanilla's integrated server does, so it finishes some that
     # vanilla's server (view distance 4) left before their terrain: those had no blocks,
     # light or heightmaps to compare yet.
     r'^chunk\.blank\.':
-        'a chunk vanilla left before its terrain (no blocks yet), finished by Horizon',
+        'a chunk vanilla left before its terrain (no blocks yet), finished by Foundry Client',
     r'^chunk\.unlit\.':
-        'a chunk vanilla left before its light, finished (and lit) by Horizon',
-    # Horizon keeps simulating between loading and saving (it needs a few seconds of
+        'a chunk vanilla left before its light, finished (and lit) by Foundry Client',
+    # Foundry Client keeps simulating between loading and saving (it needs a few seconds of
     # chunk generation first), so counters and positions of live things move on.
     r'^chunk\.block_entities\.\(2, -60, 5\)\.(cooking_time_spent|lit_time_remaining|Items\[\]\.count)$':
         'the lit furnace keeps smelting',
@@ -291,7 +291,7 @@ def build_world(directory):
         if command_failed(out):
             failed.append((command, out))
     # A scoreboard with every kind of saved field (scoreboard.dat). No criteria that
-    # Horizon's own player (not the bot) would update while it runs.
+    # Foundry Client's own player (not the bot) would update while it runs.
     for command in SCOREBOARD:
         out = server.run(command.replace('{uuid0}', entity_uuid_text(0)))
         if command_failed(out):
@@ -338,7 +338,7 @@ def entity_uuid_text(i):
     return f'{u(UUID_BASE)}-{u(0)[:4]}-{u(0)[4:]}-{u(0)[:4]}-{u(0)[4:]}{u(i)}'
 
 
-# ---------------------------------------------------------------- Horizon
+# ---------------------------------------------------------------- Foundry Client
 
 def vscreen_env():
     text = subprocess.run(['vscreen', 'env'], capture_output=True, text=True, check=True).stdout
@@ -349,13 +349,13 @@ def vscreen_env():
     return env
 
 
-def horizon_resave(source, destination, bin_dir):
+def foundry_resave(source, destination, bin_dir):
     shutil.rmtree(destination, ignore_errors=True)
     saves = destination / 'saves'
     saves.mkdir(parents=True)
     shutil.copytree(source, saves / 'world')
     socket = Path(tempfile.mkdtemp(prefix='hzrt')) / 'control.sock'  # sockets need short paths
-    ctl = [str(lab.binary(bin_dir, 'horizon-ctl')), '--socket', str(socket)]
+    ctl = [str(lab.binary(bin_dir, 'foundry-ctl')), '--socket', str(socket)]
     extra = []
     # Offscreen on macOS, and on a Linux without vscreen (never a window on a real monitor).
     if sys.platform == 'darwin' or not shutil.which('vscreen'):
@@ -372,15 +372,15 @@ def horizon_resave(source, destination, bin_dir):
         cwd=destination, env=env, capture_output=True, text=True)
     print(launch.stdout.strip())
     if launch.returncode:
-        sys.exit('horizon failed to launch: ' + launch.stdout + launch.stderr)
+        sys.exit('foundry failed to launch: ' + launch.stdout + launch.stderr)
     steps = [['wait-ready', '240']]
-    steps += [['command', f'gamerule {rule} {new}'] for rule, (_, new) in HORIZON_RULES.items()]
+    steps += [['command', f'gamerule {rule} {new}'] for rule, (_, new) in FOUNDRY_RULES.items()]
     steps += [['save-all'], ['quit']]
     for step in steps:
         result = subprocess.run(ctl + step, cwd=destination, env=env, capture_output=True, text=True)
         print(' '.join(step), '->', result.stdout.strip() or result.stderr.strip())
         if step[0] != 'quit' and result.returncode:
-            sys.exit('horizon-ctl failed: ' + result.stdout)
+            sys.exit('foundry-ctl failed: ' + result.stdout)
     time.sleep(3)
     return saves / 'world'
 
@@ -486,16 +486,16 @@ BLANK_STATUSES = {'minecraft:empty', 'minecraft:structure_starts', 'minecraft:st
 LIT_STATUSES = {'minecraft:light', 'minecraft:spawn', 'minecraft:full'}
 
 
-def compare_chunks(vanilla, horizon, report):
-    for key in sorted(set(vanilla) | set(horizon)):
-        if key not in horizon:
-            report.append((f'chunk {key}', 'present', 'missing from Horizon'))
+def compare_chunks(vanilla, foundry, report):
+    for key in sorted(set(vanilla) | set(foundry)):
+        if key not in foundry:
+            report.append((f'chunk {key}', 'present', 'missing from Foundry Client'))
             continue
         if key not in vanilla:
             report.append((f'chunk {key}', 'missing from vanilla', 'present'))
             continue
         va, vs = normalize_chunk(vanilla[key])
-        ha, hs = normalize_chunk(horizon[key])
+        ha, hs = normalize_chunk(foundry[key])
         out = []
         diff(va, ha, 'chunk', out)
         promoted = va.get('Status') != 'minecraft:full' and ha.get('Status') == 'minecraft:full'
@@ -521,7 +521,7 @@ def compare_chunks(vanilla, horizon, report):
             blank = re.compile(r'^chunk\.(Heightmaps|sections)\.')
             out = [(path.replace('chunk.', 'chunk.blank.', 1) if blank.match(path) else path, p, q)
                    for path, p, q in out]
-        # Before its light step a chunk saves no light; Horizon lights what it finishes.
+        # Before its light step a chunk saves no light; Foundry Client lights what it finishes.
         elif promoted and va.get('Status') not in LIT_STATUSES:
             unlit = re.compile(r'^chunk\.sections\.(SkyLight|BlockLight)\[')
             out = [(path.replace('chunk.', 'chunk.unlit.', 1) if unlit.match(path) else path, p, q)
@@ -537,7 +537,7 @@ def chunk_of(entity):
     return int(x // 16), int(z // 16)
 
 
-def compare_entities(vanilla, horizon, report, chunks=None):
+def compare_entities(vanilla, foundry, report, chunks=None):
     def collect(regions):
         out = {}
         for key, root in regions.items():
@@ -545,23 +545,23 @@ def compare_entities(vanilla, horizon, report, chunks=None):
                 uuid = tuple(e['UUID'][1]) if 'UUID' in e else None
                 out[uuid] = e
         return out
-    a, b = collect(vanilla), collect(horizon)
+    a, b = collect(vanilla), collect(foundry)
     # Vanilla drops a lead whose holder it cannot find, which would leave nothing to compare.
     leads = sum('leash' in e for e in a.values())
     if leads != scene.LEADS:
         report.append(('vanilla kept leads in the scene', scene.LEADS, leads))
-    # Entities Horizon adds in the chunks vanilla never generated (chunk-generation
+    # Entities Foundry Client adds in the chunks vanilla never generated (chunk-generation
     # spawns) are not part of the scene; anywhere else they are a difference.
     vanilla_chunks = {chunk_of(e) for e in a.values()} | set(chunks or ())
     extra = [u for u in b if u not in a and not (u and u[0] == UUID_BASE)
              and chunk_of(b[u]) not in vanilla_chunks]
     if extra:
-        print(f'  note: Horizon saved {len(extra)} entities in chunks vanilla never generated')
+        print(f'  note: Foundry Client saved {len(extra)} entities in chunks vanilla never generated')
     for uuid in extra:
         del b[uuid]
     for uuid in sorted(set(a) | set(b), key=str):
         if uuid not in b:
-            report.append((f'entity {uuid} {a[uuid].get("id")}', 'present', 'missing from Horizon'))
+            report.append((f'entity {uuid} {a[uuid].get("id")}', 'present', 'missing from Foundry Client'))
         elif uuid not in a:
             report.append((f'entity {uuid} {b[uuid].get("id")}', 'missing from vanilla', 'present'))
         else:
@@ -590,38 +590,38 @@ def dimension(world):
     return d if d.is_dir() else world
 
 
-def compare_worlds(vanilla, horizon):
+def compare_worlds(vanilla, foundry):
     report = []
-    va, ha = dimension(vanilla), dimension(horizon)
+    va, ha = dimension(vanilla), dimension(foundry)
     compare_chunks(load_regions(va / 'region'), load_regions(ha / 'region'), report)
     chunks = {(k[1], k[2]) for k in load_regions(va / 'region')}
     compare_entities(load_regions(va / 'entities'), load_regions(ha / 'entities'), report, chunks)
-    # Enumerate both worlds: a .dat file Horizon writes that vanilla never saved
+    # Enumerate both worlds: a .dat file Foundry Client writes that vanilla never saved
     # is a real difference, not something to skip just because the vanilla side
     # has no file to enumerate. Files present in both keep the NBT comparison
     # below unchanged.
     dat_files = {'level.dat'}
     for pattern in ('data/**/*.dat', 'players/**/*.dat'):
         dat_files.update(p.relative_to(world).as_posix()
-                         for world in (vanilla, horizon)
+                         for world in (vanilla, foundry)
                          for p in world.glob(pattern))
     for rel in sorted(dat_files):
-        a, b = vanilla / rel, horizon / rel
+        a, b = vanilla / rel, foundry / rel
         if not a.exists():
             report.append((rel, 'missing from vanilla', 'present'))
         elif not b.exists():
-            report.append((rel, 'present', 'missing from Horizon'))
+            report.append((rel, 'present', 'missing from Foundry Client'))
         else:
             va, hb = anvil_dump.read_dat(str(a)), anvil_dump.read_dat(str(b))
             if rel.endswith('scoreboard.dat'):
                 va, hb = normalize_scoreboard(va), normalize_scoreboard(hb)
             compare_dat(rel, va, hb, report)
-    for rule, (old, new) in HORIZON_RULES.items():
+    for rule, (old, new) in FOUNDRY_RULES.items():
         changed = (f'data/minecraft/game_rules.dat.data.minecraft:{rule}', old, new)
         if changed in report:
             report.remove(changed)
         else:
-            report.append((changed[0], f'{new} set in Horizon', 'not saved'))
+            report.append((changed[0], f'{new} set in Foundry Client', 'not saved'))
     return report
 
 
@@ -641,7 +641,7 @@ def summarize(report):
             continue
         failures += len(items)
         path, a, b = items[0]
-        print(f'  DIFF     {pattern}  x{len(items)}\n           e.g. {path}\n           vanilla {short(a)}\n           horizon {short(b)}')
+        print(f'  DIFF     {pattern}  x{len(items)}\n           e.g. {path}\n           vanilla {short(a)}\n           foundry {short(b)}')
     return failures
 
 
@@ -650,9 +650,9 @@ def summarize(report):
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--keep', action='store_true')
-    parser.add_argument('--bin-dir', help='prebuilt horizon-client and horizon-ctl (default: build them with the fast profile)')
+    parser.add_argument('--bin-dir', help='prebuilt foundry-client and foundry-ctl (default: build them with the fast profile)')
     parser.add_argument('--vanilla', help='an existing vanilla world folder (skips generation)')
-    parser.add_argument('--horizon', help='an existing Horizon-saved world folder (skips the Horizon run)')
+    parser.add_argument('--foundry', help='an existing Foundry Client-saved world folder (skips the Foundry Client run)')
     parser.add_argument('--skip-vanilla-load', action='store_true')
     parser.add_argument('--gen-only', action='store_true', help='stop after building the vanilla world')
     args = parser.parse_args()
@@ -670,14 +670,14 @@ def main():
             print('vanilla log:', line)
     if args.gen_only:
         return
-    if args.horizon:
-        h = Path(args.horizon)
+    if args.foundry:
+        h = Path(args.foundry)
     else:
         bin_dir = Path(args.bin_dir).resolve() if args.bin_dir else None
         if bin_dir is None:
-            subprocess.run(fast_bins.command('horizon-client', 'horizon-ctl'), cwd=ROOT, check=True)
+            subprocess.run(fast_bins.command('foundry-client', 'foundry-ctl'), cwd=ROOT, check=True)
             bin_dir = ROOT / os.environ.get('CARGO_TARGET_DIR', 'target') / 'fast'
-        h = horizon_resave(v0, RUN / 'h', bin_dir)
+        h = foundry_resave(v0, RUN / 'h', bin_dir)
     print('comparing', v0, 'with', h)
     report = compare_worlds(v0, h)
     failures += summarize(report)
@@ -692,13 +692,13 @@ def main():
         seen0 = {untimed.sub('', line) for line in problems0}
         for line in problems1:
             if untimed.sub('', line) not in seen0:
-                print('vanilla log (Horizon save):', line)
+                print('vanilla log (Foundry Client save):', line)
                 failures += 1
         volatile = re.compile(r'(cooking_time_spent|lit_time_remaining|ticks_since_song_started|Age|BrewTime|'
                               r'ticks_in_hive|triggered|state_updating_resumes_at|LastExecution|last_vibration_frequency|warning_level): -?[0-9]+[a-zA-Z]?')
         # A lit campfire keeps cooking while each server runs before `data get`: its
         # progress counters advance by however many ticks that took (stage 3 checks
-        # that Horizon saves them exactly as loaded).
+        # that Foundry Client saves them exactly as loaded).
         volatile2 = re.compile(r'(RecipesUsed: \{[^}]*\}|listener: \{.*\}(?=, x)|CookingTimes: \[I;[^\]]*\])')
         # The lit furnace keeps smelting while each game runs: its slots move on.
         volatile_items = re.compile(r'Items: \[[^\]]*\]')
@@ -706,9 +706,9 @@ def main():
             if label.startswith('entity'):
                 # Entity data moves with the simulation: only require vanilla to load it.
                 if 'falling_block' in label:
-                    continue  # lands in Horizon (known gap above)
+                    continue  # lands in Foundry Client (known gap above)
                 if 'No entity was found' in views1.get(label, '') and 'No entity was found' not in views0[label]:
-                    print(f'VANILLA cannot find {label} in the Horizon save')
+                    print(f'VANILLA cannot find {label} in the Foundry Client save')
                     failures += 1
                 continue
             def stable(text):

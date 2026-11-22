@@ -114,9 +114,9 @@ class SessionCheckTests(unittest.TestCase):
     def loaded(self, *sessions):
         """Each session's log with its pack's load line, as the game prints it."""
         for name in sessions:
-            pack = identity.SESSIONS[name][1]['HORIZON_SHADER_PACK']
-            meta = tomllib.loads((identity.pack_dir(pack) / 'horizon-shaders.toml').read_text(encoding='utf-8'))
-            (self.dir / f'{name}.log').write_text(f'INFO shader pack {meta["id"]} {meta["version"]}: Warm horizon in 12 ms\n')
+            pack = identity.SESSIONS[name][1]['FOUNDRY_SHADER_PACK']
+            meta = tomllib.loads((identity.pack_dir(pack) / 'foundry-shaders.toml').read_text(encoding='utf-8'))
+            (self.dir / f'{name}.log').write_text(f'INFO shader pack {meta["id"]} {meta["version"]}: Warm foundry in 12 ms\n')
 
     def test_a_missing_scene_cannot_pass_when_other_screenshots_exist(self):
         scenes = identity.SESSIONS['vanilla'][2]
@@ -169,11 +169,11 @@ class SessionCheckTests(unittest.TestCase):
         for scene in identity.SESSIONS['terrain_pack'][2]:
             self.shot(f'terrain_pack.{scene}.png')
         log = self.dir / 'terrain_pack.log'
-        log.write_text('INFO shader pack golden_hour 2.0.0: Warm horizon in 12 ms\n')
+        log.write_text('INFO shader pack golden_hour 2.0.0: Warm foundry in 12 ms\n')
         self.assertEqual(identity.session_checks(self.dir, ['terrain_pack']), [
             'terrain_pack: the log has no load line of shader pack frame_identity_terrain',
             'terrain_pack: no LabPBR maps were loaded'])
-        log.write_text('INFO Horizon: LabPBR maps at 16 px, 900 layers\n'
+        log.write_text('INFO Foundry Client: LabPBR maps at 16 px, 900 layers\n'
                        'INFO shader pack frame_identity_terrain 1.0.0: Terrain, Colour in 40 ms\n')
         self.assertEqual(identity.session_checks(self.dir, ['terrain_pack']), [])
 
@@ -222,8 +222,8 @@ class SessionCheckTests(unittest.TestCase):
             (self.dir / label).mkdir()
             for scene in identity.SESSIONS['visbuffer'][2]:
                 encode(self.dir / label / f'visbuffer.{scene}.png', 4, 4, 8, self.rows, 0)
-        (self.dir / 'base' / 'visbuffer.log').write_text('Horizon: solid terrain through a visibility buffer')
-        (self.dir / 'change' / 'visbuffer.log').write_text('Horizon: drawing forward')
+        (self.dir / 'base' / 'visbuffer.log').write_text('Foundry Client: solid terrain through a visibility buffer')
+        (self.dir / 'change' / 'visbuffer.log').write_text('Foundry Client: drawing forward')
         self.assertEqual(identity.build_checks(self.dir, ['visbuffer']),
                          ["change: visbuffer: the visibility buffer didn't run"])
 
@@ -233,16 +233,16 @@ class SessionCheckTests(unittest.TestCase):
         base_packs = self.dir / 'base-packs'
         folder = base_packs / change.relative_to(identity.ROOT)
         folder.mkdir(parents=True)
-        manifest = (change / 'horizon-shaders.toml').read_text(encoding='utf-8')
+        manifest = (change / 'foundry-shaders.toml').read_text(encoding='utf-8')
         version = tomllib.loads(manifest)['version']
-        (folder / 'horizon-shaders.toml').write_text(
+        (folder / 'foundry-shaders.toml').write_text(
             manifest.replace(f'version = "{version}"', 'version = "0.9.0"'), encoding='utf-8')
         for label, drawn in (('base', '0.9.0'), ('change', version)):
             (self.dir / label).mkdir()
             for scene in identity.SESSIONS['terrain_pack'][2]:
                 encode(self.dir / label / f'terrain_pack.{scene}.png', 4, 4, 8, self.rows, 0)
             (self.dir / label / 'terrain_pack.log').write_text(
-                'INFO Horizon: LabPBR maps at 16 px, 900 layers\n'
+                'INFO Foundry Client: LabPBR maps at 16 px, 900 layers\n'
                 f'INFO shader pack frame_identity_terrain {drawn}: Terrain, Colour in 40 ms\n')
         with mock.patch.object(identity, 'BASE_PACKS', base_packs):
             self.assertEqual(identity.build_checks(self.dir, ['terrain_pack']), [])
@@ -261,11 +261,11 @@ class SessionCheckTests(unittest.TestCase):
         for scene in identity.SESSIONS['visbuffer'][2]:
             self.shot(f'visbuffer.{scene}.png')
         log = self.dir / 'latest.log'
-        lines = [f'line {i}' for i in range(16)] + ['Horizon: solid terrain through a visibility buffer']
+        lines = [f'line {i}' for i in range(16)] + ['Foundry Client: solid terrain through a visibility buffer']
         log.write_text('\n'.join(lines + [f'line {i}' for i in range(600)]) + '\n')
 
         def ctl(*words, **options):
-            # 🤖 Agent: horizon-ctl logs prints the log's last --lines lines.
+            # 🤖 Agent: foundry-ctl logs prints the log's last --lines lines.
             return '\n'.join(log.read_text().splitlines()[-int(words[words.index('--lines') + 1]):])
         identity.save_log(SimpleNamespace(ctl=ctl), self.dir / 'visbuffer.log')
         self.assertEqual(identity.session_checks(self.dir, ['visbuffer']), [])
@@ -430,7 +430,7 @@ class ReliefPackTests(unittest.TestCase):
 
 
 class LookGateTests(unittest.TestCase):
-    """Horizon's HDR look drawn by its pack is held to the look the game draws itself, where the pack reaches."""
+    """Foundry Client's HDR look drawn by its pack is held to the look the game draws itself, where the pack reaches."""
     WIDTH, HEIGHT = 240, 64
 
     def setUp(self):
@@ -439,8 +439,8 @@ class LookGateTests(unittest.TestCase):
     def shots(self, changed=None, look=None):
         """Both sessions' shots of every scene, a flat grey; `changed` and `look` map (scene, kind) to the pack's and
         the look's own pixels that differ, as {(x, y): (r, g, b)}."""
-        for name, own in (('float_hdr', look), ('horizon_hdr', changed)):
-            for scene in identity.SESSIONS['horizon_hdr'][2]:
+        for name, own in (('float_hdr', look), ('foundry_hdr', changed)):
+            for scene in identity.SESSIONS['foundry_hdr'][2]:
                 for kind, depth, grey in (('.png', 8, bytes((100,))), ('-hdr.png', 16, (400 << 6).to_bytes(2, 'big'))):
                     rows = [bytearray(grey * 3 * self.WIDTH) for _ in range(self.HEIGHT)]
                     for (x, y), rgb in (own or {}).get((scene, kind), {}).items():
@@ -450,11 +450,11 @@ class LookGateTests(unittest.TestCase):
         self.loaded('Blocks, Tone curve, Entities')
 
     def loaded(self, labels):
-        (self.dir / 'horizon_hdr.log').write_text(
-            f'[10:22:24] [Render thread/INFO]: shader pack horizon_hdr 1.0.0: {labels} in 9 ms\n')
+        (self.dir / 'foundry_hdr.log').write_text(
+            f'[10:22:24] [Render thread/INFO]: shader pack foundry_hdr 1.0.0: {labels} in 9 ms\n')
 
     def gate(self):
-        return identity.look_gates(self.dir, ['float_hdr', 'horizon_hdr'])
+        return identity.look_gates(self.dir, ['float_hdr', 'foundry_hdr'])
 
     def test_the_hotbar_box_covers_the_selected_slot_at_an_odd_gui_width(self):
         # 🤖 Agent: 854x480 is scale 2 and 427 GUI pixels wide: the hotbar centres on GUI pixel 213, and its selected
@@ -467,17 +467,17 @@ class LookGateTests(unittest.TestCase):
         self.assertEqual(self.gate(), [])
         # 🤖 Agent: Without its [tonemap] the game's own curve draws the same picture.
         self.loaded('Blocks, Entities')
-        self.assertEqual(self.gate(), ['horizon_hdr: the log has no load line of horizon_hdr with Blocks, Entities, '
+        self.assertEqual(self.gate(), ['foundry_hdr: the log has no load line of foundry_hdr with Blocks, Entities, '
                                        'Tone curve'])
-        (self.dir / 'horizon_hdr.log').unlink()
+        (self.dir / 'foundry_hdr.log').unlink()
         self.assertEqual(len(self.gate()), 1)
 
     def test_a_shot_that_holds_nothing_or_is_missing(self):
         white = {(x, y): (255, 255, 255) for x in range(self.WIDTH) for y in range(self.HEIGHT)}
         self.shots(look={('glass', '.png'): white})
-        self.assertEqual(self.gate(), ['horizon_hdr.glass.png: no pixel is held'])
+        self.assertEqual(self.gate(), ['foundry_hdr.glass.png: no pixel is held'])
         self.shots()
-        (self.dir / 'horizon_hdr.glass-hdr.png').unlink()
+        (self.dir / 'foundry_hdr.glass-hdr.png').unlink()
         self.assertEqual(self.gate(), [])
 
     def test_the_packs_rounding_passes_and_a_larger_step_fails(self):
@@ -486,9 +486,9 @@ class LookGateTests(unittest.TestCase):
         self.shots({('glass', '.png'): {(1, 0): (100, 102, 100)},
                     ('nether', '-hdr.png'): {(2, 0): (400, 400, 403), (3, 0): (397, 400, 400)}})
         self.assertEqual(self.gate(), [
-            'horizon_hdr.glass.png: 1 pixels differ from float_hdr by more than 1, largest step 2, first at 1,0: '
+            'foundry_hdr.glass.png: 1 pixels differ from float_hdr by more than 1, largest step 2, first at 1,0: '
             '(100, 100, 100) against (100, 102, 100) (240x64)',
-            'horizon_hdr.nether-hdr.png: 2 pixels differ from float_hdr by more than 2, largest step 3, first at 2,0: '
+            'foundry_hdr.nether-hdr.png: 2 pixels differ from float_hdr by more than 2, largest step 3, first at 2,0: '
             '(400, 400, 400) against (400, 400, 403) (240x64)'])
 
     def test_what_the_pack_does_not_reach_is_not_held(self):
@@ -507,33 +507,33 @@ class LookGateTests(unittest.TestCase):
         self.assertEqual(len(self.gate()), 3)
 
     def test_the_session_check_asks_only_that_the_pack_loaded(self):
-        for name in ('hdr_toggle', 'horizon_hdr'):
+        for name in ('hdr_toggle', 'foundry_hdr'):
             for scene in identity.SESSIONS[name][2]:
                 for kind in ('.png', '-hdr.png'):
                     encode(self.dir / f'{name}.{scene}{kind}', 4, 4, 8, picture(4, 4, 8), 0)
 
         def problems():
-            return [p for p in identity.session_checks(self.dir, ['hdr_toggle', 'horizon_hdr'])
-                    if p.startswith('horizon_hdr')]
-        self.assertEqual(problems(), ['horizon_hdr: the log has no load line of shader pack horizon_hdr'])
-        (self.dir / 'horizon_hdr.log').write_text('INFO shader pack horizon_hdr 1.0.0: Blocks, Entities in 9 ms\n')
+            return [p for p in identity.session_checks(self.dir, ['hdr_toggle', 'foundry_hdr'])
+                    if p.startswith('foundry_hdr')]
+        self.assertEqual(problems(), ['foundry_hdr: the log has no load line of shader pack foundry_hdr'])
+        (self.dir / 'foundry_hdr.log').write_text('INFO shader pack foundry_hdr 1.0.0: Blocks, Entities in 9 ms\n')
         self.assertEqual(problems(), [])
 
     def test_the_pack_is_not_drawn_without_the_look_it_is_held_to(self):
-        sessions = 'vanilla,horizon_hdr,float_dim,horizon_hdr_dim'
+        sessions = 'vanilla,foundry_hdr,float_dim,foundry_hdr_dim'
         with mock.patch.object(identity.sys, 'argv', ['tool', '--sessions', sessions]), \
                 mock.patch.object(identity, 'base_revision', side_effect=AssertionError('went on to its base')):
             with self.assertRaises(SystemExit) as stopped:
                 identity.main()
         self.assertEqual(stopped.exception.code,
-                         '--sessions leaves out a session another is held to: horizon_hdr needs float_hdr')
+                         '--sessions leaves out a session another is held to: foundry_hdr needs float_hdr')
 
 
 class BaseTests(unittest.TestCase):
     def test_only_files_no_binary_is_built_from_let_the_base_reuse_the_change(self):
         changed = ['tools/test_frame_identity_parity.py', 'tests/test_frame_identity.py', '.github/workflows/ci.yml',
                    'docs/parity-workflow.md', 'README.md', 'docs/modpacks/atm10-mods.csv', 'crates/x/README.md',
-                   'crates/horizon-client-render/src/gfx.rs', 'tools/native-hook-fragments/player.json']
+                   'crates/foundry-client-render/src/gfx.rs', 'tools/native-hook-fragments/player.json']
         original = identity.git
         identity.git = lambda *args, cwd=None: '\n'.join(changed)
         try:

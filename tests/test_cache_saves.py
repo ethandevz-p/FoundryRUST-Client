@@ -127,7 +127,7 @@ class PackBenchCacheTests(unittest.TestCase):
     """A dispatch from main may compare with any base, a pull request's head too; only a run whose base is main's own
     commit of the run saves the Rust cache."""
 
-    URL = "https://github.com/horizon-rust/horizon.git"
+    URL = "https://github.com/foundry-rust/foundry.git"
 
     def setUp(self):
         self.job = yaml.safe_load((WORKFLOWS / "pack-bench.yml").read_text())["jobs"]["bench"]

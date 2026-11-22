@@ -1,0 +1,5 @@
+# foundry-core's ignored tests that never run in the daily shards, and who runs them (README.md: `manual`).
+foundry-core paletted::tests::benchmark_pack by-hand manual # microbenchmark; run with --ignored --nocapture
+foundry-core paletted::tests::benchmark_palette_ids by-hand manual # microbenchmark; run with --ignored --nocapture
+foundry-core paletted::tests::benchmark_unpack by-hand manual # microbenchmark; run with --ignored --nocapture
+foundry-core random::positional::tests::benchmark_legacy_positional_at by-hand manual # benchmark

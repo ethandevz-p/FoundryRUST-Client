@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """Where the order entities join the world changes what they do, on a dedicated server, against vanilla's (#6509).
 
-Vanilla ticks the entities of a level in the order they joined, whatever their kind. Horizon ticks one kind after
+Vanilla ticks the entities of a level in the order they joined, whatever their kind. Foundry Client ticks one kind after
 another (boats and minecarts first, then bolts, bobbers, tridents, rockets, items, arrows, mobs, orbs, falling blocks,
 TNT). #6509 says to change the cross-kind order only once a harness shows where vanilla differs; this is that harness,
 and it changes nothing. It measures, it does not fix.
 
-A vanilla dedicated server and Horizon's (`horizon-client --dedicated --nogui`) each serve the same flat world with
+A vanilla dedicated server and Foundry Client's (`foundry-client --dedicated --nogui`) each serve the same flat world with
 nobody on it. Every case is a small cell of two kinds, 10 blocks or more from the next cell and inside force-loaded
 (ticking) chunks, summoned by console in one order and then the other (`a-first`, `b-first`: the ids rise with the join).
 Ticking is frozen and stepped one tick at a time; after each tick the Pos and Motion (and Health, fuse, orb value,
@@ -18,9 +18,9 @@ item count where the kind has one) of every entity of every cell are read. Famil
 - ride: a pig rides a moving boat, minecart or pig (`/ride`), the rider or the vehicle joined first;
 - push: a boat, minecart or pig runs into a pig, boat, minecart or itself; two items or two orbs that merge.
 
-Per cell the report gives: Horizon against vanilla (first tick that differs, values off, largest difference), and
-whether the join order changes the result on vanilla itself (`order matters`) and on Horizon. A cell where vanilla's
-result does not depend on the order is a control: Horizon must match it. KNOWN lists the cells where Horizon still
+Per cell the report gives: Foundry Client against vanilla (first tick that differs, values off, largest difference), and
+whether the join order changes the result on vanilla itself (`order matters`) and on Foundry Client. A cell where vanilla's
+result does not depend on the order is a control: Foundry Client must match it. KNOWN lists the cells where Foundry Client still
 differs from vanilla and why: they are printed on every run so they stay visible, and do not fail the harness; a cell
 that matches again is reported and should leave the list. A cell that differs and is not in KNOWN fails, and so does a
 cell in which nothing moves on vanilla (it would match vacuously).
@@ -65,13 +65,13 @@ PROPERTIES = {
     'spawn-animals': 'false',
     'spawn-npcs': 'false',
 }
-# Cells where Horizon differs from vanilla on current main, and why. Filled from the measured run (see the pull request).
+# Cells where Foundry Client differs from vanilla on current main, and why. Filled from the measured run (see the pull request).
 R_order_wind = (
-    "vanilla's result depends on which joined first; Horizon ticks this kind in its own fixed place relative to the wind charge")
+    "vanilla's result depends on which joined first; Foundry Client ticks this kind in its own fixed place relative to the wind charge")
 R_order_blast = (
-    "vanilla's result depends on which joined first; Horizon ticks this kind in its own fixed place relative to the primed TNT")
+    "vanilla's result depends on which joined first; Foundry Client ticks this kind in its own fixed place relative to the primed TNT")
 R_order_other = (
-    "vanilla's result depends on which joined first; Horizon's does not (it ticks by kind)")
+    "vanilla's result depends on which joined first; Foundry Client's does not (it ticks by kind)")
 R_same = (
     "differs the same in both orders, so not a join-order result (vanilla's does not depend on it): placement or damage, left as measured")
 KNOWN = {
@@ -190,7 +190,7 @@ def cells():
 
 
 def selector(index, entity):
-    """The entity as the nearest of its kind to where it joined: tags are not found on every kind in Horizon
+    """The entity as the nearest of its kind to where it joined: tags are not found on every kind in Foundry Client
     (rockets, tridents, falling blocks), so the selector uses the type and the start."""
     who, kind, dx, dy, dz, _ = entity
     ox, oy, oz = cell_origin(index)
@@ -405,9 +405,9 @@ def moved(rows, whos):
     return sum(1 for k in first if first[k] != last[k])
 
 
-def report(vanilla, horizon):
+def report(vanilla, foundry):
     """Rows of the table and the cells that fail."""
-    v, h = values(vanilla), values(horizon)
+    v, h = values(vanilla), values(foundry)
     lines, failed, fixed, vacuous = [], [], [], []
     names = list(v)
     for name in names:
@@ -416,7 +416,7 @@ def report(vanilla, horizon):
         van_matters = compare(v[name], v[other])[0] > 0
         hor_matters = compare(h[name], h[other])[0] > 0
         status = 'match' if off == 0 else f'DIFF first tick {first}, {off} of {total} values, largest {worst:.4g}'
-        lines.append(f'{name:46} {status:62} order matters: vanilla {"yes" if van_matters else "no "}, horizon '
+        lines.append(f'{name:46} {status:62} order matters: vanilla {"yes" if van_matters else "no "}, foundry '
                      f'{"yes" if hor_matters else "no"}')
         # a wind burst does not push an item: that cell is a control and may stay still
         if moved(v[name], 'b' if name.startswith(('wind', 'blast')) else 'ab') == 0 and not name.startswith('wind:wind_charge+item'):
@@ -434,27 +434,27 @@ def main():
     build = lab.LOCAL / NAME
     build.mkdir(parents=True, exist_ok=True)
     (build / 'report.json').unlink(missing_ok=True)
-    subprocess.run(fast_bins.command('horizon-client'), cwd=lab.ROOT,
+    subprocess.run(fast_bins.command('foundry-client'), cwd=lab.ROOT,
                    check=True, capture_output=True)
     metadata = json.loads(subprocess.check_output(['cargo', 'metadata', '--no-deps', '--format-version', '1'],
                                                   cwd=lab.ROOT, text=True))
-    binary = Path(metadata['target_directory']) / 'fast' / ('horizon-client.exe' if os.name == 'nt' else 'horizon-client')
+    binary = Path(metadata['target_directory']) / 'fast' / ('foundry-client.exe' if os.name == 'nt' else 'foundry-client')
     dependencies = os.pathsep.join(map(str, [jars['server'], *libraries]))
     vanilla_server = ['java', '-Xmx2g', '-Duser.timezone=UTC', '-cp', dependencies, 'net.minecraft.server.Main', 'nogui']
-    horizon_server = [binary, '--resources', lab.RESOURCES, '--dedicated', '--nogui']
+    foundry_server = [binary, '--resources', lab.RESOURCES, '--dedicated', '--nogui']
 
     all_cells = cells()
     world = generate_world(vanilla_server, build)
     vanilla = run_side('vanilla', vanilla_server, build, world, all_cells)
-    horizon = run_side('horizon', horizon_server, build, world, all_cells)
+    foundry = run_side('foundry', foundry_server, build, world, all_cells)
     if noise:
         again = run_side('vanilla2', vanilla_server, build, world, all_cells)
         itself = sum(compare(a, b)[0] > 0 for a, b in zip(values(vanilla).values(), values(again).values()))
         print(f'vanilla differs from itself in {itself} of {len(all_cells)} cells')
-    lines, failed, fixed, vacuous = report(vanilla, horizon)
+    lines, failed, fixed, vacuous = report(vanilla, foundry)
     text = '\n'.join(lines)
     (build / 'table.txt').write_text(text + '\n', encoding='utf-8')
-    (build / 'values.json').write_text(json.dumps(dict(vanilla=vanilla, horizon=horizon)), encoding='utf-8')
+    (build / 'values.json').write_text(json.dumps(dict(vanilla=vanilla, foundry=foundry)), encoding='utf-8')
     print(text)
     differing = [line for line in lines if ' DIFF ' in line]
     print(f'\n{len(lines) - len(differing)} of {len(lines)} cells identical to vanilla; the {len(differing)} that differ '

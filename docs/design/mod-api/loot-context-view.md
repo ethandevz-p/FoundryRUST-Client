@@ -1,6 +1,6 @@
 # Design: Read-only typed loot context
 
-Provisional proposal for [arismoko/horizon#2647](https://github.com/arismoko/horizon/issues/2647). Docs only; approval precedes code. Broaden the existing `LootContext` snapshot at the condition/function evaluation boundary. Do not provide a mutable Host, live world access, or another loot hook. [arismoko/horizon#2648](https://github.com/arismoko/horizon/issues/2648) owns the narrow tags view. [PR arismoko/horizon#2595](https://github.com/arismoko/horizon/pull/2595) owns `LevelRef::roll_loot` and its FISHING-shaped input; this proposal neither expands that input nor changes random ownership.
+Provisional proposal for [arismoko/foundry#2647](https://github.com/arismoko/foundry/issues/2647). Docs only; approval precedes code. Broaden the existing `LootContext` snapshot at the condition/function evaluation boundary. Do not provide a mutable Host, live world access, or another loot hook. [arismoko/foundry#2648](https://github.com/arismoko/foundry/issues/2648) owns the narrow tags view. [PR arismoko/foundry#2595](https://github.com/arismoko/foundry/pull/2595) owns `LevelRef::roll_loot` and its FISHING-shaped input; this proposal neither expands that input nor changes random ownership.
 
 ## Evidence and current routes
 
@@ -12,14 +12,14 @@ Verified repository-relative owners:
 
 | Route | Owner |
 | --- | --- |
-| Existing API snapshot and nested Wire values | `crates/horizon-mod-vocab/src/world/snapshots.rs:104`, `:129`, `:140`, `:174`, `:187`, `:199` |
-| Condition/function catalog, authoritative server | `crates/horizon-mod-vocab/src/hooks/loot_condition.rs:9`, `loot_function.rs:10` |
-| Guarded conversion and dispatch, immutable context | `crates/horizon-client/src/game/modding/api_values/loot_values.rs:7`, `:24`, `:174` |
-| Engine callbacks and borrowed context | `crates/horizon-world/src/loot.rs:89`, `:103`, `:120`; forwarding `crates/horizon-world/src/native_load_hooks.rs:40`, `:51` |
-| World evaluator: custom condition, context capture, custom function | `crates/horizon-world/src/loot.rs:1583`, `:1613`, `:2107` |
-| Items evaluator: context capture, custom condition/function | `crates/horizon-items/src/items.rs:2049`, `:2234`, `:2627` |
-| Place scope shared by both evaluators | `crates/horizon-world/src/loot.rs:187`, `:200` |
-| Existing typed block value | `crates/horizon-mod-vocab/src/block/block_state.rs:9` |
+| Existing API snapshot and nested Wire values | `crates/foundry-mod-vocab/src/world/snapshots.rs:104`, `:129`, `:140`, `:174`, `:187`, `:199` |
+| Condition/function catalog, authoritative server | `crates/foundry-mod-vocab/src/hooks/loot_condition.rs:9`, `loot_function.rs:10` |
+| Guarded conversion and dispatch, immutable context | `crates/foundry-client/src/game/modding/api_values/loot_values.rs:7`, `:24`, `:174` |
+| Engine callbacks and borrowed context | `crates/foundry-world/src/loot.rs:89`, `:103`, `:120`; forwarding `crates/foundry-world/src/native_load_hooks.rs:40`, `:51` |
+| World evaluator: custom condition, context capture, custom function | `crates/foundry-world/src/loot.rs:1583`, `:1613`, `:2107` |
+| Items evaluator: context capture, custom condition/function | `crates/foundry-items/src/items.rs:2049`, `:2234`, `:2627` |
+| Place scope shared by both evaluators | `crates/foundry-world/src/loot.rs:187`, `:200` |
+| Existing typed block value | `crates/foundry-mod-vocab/src/block/block_state.rs:9` |
 
 Both evaluator routes must carry the same typed slots through the common boundary. Blocks, containers, fishing and command-driven item rolls reach the items evaluator; entity drops and world loot reach the world evaluator. Caller-specific context must be carried explicitly, never reconstructed from whichever Game fields happen to be selected. Before implementation, enumerate gameplay producers and prove their parameter-set selection with fixtures; these evaluation owners do not establish complete producer coverage for interaction/enchantment contexts currently missing from the snapshot.
 
@@ -54,11 +54,11 @@ Build first: independent this/attacker/direct/player facts, damage facts, origin
 
 Extend the existing API context in one clean break; remove renamed/redundant fields and update every caller, generated boundary, sample and catalog together. No parallel legacy context. Proposed `LootContext::get(&LootKey<T>) -> Result<Option<&T>, LootContextReadError>` and `require` distinguish absent optional (`None`), disallowed (`ParameterNotAllowed`), undeclared (`NotDeclared`) and unsupported (`UnsupportedLootParameter`). A read requires declaration, as vanilla validates the parameters a function references against the table's parameter set: an undeclared read answers the typed `NotDeclared` error, never the value and never a `None` that looks like an absent optional. Missing required values refuse evaluation as `MissingRequiredLootParameter` before invoking a mod. A typed key cannot be constructed with an arbitrary conflicting T. Presence is explicit: an empty required tool is present, zero radius and false enchantment activity are present, and Unit presence differs from absence.
 
-`LootContext`, proposed key/set descriptors, error enums and every new crossing snapshot explicitly use `#[derive(Wire)]` (the repository macro is `horizon_mod_api_macros::Wire`). Existing `LootEntity`, `LootDamage`, `LootStack`, `LootPlace`, `LootLevel` already derive it; `BlockState` also derives it. Use the existing API Tag representation and shared NBT codec. No engine types, Java objects, serde values as typed parameter payloads, arbitrary `Any`, or manual per-target encoding. Generate and validate native/wasm dispatch together.
+`LootContext`, proposed key/set descriptors, error enums and every new crossing snapshot explicitly use `#[derive(Wire)]` (the repository macro is `foundry_mod_api_macros::Wire`). Existing `LootEntity`, `LootDamage`, `LootStack`, `LootPlace`, `LootLevel` already derive it; `BlockState` also derives it. Use the existing API Tag representation and shared NBT codec. No engine types, Java objects, serde values as typed parameter payloads, arbitrary `Any`, or manual per-target encoding. Generate and validate native/wasm dispatch together.
 
 Mods declare every parameter they read, required or optional, when registering a loot kind; a read outside the declaration is `NotDeclared`. Unknown built-in keys or deferred keys refuse registration with proposed `UnsupportedLootParameter { key }`; unsupported set families refuse as `UnsupportedLootParameterSet { set }`. A kind's required reads must be allowed by its declared sets, otherwise `LootParameterSetMismatch`. Optional reads may be absent, but unsupported capability must never masquerade as absence.
 
-Defer custom keys and custom sets in this first build. Proposed `UnsupportedCustomLootKey` and `UnsupportedCustomLootParameterSet` are load-time refusals on both targets. Later, permit namespaced load-time declarations with a fixed API-owned Wire schema, unique owner, duplicate/type-conflict refusals, and explicit producer binding plus required/allowed set descriptors. Freeze resolved numeric slots before world use; no runtime string-map registration. The public docs' unregistered Java keys do not establish a safe cross-process type contract for Horizon.
+Defer custom keys and custom sets in this first build. Proposed `UnsupportedCustomLootKey` and `UnsupportedCustomLootParameterSet` are load-time refusals on both targets. Later, permit namespaced load-time declarations with a fixed API-owned Wire schema, unique owner, duplicate/type-conflict refusals, and explicit producer binding plus required/allowed set descriptors. Freeze resolved numeric slots before world use; no runtime string-map registration. The public docs' unregistered Java keys do not establish a safe cross-process type contract for Foundry Client.
 
 ## Safety, cost and action boundaries
 
@@ -82,7 +82,7 @@ Run every fixture through an actual custom condition and function on native and 
 | Stone at (2,70,4), bare-hand block roll | BLOCK origin=[2.5,70.5,4.5], block_state resolves `minecraft:stone`, TOOL present as empty instance; block_entity/radius absent. |
 | Same block with explosion decay radius 4 | Radius=Some(4.0), never absent or zero substitution. |
 | Broken named container | Saved block-entity Tag equals pre-removal metadata including custom name; subsequent removal does not alter snapshot. |
-| FISHING roll with explicit stick and no entity | Origin equals supplied coordinates; TOOL item=`minecraft:stick`, count=1 and exact components; this absent. PR arismoko/horizon#2595 retains ownership of roll API semantics. |
+| FISHING roll with explicit stick and no entity | Origin equals supplied coordinates; TOOL item=`minecraft:stick`, count=1 and exact components; this absent. PR arismoko/foundry#2595 retains ownership of roll API semantics. |
 | Deferred enchantment/trade/custom key registration | Exact `UnsupportedLootParameter`, `UnsupportedLootParameterSet`, or custom refusal; identical native/wasm result before evaluation. |
 | Missing BLOCK state / false / Unit | Missing required state refuses before callback; future false bool returns Some(false); future trade token returns Some(()) versus None. |
 | Malformed and excessive inputs | NaN/infinite origin, negative radius, oversized nested data refuse without callback or partial output; legal depth-512 data and largest vanilla fixture fit shared bounds. |

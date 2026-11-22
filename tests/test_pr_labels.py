@@ -68,26 +68,26 @@ class AreaTests(unittest.TestCase):
     def test_paths(self):
         cases = {
             "launcher/src/main.rs": "launcher",
-            "crates/horizon-world/src/worldgen/structure/mod.rs": "worldgen",
-            "crates/horizon-client/src/mobs/ai.rs": "mobs",
-            "crates/horizon-client/src/game/mobs/wither.rs": "mobs",
-            "crates/horizon-client-render/src/gfx/cull.rs": "rendering",
-            "crates/horizon-client-render/src/terrain.wgsl": "rendering",
-            "crates/horizon-client/src/game/interface/dedicated/status.rs": "server",
-            "crates/horizon-server-files/src/lib.rs": "server",
-            "crates/horizon-client/src/lan/hub.rs": "multiplayer",
-            "crates/horizon-client/src/game/network/remote_vehicles.rs": "multiplayer",
-            "crates/horizon-protocol/src/packets/play.rs": "multiplayer",
-            "crates/horizon-mod-package/src/lib.rs": "mods",
-            "crates/horizon-client/src/game/native_hooks/mod.rs": "mods",
-            "crates/horizon-world/src/datafix/v3.rs": "saves",
-            "crates/horizon-client/src/game/administration/commands/admin.rs": "commands",
-            "crates/horizon-command/src/args.rs": "commands",
-            "crates/horizon-client-render/src/sound_engine.rs": "audio",
-            "crates/horizon-client-render/src/streaming.rs": "chunks",
-            "crates/horizon-world/src/level/redstone.rs": "blocks",
-            "crates/horizon-client/src/title/worlds.rs": "ui",
-            "crates/horizon-client-render/src/options_ui.rs": "ui",
+            "crates/foundry-world/src/worldgen/structure/mod.rs": "worldgen",
+            "crates/foundry-client/src/mobs/ai.rs": "mobs",
+            "crates/foundry-client/src/game/mobs/wither.rs": "mobs",
+            "crates/foundry-client-render/src/gfx/cull.rs": "rendering",
+            "crates/foundry-client-render/src/terrain.wgsl": "rendering",
+            "crates/foundry-client/src/game/interface/dedicated/status.rs": "server",
+            "crates/foundry-server-files/src/lib.rs": "server",
+            "crates/foundry-client/src/lan/hub.rs": "multiplayer",
+            "crates/foundry-client/src/game/network/remote_vehicles.rs": "multiplayer",
+            "crates/foundry-protocol/src/packets/play.rs": "multiplayer",
+            "crates/foundry-mod-package/src/lib.rs": "mods",
+            "crates/foundry-client/src/game/native_hooks/mod.rs": "mods",
+            "crates/foundry-world/src/datafix/v3.rs": "saves",
+            "crates/foundry-client/src/game/administration/commands/admin.rs": "commands",
+            "crates/foundry-command/src/args.rs": "commands",
+            "crates/foundry-client-render/src/sound_engine.rs": "audio",
+            "crates/foundry-client-render/src/streaming.rs": "chunks",
+            "crates/foundry-world/src/level/redstone.rs": "blocks",
+            "crates/foundry-client/src/title/worlds.rs": "ui",
+            "crates/foundry-client-render/src/options_ui.rs": "ui",
             "docs/api/shaders.md": "website",
             "roadmap/roadmap.toml": "website",
         }
@@ -95,14 +95,14 @@ class AreaTests(unittest.TestCase):
             self.assertEqual(pl.area_of(path), area, path)
 
     def test_no_area(self):
-        for path in ("tools/parity.py", "crates/horizon-client/src/game.rs", "Cargo.lock", "docs/README.md",
-                     "mods/horizon/src/test/java/dev/horizonlab/parity/VanillaMobOracle.java",
-                     "crates/horizon-client/examples/mob_ai_probe.rs"):
+        for path in ("tools/parity.py", "crates/foundry-client/src/game.rs", "Cargo.lock", "docs/README.md",
+                     "mods/foundry/src/test/java/dev/foundrylab/parity/VanillaMobOracle.java",
+                     "crates/foundry-client/examples/mob_ai_probe.rs"):
             self.assertIsNone(pl.area_of(path), path)
 
     def test_biggest_three_with_a_tenth_each(self):
-        files = [("launcher/src/a.rs", 50), ("crates/horizon-client/src/mobs/a.rs", 30),
-                 ("crates/horizon-command/src/a.rs", 10), ("crates/horizon-client-render/src/audio.rs", 9),
+        files = [("launcher/src/a.rs", 50), ("crates/foundry-client/src/mobs/a.rs", 30),
+                 ("crates/foundry-command/src/a.rs", 10), ("crates/foundry-client-render/src/audio.rs", 9),
                  ("tools/x.py", 1)]
         self.assertEqual(pl.areas(files), ["launcher", "mobs", "commands"])
         self.assertEqual(pl.areas([("tools/x.py", 95), ("launcher/src/a.rs", 5)]), [])
@@ -169,7 +169,7 @@ class SizeTests(unittest.TestCase):
     def test_counted_is_pr_readys_rule(self):
         for path in ("crates/a/src/lib.rs", "docs/a.md", "README.md", "tests/test_a.py", "crates/a/tests/it.rs",
                      "crates/a/src/test/x.rs", "tools/test_a_parity.py", "test_root.py", "tools/ci/pr_labels.py",
-                     "Cargo.lock", "mods/horizon/src/test/java/A.java", "crates/a/src/tests.rs", "attest/a.rs"):
+                     "Cargo.lock", "mods/foundry/src/test/java/A.java", "crates/a/src/tests.rs", "attest/a.rs"):
             self.assertEqual(pl.counted(path), pr_ready.reviewed(path), path)
 
     def test_one_size_replaces_the_old(self):

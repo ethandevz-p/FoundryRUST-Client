@@ -1,0 +1,22 @@
+[package]
+name = "foundry-mod-api-gen-tests"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+description = "Generated mod API dispatch contract tests"
+
+[dependencies]
+foundry-core = { path = "../../foundry-core" }
+foundry-mod-api-macros = { path = "../../foundry-mod-api-macros" }
+foundry-client-core = { path = "../../foundry-client-core" }
+foundry-mod-runtime = { path = "../../foundry-mod-runtime" }
+log = "0.4"
+serde_json = "1"
+
+[build-dependencies]
+foundry-mod-api-gen = { path = ".." }
+
+[lints]
+workspace = true

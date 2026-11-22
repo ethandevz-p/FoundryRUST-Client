@@ -2,8 +2,8 @@ use super::*;
 use crate::native_mods::{tests::dir, tests::write_bundle};
 use std::cell::Cell;
 
-const STRUCT: &str = "horizon_client::game::ported_level::PortedGame";
-const METHOD: &str = "horizon_client::game::ported_level::PortedGame::tick";
+const STRUCT: &str = "foundry_client::game::ported_level::PortedGame";
+const METHOD: &str = "foundry_client::game::ported_level::PortedGame::tick";
 const PAYLOAD: &str =
     "pub struct PortedGame; impl PortedGame { pub fn tick(&mut self) -> u32 { 7 } }";
 
@@ -17,9 +17,9 @@ impl Fixture {
         let root = dir(name);
         let folder = root.join("mod");
         write_bundle(&folder, "example", "");
-        fs::write(folder.join("Cargo.toml"), "[package]\nname='example'\nversion='0.1.0'\n[dependencies]\nmod_api={package='horizon-mod-api',path='.horizon/sdk/api/crates/horizon-mod-api'}\n").unwrap();
+        fs::write(folder.join("Cargo.toml"), "[package]\nname='example'\nversion='0.1.0'\n[dependencies]\nmod_api={package='foundry-mod-api',path='.foundry/sdk/api/crates/foundry-mod-api'}\n").unwrap();
         if modules {
-            let manifest = folder.join(horizon_platform::mod_package::manifest::MANIFEST);
+            let manifest = folder.join(foundry_platform::mod_package::manifest::MANIFEST);
             let text = fs::read_to_string(&manifest).unwrap();
             fs::write(manifest, format!("{text}\n[[native.module]]\nid='ported'\nfile='game.rs'\nname='ported_level'\nsource='src/ported.rs'\n")).unwrap();
             fs::write(folder.join("src/ported.rs"), PAYLOAD).unwrap();
@@ -28,21 +28,21 @@ impl Fixture {
         for (file, text) in [
             ("Cargo.toml", "[workspace]\nmembers=[]\n"),
             (
-                "crates/horizon-client/Cargo.toml",
-                "[package]\nname='horizon-client'\n",
+                "crates/foundry-client/Cargo.toml",
+                "[package]\nname='foundry-client'\n",
             ),
-            ("crates/horizon-client/src/lib.rs", "mod game; mod entry;"),
-            ("crates/horizon-client/src/entry.rs", ""),
-            ("crates/horizon-client/src/game.rs", ""),
-            ("crates/horizon-mod-api-gen/internals.txt", ""),
+            ("crates/foundry-client/src/lib.rs", "mod game; mod entry;"),
+            ("crates/foundry-client/src/entry.rs", ""),
+            ("crates/foundry-client/src/game.rs", ""),
+            ("crates/foundry-mod-api-gen/internals.txt", ""),
             (
-                "crates/horizon-engine-slots/Cargo.toml",
-                "[package]\nname='horizon-engine-slots'\n",
+                "crates/foundry-engine-slots/Cargo.toml",
+                "[package]\nname='foundry-engine-slots'\n",
             ),
-            ("crates/horizon-engine-slots/src/lib.rs", ""),
+            ("crates/foundry-engine-slots/src/lib.rs", ""),
             (
-                "crates/horizon-mod-points/Cargo.toml",
-                "[package]\nname='horizon-mod-points'\n",
+                "crates/foundry-mod-points/Cargo.toml",
+                "[package]\nname='foundry-mod-points'\n",
             ),
         ] {
             let path = source.join(file);
@@ -67,14 +67,14 @@ impl Fixture {
                 // This is the external tool seam only. Production code prepares the real tool
                 // input and pristine source, and runs the actual discovery staging afterwards.
                 assert_eq!(
-                    fs::read_to_string(prepared.join("crates/horizon-client/src/game.rs")).unwrap(),
+                    fs::read_to_string(prepared.join("crates/foundry-client/src/game.rs")).unwrap(),
                     ""
                 );
                 let payload = fs::read_to_string(input.join("example/src/ported.rs")).unwrap();
-                assert!(input.join("example/horizon-mixin.toml").is_file());
+                assert!(input.join("example/foundry-mixin.toml").is_file());
                 super::super::sync(prepared, output)?;
                 fs::write(
-                    output.join("crates/horizon-client/src/game.rs"),
+                    output.join("crates/foundry-client/src/game.rs"),
                     format!("pub mod ported_level {{ {payload} }}"),
                 )
                 .map_err(|e| e.to_string())
@@ -108,7 +108,7 @@ fn pinned_module_catalog_uses_canonical_paths_and_fresh_source_twice() {
     }
     assert_eq!(calls.get(), 2);
     assert_eq!(
-        fs::read_to_string(fixture.source.join("crates/horizon-client/src/game.rs")).unwrap(),
+        fs::read_to_string(fixture.source.join("crates/foundry-client/src/game.rs")).unwrap(),
         ""
     );
 }

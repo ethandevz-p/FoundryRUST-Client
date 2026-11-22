@@ -1,10 +1,10 @@
 # Release flow
 
 How a change gets from a pull request to players: the checks a pull request passes, how it merges, and the
-automatic releases that follow. Releases are automatic and frequent so the latest Horizon is always playable.
-Since 2026-10-28 Horizon ships only the **Nightly** (Ludovic's decision; the Team proposed it): the batch train builds
+automatic releases that follow. Releases are automatic and frequent so the latest Foundry Client is always playable.
+Since 2026-10-28 Foundry Client ships only the **Nightly** (Ludovic's decision; the Team proposed it): the batch train builds
 a Nightly instead of a `vX.Y.Z` release, it is published once its smoke test passed and no `release-blocker` is open,
-and every launcher and `horizon-server update` install it ([Nightly only](#nightly-only)).
+and every launcher and `foundry-server update` install it ([Nightly only](#nightly-only)).
 
 ## Pull request checks
 
@@ -13,8 +13,8 @@ reopened; labels never start it):
 
 | Job | Runs on | What | Time |
 | --- | --- | --- | --- |
-| `verify` | Blacksmith's runners for every pull request (approved forks' included), the merge queue and main's pushes. `SELF_HOSTED_CI=all` sends this repository's own to our checks runners (label `horizon-checks`, the CI VPS's); forks' pull requests see no repository variable, so no switch moves them ([CI runners](ci-runners.md)) | One job per part, side by side: the public-tree check and the Python tests (`verify (tree and Python tests)`), rustfmt and clippy with warnings denied (`verify (format and lint)`), clippy of the server build (`verify (server build lint)`), the launcher's checks (`verify (launcher)`) and the Rust tests (`verify (Rust tests)`); `verify` waits for them and passes when each passed or had nothing to do. Each Rust part keeps its build folder between runs (a sticky disk on Blacksmith's, the runner's own on ours) | ~8 min |
-| `parity / parity` | A runner with the label `horizon-game`: the Mac mini's and playhorizon's (below) | Only for a change to a harness, an oracle, a probe or the runner (or the `run-parity` label): the vanilla harnesses the change can affect (`tools/parity.py --changed <base>`). Other pull requests skip it: [parity-main](#parity-on-main) checks them on main | seconds when nothing is affected; minutes per affected harness |
+| `verify` | Blacksmith's runners for every pull request (approved forks' included), the merge queue and main's pushes. `SELF_HOSTED_CI=all` sends this repository's own to our checks runners (label `foundry-checks`, the CI VPS's); forks' pull requests see no repository variable, so no switch moves them ([CI runners](ci-runners.md)) | One job per part, side by side: the public-tree check and the Python tests (`verify (tree and Python tests)`), rustfmt and clippy with warnings denied (`verify (format and lint)`), clippy of the server build (`verify (server build lint)`), the launcher's checks (`verify (launcher)`) and the Rust tests (`verify (Rust tests)`); `verify` waits for them and passes when each passed or had nothing to do. Each Rust part keeps its build folder between runs (a sticky disk on Blacksmith's, the runner's own on ours) | ~8 min |
+| `parity / parity` | A runner with the label `foundry-game`: the Mac mini's and playfoundry's (below) | Only for a change to a harness, an oracle, a probe or the runner (or the `run-parity` label): the vanilla harnesses the change can affect (`tools/parity.py --changed <base>`). Other pull requests skip it: [parity-main](#parity-on-main) checks them on main | seconds when nothing is affected; minutes per affected harness |
 
 Pushes to main run `verify` only; the nightly audit covers main's harnesses.
 
@@ -33,7 +33,7 @@ repository, `run-parity.yml` for a fork's pull request a maintainer labels `run-
 
 A pull request every harness reaches (a crate split moves files every probe links: #2160 ran all 352 harnesses, 71
 minutes on a Mac mini runner, while five other pull requests' jobs queued behind it) carries the `full-parity` label:
-its job runs on playhorizon's runner only (4 harnesses at a time), and waits for it while that runner is busy
+its job runs on playfoundry's runner only (4 harnesses at a time), and waits for it while that runner is busy
 instead of taking the Mac mini's. Labels don't start `checks`: add it when opening the pull request
 (`gh pr create --label full-parity`), or before the next push.
 
@@ -41,8 +41,8 @@ A pull request that must leave the picture alone (HDR, shader packs) carries the
 runs `frame_identity` ([parity-workflow.md](parity-workflow.md)), which no automatic selection picks, since it fails
 any change that moves the picture on purpose. Like `full-parity`, it is read when the job starts.
 
-Horizon never downloads the game, so harnesses that compare with vanilla run only where the maintainer's own
-copy is: the Mac mini and playhorizon (below). Their runners run as the maintainer's account and keep their checkout
+Foundry Client never downloads the game, so harnesses that compare with vanilla run only where the maintainer's own
+copy is: the Mac mini and playfoundry (below). Their runners run as the maintainer's account and keep their checkout
 between runs (`clean: false`), so the probes build incrementally into `.local/parity-target` and earlier passes
 stand.
 
@@ -56,15 +56,15 @@ alone, with a warning. The check is still reported on the head.
    (Homebrew and `java_home` on the Mac; on Linux what `linux-runner.sh` pinned, else nixpkgs), and sccache when
    the machine has it.
 2. `tools/ci/vanilla-data.sh` links `.local/` to the runner's copy of the vanilla data, cloned once from
-   `~/code/horizon-parity/shared-local` into `~/.actions-runners/horizon/_work/horizon/shared-local`, and
-   prepares `.local/horizon-client` with the pull request's own `horizon-prepare` once per preparer version
-   (its sources, the exporters in `mods/horizon/src/test/java` and `research-lock.json`). The game's sounds, which
+   `~/code/foundry-parity/shared-local` into `~/.actions-runners/foundry/_work/foundry/shared-local`, and
+   prepares `.local/foundry-client` with the pull request's own `foundry-prepare` once per preparer version
+   (its sources, the exporters in `mods/foundry/src/test/java` and `research-lock.json`). The game's sounds, which
    depend only on the Minecraft version, are kept once in `shared-local/sounds/<version>/` (copied from a folder
-   `horizon-prepare sounds` made from the maintainer's own game; the Mac mini has no official launcher of its own)
+   `foundry-prepare sounds` made from the maintainer's own game; the Mac mini has no official launcher of its own)
    and cloned into each preparation (not linked: vanilla's packs refuse symbolic links), for the audio harnesses.
-   `tools/prepare_output.py check` then compares what was prepared with `crates/horizon-prepare/output-versions.txt`:
+   `tools/prepare_output.py check` then compares what was prepared with `crates/foundry-prepare/output-versions.txt`:
    launchers keep a player's prepared resources across releases whose preparer declares the same `OUTPUT_VERSION`
-   (`crates/horizon-prepare/src/lib.rs`), so a change to the prepared files fails here until it bumps the number
+   (`crates/foundry-prepare/src/lib.rs`), so a change to the prepared files fails here until it bumps the number
    and appends the new digest (the error gives both lines).
 3. `tools/parity.py --changed <base sha>` picks the harnesses whose traced dependencies (their script, Python
    modules, Java oracles and every Rust source their probes compile) changed since the merge base, plus any
@@ -75,16 +75,16 @@ Failed harnesses' logs are uploaded as the `parity-logs` artifact.
 
 **Hosted parity.** A maintainer can also run harnesses on Blacksmith's runners, away from the Mac mini:
 `gh workflow run parity-hosted.yml --ref <branch> -f harnesses="..."`, or `-f base=<commit>` for what the branch's
-changes reach. The data comes encrypted from the maintainers' private `horizon-rust/vanilla-data`. The only thing
+changes reach. The data comes encrypted from the maintainers' private `foundry-rust/vanilla-data`. The only thing
 that leaves the runner is the harness logs: the first-attempt and failure logs, holding compared values, log tails and
 names, as this job's public logs already do ([ci-runners.md](ci-runners.md#hosted-parity)). Its result is advisory;
 this job is still the check.
 
 **Platform-specific harnesses.** A harness listed under `linux_only` in `tools/parity_hosts.json` gives
-different results on macOS for a reason that is not a Horizon bug (the reason is printed). `parity.py` skips it on
+different results on macOS for a reason that is not a Foundry Client bug (the reason is printed). `parity.py` skips it on
 other platforms unless it is named on the command line. Today it holds only `save_roundtrip` (it needs `vscreen`):
 `options`, `chunk_generation`, `world_border_render` and `mob_ai`, which once differed on macOS through the
-platform's libm, pass on the Mac mini since `horizon_core::jmath` computes what HotSpot computes (checked
+platform's libm, pass on the Mac mini since `foundry_core::jmath` computes what HotSpot computes (checked
 2026-10-14).
 
 **Pull requests from forks** never run code on the Mac mini by themselves. A maintainer who has read the change
@@ -92,23 +92,23 @@ adds the `run-parity` label: that runs the job once, on the commit the pull requ
 after new pushes, remove the label and add it again.
 
 **Two runners.** The Mac mini has two runners for this repository, `ludovics-mac-mini`
-(`~/.actions-runners/horizon`, `CARGO_BUILD_JOBS=10`) and `ludovics-mac-mini-2` (`~/.actions-runners/horizon-2`,
+(`~/.actions-runners/foundry`, `CARGO_BUILD_JOBS=10`) and `ludovics-mac-mini-2` (`~/.actions-runners/foundry-2`,
 `CARGO_BUILD_JOBS=6`), with the same labels, so the 30-minute nightly audit or a long parity job never holds a
 release's macOS build back. Each keeps its own checkout, `target/` and Rust install; the second's
-`_work/horizon/shared-local` links to the first's, so they share the vanilla data, the preparations (one at a
+`_work/foundry/shared-local` links to the first's, so they share the vanilla data, the preparations (one at a
 time, under a lock) and the parity passes and slots.
 
-**playhorizon's runner.** `playhorizon-horizon` runs on a server a hosting partner lends the project (Ubuntu, 8
+**playfoundry's runner.** `playfoundry-foundry` runs on a server a hosting partner lends the project (Ubuntu, 8
 AMD EPYC threads, 30 GB, in Detroit; reachable only through the maintainer's tailnet). Nobody sits at it, so the
 watcher never pauses it except by hand. It gets half the machine: `RUNNER_MEMORY=24`, `CARGO_BUILD_JOBS` and the
-harness slots at 4, and a drop-in (`~/.config/systemd/user/horizon-runner.service.d/cpus.conf`) that starts it under
+harness slots at 4, and a drop-in (`~/.config/systemd/user/foundry-runner.service.d/cpus.conf`) that starts it under
 `taskset -c 4-7` (the user slice can't set `AllowedCPUs`: systemd doesn't delegate the cpuset controller to it).
 Agents' `tools/remote.sh` runs and benchmarks share CPUs 0-3, so they never slow a pull request's job.
 Without Nix, `linux-runner.sh` takes the build libraries, the JDK, sccache, Xvfb and Mesa's software Vulkan
 (lavapipe; there is no GPU) from apt, and Python 3.13 from uv. The partner can reach the machine, so gh is not
 logged in there: the registration token comes from another machine (`RUNNER_TOKEN`), and no job with secrets may
-run there (parity has none). It is also a parity host (`playhorizon` in `tools/parity_hosts.json`, 3 jobs on CPUs 0-3). Since
-2026-10-26 it has the `horizon-game` label: pull requests' parity jobs run there or on the Mac mini, and
+run there (parity has none). It is also a parity host (`playfoundry` in `tools/parity_hosts.json`, 3 jobs on CPUs 0-3). Since
+2026-10-26 it has the `foundry-game` label: pull requests' parity jobs run there or on the Mac mini, and
 `full-parity` ones only there.
 
 ## Merging
@@ -119,7 +119,7 @@ requires `verify` for everyone, and a council member's review (team `council`) f
 and ships releases). Branches don't have to be up to date with main: main's own `checks` run catches the rare
 semantic conflict.
 
-**Who merges.** The Horizon Team (GitHub team `horizon-team`: kacpherek, levzzz5154, rdbtCVS, Online5277, dezer-x,
+**Who merges.** The Foundry Client Team (GitHub team `foundry-team`: kacpherek, levzzz5154, rdbtCVS, Online5277, dezer-x,
 NikitaMGrimm) and Ludovic. The orchestrator's agents prove only the risky pull requests (below), so a contributor's
 ordinary pull request doesn't wait for them.
 
@@ -139,7 +139,7 @@ paths, `lan_e2e`, a screenshot for anything visible) before it merges. Risky mea
 
 - it changes what is saved or loaded (`save.rs`, `entity_nbt.rs`, `block_entity_nbt.rs`, `region.rs`, `datafix/`):
   a bug there damages players' worlds;
-- the network or the server thread: `horizon-protocol`, `net.rs`, `remote*.rs`, `lan/`, `lan*.rs`,
+- the network or the server thread: `foundry-protocol`, `net.rs`, `remote*.rs`, `lan/`, `lan*.rs`,
   `integrated.rs`, `levels.rs`, `dedicated*`;
 - world generation (`worldgen/`): seeds must keep generating the same terrain;
 - the launcher's installs and updates, or the mod runtime;
@@ -151,7 +151,7 @@ Unsure? Add `needs-proof`: it costs a few hours, a broken release costs more.
 `parity` becomes required once it has run green on pull requests for a while (a week without a false failure):
 
 ```sh
-gh api -X POST repos/horizon-rust/horizon/branches/main/protection/required_status_checks/contexts -f 'contexts[]=parity / parity'
+gh api -X POST repos/foundry-rust/foundry/branches/main/protection/required_status_checks/contexts -f 'contexts[]=parity / parity'
 ```
 
 A skipped `parity` (a fork's pull request without the label) counts as passed, so requiring it never blocks a
@@ -181,7 +181,7 @@ which runs them on main a batch of merges at a time, on the Mac mini's runner:
   which merges each harness broke; a later search from the same base goes on from there
   (`.local/parity-runner/bisect.json`).
 - Jobs on the self-hosted Mac take turns at compiling (`tools/compile_lock.py`, flock on files in
-  `/Users/Shared/horizon-compile-lock`): parity-main's probe prebuild, pull requests' parity prebuilds and the
+  `/Users/Shared/foundry-compile-lock`): parity-main's probe prebuild, pull requests' parity prebuilds and the
   Nightly's, releases' and the launcher's Mac compiles. A pull request's job is not given the turn while parity-main
   or a Mac build is waiting or compiling; those wait only for the turn's holder, and a pull request's prebuild that
   holds it gives it back after its current Cargo run. A holder that dies frees the turn at
@@ -198,7 +198,7 @@ which runs them on main a batch of merges at a time, on the Mac mini's runner:
   minutes: Cargo's `--timings` report of each prebuild run (`cargo-NN.html`, the largest left out above 20 MB in
   all) and `prebuild-calls.txt`, each run's `cargo N/M` line with the change in the machine's sccache hits and
   misses since the reading before it. Only parity-main
-  collects them (`HORIZON_PARITY_PREBUILD_TIMINGS=1` on its harness step).
+  collects them (`FOUNDRY_PARITY_PREBUILD_TIMINGS=1` on its harness step).
 - Nightlies build only on a commit both `checks` and `parity-main` passed on (`tools/release_train.py`,
   `tools/ci/nightly.py`, see below), so a broken merge holds them instead of reaching players. They take the
   newest such commit even when a later batch failed: that failure is in merges the green commit doesn't contain, so
@@ -212,7 +212,7 @@ which runs them on main a batch of merges at a time, on the Mac mini's runner:
   difference harms players (crashes, saves, multiplayer) stay off the list: they hold the Nightly until fixed.
 
 A pull request still runs its own parity job when it changes a harness script, an oracle
-(`mods/horizon/src/test/`), a probe (`crates/*/examples/`, `game/*_fixture.rs`, `game/*_harness.rs`), the runner
+(`mods/foundry/src/test/`), a probe (`crates/*/examples/`, `game/*_fixture.rs`, `game/*_harness.rs`), the runner
 (`tools/parity*.py`, `tools/lab.py`, `tools/parity_hosts.json`, `parity*.yml`), or carries the `run-parity` label
 (`run-parity.yml` runs it when the label is added).
 
@@ -250,9 +250,9 @@ The mod SDK of a Nightly is built inside `nightly build`, for the exact main com
    All four legs must pass: Linux client and server, Windows GNU client and macOS ARM64 client. Each builds two
    native starter mods against the SDK alone, starts their installed executable, and checks Windows export capacity.
    A live run can reuse an existing SDK only after its complete inventory and signed index are authenticated.
-   Each leg logs its runner's cores and memory. On a dry run only (`dry_run`, which sets `HORIZON_SDK_TIMINGS`), it
+   Each leg logs its runner's cores and memory. On a dry run only (`dry_run`, which sets `FOUNDRY_SDK_TIMINGS`), it
    also uploads `sdk-timings-<leg>` (3 days), the `cargo rustc --timings` report of its SDK build, apart from the
-   SDK's own artifact: cargo fails a build that can't write the report, so a published SDK's build never makes one. The surface export reuses the `horizon-stage` that
+   SDK's own artifact: cargo fails a build that can't write the report, so a published SDK's build never makes one. The surface export reuses the `foundry-stage` that
    staging built (`target/prebuilt/tools`).
 2. After the game build (including its smoke test), `sdk-publish.yml` gathers identical build data and surfaces,
    builds the generated API source, writes `sdk.json`, and checks every slice's commit, host, side, compiler,
@@ -295,10 +295,10 @@ These are publication machinery, not evidence that a candidate has shipped. Acti
 code-owner review, green exact-head CI and the real platform/native canaries. A Nightly predating this route may
 have no SDK; consumers must report that rather than rebuilding the game per mod.
 
-The game workflow also builds `horizon-wasm-std.wasm` once with the pinned Rust toolchain, `rust-src` and
+The game workflow also builds `foundry-wasm-std.wasm` once with the pinned Rust toolchain, `rust-src` and
 `wasm32-unknown-unknown`, without credentials or shared caches. Every client archive (including musl) and the Linux
 server archive take that same member beside the executable through xtask's required-input preflight.
-The dedicated executable is built from `horizon-game --no-default-features --bin horizon-client`.
+The dedicated executable is built from `foundry-game --no-default-features --bin foundry-client`.
 
 For `[[native.mixin]]`, delivery currently uses the existing pinned-source tool build when no matching prebuilt
 exists. Building that small tool once per pin/patch/platform does not rebuild any game crate. The former unsigned
@@ -308,7 +308,7 @@ The launcher still supports matching existing prebuilts and the explicit `native
 For the candidate's native canaries, `SDK_BASE` must hold exactly one complete `sdk-<candidate SHA>` folder and
 `LAUNCHER` must be the matching launcher for the machine running the command. Use a fresh `SCRATCH` parent;
 the script creates isolated game/launcher/XDG homes and checks that the prebuilt game library's hash is unchanged.
-Dry-run SDKs additionally require a debug-assertions launcher with `HORIZON_SDK_TRUSTED_KEY` set to that run's
+Dry-run SDKs additionally require a debug-assertions launcher with `FOUNDRY_SDK_TRUSTED_KEY` set to that run's
 throwaway public key; never pass production private signing material.
 
 ```sh
@@ -341,33 +341,33 @@ There is no daily run: `daily.yml` and the workflows it called (`ignored-tests.y
 | `ci.yml` (`Windows ARM64 game and launcher`) | Manual dispatch with `-f arm64=true` only | The launcher's library tests and the `#[ignore]`d `rust_toolchain::tests::managed_arm64_toolchain_builds_the_game` |
 | `ci.yml` (`Windows x64 game and launcher tests`) | Manual dispatch with `-f windows=true` only, a [try run](ci-runners.md#try-runs) | On Windows x64: the launcher's tests; the game's release build, uploaded for 3 days |
 | `launcher.yml` (`build`) | See the workflow's `on:` (pushes to `main`, `launcher` and `launcher-*` within its path filter, a schedule, manual dispatch) and its `decide` job: it builds when a launcher release is due, and on every dry run (every run off main, and a dispatch with `dry_run`, the default), which publishes nothing | The launcher's tests on Linux, macOS (two builds, one for x86-64) and Windows (x64, ARM64) |
-| `game-build.yml`, from `nightly-build.yml` | Each Nightly build | On Windows x64, in release, in its own job (`polytone windows`) beside the Windows build, which `sign` and `publish` wait for as for the builds: `horizon-client-render`'s `particles::polytone::tests::` |
-| `perf-wasm.yml` | Pull requests and pushes to main that change `crates/horizon-perf/`, `crates/horizon-perf-format/`, `crates/horizon-bench/`, `xtask/`, `Cargo.lock`, `Cargo.toml` or the workflow itself; manual dispatch | On Linux: `horizon-perf`'s `wasm` test |
-| `mod-registry.yml` | Pull requests and pushes to main that change `crates/horizon-mod-package/`, `crates/horizon-mod-registry/` or the workflow itself | On Linux: `horizon-mod-registry`'s tests |
-| `telemetry-server.yml` | Pull requests and pushes to main that change `crates/horizon-telemetry/`, `crates/horizon-telemetry-server/` or the workflow itself | On Linux: `horizon-telemetry-server`'s tests |
-| `parity.yml`, from `ci.yml` (`parity`) and `run-parity.yml` | A pull request from this repository that changes a harness, an oracle, a probe or the runner, or carries the `run-parity` or `frame-identity` label; the `run-parity` label being added | On the self-hosted `horizon-game` runners: the harnesses the change can affect (`tools/parity.py --changed`) |
-| `parity-main.yml` | Pushes to main; manual dispatch | On the self-hosted macOS `horizon-parity-main` runner: the harnesses the push can affect |
-| `nightly.yml` (`audit`) | Once a day (03:07 in Paris); manual dispatch | On the self-hosted macOS `horizon-game` runners: every harness (`tools/parity.py --all`) |
+| `game-build.yml`, from `nightly-build.yml` | Each Nightly build | On Windows x64, in release, in its own job (`polytone windows`) beside the Windows build, which `sign` and `publish` wait for as for the builds: `foundry-client-render`'s `particles::polytone::tests::` |
+| `perf-wasm.yml` | Pull requests and pushes to main that change `crates/foundry-perf/`, `crates/foundry-perf-format/`, `crates/foundry-bench/`, `xtask/`, `Cargo.lock`, `Cargo.toml` or the workflow itself; manual dispatch | On Linux: `foundry-perf`'s `wasm` test |
+| `mod-registry.yml` | Pull requests and pushes to main that change `crates/foundry-mod-package/`, `crates/foundry-mod-registry/` or the workflow itself | On Linux: `foundry-mod-registry`'s tests |
+| `telemetry-server.yml` | Pull requests and pushes to main that change `crates/foundry-telemetry/`, `crates/foundry-telemetry-server/` or the workflow itself | On Linux: `foundry-telemetry-server`'s tests |
+| `parity.yml`, from `ci.yml` (`parity`) and `run-parity.yml` | A pull request from this repository that changes a harness, an oracle, a probe or the runner, or carries the `run-parity` or `frame-identity` label; the `run-parity` label being added | On the self-hosted `foundry-game` runners: the harnesses the change can affect (`tools/parity.py --changed`) |
+| `parity-main.yml` | Pushes to main; manual dispatch | On the self-hosted macOS `foundry-parity-main` runner: the harnesses the push can affect |
+| `nightly.yml` (`audit`) | Once a day (03:07 in Paris); manual dispatch | On the self-hosted macOS `foundry-game` runners: every harness (`tools/parity.py --all`) |
 
 An `#[ignore]`d test also runs when something else starts it:
 
 - An ordinary test can start it as a child process, as `processes_sharing_the_secrets_file_lose_nothing` starts
   `secrets_file_writer` (`launcher/src/account/tests.rs`).
 - A parity harness can run it with its oracle's output: the tests in `tools/ci/ignored-tests/parity-harness.txt`, such
-  as `vanilla_bed_poi_states`, which `tools/test_bed_poi_parity.py` (`bed_poi`) runs with `HORIZON_BED_POI_ORACLE` set.
+  as `vanilla_bed_poi_states`, which `tools/test_bed_poi_parity.py` (`bed_poi`) runs with `FOUNDRY_BED_POI_ORACLE` set.
   Run these through their harness (`python3 tools/parity.py bed_poi`), not with `-- --ignored`: without the
   oracle's file the test panics.
 
 Run by no workflow: the other `#[ignore]`d tests (many are marked `daily`), the launcher's tests on Windows between
-the runs above (a try run with `-f windows=true` runs them on a branch), and `horizon-mod-package`'s tests on Windows
+the runs above (a try run with `-f windows=true` runs them on a branch), and `foundry-mod-package`'s tests on Windows
 with its `runtime-process` feature. Run them by hand when a change reaches them:
 
 - A crate's ignored tests: `cargo test -p <crate> -- --ignored`, naming the test to run one. In `launcher/`, a
   separate workspace, `cargo test -- --ignored`.
 - The launcher on Windows: `cargo test` in `launcher/`.
-- `horizon-mod-package` on Windows: `cargo test -p horizon-mod-package --features runtime-process`, and its ignored
+- `foundry-mod-package` on Windows: `cargo test -p foundry-mod-package --features runtime-process`, and its ignored
   tests with `-- --ignored` added.
-- Tests that read the vanilla data need resources prepared with `horizon-prepare`; without them they prove nothing.
+- Tests that read the vanilla data need resources prepared with `foundry-prepare`; without them they prove nothing.
 
 The function-replacement check above is run by hand too. It compares hashes with `sha256sum`
 (`tools/ci/fn_replace_check.sh`), so on macOS put a `sha256sum` on `PATH` first (GNU coreutils has one).
@@ -378,8 +378,8 @@ The function-replacement check above is run by hand too. It compares hashes with
 commits) since the commit the published Nightly was built on:
 
 - A pull request counts when it changed what players run: `crates/` (not `examples/`, `tests/`, `benches/`),
-  `xtask/`, `packaging/`, `Cargo.toml`, `Cargo.lock`, `research-lock.json`, or an exporter `horizon-prepare`
-  compiles (the `mods/horizon/src/test/java/dev/horizonlab/parity/*.java` files its sources name). Markdown never
+  `xtask/`, `packaging/`, `Cargo.toml`, `Cargo.lock`, `research-lock.json`, or an exporter `foundry-prepare`
+  compiles (the `mods/foundry/src/test/java/dev/foundrylab/parity/*.java` files its sources name). Markdown never
   counts.
 - It goes in batches, so players get a few Nightlies a day rather than one per merge: once 5 pull requests count
   and the newest of them merged at least 5 minutes ago (a wave of merges becomes one Nightly), or once the oldest has
@@ -401,7 +401,7 @@ commits) since the commit the published Nightly was built on:
 
 ### Nightly only
 
-Ludovic decided on 2026-10-28 that Horizon ships only the Nightly. No `vX.Y.Z` game release is made any more:
+Ludovic decided on 2026-10-28 that Foundry Client ships only the Nightly. No `vX.Y.Z` game release is made any more:
 the last one stays GitHub's *latest*, so launchers and servers from before the switch (which don't read Nightlies)
 keep a working build until they update themselves. `.github/release-line.txt` still numbers the launcher's releases
 (`launcher@X.Y.Z`).
@@ -415,7 +415,7 @@ keep a working build until they update themselves. `.github/release-line.txt` st
   Nightly, never one of the old releases (up to `v0.2.97`) unless no Nightly is installed yet: they stay full
   releases for `releases/latest`, but Stable skips them. A newer game release, not a pre-release, with a build for the player's platform replaces
   that weekly Nightly.
-- **Servers** (#3331): `horizon-server update`, `install.sh` and `install.ps1` follow the Nightly the same way.
+- **Servers** (#3331): `foundry-server update`, `install.sh` and `install.ps1` follow the Nightly the same way.
 - **Kira** posts each Nightly in #releases; the bug template asks for the version the game shows.
 - **Everyone gets the reviewers' picks.** A Nightly is main plus the pull requests the trusted reviewers picked
   ([below](#trusted-reviewers-pick-the-nightlys-pull-requests)), so a pick reaches every player with the next
@@ -429,7 +429,7 @@ keep a working build until they update themselves. `.github/release-line.txt` st
 | `release-now` | A Nightly as soon as main's checks and parity-main pass, past the batch rule and the day's cap |
 | `skip-release` | Doesn't trigger a Nightly or a launcher release and isn't listed in the notes |
 | `run-parity` | Runs the parity job once on a fork's pull request |
-| `full-parity` | Runs the pull request's parity job on playhorizon's runner only (a change every harness reaches) |
+| `full-parity` | Runs the pull request's parity job on playfoundry's runner only (a change every harness reaches) |
 | `parity-regression` | Opened by the nightly audit for a harness that fails on main |
 | `release-blocker` | On an issue: no Nightly is published while it is open ([When it releases](#when-it-releases)) |
 
@@ -440,15 +440,15 @@ the notes.
 
 | Archive | Runs on | Checks |
 | --- | --- | --- |
-| `horizon-linux-x86_64.tar.gz` | GitHub `ubuntu-22.04` (an older glibc, so it runs on any recent distribution) | the standard loader and libraries only (`tools/check_imports.py`) |
-| `horizon-linux-musl-x86_64.tar.gz` | Alpine 3.22 in Docker on GitHub `ubuntu-22.04`, targeting `x86_64-unknown-linux-musl` | musl loader and libraries only (`tools/check_imports.py --musl`), CPU baseline and every program's startup checked inside Alpine |
-| `horizon-server-linux-x86_64.tar.gz` | the same Linux job, after the client archive: `horizon-server`, `horizon-prepare` and the game built with `--no-default-features` as `horizon-engine` (docs/server.md) | as above, and neither `libasound.so.2` nor `libudev.so.1` (`tools/check_imports.py --server`) |
-| `horizon-windows-x64.zip` | GitHub `windows-latest`, C runtime linked in | system DLLs only (`tools/check_imports.py`); PE machine is x64 |
-| `horizon-windows-arm64.zip` | GitHub `windows-11-vs2026-arm`, built for `aarch64-pc-windows-msvc`, C runtime linked in | system DLLs only (`tools/check_imports.py`); PE machine is ARM64 and binaries start on the native runner |
-| `horizon-macos-arm64.zip` | The Mac mini's runner (`vars.MAC_RUNNER=macos-latest` sends it to GitHub) | system libraries only (`otool -L`); a 1500-frame offscreen run of a new world (about 12 s; 300 frames end before the world has loaded) with resources prepared from the runner's own Minecraft (`--offscreen --world smoke --frames 1500 --smoke-report`: frames drawn, chunks generated and meshed, a player, no error) |
-| `horizon-macos-x64.zip` | The same runner, cross-built for `x86_64-apple-darwin` (#1161) | as `horizon-macos-arm64.zip`, every program and the 1500-frame run under Rosetta 2; only the arm64 build's `smoke-test.json` is published |
+| `foundry-linux-x86_64.tar.gz` | GitHub `ubuntu-22.04` (an older glibc, so it runs on any recent distribution) | the standard loader and libraries only (`tools/check_imports.py`) |
+| `foundry-linux-musl-x86_64.tar.gz` | Alpine 3.22 in Docker on GitHub `ubuntu-22.04`, targeting `x86_64-unknown-linux-musl` | musl loader and libraries only (`tools/check_imports.py --musl`), CPU baseline and every program's startup checked inside Alpine |
+| `foundry-server-linux-x86_64.tar.gz` | the same Linux job, after the client archive: `foundry-server`, `foundry-prepare` and the game built with `--no-default-features` as `foundry-engine` (docs/server.md) | as above, and neither `libasound.so.2` nor `libudev.so.1` (`tools/check_imports.py --server`) |
+| `foundry-windows-x64.zip` | GitHub `windows-latest`, C runtime linked in | system DLLs only (`tools/check_imports.py`); PE machine is x64 |
+| `foundry-windows-arm64.zip` | GitHub `windows-11-vs2026-arm`, built for `aarch64-pc-windows-msvc`, C runtime linked in | system DLLs only (`tools/check_imports.py`); PE machine is ARM64 and binaries start on the native runner |
+| `foundry-macos-arm64.zip` | The Mac mini's runner (`vars.MAC_RUNNER=macos-latest` sends it to GitHub) | system libraries only (`otool -L`); a 1500-frame offscreen run of a new world (about 12 s; 300 frames end before the world has loaded) with resources prepared from the runner's own Minecraft (`--offscreen --world smoke --frames 1500 --smoke-report`: frames drawn, chunks generated and meshed, a player, no error) |
+| `foundry-macos-x64.zip` | The same runner, cross-built for `x86_64-apple-darwin` (#1161) | as `foundry-macos-arm64.zip`, every program and the 1500-frame run under Rosetta 2; only the arm64 build's `smoke-test.json` is published |
 
-Each builds `horizon-client`, `horizon-ctl`, `horizon-prepare` and `horizon-server` in release mode, checks they
+Each builds `foundry-client`, `foundry-ctl`, `foundry-prepare` and `foundry-server` in release mode, checks they
 exist, verifies Windows PE architectures, checks the `--help` and `--version` entry points, packages the folder with
 `cargo run -p xtask -- package` and archives it. The
 GitHub jobs keep their Cargo caches (`Swatinem/rust-cache`); the Mac mini keeps its `target/`. Only the Mac
@@ -459,9 +459,9 @@ The musl archive is an optional manual download for musl-based Linux desktops; s
 standard glibc archive. The musl client and tools keep audio and controllers enabled and link musl dynamically
 (`-C target-feature=-crt-static`) to load graphics and window libraries at runtime. A failed musl build does
 not block other platforms: signing and publication omit the missing archive with a warning. The dedicated
-server archive remains glibc; the bundled musl `horizon-server` refuses automatic updates to glibc archives.
+server archive remains glibc; the bundled musl `foundry-server` refuses automatic updates to glibc archives.
 
-Musl gameplay parity is not yet validated. On x86-64, `horizon-core::jmath` uses the platform libm for several
+Musl gameplay parity is not yet validated. On x86-64, `foundry-core::jmath` uses the platform libm for several
 functions, so musl may round differently from glibc or HotSpot. Values near a simulation threshold could
 therefore change world generation or mob behaviour for the same seed. This build has no musl parity results;
 CLI startup checks do not establish gameplay parity. Before merging the platform support, record a successful
@@ -492,7 +492,7 @@ Nightly was opt-in beside it. Since 2026-10-28 the one channel is the Nightly ([
 ### Signed checksums
 
 Every game and launcher release carries `SHA256SUMS` (the archives' SHA-256, `sha256sum`'s format) and
-`SHA256SUMS.sig`: one base64 Ed25519 signature per line over `horizon release <tag>\n` followed by SHA256SUMS,
+`SHA256SUMS.sig`: one base64 Ed25519 signature per line over `foundry release <tag>\n` followed by SHA256SUMS,
 so a signed list can't be reused under another tag.
 
 - A `sign` job of its own makes them: `tools/ci/sign_release.sh` runs the runner's `sha256sum` and OpenSSL and
@@ -501,18 +501,18 @@ so a signed list can't be reused under another tag.
   runs, which sign with a throwaway key). No code from the repository runs beside the key, so no pull request
   can read it by changing what a build compiles; the key is in no file, no log and no password vault, and nobody
   needs to read it.
-- The publish job then checks the signature the way launchers do (`horizon-release-sign verify --publishing`,
-  crates/horizon-release-sign), against the public keys built in from
-  `crates/horizon-release-sign/release-keys.txt`. While that file lists no key, releases go out with SHA256SUMS
+- The publish job then checks the signature the way launchers do (`foundry-release-sign verify --publishing`,
+  crates/foundry-release-sign), against the public keys built in from
+  `crates/foundry-release-sign/release-keys.txt`. While that file lists no key, releases go out with SHA256SUMS
   alone and a warning (today's releases keep working). Once it lists one, a missing secret or a key it doesn't
   list fails the release before anything is published, instead of publishing something launchers would refuse.
-- Making the key: `tools/ci/new_release_key.sh` pipes a new key from `horizon-release-sign keygen` straight into
+- Making the key: `tools/ci/new_release_key.sh` pipes a new key from `foundry-release-sign keygen` straight into
   `gh secret set RELEASE_SIGNING_KEY --env release` and prints only the public key, which then goes into
   release-keys.txt by pull request.
 
-**Releases from before signing.** The launcher and `horizon-server update` install only signed releases, with
+**Releases from before signing.** The launcher and `foundry-server update` install only signed releases, with
 one exception, so a player or a server can still go back to an older version: every release published before
-signing began has its archives' SHA-256 pinned in `crates/horizon-release-sign/legacy-releases.txt`, built into
+signing began has its archives' SHA-256 pinned in `crates/foundry-release-sign/legacy-releases.txt`, built into
 both. Those releases install only with exactly those files, whatever GitHub serves for them later. The file was
 written once by `tools/ci/legacy_releases.py` from the SHA-256s GitHub computed at upload; it lists no signed
 release and never changes again (`--check` says whether it is complete).
@@ -555,14 +555,14 @@ open `release-blocker`. The reviewers' `/nightly` and the 20:17 UTC build still 
 To stop the next Nightlies while a problem is fixed, label an issue about it `release-blocker`. The way out is
 forward: revert the pull request (or `/nightly remove` a pick), label the revert `release-now`, and a fixed Nightly
 is out as soon as main's checks and parity-main pass. Meanwhile a player can pick an earlier build on the launcher's
-Versions page (the last week's `nightly-<date>`, or a `vX.Y.Z`), and `horizon-server update --version <tag>` does
+Versions page (the last week's `nightly-<date>`, or a `vX.Y.Z`), and `foundry-server update --version <tag>` does
 the same for a server.
 
-## Prebuilt SDK retention design (horizon-rust/horizon, arismoko/horizon#3011)
+## Prebuilt SDK retention design (foundry-rust/foundry, arismoko/foundry#3011)
 
 **Proposed for review, not enabled.** This is an availability policy, not an implementation or an instruction to
 build an SDK. Automated SDK pruning stays removed until this design is reviewed. SDK signing and authentication
-of downloads or caches belong to arismoko/horizon#3009; retaining a release does not authenticate it.
+of downloads or caches belong to arismoko/foundry#3009; retaining a release does not authenticate it.
 
 ### Current publication contract
 
@@ -574,7 +574,7 @@ published, non-draft `sdk-<40 lowercase hex SHA>` release holding every asset
 `api-source.tar.xz`, `build-data.tar.xz` and the `runtime`, `api` and `engine` slices of the four packages (Linux client, Linux server,
 Windows GNU and macOS ARM64); its `sdk.json` must match those sums and name that build and this package format. The
 Nightly carries that `sdk.json` in its own signed sums. The SDK signature's message names `sdk-<sha>`, so it never
-passes for a game release, nor a game release's for an SDK (`horizon-release-sign`: `signed_digest`, `sdk_digest`).
+passes for a game release, nor a game release's for an SDK (`foundry-release-sign`: `signed_digest`, `sdk_digest`).
 One publish step ([sdk-publish.yml](../.github/workflows/sdk-publish.yml)), called by the Nightly workflow and by the
 [SDK workflow](../.github/workflows/prebuilt-game.yml)'s hand dispatch, publishes those exact-SHA releases without
 pruning; it signs through the `release` environment on main only, and any other run signs with a throwaway key and
@@ -593,7 +593,7 @@ availability, not a promise to retain compiled SDKs forever.
 Once SDKs publish as `sdk-<sha>` releases, each asset's `kind` is listed in the release's signed `sdk.json`.
 Pruning deletes only assets whose `kind` is `runtime`, `api` or `engine`, never the release, its small files or
 its signature. An evicted build keeps `sdk.json`, `surface.json`, `build-data.tar.xz`, `api-source.tar.xz`,
-`SHA256SUMS` and `SHA256SUMS.sig`, so `cargo horizon-mod sdk diff` and the fit test keep working for it; only
+`SHA256SUMS` and `SHA256SUMS.sig`, so `cargo foundry-mod sdk diff` and the fit test keep working for it; only
 building against it needs the compiled assets back.
 
 ### Keep set and bound
@@ -706,7 +706,7 @@ No SDK compilation is needed to evaluate this design.
 ## Launcher releases
 
 `.github/workflows/launcher.yml` releases the launcher the same way. It starts on a push to main that changes
-`launcher/`, `crates/horizon-prepare/` or `crates/horizon-theme/` (what the launcher builds in), every hour at :47,
+`launcher/`, `crates/foundry-prepare/` or `crates/foundry-theme/` (what the launcher builds in), every hour at :47,
 and by hand; pushes to `launcher` and `launcher-*` branches only build. Branch builds of the launcher (any run off
 main) are unsigned and run on GitHub-hosted runners; signing stays on main. The notes and the signature check
 run on every run with a token that only reads; a separate publish job, only for main's real release, creates the
@@ -722,8 +722,8 @@ release.
   patches separately). Without `.github/release-line.txt`, `launcher-vX.Y.Z`: the patch after the last launcher tag,
   or the next minor (`X.Y+1.0`) when one of those pull requests is labelled `feature`. `launcher-v0.2.0` was taken
   long before 0.2, hence the new prefix.
-- No version-bump commits: the build gets the version in `HORIZON_LAUNCHER_VERSION` and the tag in
-  `HORIZON_LAUNCHER_TAG`, which `launcher/src/backend.rs` reads with `option_env!` (falling back to `Cargo.toml`'s),
+- No version-bump commits: the build gets the version in `FOUNDRY_LAUNCHER_VERSION` and the tag in
+  `FOUNDRY_LAUNCHER_TAG`, which `launcher/src/backend.rs` reads with `option_env!` (falling back to `Cargo.toml`'s),
   so `--version`, the window, the User-Agent and the self-update comparison all use them. Each build checks
   `--version` says it.
 - Linux on GitHub `ubuntu-22.04`, Windows x64 on `windows-latest`, Windows ARM64 on `windows-11-vs2026-arm`, and
@@ -732,15 +732,15 @@ release.
   available yet, and Windows ARM64 installs the x64 build (under emulation) from a Nightly without an ARM64 one.
 - Published with `--latest=false`: the repository's latest release stays a game release. Notes list the pull
   requests under New and Fixed; Kira posts launcher releases without pinging.
-- Windows also publishes `horizon-launcher-setup.exe` (x64) and `horizon-launcher-setup-arm64.exe`, the launcher's
+- Windows also publishes `foundry-launcher-setup.exe` (x64) and `foundry-launcher-setup-arm64.exe`, the launcher's
   binary under another name: with no
   arguments it opens the per-user setup (`launcher/src/installer.rs`) instead of Home, and
-  `horizon-launcher.exe uninstall` removes it again. Both files are in the release's signed `SHA256SUMS`.
+  `foundry-launcher.exe uninstall` removes it again. Both files are in the release's signed `SHA256SUMS`.
 
-Making a launcher release GitHub's latest instead would break servers: every `horizon-server` already installed,
+Making a launcher release GitHub's latest instead would break servers: every `foundry-server` already installed,
 `install.sh` and `install.ps1` ask for `releases/latest` and expect the game's archives there, and a server that
 can't update can't fetch the fix either. So the game release stays the latest, and it sends people to the launcher
-(#1647): its notes open with a "Want to play? Download the Horizon launcher" block (`PLAYERS` in
+(#1647): its notes open with a "Want to play? Download the Foundry Client launcher" block (`PLAYERS` in
 `tools/release_train.py`: raw HTML, which GitHub shows and launchers' notes skip; the site's Releases page leaves
 it out too), which `PLAYERS_FOOTER` repeats above the disclaimer at the end, and its archives carry labels ("Game files the
 launcher installs: Linux (…)") that GitHub shows in place of the file names. Everything that downloads matches
@@ -769,7 +769,7 @@ CODEOWNERS-guarded files alone, the sets and builds stay capped, `paused` stops 
 sticks, and the build runs without secrets. Each pull request is built at the head it was picked at; a push after
 the pick waits until someone picks it again (`/nightly add`).
 
-Every Nightly ships its exact source. Its notes name the commit; `horizon-source.tar.gz` on the release is that
+Every Nightly ships its exact source. Its notes name the commit; `foundry-source.tar.gz` on the release is that
 commit's `git archive`, signed with the builds in `SHA256SUMS`; and `nightly.py keep-source` tags the commit
 `nightly-source/<date>-<short>`. That tag is never pruned, unlike the `nightly-<date>` release and the
 `nightly/build-*` branch (7 days each), because native mods pin a Nightly's commit and the launcher downloads that
@@ -873,8 +873,8 @@ comment on any issue or pull request (`.github/workflows/nightly-command.yml`, `
   Fixed, as a release's notes), then each picked pull request with its title, author and who picked it, the known
   issues and the thanks. `build` is
   `game-build.yml`, the same builds and smoke test as a release, with the version `nightly-<date>` and
-  `HORIZON_NIGHTLY="<date> <short sha>"` built in, macOS signed ad hoc. `sign` signs SHA256SUMS for the channel
-  (the message says `horizon release nightly`, so a nightly's signature never passes for a release's). `publish`
+  `FOUNDRY_NIGHTLY="<date> <short sha>"` built in, macOS signed ad hoc. `sign` signs SHA256SUMS for the channel
+  (the message says `foundry release nightly`, so a nightly's signature never passes for a release's). `publish`
   checks the signature, the smoke test and that no `release-blocker` is open (as a release; a dry run only warns, so
   `/nightly dry-run <pr>` still tries a blocker's fix), renames the
   previous `nightly` pre-release to `nightly-<its date>`, publishes the new one as the `nightly` pre-release (never
@@ -885,14 +885,14 @@ comment on any issue or pull request (`.github/workflows/nightly-command.yml`, `
   merge with a read-only token that isn't kept in the checkout and no secrets; the runner's Developer ID keychain
   stays locked. `sign` is the only job with the key, and checks out only main's `tools/ci/sign_release.sh`, which
   hashes the archives with the runner's `sha256sum` and signs with its OpenSSL: it never runs what `build` made.
-  `publish` runs main's `horizon-release-sign`, never the archives.
+  `publish` runs main's `foundry-release-sign`, never the archives.
 - **Where it builds.** `release.yml` starts `nightly-build.yml`, which calls `game-build.yml` with `trusted: false`
   and `developer_id: false`, so releases build as Nightlies do. The macOS jobs run on the Mac mini's nightly runner
-  (`horizon-nightly`), never the release runner (`MAC_RUNNER`), and the Rust cache has its own key and is never
-  saved. They don't read machine-shared caches: no sccache (`HORIZON_NO_SCCACHE`, `tools/ci/runner-env.sh`) and no
+  (`foundry-nightly`), never the release runner (`MAC_RUNNER`), and the Rust cache has its own key and is never
+  saved. They don't read machine-shared caches: no sccache (`FOUNDRY_NO_SCCACHE`, `tools/ci/runner-env.sh`) and no
   cargo configuration from outside the checkout (`tools/ci/cargo_isolation.py` fails the job and names it), and
   each run starts from a fresh cargo home.
-- **Players.** Every launcher and `horizon-server update` install the `nightly` pre-release
+- **Players.** Every launcher and `foundry-server update` install the `nightly` pre-release
   ([Nightly only](#nightly-only)). It is never GitHub's latest: the last `vX.Y.Z` stays that, for launchers,
   servers and `install.sh` from before the switch.
 
@@ -925,7 +925,7 @@ reusable workflows and `nightly.py pick`, so a fix to those can't be proven this
 
 An off-main dry run builds with `trusted: false` on the Mac mini's nightly runner (`ludovics-mac-mini-nightly`):
 it never uses the release runner, never saves the GitHub Actions Rust cache, doesn't read machine-shared caches
-(no sccache: `HORIZON_NO_SCCACHE`, `tools/ci/runner-env.sh`) and starts from a fresh cargo home.
+(no sccache: `FOUNDRY_NO_SCCACHE`, `tools/ci/runner-env.sh`) and starts from a fresh cargo home.
 
 ## Nightly audit
 
@@ -949,7 +949,7 @@ Releases ship often, so nothing they leave behind may grow without bound.
 
 - **Artifacts:** every upload keeps 3 days (nightly parity logs 7); a release's assets live on the release itself.
 - **Mac runners:** `tools/ci/runner-gc.sh` runs every 30 minutes from launchd (`StartInterval` 1800) on the Mac mini, as a copy taken from main
-  (`~/.actions-runners/runner-gc.sh`, plist `dev.horizon.runner-gc`), never from a pull request's checkout. It skips a
+  (`~/.actions-runners/runner-gc.sh`, plist `dev.foundry.runner-gc`), never from a pull request's checkout. It skips a
   runner in a job, removes a checkout's cargo build folders past 12 GB (`MAX_TARGET_GB`) and harness work folders
   under `.local/` untouched for 3 days (`STALE_DAYS`), and keeps the 2 newest shared preparations (`KEEP_PREPARED`)
   while no runner works. It also stops harness JVMs (vanilla servers, oracles) left orphaned for 3 hours
@@ -961,9 +961,9 @@ Releases ship often, so nothing they leave behind may grow without bound.
   pile up (1051 of them, 111 GB, in one desktop checkout on 2026-11-09). git-slim removes the leftovers of cut-short
   fetches, collects a `.git` over 5 GB (`MAX_GIT_MB`) with `git gc --prune=now` and folds more than 40 packs
   (`MAX_PACKS`) into few. Update the copies after changing the scripts (git-slim.sh goes beside runner-gc.sh):
-  `ssh macmini 'cd ~/.actions-runners && for f in runner-gc.sh git-slim.sh; do curl -fsSL https://raw.githubusercontent.com/horizon-rust/horizon/main/tools/ci/$f -o $f; done'`.
+  `ssh macmini 'cd ~/.actions-runners && for f in runner-gc.sh git-slim.sh; do curl -fsSL https://raw.githubusercontent.com/foundry-rust/foundry/main/tools/ci/$f -o $f; done'`.
 
-Guest-stack release note (arismoko/horizon#3232): game and server executables reserve 136 MiB
+Guest-stack release note (arismoko/foundry#3232): game and server executables reserve 136 MiB
 (144 MiB on macOS) for their main stack through MSVC `/STACK` or Apple `-stack_size` linker arguments;
 Linux raises RLIMIT_STACK and re-execs before initialization. Rosetta 2 ignores `-stack_size`, so an
 Intel macOS program there runs its `main` on a stack its main thread allocates (`run_main`).

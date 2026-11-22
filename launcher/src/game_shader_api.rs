@@ -1,4 +1,4 @@
-//! The shader API lines the installed game serves, as the game says itself: `horizon-client
+//! The shader API lines the installed game serves, as the game says itself: `foundry-client
 //! --launch-api`, `content.shader.api` (docs/api/launch.md). The launcher and the game it
 //! installed are separate builds, and instances can play different games, so a registry shader
 //! pack is offered, checked and marked by the lines of the game it is for, never by the line
@@ -136,7 +136,7 @@ fn version_of(home: &Path) -> Option<String> {
 /// Version `tag`'s lines, and the game when it is installed but didn't say them. `again`: a game
 /// that gave no answer before is asked again now ([`for_home`]).
 fn of_game(tag: Option<String>, again: bool) -> (Vec<String>, Option<Game>) {
-    let own = || vec![horizon_shader_api::API.to_owned()];
+    let own = || vec![foundry_shader_api::API.to_owned()];
     let Some(tag) = tag else {
         return (own(), None);
     };
@@ -495,7 +495,7 @@ pub mod tests {
             assert_eq!(lines_of(reply), None);
         }
         // Without an installed game that answers, the launcher's own line stands in.
-        assert_eq!(served(), [horizon_shader_api::API]);
+        assert_eq!(served(), [foundry_shader_api::API]);
         assert_eq!(with_game(&["0.1"], served), ["0.1"]);
         // A test's game stands for every folder's operation inside it.
         let inner = with_game(&["0.1"], || {
@@ -503,7 +503,7 @@ pub mod tests {
             served()
         });
         assert_eq!(inner, ["0.1"]);
-        assert_eq!(served(), [horizon_shader_api::API]);
+        assert_eq!(served(), [foundry_shader_api::API]);
     }
 
     /// The window's thread is answered at once, with no answer, while a worker asks the game;
@@ -566,7 +566,7 @@ pub mod tests {
         known().remove(&key);
 
         {
-            let lines = vec![horizon_shader_api::API.to_owned()];
+            let lines = vec![foundry_shader_api::API.to_owned()];
             let _quiet = begin((Some("folder".into()), lines, Some(key)));
             assert!(said().is_err());
         }
@@ -583,7 +583,7 @@ pub mod tests {
     /// ends; one whose output never stops gives none once it passes [`MAX_REPLY`] (#18074).
     #[test]
     fn a_game_that_does_not_answer_in_time_is_stopped() {
-        const HANG: &str = "HORIZON_TEST_GAME_HANGS";
+        const HANG: &str = "FOUNDRY_TEST_GAME_HANGS";
         let game = |hangs: &str| {
             let mut game = Command::new(std::env::current_exe().unwrap());
             game.args([

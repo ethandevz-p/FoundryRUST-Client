@@ -29,11 +29,11 @@ def main():
     resources = args.resources.resolve()
     assert binary.is_file() and resources.is_dir()
     assert shutil.disk_usage(root).free > 5 * 1024**3, '5 GiB engine guard'
-    work = Path(tempfile.mkdtemp(prefix='horizon-registered-slot-sources-'))
+    work = Path(tempfile.mkdtemp(prefix='foundry-registered-slot-sources-'))
     fixture = root / 'tools/fixtures/registered_slot_sources'
     env = game_environment(os.environ, work)
     # The test reads its pack and program from the repository's fixture folder.
-    env.update(HORIZON_TEST_RESOURCES=str(resources))
+    env.update(FOUNDRY_TEST_RESOURCES=str(resources))
     # A name filter that matches no test still exits 0: find the one test first, run it by its
     # exact path, and require that it ran and passed.
     listed = subprocess.run([str(binary), '--list', '--include-ignored'], capture_output=True,

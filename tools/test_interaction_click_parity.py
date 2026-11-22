@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""Compare a server's `Interaction.interact` with Horizon's interaction click.
+"""Compare a server's `Interaction.interact` with Foundry Client's interaction click.
 
 The Java oracle builds a real server `Interaction` per `response` value, with the
 level's game time and the clicker's id pinned, runs the shipped
 `Interaction.interact`, and prints the answer and the fields
-`Interaction.addAdditionalSaveData` then saves. Horizon runs the same two clicks
+`Interaction.addAdditionalSaveData` then saves. Foundry Client runs the same two clicks
 through its own click chain, from a guest's interact packet to the box, and prints
 the same words. Only the click is compared: `skipAttackInteraction`, a client's own
-prediction and the metadata defaults Horizon adds around the box are outside it.
+prediction and the metadata defaults Foundry Client adds around the box are outside it.
 """
 import argparse
 import json
@@ -46,10 +46,10 @@ def main():
         'tools/oracle_harness.py',
         'tools/test_rust_parity.py',
         'tools/lab.py',
-        'crates/horizon-client/src/game/items/item_actions.rs',
-        'crates/horizon-client/src/game/items/interactions.rs',
-        'crates/horizon-client/src/game/items/interaction_click_parity_tests.rs',
-        f'mods/horizon/src/test/java/dev/horizonlab/parity/{ORACLE}.java')]
+        'crates/foundry-client/src/game/items/item_actions.rs',
+        'crates/foundry-client/src/game/items/interactions.rs',
+        'crates/foundry-client/src/game/items/interaction_click_parity_tests.rs',
+        f'mods/foundry/src/test/java/dev/foundrylab/parity/{ORACLE}.java')]
     hashes = base.source_hashes(sources)
     classes, dependencies, _ = harness.compile_oracle(
         build, ORACLE, jars, baking.client_libraries(), lock['minecraft']['java_major'])
@@ -58,11 +58,11 @@ def main():
     # build artifact, and a test binary's own writes are the run's, not the driver's.
     with tempfile.TemporaryDirectory(prefix='interaction-click-') as scratch:
         trace = Path(scratch) / 'rust.json'
-        env = lab.game_env(HORIZON_TEST_RESOURCES=args.resources.resolve(),
-                           HORIZON_INTERACTION_CLICK_TRACE=trace)
+        env = lab.game_env(FOUNDRY_TEST_RESOURCES=args.resources.resolve(),
+                           FOUNDRY_INTERACTION_CLICK_TRACE=trace)
         with (build / 'rust.log').open('w') as log:
             subprocess.run(
-                ['cargo', 'test', '--locked', '--profile', 'fast', '-p', 'horizon-client', '--lib',
+                ['cargo', 'test', '--locked', '--profile', 'fast', '-p', 'foundry-client', '--lib',
                  TEST, '--', '--ignored', '--exact'],
                 cwd=lab.ROOT, env=env, stdout=log, stderr=subprocess.STDOUT,
                 check=True, timeout=3600)
@@ -75,7 +75,7 @@ def main():
     if covered != CASES:
         raise AssertionError(f'vanilla oracle covers {covered}, not {CASES}')
     if rust != vanilla:
-        raise AssertionError(f'the interaction click differs: vanilla {vanilla}; Horizon {rust}')
+        raise AssertionError(f'the interaction click differs: vanilla {vanilla}; Foundry Client {rust}')
     base.ensure_sources_unchanged(sources, hashes)
     lab.write_json(report, dict(
         schema=1, minecraft=lock['minecraft']['version'], cases=len(vanilla),

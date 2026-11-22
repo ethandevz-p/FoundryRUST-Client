@@ -7,7 +7,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 # A quoted repository path, not part of an f-string placeholder or a longer name.
 REPO_PATH = re.compile(r"""(?<![{\w])['"]((?:crates|mods|tools)/[\w./-]+\.(?:rs|java|py|toml))['"]""")
-CLIENT_BUILD = re.compile(r"""\[[^\[\]]*?['"]--bin['"]\s*,\s*['"]horizon-client['"][^\[\]]*?\]""")
+CLIENT_BUILD = re.compile(r"""\[[^\[\]]*?['"]--bin['"]\s*,\s*['"]foundry-client['"][^\[\]]*?\]""")
 PACKAGE = re.compile(r"""['"]-p['"]\s*,\s*['"]([\w-]+)['"]""")
 
 
@@ -26,18 +26,18 @@ class ParityHarnessSources(unittest.TestCase):
                   for command in CLIENT_BUILD.findall(script.read_text(encoding="utf-8"))]
         self.assertTrue(builds)
         wrong = [name for name, command in builds
-                 if "horizon-game" not in PACKAGE.findall(command)]
+                 if "foundry-game" not in PACKAGE.findall(command)]
         self.assertEqual(wrong, [])
 
     def test_fast_programs_are_built_with_the_shared_selection(self):
         # tools/fast_bins.py: a fast program built with its own -p list compiles the game's chain once more in the
         # parity prebuild. Not parity harnesses, so the prebuild never builds their selection:
         allowed = {
-            "mod_dimensions_e2e.py": "adds horizon-mod-dimension-game, a game with a test mod built in",
-            "profile_client_e2e.py": "adds horizon-perf and builds every program of its packages",
+            "mod_dimensions_e2e.py": "adds foundry-mod-dimension-game, a game with a test mod built in",
+            "profile_client_e2e.py": "adds foundry-perf and builds every program of its packages",
         }
         # old_world_e2e.py builds an example in the same run, which the check leaves out: examples turn on
-        # horizon-client-lib's dev-dependencies and must stay apart from the shared selection anyway.
+        # foundry-client-lib's dev-dependencies and must stay apart from the shared selection anyway.
         found = {script.name for script in sorted((ROOT / "tools").glob("**/*.py"))
                  for node in ast.walk(ast.parse(script.read_text(encoding="utf-8")))
                  if isinstance(node, ast.List) and hand_built_fast_program(node)}
@@ -49,11 +49,11 @@ class ParityHarnessSources(unittest.TestCase):
         # the fast profile's code once more in the parity prebuild. Not parity harnesses, so they keep release:
         allowed = {
             "bench_sprite_mips.py": "a benchmark, building a generated crate that has no fast profile",
-            "compare_prepare.py": "compares the shipped horizon-prepare",
+            "compare_prepare.py": "compares the shipped foundry-prepare",
             "measure_attribute_memory.py": "a memory measurement of the release build",
-            "port_harness.py": "builds horizon-prepare for version ports",
+            "port_harness.py": "builds foundry-prepare for version ports",
             "prebuilt_game.py": "the staging tool of the packaged game",
-            "prepare_native_client.py": "prepares the game's resources with the shipped horizon-prepare",
+            "prepare_native_client.py": "prepares the game's resources with the shipped foundry-prepare",
             "test_wire_wasm_depth.py": "builds a generated wasm crate that has no fast profile",
         }
         found = {script.name for script in sorted((ROOT / "tools").glob("**/*.py"))

@@ -5,7 +5,7 @@ perf_bench.py measures throughput on short flights; this measures smoothness (1%
 p99/p99.9, the worst frame, frames over 33 ms) in the situations where players see hitches:
 
     fly16      the village flight of perf_bench, 16 blocks/s, 12 s
-    ocean      perf_bench's ocean flight (16 blocks/s, 12 s): Horizon's worst lows on Windows at RD 32
+    ocean      perf_bench's ocean flight (16 blocks/s, 12 s): Foundry Client's worst lows on Windows at RD 32
     fly64      a 1,920-block straight line at 64 blocks/s (30 s), new terrain all the way
     teleport   8 teleports of 1,500-3,000 blocks, 5 s recorded after each
     elytra     a 990-block straight line at 33 blocks/s (30 s, an elytra's cruise), new terrain all the way
@@ -37,10 +37,10 @@ First-use costs (pipelines compiled in the frame) block the render thread in the
 shader compiler: the frame's wall time grows, its CPU time hardly. The driver's shader cache hides them
 after the first run on a machine: give the game a resources folder whose shaders differ to see them cold.
 
-One game per render distance, from a fresh world (seed 1234, creative), driven over horizon-ctl.
-The game runs with HORIZON_SPIKES, the slow ring's threshold, and a client capture records each scenario; the
-report keeps the slowest frames' spans, read with `horizon-perf query ticks` (build it beside the game:
-`cargo build --profile fast -p horizon-perf`), next to each scenario's figures.
+One game per render distance, from a fresh world (seed 1234, creative), driven over foundry-ctl.
+The game runs with FOUNDRY_SPIKES, the slow ring's threshold, and a client capture records each scenario; the
+report keeps the slowest frames' spans, read with `foundry-perf query ticks` (build it beside the game:
+`cargo build --profile fast -p foundry-perf`), next to each scenario's figures.
 
     python3 tools/pacing_bench.py --build target/fast --label main --distances 32
     python3 tools/pacing_bench.py --compare main mybranch
@@ -126,7 +126,7 @@ def slowest_frames(reply, count, over_ms):
 
 
 def capture_frames(perf, capture, run=subprocess.run):
-    """The slow frames of a client capture, as `horizon-perf query ticks` answers; waits until the file is whole."""
+    """The slow frames of a client capture, as `foundry-perf query ticks` answers; waits until the file is whole."""
     deadline = time.time() + CAPTURE_SECONDS
     while run([perf, "query", "meta", capture], capture_output=True).returncode:
         if time.time() > deadline:
@@ -461,9 +461,9 @@ def launch(args, distance, tag):
         if "enableVsync:false\n" not in text:
             raise RuntimeError("perf_bench's options no longer set enableVsync:false")
         options.write_text(text.replace("enableVsync:false\n", "enableVsync:true\n"))
-    sock = Path("/tmp") / f"horizon-pacing-{os.getpid()}{tag}.sock"
+    sock = Path("/tmp") / f"foundry-pacing-{os.getpid()}{tag}.sock"
     sock.unlink(missing_ok=True)
-    client = lab.binary(Path(args.build).resolve(), "horizon-client")
+    client = lab.binary(Path(args.build).resolve(), "foundry-client")
     command = [str(client), "--resources", str(Path(args.resources).resolve()), "--control-socket", str(sock),
                "--no-pause", "--weather", "clear", "--time", "6000"]
     if args.size:
@@ -471,7 +471,7 @@ def launch(args, distance, tag):
         command += ["--width", width, "--height", height]
     if args.offscreen:
         command.append("--offscreen")
-    env = lab.game_env(HORIZON_SPIKES=str(args.spike_ms))
+    env = lab.game_env(FOUNDRY_SPIKES=str(args.spike_ms))
     for kv in args.env:
         k, _, v = kv.partition("=")
         env[k] = v
@@ -480,7 +480,7 @@ def launch(args, distance, tag):
     proc = subprocess.Popen(command, cwd=game_dir, env=env, stdout=log, stderr=subprocess.STDOUT)
     control = pb.Control(sock)
     pb.poll(control, lambda s: s.get("screen") == "title" and s.get("renderer"), 300)
-    return proc, control, log_path, log, game_dir, sock, Path(env["HORIZON_HOME"])
+    return proc, control, log_path, log, game_dir, sock, Path(env["FOUNDRY_HOME"])
 
 
 def dedicated_server(args, distance, directory):
@@ -497,7 +497,7 @@ def dedicated_server(args, distance, directory):
     (directory / "server.properties").write_text("".join(f"{k}={v}\n" for k, v in properties.items()),
                                                  encoding="iso-8859-1")
     (directory / "eula.txt").write_text("eula=true\n")
-    binary = lab.binary(Path(args.build).resolve(), "horizon-client")
+    binary = lab.binary(Path(args.build).resolve(), "foundry-client")
     server = Server([binary, "--resources", Path(args.resources).resolve(), "--dedicated", "--nogui"],
                     directory, "server")
     server.wait_for(r"Done \(", 900)
@@ -508,9 +508,9 @@ def play(args, distance, names, result):
     """One game through `names`: in a fresh world, or (`join` alone) joining a dedicated server."""
     import shutil
     joining = names == ["join"]
-    perf = Path(args.perf or lab.binary(Path(args.build), "horizon-perf")).resolve()
+    perf = Path(args.perf or lab.binary(Path(args.build), "foundry-perf")).resolve()
     if not perf.exists():
-        raise SystemExit(f"{perf} is missing: build it with `cargo build --profile fast -p horizon-perf` or pass --perf")
+        raise SystemExit(f"{perf} is missing: build it with `cargo build --profile fast -p foundry-perf` or pass --perf")
     proc, control, _, log, game_dir, sock, home = launch(args, distance, "-join" if joining else "")
     server = None
     try:
@@ -598,14 +598,14 @@ def compare(labels):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--label", default="horizon")
+    parser.add_argument("--label", default="foundry")
     parser.add_argument("--build", default=str(lab.ROOT / "target/fast"))
     parser.add_argument("--resources", default=str(lab.RESOURCES))
     parser.add_argument("--distances", default="32")
     parser.add_argument("--scenarios", default=",".join(SCENARIOS))
     parser.add_argument("--timeout", type=float, default=600)
-    parser.add_argument("--perf", help="horizon-perf (default: beside the game, in --build)")
-    parser.add_argument("--spike-ms", type=float, default=20.0, help="HORIZON_SPIKES: the slow ring's threshold (frame ms)")
+    parser.add_argument("--perf", help="foundry-perf (default: beside the game, in --build)")
+    parser.add_argument("--spike-ms", type=float, default=20.0, help="FOUNDRY_SPIKES: the slow ring's threshold (frame ms)")
     parser.add_argument("--offscreen", action="store_true")
     parser.add_argument("--max-fps", type=int, help="frame cap (options.txt maxFps; default 260 = none): measures "
                         "the frame limiter's pacing, and at a player's 60 each frame takes in more streamed work")

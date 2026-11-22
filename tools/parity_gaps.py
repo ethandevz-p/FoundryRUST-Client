@@ -6,7 +6,7 @@
     parity_gaps.py readme --write   rewrites it (the block under "Project status" and the badge), then commit it
 
 The harness count says that what is tested passes; it can't say what isn't tested. The port ledger
-(tools/port_ledger.py) read every vanilla 26.3 method against Horizon's code, and the rows a player would notice went
+(tools/port_ledger.py) read every vanilla 26.3 method against Foundry Client's code, and the rows a player would notice went
 into ten issues, one per area, as a checklist: a row is ticked when it is fixed (or turns out wrong). The headline
 is the number of rows not ticked yet, and it goes down as gaps close. Run it after ticking rows, and in each weekly
 roadmap pass (roadmap/README.md).
@@ -21,7 +21,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 README = ROOT / "docs" / "status.md"
-REPO = "horizon-rust/horizon"
+REPO = "foundry-rust/foundry"
 # The gap lists, one per area, filed from the port ledger on 2026-10-28 (#3859 step 5).
 ISSUES = list(range(3512, 3522))
 # The block is one paragraph, found by its first words: no HTML comment markers, which the website would print.
@@ -62,8 +62,8 @@ def block(lists: list[dict]) -> str:
     parts = "; ".join(f"{l['area']} [{l['open']}](https://github.com/{REPO}/issues/{l['number']})"
                       for l in sorted(lists, key=lambda l: -l["open"]))
     return (f"**Player-visible gaps: {still} open** of the {total} the [port ledger](../tools/port_ledger.py) found, "
-            "reading every vanilla 26.3 method against Horizon's code: vanilla behaviour a player would notice that "
-            f"Horizon doesn't have yet. By area: {parts}. This number goes down as gaps close "
+            "reading every vanilla 26.3 method against Foundry Client's code: vanilla behaviour a player would notice that "
+            f"Foundry Client doesn't have yet. By area: {parts}. This number goes down as gaps close "
             "(`tools/parity_gaps.py`); the table below says what the harnesses compare.")
 
 
@@ -86,7 +86,7 @@ def rewrite(text: str, new_block: str, still: int) -> str:
     badge = (f'  <a href="#project-status"><img src="https://img.shields.io/badge/player--visible%20gaps-{still}'
              f'%20open-F0795A" alt="Player-visible gaps open"></a>\n')
     # No badge yet: it goes last in the existing badge row, the paragraph that closes just above the title.
-    row_end = text.find("</p>\n\n# Horizon")
+    row_end = text.find("</p>\n\n# Foundry Client")
     if row_end >= 0:
         return text[:row_end] + badge + text[row_end:]
     # No canonical title/badge row: put a fresh badge paragraph just before "Project status" so a rewrite never
@@ -95,7 +95,7 @@ def rewrite(text: str, new_block: str, still: int) -> str:
     if heading >= 0:
         row = f'<p align="center">\n{badge}</p>\n\n'
         return text[:heading] + row + text[heading:]
-    raise ValueError("could not place the player-visible gaps badge: no badge, no `# Horizon` badge row "
+    raise ValueError("could not place the player-visible gaps badge: no badge, no `# Foundry Client` badge row "
                      "and no `## Project status` heading")
 
 

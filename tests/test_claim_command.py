@@ -167,7 +167,7 @@ class GraceTests(unittest.TestCase):
 
     def test_bot_filed_issues_have_no_window(self):
         do("/claim", Fake({5: thread(age=timedelta(seconds=5), bot=True)}))
-        do("/claim", Fake({5: thread(age=timedelta(seconds=5), author="kira-horizon[bot]")}))
+        do("/claim", Fake({5: thread(age=timedelta(seconds=5), author="kira-foundry[bot]")}))
 
 
 class UnclaimTests(unittest.TestCase):

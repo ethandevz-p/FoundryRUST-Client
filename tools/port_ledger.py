@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""The port ledger: every vanilla method next to the Horizon functions that port it, both ways, and the gaps.
+"""The port ledger: every vanilla method next to the Foundry Client functions that port it, both ways, and the gaps.
 
 vanilla_map.py maps vanilla classes to the files that name them. The ledger goes one level down and both
 ways: each vanilla method (from the game jar's bytecode and the decompiled sources) to the Rust functions,
@@ -35,7 +35,7 @@ method-by-method reading misses:
     python3 tools/port_ledger.py build                         # index into .local/port-ledger/ledger.json
     python3 tools/port_ledger.py where KineticWeapon.damageEntities
     python3 tools/port_ledger.py where ShulkerBulletRenderer   # a whole class
-    python3 tools/port_ledger.py what crates/horizon-client/src/game/items/spear.rs:150
+    python3 tools/port_ledger.py what crates/foundry-client/src/game/items/spear.rs:150
     python3 tools/port_ledger.py class Shulker                 # every method: ported where, or not
     python3 tools/port_ledger.py issue 3123                    # the classes, code and gaps a report points at
     python3 tools/port_ledger.py blame blaze v                 # what computes a field a parity trace shows differ
@@ -342,10 +342,10 @@ MAP_DIR = ROOT / "tools" / "port_map"
 # Why a vanilla method or class needs no port of its own (`skip:<reason>` in the verdict map).
 SKIP_REASONS = {
     "java": "Java plumbing Rust doesn't need: codecs, builders, collections, caches, JIT-minded optimisations",
-    "data": "data Horizon reads from tables or files instead of code: registries, bootstraps, datagen",
-    "ui": "layout or drawing Horizon's own UI and renderer do differently, with no behaviour of its own",
+    "data": "data Foundry Client reads from tables or files instead of code: registries, bootstraps, datagen",
+    "ui": "layout or drawing Foundry Client's own UI and renderer do differently, with no behaviour of its own",
     "debug": "debug and developer tooling",
-    "service": "an online service Horizon doesn't offer: Realms, telemetry, chat reporting, social",
+    "service": "an online service Foundry Client doesn't offer: Realms, telemetry, chat reporting, social",
     "server": "dedicated-server and JVM tooling: RCON, JMX, the server GUI, profilers",
     "other": "see the note",
 }
@@ -1134,12 +1134,12 @@ def registry_aliases(sources, van):
     return out
 
 
-ORACLE_DIR = ROOT / "mods" / "horizon" / "src" / "test" / "java" / "dev" / "horizonlab" / "parity"
+ORACLE_DIR = ROOT / "mods" / "foundry" / "src" / "test" / "java" / "dev" / "foundrylab" / "parity"
 
 
 def harness_coverage(van, methods, fns, edges, known):
     """The parity harnesses that cover each ported method. A harness (tools/test_*_parity.py) runs a vanilla oracle
-    (mods/horizon/src/test/java/.../parity/*.java) and a Rust fixture (crates/*/examples/**/*_fixture.rs) on the same
+    (mods/foundry/src/test/java/.../parity/*.java) and a Rust fixture (crates/*/examples/**/*_fixture.rs) on the same
     inputs. It covers a method when its fixture reaches the method's port and the vanilla side is in reach too: the
     oracle calls into the method, or the harness or oracle names the method's class (oracles often reach vanilla
     through an interface, a block state for the block, which a call graph can't follow)."""
@@ -1339,7 +1339,7 @@ def build(sources, jars, jobs):
                     if not cp:
                         # Only the pinned version can call a citation stale. An unknown class is no evidence
                         # of a rename: Java's Math/Number/UUID, JOML's Matrix4f/Quaternion, authlib and
-                        # Horizon's own types (Ranges, Game, its snake_case helpers) are not vanilla 26.3
+                        # Foundry Client's own types (Ranges, Game, its snake_case helpers) are not vanilla 26.3
                         # classes, so citing one says nothing about whether vanilla had it. When its class
                         # is in the index but the method is not, the method is a real rename candidate.
                         continue
@@ -1437,7 +1437,7 @@ def build(sources, jars, jobs):
         return lineage_cache[cp]
 
     def resembles_a_class(name):
-        """HurtByTarget is HurtByTargetGoal's port; Game and MotionWorld are Horizon's own containers."""
+        """HurtByTarget is HurtByTargetGoal's port; Game and MotionWorld are Foundry Client's own containers."""
         n = name.lower()
         i = bisect.bisect_left(simple_names, n)
         return i < len(simple_names) and simple_names[i].startswith(n)
@@ -1445,7 +1445,7 @@ def build(sources, jars, jobs):
     def owner_fits(fid, class_path):
         """Whether a fn's impl type lets it port a method of `class_path`: `impl HurtByTarget` doesn't port
         AvoidEntityGoal.canUse however alike the names; `impl Mob` may port LivingEntity's or Zombie's; a fn
-        on one of Horizon's own containers (Game, Sim, MotionWorld) may port anything."""
+        on one of Foundry Client's own containers (Game, Sim, MotionWorld) may port anything."""
         owner = fns[fid].get("owner")
         if not owner:
             return True
@@ -1853,7 +1853,7 @@ def build(sources, jars, jobs):
         return set()
 
     def substantial(c):
-        """Worth reporting as a missing call: Horizon ports it as a function of its own (or an override
+        """Worth reporting as a missing call: Foundry Client ports it as a function of its own (or an override
         of it), or it is more than a getter."""
         if any(ported.get(o) for o in [c] + overrides(c)):
             return True
@@ -1971,7 +1971,7 @@ def build(sources, jars, jobs):
         gaps.append({"kind": "stale", **s})
     for row in map_problems:
         gaps.append({"kind": "map", "src": row["src"], "row": row["vanilla"], "problem": row["problem"]})
-    # Whole classes nothing ports, in packages where Horizon ports the neighbours (a renderer, a sound
+    # Whole classes nothing ports, in packages where Foundry Client ports the neighbours (a renderer, a sound
     # instance, a goal): the kind of gap no call graph shows, since the game reaches them by registration.
     by_class = defaultdict(list)
     for k, m in methods.items():
@@ -2386,7 +2386,7 @@ def emit(out, as_json, empty):
         print()
 
 
-ISSUE_REPO = "horizon-rust/horizon"
+ISSUE_REPO = "foundry-rust/foundry"
 # Class-name affixes a player never says: "ender pearl" is ThrownEnderpearl, "shulker bullet" ShulkerBullet.
 CLASS_AFFIXES = re.compile(r"^(Thrown|Abstract|Base|Client|Server)|(Entity|Item|Block|BlockEntity|Renderer|Model|Goal)$")
 
@@ -2409,7 +2409,7 @@ def issue_text(ref):
 
 
 REPORT_BOILERPLATE = re.compile(
-    r"^\W*(\*\*)?(version|os|horizon version|os, cpu, gpu|reported on discord|attachments|opened by|tags)\b.*$"
+    r"^\W*(\*\*)?(version|os|foundry version|os, cpu, gpu|reported on discord|attachments|opened by|tags)\b.*$"
     r"|^\W*(what i did|what happened|what i expected)\s*:", re.I | re.M)
 
 

@@ -7,20 +7,20 @@ we have to the max") every job that can runs on our own machines, and GitHub's p
 
 | Runner | Machine | Labels | Takes |
 | --- | --- | --- | --- |
-| `vps-checks-1`, `vps-checks-2` | the CI VPS (14 vCPU, 62 GB, no GPU), isolated user `gha` | `horizon-checks` | `mod-registry`, `telemetry-server`, `pack load bench`; `checks`' `verify` only with `SELF_HOSTED_CI=all` |
-| `vps-light-1`…`-8` | the CI VPS | `horizon-light` | The bots, as playhorizon's light runners below |
-| `playhorizon-light-1`…`-12` | playhorizon (partner's server, 8 vCPU) | `horizon-light`, `playhorizon-light` | The bots that run main's own scripts: `pr labels`, `overlap note`, `cancel-on-close`, `claim command`, `triage command`, `mojang republish`, `nightly build`'s `answer`, and `checks`' `parity-scope` |
-| `playhorizon-ci-1`, `playhorizon-ci-2` | playhorizon | `playhorizon-ci` | Nothing routed since 2026-11-03 (they took `checks` of this repository's own pull requests with the old `SELF_HOSTED_CI=all`) |
-| `playhorizon-horizon` | playhorizon | `horizon-game` | Parity ([release-flow.md](release-flow.md#the-parity-job)) |
-| `ludovics-mac-mini*` | Mac mini | `horizon-game`, `horizon-parity-main`, `horizon-release`, `horizon-nightly` | Parity, parity-main, macOS builds, releases |
+| `vps-checks-1`, `vps-checks-2` | the CI VPS (14 vCPU, 62 GB, no GPU), isolated user `gha` | `foundry-checks` | `mod-registry`, `telemetry-server`, `pack load bench`; `checks`' `verify` only with `SELF_HOSTED_CI=all` |
+| `vps-light-1`…`-8` | the CI VPS | `foundry-light` | The bots, as playfoundry's light runners below |
+| `playfoundry-light-1`…`-12` | playfoundry (partner's server, 8 vCPU) | `foundry-light`, `playfoundry-light` | The bots that run main's own scripts: `pr labels`, `overlap note`, `cancel-on-close`, `claim command`, `triage command`, `mojang republish`, `nightly build`'s `answer`, and `checks`' `parity-scope` |
+| `playfoundry-ci-1`, `playfoundry-ci-2` | playfoundry | `playfoundry-ci` | Nothing routed since 2026-11-03 (they took `checks` of this repository's own pull requests with the old `SELF_HOSTED_CI=all`) |
+| `playfoundry-foundry` | playfoundry | `foundry-game` | Parity ([release-flow.md](release-flow.md#the-parity-job)) |
+| `ludovics-mac-mini*` | Mac mini | `foundry-game`, `foundry-parity-main`, `foundry-release`, `foundry-nightly` | Parity, parity-main, macOS builds, releases |
 
-ludodesktop (the maintainer's desktop) runs no Horizon CI since 2026-11-17 (his decision): its runners were removed.
-playhorizon's runners are installed by `tools/ci/checks-runners.sh`. Every persistent checkout (playhorizon's, the Mac
+ludodesktop (the maintainer's desktop) runs no Foundry Client CI since 2026-11-17 (his decision): its runners were removed.
+playfoundry's runners are installed by `tools/ci/checks-runners.sh`. Every persistent checkout (playfoundry's, the Mac
 mini's) is kept small by [`tools/ci/git-slim.sh`](../tools/ci/git-slim.sh) before a job or while the runner is idle.
 
 Blacksmith's runners (outside GitHub's 20-job pool) took over from GitHub's on 2026-11-17 for jobs that hold no
 secret and neither publish nor release: `checks`' `verify` ([below](#verify-on-blacksmith)), `perf-wasm`,
-`cargo-horizon-mod`'s `plan`, `needs-info`, `stale pull requests`, and the bots whenever `SELF_HOSTED_CI=off` sends them away from ours.
+`cargo-foundry-mod`'s `plan`, `needs-info`, `stale pull requests`, and the bots whenever `SELF_HOSTED_CI=off` sends them away from ours.
 One exception holds secrets there: [hosted parity](#hosted-parity), started by hand, whose fetch step reads the
 maintainers' vanilla data.
 
@@ -29,7 +29,7 @@ maintainers' vanilla data.
 - **Every job that holds a secret, or whose token can push, tag, publish or start workflows** (`contents: write`,
   `actions: write`): `release`'s and `launcher`'s `decide` (they choose the commit a release builds and start the
   build), `nightly build`'s `pick`, `sign` and `publish`, `launcher`'s `sign` and `publish`, `nightly command` (it
-  writes the set of pull requests the Nightly holds), `native hook stamp` (it pushes a branch). playhorizon is a
+  writes the set of pull requests the Nightly holds), `native hook stamp` (it pushes a branch). playfoundry is a
   partner's server that the partner can reach, and a checks runner keeps what a fork's job left behind: neither may
   decide or sign what players download. `tests/test_ci_runners.py` pins it.
   Not on GitHub's own runners, as the one exception: [hosted parity](#hosted-parity)'s fetch step, on Blacksmith's,
@@ -54,10 +54,10 @@ per part, side by side, each on a size that fits it:
 | `verify (launcher)` (`verify-launcher`), when `verify-scope` (`rust_changes.py --launcher`) says the change reaches it | 8 vCPU | no |
 | `verify (Rust tests)` (`verify-test`), when `verify-scope` finds a Rust change | 16 vCPU: a cold build folder compiles the workspace | yes |
 | `verify (mod API)` (`verify-mod-api`), when `verify-scope` says the change can reach the mod API: the comparison and the surface report run on pull requests only; elsewhere it builds the generator to warm its disk | 4 vCPU: the generator and the comparison use one core; only its compiles use more (8 vCPU ran at ~13%) | yes |
-| `verify (Windows Wasm cache)` (`verify-windows-wasm-cache`), on pull requests changing `crates/horizon-mod-wasm/`, workspace Cargo configuration, the Rust toolchain pin, the workflow, or the selector | GitHub's `windows-latest`, x64 MSVC | no |
+| `verify (Windows Wasm cache)` (`verify-windows-wasm-cache`), on pull requests changing `crates/foundry-mod-wasm/`, workspace Cargo configuration, the Rust toolchain pin, the workflow, or the selector | GitHub's `windows-latest`, x64 MSVC | no |
 
 Only `verify` is required, and it waits for all the parts. `SELF_HOSTED_CI=all` sends the Linux parts to our checks
-runners. The Windows part runs just the `horizon-mod-wasm` `module_cache` tests on a fresh GitHub runner without a
+runners. The Windows part runs just the `foundry-mod-wasm` `module_cache` tests on a fresh GitHub runner without a
 build cache. `verify` accepts a skipped part when `verify-scope` answers exactly `false` or the event excludes that
 part. A failed or cancelled `verify-scope` fails `verify`. The Linux build parts end with a `load probe:` line
 (`tools/ci/load_probe.sh`: cores, load, CPU and memory use, seconds) for choosing runner sizes; its `peak` is the job's
@@ -97,7 +97,7 @@ git push origin HEAD:try/<name>                               # any branch here 
 gh workflow run checks --ref try/<name>                       # Linux: verify's parts
 gh workflow run checks --ref try/<name> -f windows=true       # and the game for Windows x64, the launcher's tests there
 gh run list --workflow checks --branch try/<name> --limit 1   # its id; then gh run watch <id>
-gh run download <id> -n horizon-windows-x64                   # the Windows game, for 3 days
+gh run download <id> -n foundry-windows-x64                   # the Windows game, for 3 days
 git push origin --delete try/<name>                           # when done
 ```
 
@@ -107,9 +107,9 @@ git push origin --delete try/<name>                           # when done
   on 2026-11-19, the tree check of the whole history the slowest part. The Windows job took 48: 28 for the game, 4 for
   the folder, 15 for the launcher's tests.
 - **Windows x64** (`-f windows=true`, `windows-x64`, on `windows-latest` as the release build): the game built as
-  `game-build.yml` builds it, uploaded as the artifact `horizon-windows-x64` (kept 3 days): `horizon-client.exe`,
-  `horizon-ctl.exe`, `horizon-prepare.exe`, `horizon-server.exe`, `horizon-wasm-std.wasm` and DXC. No exporters (they
-  are compiled from Minecraft's jars on the Mac mini), so point it at resources an installed Horizon already prepared
+  `game-build.yml` builds it, uploaded as the artifact `foundry-windows-x64` (kept 3 days): `foundry-client.exe`,
+  `foundry-ctl.exe`, `foundry-prepare.exe`, `foundry-server.exe`, `foundry-wasm-std.wasm` and DXC. No exporters (they
+  are compiled from Minecraft's jars on the Mac mini), so point it at resources an installed Foundry Client already prepared
   (`--resources`). Then the Wasm cache and launcher tests run. It builds from scratch, with no Rust cache read or
   saved. The repository is public: anyone signed in to GitHub can download the artifact for its 3 days, so a try run
   is no private channel.
@@ -130,7 +130,7 @@ git push origin --delete try/<name>                           # when done
 runner and runs commands there over SSH, so the job runs code nobody reviewed. It therefore runs only on `testbox/*`
 branches and fails on any other ref: on main or a tag it could write Actions cache entries that release builds
 restore, and on a branch another workflow builds (`launcher-*`) entries that a build holding a secret restores.
-Cargo's settings (the build folder, mold, `HORIZON_NO_AUDIO`, `HORIZON_TELEMETRY_URL=off`) are in the runner's
+Cargo's settings (the build folder, mold, `FOUNDRY_NO_AUDIO`, `FOUNDRY_TELEMETRY_URL=off`) are in the runner's
 `~/.cargo/config.toml`, so they reach only processes Cargo starts. The build folder is a sticky disk of its own
 (`-testbox-target`) that is never saved, so each session builds from scratch and stays fast after that: a saved disk
 would restore the dates of the checkout over files a session had edited, and the next session could reuse what
@@ -157,7 +157,7 @@ gh workflow run parity-hosted.yml --ref <branch> -f harnesses="food light spawn_
 gh workflow run parity-hosted.yml --ref <branch> -f base=<commit>                       # what the branch's changes reach
 ```
 
-- **The game's data.** Horizon's code never downloads the game. The data comes from `horizon-rust/vanilla-data`, a
+- **The game's data.** Foundry Client's code never downloads the game. The data comes from `foundry-rust/vanilla-data`, a
   private repository of the maintainers' own Minecraft files.
   - It holds them encrypted (AES-256, zstd) in datasets made with `lab.py prepare`. Today there is one,
     `26.3-linux-x64`: the jars and libraries, without sources, sounds or other languages.
@@ -188,7 +188,7 @@ gh workflow run parity-hosted.yml --ref <branch> -f base=<commit>               
     output, not a variable: the oracle shim keys every variable the harnesses see, so a variable that differs
     between main's saving run and a reading run would make every reading run miss.
   - The dataset's encrypted chunks, as they are. The fetch script takes them only when they are plain files that
-    match the MANIFEST it reads from `horizon-rust/vanilla-data` each run, and downloads the dataset otherwise.
+    match the MANIFEST it reads from `foundry-rust/vanilla-data` each run, and downloads the dataset otherwise.
   - Sealed by `tools/ci/sealed-cache.sh`: the build folders (`.local/parity-target`, `target/`, one entry per probe
     group, keyed by the toolchain and `Cargo.lock`), the prepared resources, and the oracle results with the
     parity state. Sealing is tar, zstd, the dataset's own encryption (AES-256-CBC, PBKDF2), then HMAC-SHA256 with
@@ -223,7 +223,7 @@ gh workflow run parity-hosted.yml --ref <branch> -f base=<commit>               
     planned. The lists will come from a hosted full run on main.
   - `base` matters only when the head conflicts with main: otherwise the head is tested merged into main's tip and
     compared with it, as in `parity.yml`.
-  - Each shard runs on a `run` runner with Xvfb and Mesa's software Vulkan (lavapipe), as playhorizon has. The oracle
+  - Each shard runs on a `run` runner with Xvfb and Mesa's software Vulkan (lavapipe), as playfoundry has. The oracle
     cache is created before the harnesses start, since shims that create it at once can fail.
   - `hosted parity (advisory)` states the result and lists what was not run. It lists a harness as passed on its
     retry only when its saved record says so; a first log without one (a shard stopped mid-retry) is listed as a
@@ -245,7 +245,7 @@ gh workflow run parity-hosted.yml --ref <branch> -f base=<commit>               
 The repository variable `SELF_HOSTED_CI` decides, from the next job queued (queued jobs keep the runner they asked
 for):
 
-| `SELF_HOSTED_CI` | Bots (`horizon-light`) | `checks`, `mod-registry`, `telemetry-server`, `pack load bench` (`horizon-checks`) |
+| `SELF_HOSTED_CI` | Bots (`foundry-light`) | `checks`, `mod-registry`, `telemetry-server`, `pack load bench` (`foundry-checks`) |
 | --- | --- | --- |
 | unset (default) | ours | `verify`: Blacksmith's; the rest ours, forks' pull requests excepted |
 | `all` | ours | ours, every pull request, `verify` included |
@@ -253,12 +253,12 @@ for):
 | `off` | Blacksmith's | Blacksmith's |
 
 ```sh
-gh variable set SELF_HOSTED_CI --body light --repo horizon-rust/horizon   # or all, off
-gh variable delete SELF_HOSTED_CI --repo horizon-rust/horizon             # the default
+gh variable set SELF_HOSTED_CI --body light --repo foundry-rust/foundry   # or all, off
+gh variable delete SELF_HOSTED_CI --repo foundry-rust/foundry             # the default
 ```
 
 It is `light` since 2026-11-17, when the desktop's runners were removed. Set `light` when the CI VPS is down, `off`
-when playhorizon is down or moves: the bots would wait for it. Back to the default when they return.
+when playfoundry is down or moves: the bots would wait for it. Back to the default when they return.
 
 ## Forks
 
@@ -284,7 +284,7 @@ checks runners may take it:
 3. A fork's pull request runs its *own* copy of the workflows, so it could name the light labels anyway. Before
    every job, the runners' `job-started.sh` (`ACTIONS_RUNNER_HOOK_JOB_STARTED`) fails any pull request event whose
    head repository isn't this one, before a line of it is on disk, unless the runner's `.env` sets
-   `HORIZON_RUNNER_POOL=checks` (only the checks runners do, the light ones never).
+   `FOUNDRY_RUNNER_POOL=checks` (only the checks runners do, the light ones never).
 4. The repository asks a maintainer to approve the runs of every outside contributor's pull request (Settings →
    Actions → "Require approval for all external contributors").
 
@@ -297,24 +297,24 @@ the rest of the system read-only), inside `gha.slice` (memory ≤ 56 GB). The be
 build folders (`/var/lib/gha/checks-<n>/target`, emptied past 40 GB), one shared cargo home and Python 3.13. The eight
 light runners have no Rust. No parity runner: without a GPU the game would render on the CPU.
 
-## On playhorizon
+## On playfoundry
 
 Installed by `tools/ci/checks-runners.sh` (run it there; it reads the registration token on stdin, so the token never
 touches the disk or the screen):
 
 ```sh
-gh api -X POST repos/horizon-rust/horizon/actions/runners/registration-token --jq .token |
-  ssh ludovic@playhorizon 'bash ~/horizon-install/checks-runners.sh install'
-ssh ludovic@playhorizon 'bash ~/horizon-install/checks-runners.sh status'
+gh api -X POST repos/foundry-rust/foundry/actions/runners/registration-token --jq .token |
+  ssh ludovic@playfoundry 'bash ~/foundry-install/checks-runners.sh install'
+ssh ludovic@playfoundry 'bash ~/foundry-install/checks-runners.sh status'
 ```
 
-- Each runner is a systemd user service (`horizon-runner-ci-<n>`, `horizon-runner-light-<n>`) in
-  `~/.actions-runners/horizon-{ci,light}-<n>`, with its own work folder and `HOME`. `LIGHT_RUNNERS` (default 12) and
+- Each runner is a systemd user service (`foundry-runner-ci-<n>`, `foundry-runner-light-<n>`) in
+  `~/.actions-runners/foundry-{ci,light}-<n>`, with its own work folder and `HOME`. `LIGHT_RUNNERS` (default 12) and
   `CI_RUNNERS` (default 2) say how many.
-- All of them run nice and pinned to CPUs 4–7, inside `horizon-ci.slice` (the CPU quota and memory cap of all CI on
-  the machine, `linux-runner.sh`). The checks runners have their own `horizon-ci-checks.slice` (memory ≤ 16 GB).
+- All of them run nice and pinned to CPUs 4–7, inside `foundry-ci.slice` (the CPU quota and memory cap of all CI on
+  the machine, `linux-runner.sh`). The checks runners have their own `foundry-ci-checks.slice` (memory ≤ 16 GB).
   CPUs 0–3 stay for `tools/remote.sh` runs, benchmarks and the servers.
-- `job-started.sh`, before every job: refuses a fork's pull request unless `HORIZON_RUNNER_POOL=checks`; empties a cargo build folder over 40 GB
+- `job-started.sh`, before every job: refuses a fork's pull request unless `FOUNDRY_RUNNER_POOL=checks`; empties a cargo build folder over 40 GB
   (`MAX_TARGET_GB`); collects a checkout's `.git` over 1.5 GB with `git-slim.sh` (`git gc --prune=now`, installed beside
   the hook; it also folds many packs and removes the `tmp_pack_*` of cut-short fetches) and drops one still over 4 GB
   (`MAX_GIT_GB`), which the checkout then clones again; removes the runner's diagnostic logs older than a day.

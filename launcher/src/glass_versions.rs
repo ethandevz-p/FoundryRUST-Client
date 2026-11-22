@@ -9,11 +9,11 @@
 use super::*;
 use crate::glass_home_tabs::PatchNotes;
 use crate::glass_ui::{self as ui, Tone};
-use horizon_theme::glass::{ink, radius};
+use foundry_theme::glass::{ink, radius};
 
 /// A release's day as the mockup writes it ("Nov 1"), with its time in UTC when known.
 pub(super) fn published(date: &str, time: &str) -> String {
-    let day = horizon_launcher::nightly::day(date);
+    let day = foundry_launcher::nightly::day(date);
     if time.is_empty() {
         day
     } else {
@@ -36,7 +36,7 @@ fn badge(tone: Tone, label: &str) -> Div {
 ///
 /// A nightly's short commit, which only a tooltip shows; empty for any other version.
 fn commit_of(tag: &str) -> String {
-    horizon_launcher::nightly::label(tag)
+    foundry_launcher::nightly::label(tag)
         .and_then(|label| {
             label
                 .split_once(" · ")
@@ -62,10 +62,10 @@ fn nightly_card_text(release: &Release, same_day: bool) -> Option<(String, Strin
 
 impl Launcher {
     /// Version `tag` as the Versions page titles it ("Nov 11 update", with its time when another
-    /// update came out the same day, [`horizon_launcher::nightly::same_day_time`]), for any screen
+    /// update came out the same day, [`foundry_launcher::nightly::same_day_time`]), for any screen
     /// that names it; the tag itself otherwise.
     pub(crate) fn version_name(&self, tag: &str) -> String {
-        match horizon_launcher::nightly::published(tag) {
+        match foundry_launcher::nightly::published(tag) {
             Some((date, time)) => trf(
                 "{date} update",
                 &[("date", &published(&date, &time.unwrap_or_default()))],
@@ -104,7 +104,7 @@ impl Launcher {
             .filter(|tag| self.installed.first() != Some(*tag))
     }
 
-    /// The names of the Horizon instances that play `tag`.
+    /// The names of the Foundry Client instances that play `tag`.
     pub(crate) fn instances_using(&self, tag: &str) -> Vec<&str> {
         self.instances
             .list
@@ -136,7 +136,7 @@ impl Launcher {
         let page_title = ui::page_head(
             tr("Versions"),
             tr(
-                "Horizon's Nightly builds, newest first. Your worlds live in the game \
+                "Foundry Client's Nightly builds, newest first. Your worlds live in the game \
                 folder, so removing a version never touches them.",
             ),
         )
@@ -206,7 +206,7 @@ impl Launcher {
                                 .child(tr("Support the work below")),
                         )
                         .child(ui::text(14., FontWeight::NORMAL, ink::BODY).child(tr(
-                            "Horizon is built in the open. Sponsors fund the next release.",
+                            "Foundry Client is built in the open. Sponsors fund the next release.",
                         ))),
                 )
                 .child(
@@ -244,7 +244,7 @@ impl Launcher {
                 "Imported builds",
                 &build_import::is_imported,
                 Some(tr(
-                    "Unsigned: you picked these programs yourself, and Horizon can't \
+                    "Unsigned: you picked these programs yourself, and Foundry Client can't \
                     check where they came from. Updates never replace them.",
                 )),
                 on_disk,
@@ -265,7 +265,7 @@ impl Launcher {
                         && !listed.contains(&tag)
                 },
                 Some(tr(
-                    "Not in Horizon's version list right now. You can still play or remove them.",
+                    "Not in Foundry Client's version list right now. You can still play or remove them.",
                 )),
                 on_disk,
                 cx,
@@ -297,13 +297,13 @@ impl Launcher {
                 // A lost connection in plain words; anything else after what failed.
                 let said = match e.starts_with("No connection") {
                     true => download_error(e),
-                    false => trf("Couldn't load Horizon's versions. {error}", &[("error", e)]),
+                    false => trf("Couldn't load Foundry Client's versions. {error}", &[("error", e)]),
                 };
                 return page.child(state_card(said, true, cx));
             }
             Load::Ready(r) if r.is_empty() => {
                 return page.child(state_card(
-                    tr("Horizon's version list came back empty.").into(),
+                    tr("Foundry Client's version list came back empty.").into(),
                     true,
                     cx,
                 ));
@@ -324,7 +324,7 @@ impl Launcher {
             keep,
             |i| {
                 let release = releases[i].clone();
-                let same_day = horizon_launcher::nightly::same_day_time(&release.tag).is_some();
+                let same_day = foundry_launcher::nightly::same_day_time(&release.tag).is_some();
                 let (title, mut line) =
                     nightly_card_text(&release, same_day).unwrap_or_else(|| {
                         let title = release
@@ -500,7 +500,7 @@ impl Launcher {
             return self.glass_version_actions(&tag, cx).into_any_element();
         }
         if release.asset.is_none() {
-            let (line, download) = horizon_launcher::refusals::no_build_card();
+            let (line, download) = foundry_launcher::refusals::no_build_card();
             let line = ui::text(13., FontWeight::NORMAL, ink::QUIET).child(line);
             return match download {
                 Some(url) => line
@@ -686,7 +686,7 @@ impl Launcher {
                     line.push(tag.clone());
                 }
                 if let Some(about) = build_import::about(&tag) {
-                    let base = horizon_launcher::nightly::label(&about.base).unwrap_or(about.base);
+                    let base = foundry_launcher::nightly::label(&about.base).unwrap_or(about.base);
                     line.push(trf("Game files from {base}", &[("base", &base)]));
                     line.push(about.file);
                 }
@@ -700,7 +700,7 @@ impl Launcher {
                 let title = if native_mods::is_native(&tag) {
                     self.version_label(&tag)
                 } else {
-                    horizon_launcher::nightly::label(&tag)
+                    foundry_launcher::nightly::label(&tag)
                         .or_else(|| build_import::label(&tag))
                         .unwrap_or_else(|| tag.trim_start_matches('v').to_string())
                 };

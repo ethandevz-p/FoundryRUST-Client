@@ -1,34 +1,34 @@
 #!/usr/bin/env bash
-# The vanilla data for this checkout on the self-hosted runner. Horizon never downloads the game: the runner
-# holds the maintainer's own copy, imported and decompiled once (HORIZON_SHARED_SOURCE, default
-# ~/code/horizon-parity/shared-local; tools/ci/linux-runner.sh sets it on Linux). It is cloned once into the runner's
+# The vanilla data for this checkout on the self-hosted runner. Foundry Client never downloads the game: the runner
+# holds the maintainer's own copy, imported and decompiled once (FOUNDRY_SHARED_SOURCE, default
+# ~/code/foundry-parity/shared-local; tools/ci/linux-runner.sh sets it on Linux). It is cloned once into the runner's
 # work folder ($RUNNER_WORKSPACE/shared-local; APFS clones, or reflinks where the file system has them, so no second
 # copy of the bytes), and .local/ links to it as in a parity worktree.
-# .local/horizon-client and the exporter outputs beside it, what horizon-prepare makes, are prepared by this
+# .local/foundry-client and the exporter outputs beside it, what foundry-prepare makes, are prepared by this
 # checkout's own preparer once per preparer version (its sources, the exporters and research-lock.json), so a
 # change to the preparer is checked with what it prepares; the four newest preparations are kept on legacy runners.
-# A runner pool that keeps HORIZON_PREPARED_CACHE between jobs (HORIZON_PERSISTENT_CACHE=true) reads a read-only
-# HORIZON_SHARED_SOURCE; old keys stay until the pool collects them.
+# A runner pool that keeps FOUNDRY_PREPARED_CACHE between jobs (FOUNDRY_PERSISTENT_CACHE=true) reads a read-only
+# FOUNDRY_SHARED_SOURCE; old keys stay until the pool collects them.
 set -euo pipefail
-shared="${HORIZON_PREPARED_CACHE:-${RUNNER_WORKSPACE:?}/shared-local}"
-source="${HORIZON_SHARED_SOURCE:-$HOME/code/horizon-parity/shared-local}"
-persistent="${HORIZON_PERSISTENT_CACHE:-false}"
+shared="${FOUNDRY_PREPARED_CACHE:-${RUNNER_WORKSPACE:?}/shared-local}"
+source="${FOUNDRY_SHARED_SOURCE:-$HOME/code/foundry-parity/shared-local}"
+persistent="${FOUNDRY_PERSISTENT_CACHE:-false}"
 version=$(sed -n 's/.*"version": *"\([^"]*\)".*/\1/p' research-lock.json | head -1)
 if [ ! -f "$shared/minecraft/$version/prepared.json" ]; then
   [ -f "$source/minecraft/$version/prepared.json" ] || { echo "::error::no imported Minecraft $version"; exit 1; }
 fi
 mkdir -p .local "$shared/prepared"
 
-# HORIZON_PREPARE_KEY: the same key, computed where the Git history is (tools/pr_ready.py on another machine).
+# FOUNDRY_PREPARE_KEY: the same key, computed where the Git history is (tools/pr_ready.py on another machine).
 sha256() { if command -v shasum > /dev/null; then shasum -a 256; else sha256sum; fi; }
-key=${HORIZON_PREPARE_KEY:-$(git ls-files -s crates/horizon-prepare mods/horizon/src/test/java research-lock.json tools/ci/vanilla-data.sh tools/ci/seed_prepared_extras.py tools/prepare_output.py | sha256 | cut -c1-16)}
+key=${FOUNDRY_PREPARE_KEY:-$(git ls-files -s crates/foundry-prepare mods/foundry/src/test/java research-lock.json tools/ci/vanilla-data.sh tools/ci/seed_prepared_extras.py tools/prepare_output.py | sha256 | cut -c1-16)}
 prepared="$shared/prepared/$key"
 # .entries stores output names only, not a digest of the preparation that made them.
 # The directory name is the expected lookup key, not independent found-key evidence.
-export HORIZON_DIAGNOSTIC_EXPECTED_KEY="$key"
-export HORIZON_DIAGNOSTIC_CACHE_STATE=missing-entry-list
+export FOUNDRY_DIAGNOSTIC_EXPECTED_KEY="$key"
+export FOUNDRY_DIAGNOSTIC_CACHE_STATE=missing-entry-list
 if [ -f "$prepared/.entries" ]; then
-  export HORIZON_DIAGNOSTIC_CACHE_STATE=missing-horizon-client
+  export FOUNDRY_DIAGNOSTIC_CACHE_STATE=missing-foundry-client
 fi
 report_prepared() {
   echo "prepared cache footprint KiB: $(du -sk "$prepared" | cut -f1)"
@@ -61,7 +61,7 @@ use_private_copy() {
   while read -r name; do ln -sfn "$work/$name" ".local/$name"; done < "$work/.entries"
   echo "prepared key $key: private copy for this job ($(find "$work" -type f | wc -l) files)"
 }
-if [ "$persistent" = true ] && [ -f "$prepared/.entries" ] && grep -qx horizon-client "$prepared/.entries"; then
+if [ "$persistent" = true ] && [ -f "$prepared/.entries" ] && grep -qx foundry-client "$prepared/.entries"; then
   expected=$(cat "$prepared/.manifest" 2>/dev/null || echo none)
   found=$(digest "$prepared")
   if [ "$found" = "$expected" ]; then
@@ -88,13 +88,13 @@ if [ "$persistent" = true ]; then
   # The preparer owns its scratch data; never let it write through the source mount.
   for name in minecraft tools; do ln -sfn "$source/$name" ".local/$name"; done
   # A killed preparation may have left private scratch that must not enter the next key.
-  for name in datagen command-registries horizon-client horizon-client-motion horizon-client-health horizon-client-collision horizon-client-render; do
+  for name in datagen command-registries foundry-client foundry-client-motion foundry-client-health foundry-client-collision foundry-client-render; do
     if [ ! -L ".local/$name" ]; then rm -rf ".local/$name"; fi
   done
 else
   for entry in "$source"/*; do
     name=$(basename "$entry")
-    [ "$name" = horizon-client ] || [ -e "$shared/$name" ] && continue
+    [ "$name" = foundry-client ] || [ -e "$shared/$name" ] && continue
     if [ "$(uname)" = Darwin ]; then cp -cR "$entry" "$shared/"; else cp -R --reflink=auto "$entry" "$shared/"; fi
   done
   for entry in "$shared"/*; do
@@ -103,24 +103,24 @@ else
     if [ -L ".local/$name" ] || [ ! -e ".local/$name" ]; then ln -sfn "$entry" ".local/$name"; fi
   done
 fi
-# horizon-prepare writes .local/horizon-client and its exporters' outputs beside it: all of them live in
+# foundry-prepare writes .local/foundry-client and its exporters' outputs beside it: all of them live in
 # $prepared, listed in $prepared/.entries, and .local/ links to them. A real folder of that kind in .local/ is
 # what an older failed preparation left: it would hide the preparations (and a new one would not count it as its
 # own output), so it goes.
-outputs=$({ cat "$shared"/prepared/*/.entries; cd .local && ls -d horizon-client*; } 2>/dev/null || true)
+outputs=$({ cat "$shared"/prepared/*/.entries; cd .local && ls -d foundry-client*; } 2>/dev/null || true)
 for name in $(echo "$outputs" | LC_ALL=C sort -u); do
   if [ -e ".local/$name" ] && [ ! -L ".local/$name" ]; then
     rm -rf ".local/${name:?}"
     echo "Removed .local/$name, left by a failed preparation"
   fi
 done
-# A preparation made while such a folder was there did not list it (horizon-client above all), so it is made again.
-if [ -f "$prepared/.entries" ] && ! grep -qx horizon-client "$prepared/.entries"; then
-  echo "Preparation $key lacks horizon-client: preparing again"
+# A preparation made while such a folder was there did not list it (foundry-client above all), so it is made again.
+if [ -f "$prepared/.entries" ] && ! grep -qx foundry-client "$prepared/.entries"; then
+  echo "Preparation $key lacks foundry-client: preparing again"
   rm -rf "$prepared"
 fi
 if [ ! -f "$prepared/.entries" ]; then
-  echo "Preparing resources with this checkout's horizon-prepare ($key)"
+  echo "Preparing resources with this checkout's foundry-prepare ($key)"
   rm -rf "$prepared" && mkdir -p "$prepared"
   # Links to another preparation's outputs go first, so what this one writes shows up as new entries.
   for entry in .local/*; do
@@ -130,13 +130,13 @@ if [ ! -f "$prepared/.entries" ]; then
   started=$SECONDS
   # In the job's turn at compiling on the self-hosted Mac (tools/compile_lock.py; a no-op elsewhere).
   # Its own name: `lock` is the preparation lock's folder, which the EXIT trap above removes.
-  in_turn=""; [ ! -f tools/ci/compile-lock.sh ] || in_turn="bash tools/ci/compile-lock.sh ${HORIZON_COMPILE_LOCK_ROLE:-pr} --"
+  in_turn=""; [ ! -f tools/ci/compile-lock.sh ] || in_turn="bash tools/ci/compile-lock.sh ${FOUNDRY_COMPILE_LOCK_ROLE:-pr} --"
   if [ "$persistent" = true ]; then
-    $in_turn python3 tools/ci/preparation_step.py preparer-build "$RUNNER_TEMP/prepare-build.log" cargo build --release --locked -p horizon-prepare
+    $in_turn python3 tools/ci/preparation_step.py preparer-build "$RUNNER_TEMP/prepare-build.log" cargo build --release --locked -p foundry-prepare
   else
-    $in_turn cargo build --release --locked -p horizon-prepare
+    $in_turn cargo build --release --locked -p foundry-prepare
   fi
-  if python3 tools/ci/preparation_step.py resource-export "$RUNNER_TEMP/prepare.log" "${CARGO_TARGET_DIR:-target}/release/horizon-prepare" --root "$PWD"; then
+  if python3 tools/ci/preparation_step.py resource-export "$RUNNER_TEMP/prepare.log" "${CARGO_TARGET_DIR:-target}/release/foundry-prepare" --root "$PWD"; then
     :
   else
     status=$?
@@ -150,11 +150,11 @@ if [ ! -f "$prepared/.entries" ]; then
   while read -r name; do mv ".local/$name" "$prepared/$name"; done < "$RUNNER_TEMP/prepared-entries"
   if [ "$persistent" = true ]; then
     # Optional dispatch-only measurement before shared extras can affect the output.
-    if [ -n "${HORIZON_PREPARE_EXPORT_DIGEST:-}" ]; then
-      python3 tools/prepare_output.py digest "$prepared/horizon-client/$version" > "$HORIZON_PREPARE_EXPORT_DIGEST" 2> "$RUNNER_TEMP/export-digest.log" || { echo "::error::export digest unavailable"; exit 1; }
+    if [ -n "${FOUNDRY_PREPARE_EXPORT_DIGEST:-}" ]; then
+      python3 tools/prepare_output.py digest "$prepared/foundry-client/$version" > "$FOUNDRY_PREPARE_EXPORT_DIGEST" 2> "$RUNNER_TEMP/export-digest.log" || { echo "::error::export digest unavailable"; exit 1; }
     fi
     # Only sounds, languages and their metadata may come from the shared preparation.
-    python3 tools/ci/preparation_step.py seed-extras "$RUNNER_TEMP/seed-extras.log" python3 -m tools.ci.seed_prepared_extras "$source/horizon-client/$version" "$prepared/horizon-client/$version/"
+    python3 tools/ci/preparation_step.py seed-extras "$RUNNER_TEMP/seed-extras.log" python3 -m tools.ci.seed_prepared_extras "$source/foundry-client/$version" "$prepared/foundry-client/$version/"
   fi
   mv "$RUNNER_TEMP/prepared-entries" "$prepared/.entries"
   if [ "$persistent" != true ]; then echo "Prepared in $((SECONDS - started)) s: $(tr '\n' ' ' < "$prepared/.entries")"; fi
@@ -174,11 +174,11 @@ while read -r name; do
   if [ -L ".local/$name" ] || [ ! -e ".local/$name" ]; then ln -sfn "$prepared/$name" ".local/$name"; else
     echo "::error::.local/$name is not a link to the prepared resources"; exit 1; fi
 done < "$prepared/.entries"
-# The game's sounds (horizon-prepare sounds copies them from the official launcher's asset store) depend only on the
+# The game's sounds (foundry-prepare sounds copies them from the official launcher's asset store) depend only on the
 # Minecraft version: kept once in $shared/sounds/<version>/ (sounds.json and sounds/) and copied into each preparation
 # as clones (APFS, or reflinks on Linux: no second copy of the bytes). Not links: vanilla's resource packs refuse
 # symbolic links inside a pack, so its sound oracles would find no sound files.
-assets="$prepared/horizon-client/$version/assets/minecraft"
+assets="$prepared/foundry-client/$version/assets/minecraft"
 if [ -f "$shared/sounds/$version/sounds.json" ] && [ -d "$assets" ]; then
   for entry in sounds.json sounds; do
     [ -L "$assets/$entry" ] && rm "$assets/$entry"
@@ -187,7 +187,7 @@ if [ -f "$shared/sounds/$version/sounds.json" ] && [ -d "$assets" ]; then
     else cp -R --reflink=auto "$shared/sounds/$version/$entry" "$assets/"; fi
   done
 fi
-# The languages (horizon-prepare languages copies them from the official launcher's asset store, which no runner
+# The languages (foundry-prepare languages copies them from the official launcher's asset store, which no runner
 # has) depend only on the Minecraft version too: kept once in $shared/languages/<version>/ (assets/pack.mcmeta, the
 # language list, and assets/minecraft/lang/) and cloned into each preparation to fill missing files. Without them a
 # preparation has en_us alone, and pack_screen's harness, which draws ten languages, fails.

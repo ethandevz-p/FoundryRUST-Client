@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Mods' quiet commands on Horizon's dedicated server, end to end (horizon_protocol::quiet).
+"""Mods' quiet commands on Foundry Client's dedicated server, end to end (foundry_protocol::quiet).
 
-Horizon's dedicated server (a flat world) and Horizon's headless client (`HORIZON_NET_REPORT`, the net
-harness), which joins, then sends a batch of quiet commands as a mod would (`HORIZON_NET_QUIET`):
+Foundry Client's dedicated server (a flat world) and Foundry Client's headless client (`FOUNDRY_NET_REPORT`, the net
+harness), which joins, then sends a batch of quiet commands as a mod would (`FOUNDRY_NET_QUIET`):
 
 - as a player who isn't an operator: `setblock` is refused (the block stays air), as it would be typed;
 - as an operator: `setblock` runs, a `fill` that changes nothing fails, and `say` is refused (a chat
@@ -12,7 +12,7 @@ harness), which joins, then sends a batch of quiet commands as a mod would (`HOR
 
     python3 tools/quiet_commands_e2e.py --bin-dir target/fast
 
-The client runs with fresh HORIZON_HOME, launcher and XDG folders and without audio; the logs go to --out.
+The client runs with fresh FOUNDRY_HOME, launcher and XDG folders and without audio; the logs go to --out.
 """
 import argparse
 import json
@@ -53,7 +53,7 @@ def join(binary, port, out, label, lines):
     home = Path(tempfile.mkdtemp(prefix=f'quiet-{label}-'))
     report = out / f'{label}-report.json'
     # run_game gives the game fresh home, launcher and XDG folders.
-    env = dict(HORIZON_NET_REPORT=str(report), HORIZON_NET_QUIET=';'.join(lines))
+    env = dict(FOUNDRY_NET_REPORT=str(report), FOUNDRY_NET_QUIET=';'.join(lines))
     with (out / f'{label}-client.log').open('w') as log:
         run_game([str(binary), '--resources', str(lab.RESOURCES), '--render-distance', '2',
                   '--server', f'127.0.0.1:{port}', '--name', PLAYER],
@@ -65,18 +65,18 @@ def join(binary, port, out, label, lines):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('--bin-dir', help='a prebuilt horizon-client (default: build it with the fast profile)')
+    parser.add_argument('--bin-dir', help='a prebuilt foundry-client (default: build it with the fast profile)')
     parser.add_argument('--out', default=str(ROOT / '.local/quiet-commands-e2e'), help='logs go here')
     args = parser.parse_args()
     out = Path(args.out)
     shutil.rmtree(out, ignore_errors=True)
     out.mkdir(parents=True)
     if args.bin_dir:
-        binary = lab.binary(Path(args.bin_dir), 'horizon-client')
+        binary = lab.binary(Path(args.bin_dir), 'foundry-client')
     else:
-        subprocess.run(fast_bins.command('horizon-client'),
+        subprocess.run(fast_bins.command('foundry-client'),
                        cwd=ROOT, check=True)
-        binary = lab.binary(Path(lab.cargo_target()) / 'fast', 'horizon-client')
+        binary = lab.binary(Path(lab.cargo_target()) / 'fast', 'foundry-client')
     port = lab.free_port()
     directory = out / 'server'
     directory.mkdir()

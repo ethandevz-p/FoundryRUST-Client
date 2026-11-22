@@ -60,7 +60,7 @@ def diff():
                       "net/minecraft/elsewhere/Thing"],
             "removed": ["net/minecraft/network/protocol/game/Swing"], "moved": {},
             "changed": changed,
-            "horizon": {name: m["classes"][name] for name in changed if name in m["classes"]},
+            "foundry": {name: m["classes"][name] for name in changed if name in m["classes"]},
         },
     }
 
@@ -110,12 +110,12 @@ class PortReportTests(unittest.TestCase):
 
     def test_regen_results_replace_the_stale_tables(self):
         regen = {"new": "26.3", "candidate": "/ports/26.3", "commit": "0123456789abcdef", "generators": {
-            "version_consts": {"status": "unchanged", "outputs": ["crates/horizon-core/src/version.rs"], "stat": {}},
-            "packet_ids": {"status": "regenerated", "outputs": ["crates/horizon-protocol/src/ids.rs"],
-                           "stat": {"crates/horizon-protocol/src/ids.rs": [142, 134]}},
-            "entity_tracking": {"status": "unchanged", "outputs": ["crates/horizon-client/src/lan/tracking.rs"],
+            "version_consts": {"status": "unchanged", "outputs": ["crates/foundry-core/src/version.rs"], "stat": {}},
+            "packet_ids": {"status": "regenerated", "outputs": ["crates/foundry-protocol/src/ids.rs"],
+                           "stat": {"crates/foundry-protocol/src/ids.rs": [142, 134]}},
+            "entity_tracking": {"status": "unchanged", "outputs": ["crates/foundry-client/src/lan/tracking.rs"],
                                 "stat": {}},
-            "lan_command_order": {"status": "failed", "outputs": ["crates/horizon-client/src/lan/command_order.rs"],
+            "lan_command_order": {"status": "failed", "outputs": ["crates/foundry-client/src/lan/command_order.rs"],
                                   "error": "javac exited 1",
                                   "compile_errors": ["ParityData.java:45: cannot find symbol: variable WORLD"]}}}
         built = self.build(regen=regen)
@@ -128,21 +128,21 @@ class PortReportTests(unittest.TestCase):
                           "entity_tracking": "unchanged", "lan_command_order": "failed"})
         text = report.markdown(built)
         self.assertIn("regenerated 1, unchanged 2, failed 1", text)
-        self.assertIn("`crates/horizon-protocol/src/ids.rs` (+142 -134)", text)
+        self.assertIn("`crates/foundry-protocol/src/ids.rs` (+142 -134)", text)
         self.assertIn("- javac: `ParityData.java:45: cannot find symbol: variable WORLD`", text)
 
     def test_partial_regen_keeps_omitted_stale_tables(self):
         regen = {"new": "26.3", "candidate": "/ports/26.3", "commit": "0123456789abcdef", "generators": {
-            "packet_ids": {"status": "regenerated", "outputs": ["crates/horizon-protocol/src/ids.rs"],
-                           "stat": {"crates/horizon-protocol/src/ids.rs": [1, 1]}}}}
+            "packet_ids": {"status": "regenerated", "outputs": ["crates/foundry-protocol/src/ids.rs"],
+                           "stat": {"crates/foundry-protocol/src/ids.rs": [1, 1]}}}}
         built = self.build(regen=regen)
         stale_files = {i["files"][0] for i in built["items"] if i["kind"] == "regenerate"}
-        self.assertEqual(stale_files, {"crates/horizon-core/src/version.rs",
-                                       "crates/horizon-client/src/lan/tracking.rs"})
-        self.assertEqual(built["summary"]["generators"]["crates/horizon-core/src/version.rs"], "stale")
+        self.assertEqual(stale_files, {"crates/foundry-core/src/version.rs",
+                                       "crates/foundry-client/src/lan/tracking.rs"})
+        self.assertEqual(built["summary"]["generators"]["crates/foundry-core/src/version.rs"], "stale")
         self.assertEqual(built["summary"]["generators"]["packet_ids"], "regenerated")
         text = report.markdown(built)
-        self.assertIn("Regenerate crates/horizon-core/src/version.rs", text)
+        self.assertIn("Regenerate crates/foundry-core/src/version.rs", text)
 
     def test_ranks_and_kinds(self):
         built = self.build()
@@ -153,8 +153,8 @@ class PortReportTests(unittest.TestCase):
         self.assertEqual([i["id"] for i in built["items"]], list(range(1, len(kinds) + 1)))
         self.assertEqual(kinds, sorted(kinds, key=lambda k: k[0]))
         regenerated = {i["files"][0] for i in built["items"] if i["kind"] == "regenerate"}
-        self.assertEqual(regenerated, {"crates/horizon-core/src/version.rs", "crates/horizon-protocol/src/ids.rs",
-                                       "crates/horizon-client/src/lan/tracking.rs"})
+        self.assertEqual(regenerated, {"crates/foundry-core/src/version.rs", "crates/foundry-protocol/src/ids.rs",
+                                       "crates/foundry-client/src/lan/tracking.rs"})
 
     def test_save_format_lists_new_schemas_and_fixes(self):
         save = next(i for i in self.build()["items"] if i["kind"] == "save-format")

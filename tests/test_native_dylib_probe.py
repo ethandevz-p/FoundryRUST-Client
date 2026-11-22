@@ -20,7 +20,7 @@ class PreflightTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             sdk = Path(directory)
             (sdk / "artifact").write_bytes(b"original")
-            (sdk / "horizon-prebuilt.json").write_text(json.dumps({
+            (sdk / "foundry-prebuilt.json").write_text(json.dumps({
                 "rustc": compiler, "files": {"artifact": hashlib.sha256(b"original").hexdigest()}
             }))
             probe.preflight(sdk, compiler)
@@ -34,7 +34,7 @@ class PreflightTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             sdk = Path(directory)
             compiler = "release: 1.99.2\n"
-            (sdk / "horizon-prebuilt.json").write_text(json.dumps({"rustc": compiler, "files": {}}))
+            (sdk / "foundry-prebuilt.json").write_text(json.dumps({"rustc": compiler, "files": {}}))
             with self.assertRaisesRegex(ValueError, "pinned"):
                 probe.preflight(sdk, compiler)
 
@@ -55,18 +55,18 @@ class WindowsAllocatorTests(unittest.TestCase):
 
     def test_game_without_allocator_and_imports_from_std_pass(self):
         rows = self.verdict({
-            "horizon-client.exe": ([], {"std.dll": [ALLOC]}),
-            "horizon_client.dll": ([BACKTRACE], {"std.dll": [ALLOC]}),
+            "foundry-client.exe": ([], {"std.dll": [ALLOC]}),
+            "foundry_client.dll": ([BACKTRACE], {"std.dll": [ALLOC]}),
             "std.dll": ([ALLOC], {}),
         })
-        self.assertEqual(rows["horizon_client.dll"]["exports"], [])
+        self.assertEqual(rows["foundry_client.dll"]["exports"], [])
 
     def test_second_exporter_refused(self):
         with self.assertRaisesRegex(ValueError, "one image exporting"):
-            self.verdict({"horizon-client.exe": ([], {"std.dll": [ALLOC]}),
-                          "horizon_client.dll": ([ALLOC], {}), "std.dll": ([ALLOC], {})})
+            self.verdict({"foundry-client.exe": ([], {"std.dll": [ALLOC]}),
+                          "foundry_client.dll": ([ALLOC], {}), "std.dll": ([ALLOC], {})})
 
     def test_import_from_a_non_exporter_refused(self):
         with self.assertRaisesRegex(ValueError, "other than std.dll"):
-            self.verdict({"horizon-client.exe": ([], {"horizon_client.dll": [ALLOC]}),
-                          "horizon_client.dll": ([], {}), "std.dll": ([ALLOC], {})})
+            self.verdict({"foundry-client.exe": ([], {"foundry_client.dll": [ALLOC]}),
+                          "foundry_client.dll": ([], {}), "std.dll": ([ALLOC], {})})

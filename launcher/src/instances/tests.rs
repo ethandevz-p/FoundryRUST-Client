@@ -3,7 +3,7 @@ use std::collections::BTreeMap;
 
 fn scratch(name: &str) -> PathBuf {
     let root = std::env::temp_dir().join(format!(
-        "horizon-launcher-instances-{name}-{}",
+        "foundry-launcher-instances-{name}-{}",
         std::process::id()
     ));
     let _ = fs::remove_dir_all(&root);
@@ -40,12 +40,12 @@ fn player_home(home: &Path) {
     put(&home.join("saves/World/region/r.0.0.mca"), "region");
     put(&home.join("saves/Other/level.dat"), "other");
     put(&home.join("options.txt"), "fov:90\n");
-    put(&home.join("horizon-player.txt"), "name:Player123\n");
+    put(&home.join("foundry-player.txt"), "name:Player123\n");
     put(&home.join("resourcepacks/faithful.zip"), "pack");
     put(&home.join("logs/latest.log"), "log");
     put(&home.join("sessions/a.json"), "token");
     put(&home.join("telemetry/consent.json"), "{}");
-    let pack = horizon_port_pack::import::Pack {
+    let pack = foundry_port_pack::import::Pack {
         name: "Small Pack".into(),
         ..Default::default()
     };
@@ -58,11 +58,11 @@ fn player_home(home: &Path) {
         "modded",
     );
     put(
-        &home.join("horizon-packs/cozy/pack.json"),
+        &home.join("foundry-packs/cozy/pack.json"),
         r#"{"id":"cozy","name":"Cozy","version":"1.0.0","sha256":"00","mods":[]}"#,
     );
     put(
-        &home.join("horizon-packs/cozy/home/saves/Cozy/level.dat"),
+        &home.join("foundry-packs/cozy/home/saves/Cozy/level.dat"),
         "cozy",
     );
 }
@@ -128,7 +128,7 @@ fn build_choices_start_balanced_and_are_remembered_per_instance() {
 #[test]
 fn existing_worlds_stay_where_they_are_and_every_folder_becomes_an_instance() {
     let root = scratch("migrate");
-    let (home, data) = (root.join("horizon"), root.join("launcher"));
+    let (home, data) = (root.join("foundry"), root.join("launcher"));
     player_home(&home);
     let before = files(&home);
 
@@ -136,9 +136,9 @@ fn existing_worlds_stay_where_they_are_and_every_folder_becomes_an_instance() {
     let all = list_in(&home, &data);
     let ids: Vec<&str> = all.iter().map(|i| i.id.as_str()).collect();
     assert_eq!(ids, [DEFAULT, "pack:cozy", "port:small-pack"]);
-    assert_eq!(all[0].name, "Horizon");
+    assert_eq!(all[0].name, "Foundry Client");
     assert_eq!(all[0].home, home);
-    assert_eq!(all[1].home, home.join("horizon-packs/cozy/home"));
+    assert_eq!(all[1].home, home.join("foundry-packs/cozy/home"));
     assert_eq!(all[2].name, "Small Pack");
     assert_eq!(all[2].home, home.join("ports/small-pack/home"));
 
@@ -163,7 +163,7 @@ fn existing_worlds_stay_where_they_are_and_every_folder_becomes_an_instance() {
     let empty_files: Vec<PathBuf> = files(&empty.home).into_keys().collect();
     assert_eq!(
         empty_files,
-        [PathBuf::from("horizon-player.txt"), "options.txt".into()]
+        [PathBuf::from("foundry-player.txt"), "options.txt".into()]
     );
     let copied = files(&copy.home);
     for kept in [
@@ -192,11 +192,11 @@ fn existing_worlds_stay_where_they_are_and_every_folder_becomes_an_instance() {
 #[test]
 fn imported_packs_are_listed_without_reading_their_mods() {
     let root = scratch("listed-ports");
-    let (home, data) = (root.join("horizon"), root.join("launcher"));
+    let (home, data) = (root.join("foundry"), root.join("launcher"));
     player_home(&home);
     let carry = home.join("ports/small-pack/mods/chipped/carry");
     put(
-        &carry.join("horizon-mod.toml"),
+        &carry.join("foundry-mod.toml"),
         "id = \"chipped\"
 ",
     );
@@ -230,7 +230,7 @@ fn imported_packs_are_listed_without_reading_their_mods() {
 #[test]
 fn names_stay_unique_and_packs_are_not_copied() {
     let root = scratch("names");
-    let (home, data) = (root.join("horizon"), root.join("launcher"));
+    let (home, data) = (root.join("foundry"), root.join("launcher"));
     player_home(&home);
     create_in(&home, &data, "Survival", None, None).unwrap();
     assert_eq!(
@@ -275,9 +275,9 @@ fn an_instance_follows_the_players_answers() {
     let root = scratch("follow");
     let (main, own) = (root.join("main"), root.join("own"));
     put(&main.join("options.txt"), "fov:90\n");
-    put(&main.join("horizon-player.txt"), "name:Player123\n");
+    put(&main.join("foundry-player.txt"), "name:Player123\n");
     put(&main.join("telemetry/consent.json"), r#"{"version":1}"#);
-    horizon_platform::no_ai::set(&main, true).unwrap();
+    foundry_platform::no_ai::set(&main, true).unwrap();
     put(&own.join("options.txt"), "fov:70\n");
     follow_player(&main, &own);
     assert_eq!(
@@ -285,17 +285,17 @@ fn an_instance_follows_the_players_answers() {
         "fov:70\n"
     );
     assert_eq!(
-        fs::read_to_string(own.join("horizon-player.txt")).unwrap(),
+        fs::read_to_string(own.join("foundry-player.txt")).unwrap(),
         "name:Player123\n"
     );
     assert_eq!(
         fs::read_to_string(own.join("telemetry/consent.json")).unwrap(),
         r#"{"version":1}"#
     );
-    assert!(horizon_platform::no_ai::is_on(&own));
-    horizon_platform::no_ai::set(&main, false).unwrap();
+    assert!(foundry_platform::no_ai::is_on(&own));
+    foundry_platform::no_ai::set(&main, false).unwrap();
     follow_player(&main, &own);
-    assert!(!horizon_platform::no_ai::is_on(&own));
+    assert!(!foundry_platform::no_ai::is_on(&own));
     fs::remove_dir_all(&root).unwrap();
 }
 
@@ -323,7 +323,7 @@ fn icons_are_a_texture_name_or_a_colour() {
 #[test]
 fn an_instance_keeps_its_own_version_until_it_follows_updates_again() {
     let root = scratch("version");
-    let (home, data) = (root.join("horizon"), root.join("launcher"));
+    let (home, data) = (root.join("foundry"), root.join("launcher"));
     player_home(&home);
     create_in(&home, &data, "Old world", None, None).unwrap();
     let pinned = edit_in(&home, &data, "Old world", |m| {
@@ -364,7 +364,7 @@ fn play_time_adds_up_per_instance_and_survives_a_rename() {
     );
     // Never played: nothing written for it.
     let text = fs::read_to_string(data.join(FILE)).unwrap();
-    assert!(!text.contains("horizon"), "{text}");
+    assert!(!text.contains("foundry"), "{text}");
     fs::remove_dir_all(&root).unwrap();
 }
 
@@ -379,11 +379,11 @@ fn play_time_reads_as_minutes_then_hours() {
 
 /// A Java instance: an empty folder of its own (the real game keeps its own options), its
 /// version in instances.json, kept by a copy, and refused by Play until the launcher starts
-/// the real game; Horizon instances' entries stay as they were.
+/// the real game; Foundry Client instances' entries stay as they were.
 #[test]
 fn a_java_instance_plays_one_minecraft_version_in_its_own_folder() {
     let root = scratch("java");
-    let (home, data) = (root.join("horizon"), root.join("launcher"));
+    let (home, data) = (root.join("foundry"), root.join("launcher"));
     player_home(&home);
     let java = create_in(&home, &data, "Vanilla 1.21.4", None, Some("1.21.4")).unwrap();
     assert_eq!(java.home, home.join(OWN).join("vanilla-1-21-4"));
@@ -391,10 +391,10 @@ fn a_java_instance_plays_one_minecraft_version_in_its_own_folder() {
     assert_eq!(java.java.as_ref().unwrap().minecraft, "1.21.4");
     let copy = create_in(&home, &data, "Second", Some(&java), None).unwrap();
     assert_eq!(copy.java, java.java);
-    let horizon = create_in(&home, &data, "Horizon two", None, None).unwrap();
-    assert_eq!(horizon.java, None);
-    // Home offers Horizon's updates to a Horizon instance only, never to a Java one (#18394).
-    assert!(horizon.follows_horizon());
+    let foundry = create_in(&home, &data, "Foundry Client two", None, None).unwrap();
+    assert_eq!(foundry.java, None);
+    // Home offers Foundry Client's updates to a Foundry Client instance only, never to a Java one (#18394).
+    assert!(foundry.follows_horizon());
     assert!(!java.follows_horizon());
     let store = fs::read_to_string(data.join(FILE)).unwrap();
     assert_eq!(
@@ -418,7 +418,7 @@ fn a_java_instance_plays_one_minecraft_version_in_its_own_folder() {
 }
 
 /// Delete moves an instance's folder to the Trash and forgets it; one deleted outside the
-/// launcher is forgotten when the list is next read (#horizon-bugs: an instance that stayed).
+/// launcher is forgotten when the list is next read (#foundry-bugs: an instance that stayed).
 #[test]
 fn deleted_instances_go_to_the_trash_and_are_forgotten() {
     let root = scratch("delete");
@@ -506,15 +506,15 @@ fn a_picture_is_kept_small_and_goes_to_the_trash() {
     fs::remove_dir_all(&root).unwrap();
 }
 
-/// Edit switches what an instance plays (Horizon, Vanilla, a loader, another Minecraft version):
+/// Edit switches what an instance plays (Foundry Client, Vanilla, a loader, another Minecraft version):
 /// its folder, with its worlds, mods and options, stays byte for byte as it was, a Java
-/// instance's settings come back after a turn as Horizon, and what can't keep working is named
+/// instance's settings come back after a turn as Foundry Client, and what can't keep working is named
 /// first. The game's home plays what it was made with.
 #[test]
 fn switching_what_an_instance_plays_keeps_its_worlds_mods_and_settings() {
     use crate::loaders::{Kind as L, Loader};
     let root = scratch("switch");
-    let (home, data) = (root.join("horizon"), root.join("launcher"));
+    let (home, data) = (root.join("foundry"), root.join("launcher"));
     player_home(&home);
     let made = create_in(&home, &data, "Mine", None, None).unwrap();
     put(&made.home.join("saves/Base/level.dat"), "base");
@@ -554,14 +554,14 @@ fn switching_what_an_instance_plays_keeps_its_worlds_mods_and_settings() {
         }),
     };
 
-    // Horizon to Fabric: both kinds of Horizon mod stop loading; its world changes version.
+    // Foundry Client to Fabric: both kinds of Foundry Client mod stop loading; its world changes version.
     let now = find_in(&list_in(&home, &data), &made.id).unwrap();
     assert_eq!(
         unkept(&now, &fabric("1.21.1"), "26.3"),
         [
             Unkept::Mods {
                 count: 2,
-                made_for: "Horizon".into()
+                made_for: "Foundry Client".into()
             },
             Unkept::Worlds {
                 count: 1,
@@ -600,10 +600,10 @@ fn switching_what_an_instance_plays_keeps_its_worlds_mods_and_settings() {
         }
     );
 
-    // A turn as Horizon, then Vanilla: the Java settings come back, nothing on disk moved.
-    switch::switch_in(&home, &data, &made.id, Plays::Horizon).unwrap();
-    let horizon = find_in(&list_in(&home, &data), &made.id).unwrap();
-    assert_eq!(horizon.java, None);
+    // A turn as Foundry Client, then Vanilla: the Java settings come back, nothing on disk moved.
+    switch::switch_in(&home, &data, &made.id, Plays::Foundry Client).unwrap();
+    let foundry = find_in(&list_in(&home, &data), &made.id).unwrap();
+    assert_eq!(foundry.java, None);
     let vanilla = Plays::Java {
         minecraft: "1.21.4".into(),
         loader: None,
@@ -628,7 +628,7 @@ fn switching_what_an_instance_plays_keeps_its_worlds_mods_and_settings() {
 
     // The game's home can't switch, and is left as it was.
     let home_files = files(&home.join("saves"));
-    let refused = switch::switch_in(&home, &data, DEFAULT, Plays::Horizon).unwrap_err();
+    let refused = switch::switch_in(&home, &data, DEFAULT, Plays::Foundry Client).unwrap_err();
     assert!(refused.contains("plays what it was made with"), "{refused}");
     assert_eq!(files(&home.join("saves")), home_files);
     fs::remove_dir_all(&root).unwrap();

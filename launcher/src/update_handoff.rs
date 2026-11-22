@@ -1,11 +1,11 @@
 //! The launcher's own update from its window (#9287). The window downloads and checks the new
 //! launcher in the background ([`backend::stage_update`]) and says "A new version is available".
 //! Update starts this launcher's file again as the installer and quits:
-//! `horizon-launcher apply-update <tag> <staged file> [--restart [-- <the window's arguments>]]`.
+//! `foundry-launcher apply-update <tag> <staged file> [--restart [-- <the window's arguments>]]`.
 //! The installer waits until the window's process has exited (its stdin is a pipe only that
 //! process holds, which closes with it). If the launcher in place is already that version or newer
 //! it changes nothing. Otherwise it checks the signed SHA-256 again and puts the new launcher in
-//! place ([`backend::place_checked`], the same code `horizon-launcher update` uses), then starts
+//! place ([`backend::place_checked`], the same code `foundry-launcher update` uses), then starts
 //! it. When that fails it starts the old one again, which says why ([`take_failure`]). A window
 //! closed with an update staged hands it over the same way without the restart ([`on_close`]), and
 //! says so while it waits, so the next start is the new launcher; a failure there is said at that
@@ -26,13 +26,13 @@ use std::time::Duration;
 
 pub const COMMAND: &str = "apply-update";
 const RESTART: &str = "--restart";
-const SHA256_ENV: &str = "HORIZON_LAUNCHER_UPDATE_SHA256";
+const SHA256_ENV: &str = "FOUNDRY_LAUNCHER_UPDATE_SHA256";
 /// On a launcher started by a restart for links.json's `min_launcher` (`min_launcher`): the new
 /// one, or the old one again after a failure, or this one when the new one was already in place.
 /// That launcher doesn't restart for the minimum again. The window gives it to its installer,
 /// which gives it to the launcher it starts; read once at startup and removed
 /// ([`take_min_restarted_env`]), so no game or other program inherits it.
-pub const MIN_RESTARTED_ENV: &str = "HORIZON_LAUNCHER_MIN_RESTARTED";
+pub const MIN_RESTARTED_ENV: &str = "FOUNDRY_LAUNCHER_MIN_RESTARTED";
 static MIN_RESTARTED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
 /// Notes [`MIN_RESTARTED_ENV`] and removes it from this process's environment. Called first at
@@ -80,7 +80,7 @@ enum Close {
 }
 
 /// Whether closing the window installs a staged update: not in a copy that doesn't replace itself
-/// (a development build, `HORIZON_LAUNCHER_NO_SELF_UPDATE`) or that a package manager owns.
+/// (a development build, `FOUNDRY_LAUNCHER_NO_SELF_UPDATE`) or that a package manager owns.
 pub fn installs_on_close() -> bool {
     installs_when(
         backend::self_update_allowed(),
@@ -119,7 +119,7 @@ pub fn on_close() {
 
 /// Update was pressed: starts the installer for the staged update with a restart (true; the
 /// caller quits right after), or reports that none is staged (false: the file in place already is
-/// the new launcher, another window or `horizon-launcher update` put it there). `for_minimum`:
+/// the new launcher, another window or `foundry-launcher update` put it there). `for_minimum`:
 /// the restart is the one for links.json's `min_launcher` ([`MIN_RESTARTED_ENV`]).
 pub fn start_now(for_minimum: bool) -> Result<bool, String> {
     let staged = PENDING.lock().unwrap_or_else(|e| e.into_inner()).take();
@@ -253,7 +253,7 @@ pub fn run() -> Option<i32> {
     let sha256 = std::env::var(SHA256_ENV).unwrap_or_default();
     let Some(request) = parse(args, sha256) else {
         eprintln!(
-            "usage: horizon-launcher {COMMAND} <tag> <staged file> [{RESTART} [-- <arguments>]]"
+            "usage: foundry-launcher {COMMAND} <tag> <staged file> [{RESTART} [-- <arguments>]]"
         );
         return Some(2);
     };
@@ -308,7 +308,7 @@ fn install_locked(
 }
 
 /// `installed` is the version of the launcher in place, which may have changed since this update
-/// was staged: `horizon-launcher update` or another window can have put this version there, or a
+/// was staged: `foundry-launcher update` or another window can have put this version there, or a
 /// newer one this older stage must not replace. Only what a launcher downloaded and whose signed
 /// SHA-256 still holds goes in, never a file from elsewhere.
 fn install_over(
@@ -382,7 +382,7 @@ mod tests {
     fn staged() -> Staged {
         Staged {
             tag: "launcher@0.2.41".into(),
-            payload: PathBuf::from("/data/.launcher-update/1-ab/unpacked/Horizon.app"),
+            payload: PathBuf::from("/data/.launcher-update/1-ab/unpacked/Foundry Client.app"),
             sha256: "abc".into(),
         }
     }
@@ -397,7 +397,7 @@ mod tests {
     fn the_installer_reads_the_command_line_the_window_gives_it() {
         let window = os(&["--restart", "play"]);
         let cmd = installer_command(
-            Path::new("horizon-launcher"),
+            Path::new("foundry-launcher"),
             &staged(),
             true,
             false,
@@ -443,7 +443,7 @@ mod tests {
         }
         // The data move: `forget` empties what the close would hand over.
         set_pending(Some(Staged {
-            payload: std::env::temp_dir().join("horizon-no-stage"),
+            payload: std::env::temp_dir().join("foundry-no-stage"),
             ..staged()
         }));
         forget();
@@ -469,14 +469,14 @@ mod tests {
         assert_eq!(env_of(&installer(true), MIN_RESTARTED_ENV), marked);
         assert_eq!(env_of(&installer(false), MIN_RESTARTED_ENV), None);
 
-        let restart = restart_command(Path::new("horizon-launcher"), os(&["play"]), true);
+        let restart = restart_command(Path::new("foundry-launcher"), os(&["play"]), true);
         assert_eq!(env_of(&restart, MIN_RESTARTED_ENV), marked);
         assert_eq!(env_of(&restart, SHA256_ENV), Some(None));
         assert_eq!(
             restart.get_args().collect::<Vec<_>>(),
             [std::ffi::OsStr::new("play")]
         );
-        let plain = restart_command(Path::new("horizon-launcher"), os(&["play"]), false);
+        let plain = restart_command(Path::new("foundry-launcher"), os(&["play"]), false);
         assert_eq!(env_of(&plain, MIN_RESTARTED_ENV), None);
     }
 
@@ -493,10 +493,10 @@ mod tests {
     const TAG: &str = "launcher@0.2.41";
     const NEW_LAUNCHER: &[u8] = b"the new launcher";
 
-    /// A work folder under the temporary folder holding one stage: `horizon-launcher` packed in a
+    /// A work folder under the temporary folder holding one stage: `foundry-launcher` packed in a
     /// `.tar.gz` and unpacked beside it, as a window leaves it.
     fn stage(name: &str) -> (PathBuf, PathBuf, Staged) {
-        let work = std::env::temp_dir().join(format!("horizon-{name}-{}", std::process::id()));
+        let work = std::env::temp_dir().join(format!("foundry-{name}-{}", std::process::id()));
         let _ = fs::remove_dir_all(&work);
         let stage = backend::new_stage_folder(&work).unwrap();
 
@@ -508,18 +508,18 @@ mod tests {
         header.set_size(NEW_LAUNCHER.len() as u64);
         header.set_mode(0o755);
         header.set_cksum();
-        tar.append_data(&mut header, "top/horizon-launcher", NEW_LAUNCHER)
+        tar.append_data(&mut header, "top/foundry-launcher", NEW_LAUNCHER)
             .unwrap();
         let archive = tar.into_inner().unwrap().finish().unwrap();
         fs::write(stage.join("download.tar.gz"), &archive).unwrap();
 
-        let payload = stage.join("unpacked").join("top").join("horizon-launcher");
+        let payload = stage.join("unpacked").join("top").join("foundry-launcher");
         fs::create_dir_all(payload.parent().unwrap()).unwrap();
         fs::write(&payload, NEW_LAUNCHER).unwrap();
         let staged = Staged {
             tag: TAG.into(),
             payload,
-            sha256: horizon_release_sign::sha256_hex(&archive),
+            sha256: foundry_release_sign::sha256_hex(&archive),
         };
         (work, stage, staged)
     }
@@ -606,21 +606,21 @@ mod tests {
         fs::write(&image, NEW_LAUNCHER).unwrap();
         let mut appimage = Staged {
             payload: image,
-            sha256: horizon_release_sign::sha256_hex(NEW_LAUNCHER),
+            sha256: foundry_release_sign::sha256_hex(NEW_LAUNCHER),
             ..staged
         };
         let (result, placed) = placed_by(OLD, &appimage, &work);
         assert_eq!(result, Ok(()));
         assert_eq!(placed.as_deref(), Some(NEW_LAUNCHER));
 
-        appimage.sha256 = horizon_release_sign::sha256_hex(b"another AppImage");
+        appimage.sha256 = foundry_release_sign::sha256_hex(b"another AppImage");
         let (result, placed) = placed_by(OLD, &appimage, &work);
         assert!(result.is_err());
         assert_eq!(placed, None);
         let _ = fs::remove_dir_all(work);
     }
 
-    /// Closing a window after `horizon-launcher update`: no failure and no downgrade, even when
+    /// Closing a window after `foundry-launcher update`: no failure and no downgrade, even when
     /// the stage is unusable by now. A launcher with no readable version gets the update.
     #[test]
     fn a_launcher_already_current_is_left_alone() {
@@ -644,7 +644,7 @@ mod tests {
     #[test]
     fn a_second_installer_waits_and_then_changes_nothing() {
         let (work, _, staged) = stage("two-installers");
-        let lock = work.join("horizon-launcher.lock");
+        let lock = work.join("foundry-launcher.lock");
         let in_place = std::sync::Arc::new(Mutex::new(OLD.map(str::to_owned)));
         let held = backend::lock_update(&lock).unwrap();
         let second = std::thread::spawn({
@@ -681,10 +681,10 @@ mod tests {
     /// what is left once no installer does.
     #[test]
     fn the_cleanup_waits_for_an_installer() {
-        let dir = std::env::temp_dir().join(format!("horizon-cleanup-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("foundry-cleanup-{}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
         fs::create_dir_all(&dir).unwrap();
-        let name = "horizon-launcher.exe";
+        let name = "foundry-launcher.exe";
         let lock = backend::update_lock_file(&dir.join(name));
         let aside = [format!("{name}.old-7-0"), format!("{name}.update-7")];
         for file in &aside {

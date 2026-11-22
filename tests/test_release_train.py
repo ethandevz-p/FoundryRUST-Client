@@ -65,15 +65,15 @@ def launcher_path_crates():
 NOW = dt.datetime(2026, 10, 15, 12, 0, tzinfo=dt.timezone.utc)
 
 
-def pr(number, title="Fix a thing", labels=(), paths=("crates/horizon-client/src/game.rs",), issues=(), author="ludovic111",
+def pr(number, title="Fix a thing", labels=(), paths=("crates/foundry-client/src/game.rs",), issues=(), author="ludovic111",
        merged=dt.timedelta(hours=9)):
     return {"number": number, "title": title, "labels": list(labels), "paths": list(paths), "issues": list(issues),
-            "author": author, "url": f"https://github.com/horizon-rust/horizon/pull/{number}", "merged_at": NOW - merged}
+            "author": author, "url": f"https://github.com/foundry-rust/foundry/pull/{number}", "merged_at": NOW - merged}
 
 
 def merged_node(number, commit):
     return {"number": number, "mergeCommit": {"oid": commit}, "title": " Fix a thing ",
-            "url": f"https://github.com/horizon-rust/horizon/pull/{number}",
+            "url": f"https://github.com/foundry-rust/foundry/pull/{number}",
             "mergedAt": (NOW - dt.timedelta(hours=9)).isoformat(), "author": {"login": "contributor"},
             "labels": {"nodes": []}, "closingIssuesReferences": {"nodes": []}}
 
@@ -84,7 +84,7 @@ def metadata_page(nodes):
 
 class ReleaseTrainTests(unittest.TestCase):
     def test_repository_merge_identity_before_metadata(self):
-        for repository in ("horizon-rust/horizon", "someone/horizon"):
+        for repository in ("foundry-rust/foundry", "someone/foundry"):
             with self.subTest(repository=repository), mock.patch.object(train, "REPO", repository), \
                     mock.patch.object(train, "run", return_value="root"), \
                     mock.patch.object(train, "merged_pull_requests", return_value=[
@@ -99,7 +99,7 @@ class ReleaseTrainTests(unittest.TestCase):
                 args = api.call_args.args
                 self.assertEqual(args[:4], ("api", "graphql", "--paginate", "--slurp"))
                 self.assertIn(f"owner={repository.split('/')[0]}", args)
-                self.assertIn("name=horizon", args)
+                self.assertIn("name=foundry", args)
                 release, _ = train.decision("launcher", prs, NOW)
                 self.assertTrue(release)
                 _, body = train.notes("launcher", "launcher@0.2.0", prs, [])
@@ -173,21 +173,21 @@ class ReleaseTrainTests(unittest.TestCase):
         # Changing what counts toward a launcher release is a decision, not a sync with LAUNCHER_PATHS (see its comment).
         self.assertEqual(train.LAUNCHER_RELEASE_PATHS, [
             "launcher/",
-            "crates/horizon-bench/",
-            "crates/horizon-friends/",
-            "crates/horizon-mcp/",
-            "crates/horizon-mod-api-gen/",
-            "crates/horizon-mod-package/",
-            "crates/horizon-port-pack/",
-            "crates/horizon-prepare/",
-            "crates/horizon-release-sign/",
-            "crates/horizon-system/",
-            "crates/horizon-theme/",
+            "crates/foundry-bench/",
+            "crates/foundry-friends/",
+            "crates/foundry-mcp/",
+            "crates/foundry-mod-api-gen/",
+            "crates/foundry-mod-package/",
+            "crates/foundry-port-pack/",
+            "crates/foundry-prepare/",
+            "crates/foundry-release-sign/",
+            "crates/foundry-system/",
+            "crates/foundry-theme/",
             "packaging/icons/",
             "packaging/linux/",
             "packaging/macos/",
         ])
-        self.assertFalse(train.player_facing("crates/horizon-world/src/lib.rs", "launcher"))
+        self.assertFalse(train.player_facing("crates/foundry-world/src/lib.rs", "launcher"))
 
     def test_every_launcher_release_path_runs_the_launcher_checks(self):
         self.assertLessEqual(set(train.LAUNCHER_RELEASE_PATHS), set(train.LAUNCHER_PATHS))
@@ -268,20 +268,20 @@ class ReleaseTrainTests(unittest.TestCase):
                                      "tag=launcher@0.2.0\nversion=0.2.0\nrelease=true\nhead=head\n")
 
     def test_player_facing_paths(self):
-        exporters = {"mods/horizon/src/test/java/dev/horizonlab/parity/VanillaMobDataExporter.java"}
-        self.assertTrue(train.player_facing("crates/horizon-client/src/game.rs", "game"))
+        exporters = {"mods/foundry/src/test/java/dev/foundrylab/parity/VanillaMobDataExporter.java"}
+        self.assertTrue(train.player_facing("crates/foundry-client/src/game.rs", "game"))
         self.assertTrue(train.player_facing("Cargo.lock", "game"))
         self.assertTrue(train.player_facing("xtask/src/main.rs", "game"))
         self.assertTrue(train.player_facing(next(iter(exporters)), "game", exporters))
-        self.assertFalse(train.player_facing("mods/horizon/src/test/java/dev/horizonlab/parity/VanillaFoodOracle.java", "game", exporters))
-        self.assertFalse(train.player_facing("crates/horizon-world/examples/probe.rs", "game"))
-        self.assertFalse(train.player_facing("crates/horizon-client/README.md", "game"))
+        self.assertFalse(train.player_facing("mods/foundry/src/test/java/dev/foundrylab/parity/VanillaFoodOracle.java", "game", exporters))
+        self.assertFalse(train.player_facing("crates/foundry-world/examples/probe.rs", "game"))
+        self.assertFalse(train.player_facing("crates/foundry-client/README.md", "game"))
         self.assertFalse(train.player_facing("tools/test_food_parity.py", "game"))
         self.assertFalse(train.player_facing("launcher/src/main.rs", "game"))
         self.assertTrue(train.player_facing("launcher/src/main.rs", "launcher"))
-        self.assertTrue(train.player_facing("crates/horizon-prepare/src/lib.rs", "launcher"))
+        self.assertTrue(train.player_facing("crates/foundry-prepare/src/lib.rs", "launcher"))
         self.assertFalse(train.player_facing("launcher/links.json", "launcher"))
-        self.assertFalse(train.player_facing("crates/horizon-client/src/game.rs", "launcher"))
+        self.assertFalse(train.player_facing("crates/foundry-client/src/game.rs", "launcher"))
 
     def test_the_exporters_are_those_horizon_prepare_names(self):
         found = train.exporters()
@@ -357,16 +357,16 @@ class ReleaseTrainTests(unittest.TestCase):
 
     def test_the_first_release_of_0_2_says_what_changed(self):
         title, body = train.notes("game", "v0.2.0", [pr(1)], [], previous="v2026.10.21")
-        self.assertTrue(title.startswith("Horizon 0.2.0: "), title)
+        self.assertTrue(title.startswith("Foundry Client 0.2.0: "), title)
         body = body.removeprefix(train.PLAYERS + "\n\n")
-        self.assertTrue(body.startswith("Horizon is numbered from now on: this is Horizon 0.2.0, the release after 2026.10.21."))
-        self.assertIn("`horizon-server update --version v0.2.0`", body)
+        self.assertTrue(body.startswith("Foundry Client is numbered from now on: this is Foundry Client 0.2.0, the release after 2026.10.21."))
+        self.assertIn("`foundry-server update --version v0.2.0`", body)
         title, body = train.notes("launcher", "launcher@0.2.0", [], [], previous="launcher-v0.17.0")
-        self.assertEqual(title, "Horizon launcher 0.2.0")
+        self.assertEqual(title, "Foundry Client launcher 0.2.0")
         self.assertIn("the release after launcher 0.17.0", body)
         self.assertIn("Rebuilt from the latest main.", body)
         body = train.notes("game", "v0.3.0", [pr(1)], [], previous="v0.2.14")[1]
-        self.assertTrue(body.startswith(train.PLAYERS + "\n\nThe first release of Horizon 0.3."))
+        self.assertTrue(body.startswith(train.PLAYERS + "\n\nThe first release of Foundry Client 0.3."))
         for version, previous in [("v0.2.1", "v0.2.0"), ("v0.3.0-rc.1", "v0.2.9"), ("v2026.10.23", "v2026.10.21")]:
             body = train.notes("game", version, [pr(1)], [], previous=previous)[1]
             self.assertTrue(body.startswith(train.PLAYERS + "\n\n### Fixed"), (version, body))
@@ -403,7 +403,7 @@ class ReleaseTrainTests(unittest.TestCase):
         self.assertFalse(train.decision("game", [], NOW, new_line="0.3", blockers=[7])[0])
         self.assertTrue(train.decision("game", [pr(1)], NOW, blockers=[])[0])
 
-    @mock.patch.object(train, "REPO", "someone/horizon")
+    @mock.patch.object(train, "REPO", "someone/foundry")
     def test_game_releases_ship_only_what_parity_main_passed(self):
         def runs(parity, checks):
             def gh_json(*arguments):
@@ -461,7 +461,7 @@ class ReleaseTrainTests(unittest.TestCase):
                pr(7, "Release folder in Rust", labels=["skip-release"]),
                pr(8, "Website footer", paths=[])]
         title, body = train.notes("game", "v2026.10.15.1", prs, ["- Sound cuts out after an hour."])
-        self.assertEqual(title, "Horizon 2026.10.15.1: Controllers, nether portals")
+        self.assertEqual(title, "Foundry Client 2026.10.15.1: Controllers, nether portals")
         self.assertIn("### New\n- Controllers: gilrs input layer and gameplay (#6)", body)
         self.assertIn("### Fixed\n- Nether portals: vanilla timing and linking (#5, fixes #94)", body)
         self.assertIn("### Known issues\n- Sound cuts out after an hour.", body)
@@ -470,14 +470,14 @@ class ReleaseTrainTests(unittest.TestCase):
         self.assertIn("### Contributors\nThanks to @cosmic.", body)
         self.assertTrue(body.endswith("---\n" + train.DISCLAIMER + "\n"), body)
         self.assertLess(body.index("### New"), body.index("### Fixed"))
-        title, _ = train.notes("game", "v2026.10.15.2", [pr(9, "Horizon's mark", labels=["feature"]),
+        title, _ = train.notes("game", "v2026.10.15.2", [pr(9, "Foundry Client's mark", labels=["feature"]),
                                                          pr(10, "Game menus", labels=["feature"])], [])
-        self.assertEqual(title, "Horizon 2026.10.15.2: Game menus, Horizon's mark", "proper nouns keep their capital")
+        self.assertEqual(title, "Foundry Client 2026.10.15.2: Game menus, Foundry Client's mark", "proper nouns keep their capital")
 
     def test_a_long_release_is_named_after_its_first_titles(self):
         prs = [pr(n, f"Change number {n} with a fairly long title") for n in range(1, 10)]
         title, _ = train.notes("game", "v2026.10.15", prs, [])
-        self.assertTrue(title.startswith("Horizon 2026.10.15: Change number 9"), title)
+        self.assertTrue(title.startswith("Foundry Client 2026.10.15: Change number 9"), title)
         self.assertTrue(title.endswith("more fixes"), title)
         self.assertLess(len(title), 100)
 
@@ -485,13 +485,13 @@ class ReleaseTrainTests(unittest.TestCase):
         prs = [pr(1, "Controllers: rumble", labels=["feature"]), pr(2, "Controllers: menus", labels=["feature"]),
                pr(3, "Maces: smash attacks"), pr(4, "Fix stuck keys when opening Options")]
         title, _ = train.notes("game", "v2026.10.15", prs, [])
-        self.assertEqual(title, "Horizon 2026.10.15: Controllers, stuck keys when opening Options, maces")
+        self.assertEqual(title, "Foundry Client 2026.10.15: Controllers, stuck keys when opening Options, maces")
         self.assertEqual(train.summary([], [pr(n, f"Change number {n} with a fairly long title") for n in range(4)]),
                          "Change number 3 with a fairly long title and 3 more fixes")
 
     def test_launcher_notes(self):
         title, body = train.notes("launcher", "launcher-v0.2.0", [pr(3, "Launcher: say the self-update succeeded")], [])
-        self.assertEqual(title, "Horizon launcher 0.2.0")
+        self.assertEqual(title, "Foundry Client launcher 0.2.0")
         self.assertIn("### Fixed\n- Launcher: say the self-update succeeded (#3)", body)
         self.assertNotIn("Known issues", body)
         self.assertNotIn(train.PLAYERS, body)
@@ -504,7 +504,7 @@ class ReleaseTrainTests(unittest.TestCase):
         self.assertTrue(body.startswith(train.PLAYERS + "\n\n"))
         self.assertTrue(body.endswith("\n\n" + train.PLAYERS_FOOTER + "\n\n---\n" + train.DISCLAIMER + "\n"), body)
         self.assertNotIn("\n", train.PLAYERS, "one line: one HTML block, which ends at the blank line after it")
-        self.assertEqual(body.count("playhorizon.dev"), 2, "said at the top and the bottom")
+        self.assertEqual(body.count("playfoundry.dev"), 2, "said at the top and the bottom")
         _, body = train.notes("game", "v0.2.51", [], [])
         self.assertTrue(body.startswith(train.PLAYERS + "\n\nRebuilt from the latest main."))
 

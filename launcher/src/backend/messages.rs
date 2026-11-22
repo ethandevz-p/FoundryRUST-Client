@@ -41,7 +41,7 @@ pub enum Msg {
     /// file (none = offline) and why it plays offline, if it does.
     Session(Result<Option<crate::account::GameSession>, crate::account::NoOwner>),
     JarConsent {
-        jars: Vec<horizon_platform::mod_package::manifest::JarRef>,
+        jars: Vec<foundry_platform::mod_package::manifest::JarRef>,
         reply: std::sync::mpsc::Sender<bool>,
     },
     /// The step a start of the game is on (`play_step::say`), already in the launcher's language.

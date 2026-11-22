@@ -10,24 +10,24 @@ from unittest import mock
 
 from tools import parity, parity_plan
 
-WORLD = ["example", "world_probe", "release", ["-p", "horizon-world"], True]
-CLIENT = ["example", "client_probe", "fast", ["-p", "horizon-client-lib"], True]
-GAME = ["bins", "", "fast", ["-p", "horizon-game", "-p", "horizon-client-lib"], False]
+WORLD = ["example", "world_probe", "release", ["-p", "foundry-world"], True]
+CLIENT = ["example", "client_probe", "fast", ["-p", "foundry-client-lib"], True]
+GAME = ["bins", "", "fast", ["-p", "foundry-game", "-p", "foundry-client-lib"], False]
 
 
 class ProbeGroupTests(unittest.TestCase):
     def test_a_harness_joins_the_group_of_its_costliest_build(self):
         self.assertEqual(parity_plan.probe_group([WORLD, CLIENT, GAME]), "game")
-        self.assertEqual(parity_plan.probe_group([["bin", "horizon-client", "fast", ["-p", "horizon-game"], False]]),
+        self.assertEqual(parity_plan.probe_group([["bin", "foundry-client", "fast", ["-p", "foundry-game"], False]]),
                          "game")
         self.assertEqual(parity_plan.probe_group([WORLD, CLIENT]), "client")
         self.assertEqual(parity_plan.probe_group([WORLD]), "world")
-        self.assertEqual(parity_plan.probe_group([["example", "paletted_fixture", "fast", ["-p", "horizon-core"], True]]),
+        self.assertEqual(parity_plan.probe_group([["example", "paletted_fixture", "fast", ["-p", "foundry-core"], True]]),
                          "other")
         self.assertEqual(parity_plan.probe_group([]), "other")
 
     def test_a_tools_binary_is_not_the_game(self):
-        relay = ["bin", "horizon-relay", "dev", ["-p", "horizon-relay"], False]
+        relay = ["bin", "foundry-relay", "dev", ["-p", "foundry-relay"], False]
         self.assertEqual(parity_plan.probe_group([relay]), "other")
 
     def test_the_shared_list_stands_in_for_a_harness_that_never_ran_here(self):
@@ -122,7 +122,7 @@ class MainTests(unittest.TestCase):
 
 class HostedTests(unittest.TestCase):
     def test_hosted_runners_leave_out_what_they_cannot_run_and_say_why(self):
-        config = {"hosts": {"hosted": {"exclude": {"music": "no sounds"}}, "playhorizon": {"exclude": {"mob_ai": "heap"}}},
+        config = {"hosts": {"hosted": {"exclude": {"music": "no sounds"}}, "playfoundry": {"exclude": {"mob_ai": "heap"}}},
                   "known_failing": {"datafix": "#1: worlds"}, "named_only": {"lan": "slow"}}
         names = ["food", "music", "mob_ai", "datafix#1", "datafix#2", "lan"]
         self.assertEqual(parity_plan.hosted_left_out(names, config),
@@ -139,8 +139,8 @@ class ExportTests(unittest.TestCase):
     def test_a_fresh_runs_passes_are_exported(self):
         records = {
             "food": {"status": "pass", "host": "runner", "seconds": 3, "hashes": {"tools/lab.py": "x"},
-                     "dependencies": ["tools/lab.py", "crates/horizon-world/src/food.rs"], "artifacts": [WORLD],
-                     "tests": [["-p", "horizon-world", "--lib"]]},
+                     "dependencies": ["tools/lab.py", "crates/foundry-world/src/food.rs"], "artifacts": [WORLD],
+                     "tests": [["-p", "foundry-world", "--lib"]]},
             "mace": {"status": "fail", "dependencies": ["tools/lab.py"], "artifacts": [GAME]},
             "gone": {"status": "pass", "dependencies": ["tools/lab.py"], "artifacts": []},
         }
@@ -150,8 +150,8 @@ class ExportTests(unittest.TestCase):
             self.assertEqual(parity_plan.export_dependencies(records, found, directory), 1)
             self.assertEqual(sorted(path.name for path in directory.iterdir()), ["food.json"])
             self.assertEqual(json.loads((directory / "food.json").read_text(encoding="utf-8")),
-                             {"dependencies": ["tools/lab.py", "crates/horizon-world/src/food.rs"],
-                              "artifacts": [WORLD], "tests": [["-p", "horizon-world", "--lib"]]})
+                             {"dependencies": ["tools/lab.py", "crates/foundry-world/src/food.rs"],
+                              "artifacts": [WORLD], "tests": [["-p", "foundry-world", "--lib"]]})
 
     def test_an_incomplete_export_writes_nothing(self):
         food = {"status": "pass", "dependencies": ["tools/lab.py"], "artifacts": [WORLD]}

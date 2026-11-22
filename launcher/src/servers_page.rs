@@ -1,13 +1,13 @@
 //! The Servers page: create a server in one dialog, then start, stop and watch it, give friends its
 //! address, manage who may join, change its settings, back it up and update it, all with buttons. Every
-//! action runs `horizon-server` or calls the running server's control API (`horizon_launcher::servers`).
+//! action runs `foundry-server` or calls the running server's control API (`foundry_launcher::servers`).
 use super::line_edit::{self, Key, LineEdit};
 use super::*;
-use horizon_launcher::heads;
-use horizon_launcher::servers::{
+use foundry_launcher::heads;
+use foundry_launcher::servers::{
     self, Applied, Backup, Entry, Fix, NewServer, Problem, Status, World,
 };
-use horizon_theme::glass::radius;
+use foundry_theme::glass::radius;
 use serde_json::Value;
 use std::collections::{BTreeSet, HashMap};
 use std::path::{Path, PathBuf};
@@ -147,7 +147,7 @@ pub(super) struct Create {
     new_world: bool,
     copy: Option<PathBuf>,
     worlds: Vec<(String, PathBuf)>,
-    /// The glass dialog's line under each world: its name and "Horizon · mode · size", read
+    /// The glass dialog's line under each world: its name and "Foundry Client · mode · size", read
     /// once when the dialog opens.
     details: HashMap<PathBuf, (String, String)>,
     mode: &'static str,
@@ -427,14 +427,14 @@ impl Launcher {
                         .unwrap_or_default();
                     Err(Problem::plain(trf(
                         "Could not run {program}: {error}",
-                        &[("program", "horizon-server"), ("error", &error)],
+                        &[("program", "foundry-server"), ("error", &error)],
                     )))
                 });
             let _ = tx.send(Event::Done(result));
         });
     }
 
-    /// `horizon-server <args>` on the open server, as a job.
+    /// `foundry-server <args>` on the open server, as a job.
     fn server_command(&mut self, label: &str, args: Vec<String>) {
         let Some(dir) = self.servers.open.clone() else {
             return;
@@ -742,7 +742,7 @@ impl Launcher {
         });
     }
 
-    /// Queues a setting for `horizon-server config set`; they go one batch at a time.
+    /// Queues a setting for `foundry-server config set`; they go one batch at a time.
     fn set_setting(&mut self, key: &str, value: String) {
         self.servers.queued.retain(|(k, _)| k != key);
         self.servers.queued.push((key.to_string(), value));
@@ -868,7 +868,7 @@ impl Launcher {
             Fix::Prepare => match self.selected().cloned() {
                 Some(tag) if backend::is_prepared(&tag) => {
                     self.server_job("Copying the game files", move |log| {
-                        log(format!("Copying the game files prepared for Horizon {tag}"));
+                        log(format!("Copying the game files prepared for Foundry Client {tag}"));
                         servers::set_up(&tag)
                             .map(|_| "The game files are ready. Press Start again.".to_string())
                             .map_err(Problem::plain)
@@ -930,10 +930,10 @@ impl Launcher {
             Vec::new()
         };
         let details = if glass {
-            horizon_launcher::worlds::list(&backend::game_home())
+            foundry_launcher::worlds::list(&backend::game_home())
                 .into_iter()
                 .map(|w| {
-                    let line = format!("Horizon · {} · {}", tr(w.mode), bytes(w.size));
+                    let line = format!("Foundry Client · {} · {}", tr(w.mode), bytes(w.size));
                     (w.path, (w.name, line))
                 })
                 .collect()
@@ -1521,7 +1521,7 @@ impl Launcher {
             let result = (|| {
                 if servers::program().is_none() {
                     let tag =
-                        tag.ok_or_else(|| Problem::plain("Install a Horizon version first."))?;
+                        tag.ok_or_else(|| Problem::plain("Install a Foundry Client version first."))?;
                     servers::set_up(&tag).map_err(Problem::plain)?;
                 }
                 if !dir.join("server.toml").is_file() {
@@ -2439,7 +2439,7 @@ impl Launcher {
             return div().child(centered(
                 if self.older_horizon() {
                     tr(
-                        "This server's Horizon is too old to show its settings here. Update it on \
+                        "This server's Foundry Client is too old to show its settings here. Update it on \
                      the Backups tab, then they appear.",
                     )
                 } else {
@@ -2718,7 +2718,7 @@ impl Launcher {
         }
         self.setting_row(
             "Delete server",
-            tr("Remove this server from Horizon and move its worlds, settings and backups to the trash.").into(),
+            tr("Remove this server from Foundry Client and move its worlds, settings and backups to the trash.").into(),
             controls.into_any_element(),
         )
         .items_start()
@@ -2790,13 +2790,13 @@ impl Launcher {
         });
         let about = match (&available, &check, &status.update_last) {
             (Some(tag), _, _) => trf(
-                "Update available: Horizon {tag} (this server runs {release}). Updating backs up \
+                "Update available: Foundry Client {tag} (this server runs {release}). Updating backs up \
                  the world first, and goes back by itself if the new version doesn't start.",
                 &[("tag", tag), ("release", &release)],
             ),
-            (None, Some(_), _) => trf("Up to date: Horizon {release}.", &[("release", &release)]),
-            (None, None, Some((last, _))) => format!("Horizon {release}. {last}"),
-            (None, None, None) => format!("Horizon {release}."),
+            (None, Some(_), _) => trf("Up to date: Foundry Client {release}.", &[("release", &release)]),
+            (None, None, Some((last, _))) => format!("Foundry Client {release}. {last}"),
+            (None, None, None) => format!("Foundry Client {release}."),
         };
         let control = match available {
             Some(tag) => {
@@ -2806,7 +2806,7 @@ impl Launcher {
                         this.servers.update = None;
                         if let Some(dir) = this.servers.open.clone() {
                             let done = format!(
-                                "Updated to Horizon {tag}. The world was backed up first (Backups)."
+                                "Updated to Foundry Client {tag}. The world was backed up first (Backups)."
                             );
                             this.server_job(format!("Updating to {tag}"), move |log| {
                                 servers::run_streamed(&dir, &["update"], log).map(|_| done)
@@ -2850,7 +2850,7 @@ impl Launcher {
             .flex_col()
             .border_t_1()
             .border_color(rule)
-            .child(self.setting_row("This server's Horizon", about, control.into_any_element()));
+            .child(self.setting_row("This server's Foundry Client", about, control.into_any_element()));
         if self.servers.setting("updates", "keep").is_some() {
             rows = rows.child(self.setting_row(
                 "Older versions kept",
@@ -2868,7 +2868,7 @@ impl Launcher {
             .child(rows)
     }
 
-    /// The server's details came back without its settings: its horizon-server predates
+    /// The server's details came back without its settings: its foundry-server predates
     /// `config` (and `backups --json`).
     fn older_horizon(&self) -> bool {
         self.servers.service.is_some() && self.servers.config.is_none()
@@ -2983,7 +2983,7 @@ impl Launcher {
         if self.older_horizon() {
             return tab
                 .child(text(theme::UI).text_color(t.muted).child(tr(
-                    "This server's Horizon is too old to list its backups here: they're in its \
+                    "This server's Foundry Client is too old to list its backups here: they're in its \
                      backups folder. Update it below.",
                 )))
                 .child(self.updates_section(status, cx));
@@ -3399,14 +3399,14 @@ mod tests {
     #[cfg(unix)]
     #[test]
     fn managed_start_and_restart_require_consent_before_running_the_supervisor() {
-        const CHILD: &str = "HORIZON_MANAGED_CONSENT_TEST";
+        const CHILD: &str = "FOUNDRY_MANAGED_CONSENT_TEST";
         if std::env::var_os(CHILD).is_none() {
             let root = tempfile::tempdir().unwrap();
             let status = std::process::Command::new(std::env::current_exe().unwrap())
                 .args(["--exact", "servers_page::tests::managed_start_and_restart_require_consent_before_running_the_supervisor", "--nocapture"])
                 .env(CHILD, "1")
-                .env("HORIZON_LAUNCHER_HOME", root.path().join("launcher"))
-                .env("HORIZON_HOME", root.path().join("cache"))
+                .env("FOUNDRY_LAUNCHER_HOME", root.path().join("launcher"))
+                .env("FOUNDRY_HOME", root.path().join("cache"))
                 .status().unwrap();
             assert!(status.success());
             return;
@@ -3415,11 +3415,11 @@ mod tests {
         let root = tempfile::tempdir().unwrap();
         let bin = servers::runtime_root().join("current");
         std::fs::create_dir_all(&bin).unwrap();
-        let supervisor = bin.join("horizon-server");
+        let supervisor = bin.join("foundry-server");
         std::fs::write(&supervisor, "#!/bin/sh\nprintf ran > \"$2/ran\"\n").unwrap();
         std::fs::set_permissions(&supervisor, std::fs::Permissions::from_mode(0o700)).unwrap();
-        std::fs::write(bin.join("horizon-engine"), "never executed").unwrap();
-        std::fs::write(root.path().join("horizon-resources.json"), "{}").unwrap();
+        std::fs::write(bin.join("foundry-engine"), "never executed").unwrap();
+        std::fs::write(root.path().join("foundry-resources.json"), "{}").unwrap();
         let config = format!(
             "[engine]\nresources = {:?}\n",
             root.path().to_str().unwrap()
@@ -3427,15 +3427,15 @@ mod tests {
         std::fs::write(root.path().join("server.toml"), config).unwrap();
         let package = root
             .path()
-            .join(horizon_platform::mod_package::mod_list::DIR)
+            .join(foundry_platform::mod_package::mod_list::DIR)
             .join("needs_jar");
         std::fs::create_dir_all(&package).unwrap();
-        std::fs::write(package.join("horizon-mod.toml"), format!(
+        std::fs::write(package.join("foundry-mod.toml"), format!(
             "id='needs_jar'\nname='Needs jar'\nversion='1'\napi='0.2'\ncapabilities=['registries']\n[[jar]]\nid='fixture'\nversion='1'\nsha512='{}'\n", "a".repeat(128)
         )).unwrap();
         std::fs::write(
             root.path()
-                .join(horizon_platform::mod_package::mod_list::FILE),
+                .join(foundry_platform::mod_package::mod_list::FILE),
             "mod.needs_jar:true\n",
         )
         .unwrap();

@@ -22,8 +22,8 @@ def main():
     args = parser.parse_args()
     scratch = Path(tempfile.mkdtemp(prefix='slot-order-', dir=args.scratch))
     env = os.environ.copy()
-    for key in ['HORIZON_HOME', 'HORIZON_LAUNCHER_HOME', 'XDG_DATA_HOME', 'XDG_CONFIG_HOME',
-                'HORIZON_LAUNCHER_TRASH', 'HORIZON_LAUNCHER_CLIPBOARD', 'HORIZON_LAUNCHER_DESKTOP']:
+    for key in ['FOUNDRY_HOME', 'FOUNDRY_LAUNCHER_HOME', 'XDG_DATA_HOME', 'XDG_CONFIG_HOME',
+                'FOUNDRY_LAUNCHER_TRASH', 'FOUNDRY_LAUNCHER_CLIPBOARD', 'FOUNDRY_LAUNCHER_DESKTOP']:
         env[key] = tempfile.mkdtemp(prefix=key.lower(), dir=scratch)
     env = lab.game_env(env)
     sysroot = subprocess.check_output(['rustc', '--print', 'sysroot'], text=True).strip()

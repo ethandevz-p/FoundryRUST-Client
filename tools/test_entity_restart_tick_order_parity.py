@@ -7,7 +7,7 @@ brings it into a ticking chunk (`Callback.onMove` -> `updateStatus` -> `startTic
 (`EntityTickList.add` on an `Int2ObjectLinkedOpenHashMap`). So it ticks after every entity already ticking, even
 ones that joined the level after it.
 
-A vanilla dedicated server and Horizon's each load a copy of one flat world vanilla generated first. Ticking is
+A vanilla dedicated server and Foundry Client's each load a copy of one flat world vanilla generated first. Ticking is
 frozen; only chunks (10, 0) and (10, 4) are forced, so chunk (11, 0) (x 176 and on) does not tick its entities.
 In each lane a primed TNT without gravity, `late`, is summoned first, then a TNT `blast` with a fuse of 2, 3 blocks
 from where `late` will stand. In the test lane `late` starts in chunk (11, 0) and is teleported next to `blast`
@@ -108,17 +108,17 @@ def proves(vanilla):
 
 
 def main():
-    lock, build, vanilla_server, horizon_server, _client = locator.sides(NAME)
+    lock, build, vanilla_server, foundry_server, _client = locator.sides(NAME)
     world = locator.generate_world(vanilla_server, build)
     vanilla = run('vanilla', vanilla_server, world, build)
     (build / 'vanilla.txt').write_text('\n'.join(vanilla) + '\n', encoding='utf-8')
     why = proves(vanilla)
     if why:
         raise AssertionError(f'vanilla is no proof: {why}:\n' + '\n'.join(vanilla))
-    horizon = run('horizon', horizon_server, world, build)
-    (build / 'horizon.txt').write_text('\n'.join(horizon) + '\n', encoding='utf-8')
-    if vanilla != horizon:
-        differ = [f'- {v}\n+ {h}' for v, h in zip(vanilla, horizon) if v != h]
+    foundry = run('foundry', foundry_server, world, build)
+    (build / 'foundry.txt').write_text('\n'.join(foundry) + '\n', encoding='utf-8')
+    if vanilla != foundry:
+        differ = [f'- {v}\n+ {h}' for v, h in zip(vanilla, foundry) if v != h]
         raise AssertionError(f'{len(differ)} lines differ from vanilla:\n' + '\n'.join(differ[:24]))
     print(f'entity restart tick order: {len(vanilla)} lines identical')
 

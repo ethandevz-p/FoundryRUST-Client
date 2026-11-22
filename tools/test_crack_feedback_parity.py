@@ -34,12 +34,12 @@ def main():
     report.unlink(missing_ok=True)
     (build / 'rust.json').unlink(missing_ok=True)
     sources = [lab.ROOT / path for path in (
-        'crates/horizon-client/src/game/network/lan_actions/mod.rs',
-        'crates/horizon-client/src/game/network/lan_actions/mining.rs',
-        'crates/horizon-client/src/game/network/lan_actions/packets.rs',
-        'crates/horizon-client/src/game/network/lan_actions/shared.rs',
-        'crates/horizon-client/src/game/network/lan_actions/tests/crack_feedback_tests.rs',
-        'mods/horizon/src/test/java/dev/horizonlab/parity/VanillaCrackFeedbackOracle.java',
+        'crates/foundry-client/src/game/network/lan_actions/mod.rs',
+        'crates/foundry-client/src/game/network/lan_actions/mining.rs',
+        'crates/foundry-client/src/game/network/lan_actions/packets.rs',
+        'crates/foundry-client/src/game/network/lan_actions/shared.rs',
+        'crates/foundry-client/src/game/network/lan_actions/tests/crack_feedback_tests.rs',
+        'mods/foundry/src/test/java/dev/foundrylab/parity/VanillaCrackFeedbackOracle.java',
         'tools/test_crack_feedback_parity.py')]
     hashes = base.source_hashes(sources)
     classes, dependencies, _ = harness.compile_oracle(
@@ -47,11 +47,11 @@ def main():
         lock['minecraft']['java_major'])
     harness.java_run(build, classes, dependencies, 'VanillaCrackFeedbackOracle',
                      [build / 'java.json'], 'java')
-    env = lab.game_env(HORIZON_TEST_RESOURCES=args.resources.resolve(),
-                       HORIZON_CRACK_TRACE=build / 'rust.json')
+    env = lab.game_env(FOUNDRY_TEST_RESOURCES=args.resources.resolve(),
+                       FOUNDRY_CRACK_TRACE=build / 'rust.json')
     with (build / 'rust.log').open('w') as log:
         subprocess.run(
-            ['cargo', 'test', '-p', 'horizon-client', '--lib',
+            ['cargo', 'test', '-p', 'foundry-client', '--lib',
              'crack_packets_follow_start_clock_and_strict_observer_radius',
              '--', '--ignored', '--nocapture'],
             cwd=lab.ROOT, env=env, stdout=log, stderr=subprocess.STDOUT,

@@ -15,7 +15,7 @@ r.register_crafting_recipe_serializer("my_mod:diagonal", Diagonal);
 Implement `CraftingRecipeKind`. Its mod-owned `Value` must supply
 `Some(CraftingRecipeCodec::wire())` from `codec` and implement `Wire`; a missing
 codec refuses startup on native and wasm alike. `decode` reads the recipe JSON
-object with `type` removed. `write` writes an equivalent JSON object for Horizon
+object with `type` removed. `write` writes an equivalent JSON object for Foundry Client
 client synchronization. Known serializers that refuse malformed data skip that
 recipe alone, with the file and serializer in the diagnostic.
 
@@ -61,7 +61,7 @@ skips a file quietly **before** serializer lookup. Unknown condition types retai
 the existing fatal load behavior. Malformed recipes of a known serializer retain
 the existing skip-one-file behavior; changing that is a separate task.
 
-Reload re-reads values and preserves startup registration. Joining Horizon clients
+Reload re-reads values and preserves startup registration. Joining Foundry Client clients
 receive serializer-written content; vanilla clients receive no custom kind.
 `datapack_sync.recipe_types` selects actual recipe type IDs; the engine resolves
 each file's serializer to its reported type for filtering and replacement, including

@@ -5,7 +5,7 @@ use std::os::windows::fs::{MetadataExt, OpenOptionsExt};
 use std::{fs, io, path::Path, process::Command};
 
 use crate::run_leases::SOURCE;
-pub(crate) const SLOT: &str = "HORIZON_WINDOWS_RUNTIME_SLOT";
+pub(crate) const SLOT: &str = "FOUNDRY_WINDOWS_RUNTIME_SLOT";
 
 pub(crate) struct Guard {
     _slot: fs::File,
@@ -25,7 +25,7 @@ fn redirect_in(cmd: Command, root: &Path) -> Command {
     if value(&cmd, SOURCE).is_none() || value(&cmd, SLOT).is_some() {
         return cmd;
     }
-    let home = value(&cmd, "HORIZON_HOME")
+    let home = value(&cmd, "FOUNDRY_HOME")
         .map(Path::new)
         .or(cmd.get_current_dir())
         .expect("the game command has a home");
@@ -151,8 +151,8 @@ pub(crate) fn in_use(source: &Path) -> bool {
     in_use_in(source, &crate::backend::data_dir().join("run"))
 }
 
-/// Whether a program in the version's own folder is running: `horizon-ctl` under the launcher's
-/// MCP server, `horizon-server`, `horizon-prepare`. They start from there, not from a runtime
+/// Whether a program in the version's own folder is running: `foundry-ctl` under the launcher's
+/// MCP server, `foundry-server`, `foundry-prepare`. They start from there, not from a runtime
 /// slot, and Windows refuses both to open a running image for writing and to delete it.
 fn runs_program(dir: &Path) -> bool {
     const ERROR_SHARING_VIOLATION: i32 = 32;
@@ -211,12 +211,12 @@ mod tests {
 
     #[test]
     fn the_staged_game_finds_every_unit_it_leases_registered() {
-        use horizon_platform::mod_package::{
+        use foundry_platform::mod_package::{
             holder, locks::LockMode, runtime_leases::open_directory, runtime_leases::Registry,
             selection::LaunchArguments,
         };
         // A version, a runtime slot and lease files: the child gets a launcher home of its own.
-        const ACTOR: &str = "HORIZON_STAGED_LEASES_TEST_ACTOR";
+        const ACTOR: &str = "FOUNDRY_STAGED_LEASES_TEST_ACTOR";
         if std::env::var_os(ACTOR).is_none() {
             let launcher_home = tempfile::tempdir().unwrap();
             let output = Command::new(std::env::current_exe().unwrap())
@@ -227,7 +227,7 @@ mod tests {
                     "--nocapture",
                 ])
                 .env(ACTOR, "1")
-                .env("HORIZON_LAUNCHER_HOME", launcher_home.path())
+                .env("FOUNDRY_LAUNCHER_HOME", launcher_home.path())
                 .output()
                 .unwrap();
             let stdout = String::from_utf8_lossy(&output.stdout);
@@ -244,7 +244,7 @@ mod tests {
         let home = tempfile::tempdir().unwrap();
         let version = format!("lease-slot-{}", std::process::id());
         let source = crate::backend::version_dir(&version);
-        let resources = source.join(".local/horizon-client/26.3");
+        let resources = source.join(".local/foundry-client/26.3");
         fs::create_dir_all(&resources).unwrap();
         fs::copy(
             Path::new(&std::env::var_os("SystemRoot").unwrap()).join("System32/cmd.exe"),
@@ -254,7 +254,7 @@ mod tests {
         fs::write(source.join(".installed"), b"").unwrap();
         let mut game = Command::new(source.join(crate::backend::CLIENT));
         game.current_dir(home.path())
-            .env("HORIZON_HOME", home.path())
+            .env("FOUNDRY_HOME", home.path())
             .arg("--resources")
             .arg(&resources);
         crate::run_leases::mark(&mut game, &source);
@@ -275,7 +275,7 @@ mod tests {
         assert!(units.iter().any(|(unit, _)| unit.ends_with("game")));
         assert!(units
             .iter()
-            .any(|(unit, _)| unit.ends_with(".local/horizon-client/26.3")));
+            .any(|(unit, _)| unit.ends_with(".local/foundry-client/26.3")));
         let registry = Registry::existing(&data).unwrap();
         let missing: Vec<_> = units
             .iter()
@@ -294,10 +294,10 @@ mod tests {
 
     #[test]
     fn a_program_running_from_the_version_folder_keeps_it_in_use() {
-        let root = std::env::temp_dir().join(format!("horizon-program-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("foundry-program-{}", std::process::id()));
         let version = root.join("version");
         fs::create_dir_all(&version).unwrap();
-        let ctl = version.join("horizon-ctl.exe");
+        let ctl = version.join("foundry-ctl.exe");
         fs::copy(
             Path::new(&std::env::var_os("SystemRoot").unwrap()).join("System32/cmd.exe"),
             &ctl,
@@ -325,7 +325,7 @@ mod tests {
 
     #[test]
     fn an_orphaned_process_keeps_its_runtime_and_source_version_protected() {
-        let root = std::env::temp_dir().join(format!("horizon-orphan-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("foundry-orphan-{}", std::process::id()));
         let source = root.join("version");
         fs::create_dir_all(&source).unwrap();
         fs::copy(
@@ -359,7 +359,7 @@ mod tests {
 
     #[test]
     fn versions_reuse_a_slot_keep_native_files_and_cannot_replace_a_running_game() {
-        let root = std::env::temp_dir().join(format!("horizon-runtime-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("foundry-runtime-{}", std::process::id()));
         fs::create_dir_all(&root).unwrap();
         let home = root.join("home");
         fs::create_dir_all(&home).unwrap();
@@ -370,7 +370,7 @@ mod tests {
             fs::write(source.join("native-data/mod/table"), version).unwrap();
             let mut cmd = Command::new(source.join(crate::backend::CLIENT));
             cmd.current_dir(&home)
-                .env("HORIZON_HOME", &home)
+                .env("FOUNDRY_HOME", &home)
                 .arg("--offscreen");
             crate::run_leases::mark(&mut cmd, &source);
             redirect_in(cmd, &root.join("run"))

@@ -1,7 +1,7 @@
 # A server's levels: one per dimension
 
 Vanilla's `MinecraftServer` holds a `ServerLevel` per dimension, and each player is in one of them.
-Horizon's server does the same. That covers the dedicated server and single player's server thread
+Foundry Client's server does the same. That covers the dedicated server and single player's server thread
 (`Game::serving`, the default since #1114). So a LAN world's host and each guest can be in different
 dimensions at the same time.
 
@@ -23,7 +23,7 @@ and save, block ticks, entities, block entities and their per-level queues). `ga
 the other dimensions' levels as `Parked` values and swaps one into place (`enter_level`). The swap is
 `mem::swap` of each per-level field, so the tick code runs unchanged, one level at a time.
 
-| Vanilla | Horizon |
+| Vanilla | Foundry Client |
 | --- | --- |
 | `MinecraftServer.levels` | the level in place plus `Levels::parked` |
 | `MinecraftServer.tickChildren`, every level | `tick_server`: each level with a player in it, in Overworld, Nether, End order. The first pass reads the network and runs the shared parts (clock, weather, functions, autosave). |
@@ -48,7 +48,7 @@ Connecting or disconnecting changes `remote`, independently of the execution rol
 The server thread has a hub without a host player. The window joins it through memory as one
 more player. It still sets `options.dedicated` for gameplay checks outside the role migration's
 startup/world-loading scope. Everything above serves both servers, and `server_dimension_players`
-(vanilla clients on Horizon's dedicated server) and `lan_e2e` (Horizon clients on the
+(vanilla clients on Foundry Client's dedicated server) and `lan_e2e` (Foundry Client clients on the
 server thread) check it from the two sides.
 
 ## Cost of an extra level
@@ -111,12 +111,12 @@ the fog are the Overworld's.
 
 A viewed level is a level besides its own that a player's client keeps, so that the server can send it
 that level's chunks and updates: what Immersive Portals needs to show other dimensions through its
-portals. The spec is arismoko/horizon#3716. Built so far: the channel, the client's capability answer, the client's worlds, the server's areas and their entities, the travel into a viewed level, and the levels' sounds (arismoko/horizon#3983).
+portals. The spec is arismoko/foundry#3716. Built so far: the channel, the client's capability answer, the client's worlds, the server's areas and their entities, the travel into a viewed level, and the levels' sounds (arismoko/foundry#3983).
 
 | Side | Where | What it does |
 |---|---|---|
-| Both | `horizon-protocol/src/viewed_levels.rs` | The codec of `horizon:levels`, an engine channel mods cannot register (`is_reserved_channel`). Configuration: the query and the answer. Play, clientbound only: `open`, `run` (packets of one level, each of a level-scoped kind, or from revision 3 a sound) and `close`; below revision 3 a sound is a protocol error. Each names its level (`viewed_levels::Level`): before revision 4 by its index in the Login packet's `levels`, so a level opened after Login (a runtime level) is never sent; from revision 4 by a slot below the client's level count and an epoch, two nonnegative VarInts. An `open` binds the slot to the level its `SpawnInfo` names until a `close` of that binding; the epoch is one counter per connection, one more for each `open` and each `swap`, never wrapping. From revision 4 `open` also carries the server's column cap for that client, and a fourth message, `swap` (kind 3: slot, epoch), follows a travel's Respawn. A negative slot, epoch or cap is a codec error. |
-| Server | `lan/viewed_levels/capability.rs`, called from `lan/conn.rs` | Asks a client whose brand is Horizon's, in configuration, how many other levels it can view, and keeps the answer, its revision and level count, in `PlayerSender::viewed_levels`. The server asks with revision 4 and serves revisions 1 to 4; no answer, or another revision, is 0 levels. Revision 2 adds the travel into a viewed level (`switch.rs`), revision 3 the levels' sounds (`sounds.rs`), which a client of revision 1 or 2 is not sent, and revision 4 the bindings, the column cap in `open` and `swap` (arismoko/horizon#4152, arismoko/horizon#3894). For a client older than revision 4 the server keeps the levels it was told at Login (`Viewed::logged_in_with`) and sends nothing of a level not among them. A second answer, or one it did not ask for, closes the connection. |
+| Both | `foundry-protocol/src/viewed_levels.rs` | The codec of `foundry:levels`, an engine channel mods cannot register (`is_reserved_channel`). Configuration: the query and the answer. Play, clientbound only: `open`, `run` (packets of one level, each of a level-scoped kind, or from revision 3 a sound) and `close`; below revision 3 a sound is a protocol error. Each names its level (`viewed_levels::Level`): before revision 4 by its index in the Login packet's `levels`, so a level opened after Login (a runtime level) is never sent; from revision 4 by a slot below the client's level count and an epoch, two nonnegative VarInts. An `open` binds the slot to the level its `SpawnInfo` names until a `close` of that binding; the epoch is one counter per connection, one more for each `open` and each `swap`, never wrapping. From revision 4 `open` also carries the server's column cap for that client, and a fourth message, `swap` (kind 3: slot, epoch), follows a travel's Respawn. A negative slot, epoch or cap is a codec error. |
+| Server | `lan/viewed_levels/capability.rs`, called from `lan/conn.rs` | Asks a client whose brand is Foundry Client's, in configuration, how many other levels it can view, and keeps the answer, its revision and level count, in `PlayerSender::viewed_levels`. The server asks with revision 4 and serves revisions 1 to 4; no answer, or another revision, is 0 levels. Revision 2 adds the travel into a viewed level (`switch.rs`), revision 3 the levels' sounds (`sounds.rs`), which a client of revision 1 or 2 is not sent, and revision 4 the bindings, the column cap in `open` and `swap` (arismoko/foundry#4152, arismoko/foundry#3894). For a client older than revision 4 the server keeps the levels it was told at Login (`Viewed::logged_in_with`) and sends nothing of a level not among them. A second answer, or one it did not ask for, closes the connection. |
 | Client | `viewed_levels_net.rs`, called from `net.rs` | Answers the query before acknowledging `FinishConfiguration`, with revision 4: 2 levels, the other two of vanilla's three dimensions. |
 | Client | `game/network/viewed_worlds/` | On `open`, a world for the level, built from the dimension type the server synced for it. A `run`'s packets change that world: its chunks, light, biomes, blocks, time (an update with no clocks moves its clock on by the game time since, at its rate), weather and entities (`entities.rs`, apart from the player's own). `close` drops it and frees the slot. The client keeps each slot's world with the epoch that bound it (`worlds.rs`): a `run` or `close` at that epoch goes to it, one at an epoch no newer than the latest it was sent but not the slot's is dropped (a late packet of a level the slot no longer holds), and one at a newer epoch closes the connection. Each of these closes the connection with a fixed reason that shows none of the server's text: an `open` whose dimension is not a level id, of a dimension type the server did not sync (never an Overworld fallback), of a level viewed already in another slot, of the player's own level, of a slot past the client's 2, with a column cap past `viewed_levels::MAX_COLUMNS` (4489, the client's ceiling) or with an epoch not newer than the last; a new column past the cap the `open` said; a new entity past 8192 (`viewed_levels::MAX_ENTITIES`) or an entity's effect or attribute past 256; a `swap` the client did not make. A travel's Respawn (keep 3) into one of them swaps it with the player's world (`switch.rs`): its columns, light and block entities become the player's, the player's world becomes the viewed world of the level left, held until the server's `swap` binds it to the slot of the level entered, and no loading screen starts. A Login, any other Respawn (a death's, an End exit's) or a new configuration drops them all. The player's own level (`host.level`) is never one of them, and nothing is drawn yet. |
 | Server | `lan/viewed_levels/{areas,view,send}.rs` | A mod's areas for one player (`Hub::set_viewed_areas`), each `Loaded` or `Ticking`, within the caps (`max_viewed_*`, [hosting](hosting.md)), with centres at most 1,875,000 chunks (the world border's limit) from (0, 0). A client that can view the level is sent `open`, its chunks in runs inside a plain batch, its block, light and block-entity changes, block and level events, its time every 20 ticks, its clocks when they jump or change rate (`time set`, `time add`, `advance_time`) and its weather; chunks no area covers are forgotten 52 ticks later, then `close`. A view holds at most the client's column cap: from revision 4 the per-player `Loaded` cap, sent in `open` and at most 4489 (`viewed_levels::MAX_COLUMNS`, the setting is clamped to it); before revision 4 at most 2048 (`viewed_levels::LEGACY_COLUMNS`), which that client's areas are checked against too (`ViewedCaps::for_client`). A slot is the first free one below the client's level count, with the next epoch (`Viewed::name_new`). |
@@ -131,7 +131,7 @@ portals. The spec is arismoko/horizon#3716. Built so far: the channel, the clien
 
 An area is not a player: it stays out of `Guest::placed_in` and `Guest::watches_level`, so spawning,
 sleeping, raids, spawners and the dragon fight count real players only. A vanilla client is never asked,
-and an older Horizon client ignores the query, so both view none and are sent nothing.
+and an older Foundry Client client ignores the query, so both view none and are sent nothing.
 
 ## Not done yet
 

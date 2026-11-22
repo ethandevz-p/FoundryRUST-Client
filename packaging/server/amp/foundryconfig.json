@@ -1,0 +1,107 @@
+[
+    {
+        "DisplayName": "Accept the Minecraft EULA",
+        "Category": "Foundry Client:public",
+        "Subcategory": "Server:dns:1",
+        "Description": "Ticked accepts the Minecraft EULA for this server. The first start fails until it is ticked.",
+        "Keywords": "foundry,eula",
+        "FieldName": "FoundryEula",
+        "InputType": "checkbox",
+        "ParamFieldName": "FoundryEula",
+        "DefaultValue": "false",
+        "EnumValues": {
+            "False": "false",
+            "True": "true"
+        }
+    },
+    {
+        "DisplayName": "Foundry Client release",
+        "Category": "Foundry Client:public",
+        "Subcategory": "Server:dns:1",
+        "Description": "The GitHub release tag to install: nightly (the current Nightly) or an exact tag. Read at install and reinstall only.",
+        "Keywords": "foundry,version",
+        "FieldName": "FoundryVersion",
+        "InputType": "text",
+        "ParamFieldName": "FoundryVersion",
+        "DefaultValue": "nightly",
+        "EnumValues": {}
+    },
+    {
+        "DisplayName": "World name",
+        "Category": "Foundry Client:public",
+        "Subcategory": "Server:dns:1",
+        "Description": "The world's folder name. Read on the first start only.",
+        "Keywords": "foundry,world",
+        "FieldName": "FoundryWorld",
+        "InputType": "text",
+        "ParamFieldName": "FoundryWorld",
+        "DefaultValue": "world",
+        "EnumValues": {}
+    },
+    {
+        "DisplayName": "World seed",
+        "Category": "Foundry Client:public",
+        "Subcategory": "Server:dns:1",
+        "Description": "The world's seed; empty picks a random one. Read on the first start only.",
+        "Keywords": "foundry,seed",
+        "FieldName": "FoundrySeed",
+        "InputType": "text",
+        "ParamFieldName": "FoundrySeed",
+        "DefaultValue": "",
+        "EnumValues": {}
+    },
+    {
+        "DisplayName": "Whitelist",
+        "Category": "Foundry Client:public",
+        "Subcategory": "Server:dns:1",
+        "Description": "Ticked turns the whitelist on, as in vanilla. Read on the first start only.",
+        "Keywords": "foundry,whitelist",
+        "FieldName": "FoundryWhitelist",
+        "InputType": "checkbox",
+        "ParamFieldName": "FoundryWhitelist",
+        "DefaultValue": "true",
+        "EnumValues": {
+            "False": "false",
+            "True": "true"
+        }
+    },
+    {
+        "DisplayName": "Whitelisted players",
+        "Category": "Foundry Client:public",
+        "Subcategory": "Server:dns:1",
+        "Description": "Names separated by commas, added to the whitelist. Read on the first start only.",
+        "Keywords": "foundry,players",
+        "FieldName": "FoundryPlayers",
+        "InputType": "text",
+        "ParamFieldName": "FoundryPlayers",
+        "DefaultValue": "",
+        "EnumValues": {}
+    },
+    {
+        "DisplayName": "Operator",
+        "Category": "Foundry Client:public",
+        "Subcategory": "Server:dns:1",
+        "Description": "A player to make an operator. Read on the first start only.",
+        "Keywords": "foundry,op",
+        "FieldName": "FoundryOp",
+        "InputType": "text",
+        "ParamFieldName": "FoundryOp",
+        "DefaultValue": "",
+        "EnumValues": {}
+    },
+    {
+        "DisplayName": "Online mode",
+        "Category": "Foundry Client:public",
+        "Subcategory": "Server:dns:1",
+        "Description": "Ticked checks players' Minecraft accounts, as vanilla's online mode does (docs/hosting.md). Read on the first start only.",
+        "Keywords": "foundry,online",
+        "FieldName": "FoundryOnline",
+        "InputType": "checkbox",
+        "ParamFieldName": "FoundryOnline",
+        "DefaultValue": "true",
+        "EnumValues": {
+            "False": "false",
+            "True": "true"
+        }
+    }
+]

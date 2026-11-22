@@ -50,12 +50,12 @@ computed once at load; they are not per-tick work.
 ## Build
 
 ```sh
-cargo horizon-mod build --wasm
+cargo foundry-mod build --wasm
 ```
 
 The command builds your crate with the pinned Rust toolchain (installed through rustup the first time, with
-`rust-src`), writes `mod.wasm` beside `horizon-mod.toml`, records it in a `[wasm]` section, and
-packs `target/horizon-mod/<id>.hmod`. Let the tool write `[wasm]`; do not edit it by hand:
+`rust-src`), writes `mod.wasm` beside `foundry-mod.toml`, records it in a `[wasm]` section, and
+packs `target/foundry-mod/<id>.hmod`. Let the tool write `[wasm]`; do not edit it by hand:
 
 ```toml
 [wasm]
@@ -65,14 +65,14 @@ toolchain = "1.99.1 <commit>"     # every mod linked together needs the same one
 my_library = "…"
 ```
 
-Build with a `cargo-horizon-mod` from the game build your mod is made for. A tool installed
+Build with a `cargo-foundry-mod` from the game build your mod is made for. A tool installed
 before November 2026's fix for std symbol names (#18261) names std differently from the game's
 std member, so the game refuses the mod even when the Rust version matches. Reinstall the tool
-from the commit in your `[package.metadata.horizon] sdk`, then rebuild the mod and every library
+from the commit in your `[package.metadata.foundry] sdk`, then rebuild the mod and every library
 mod it depends on. An existing `.hmod` keeps its old imports until it's rebuilt:
 
 ```sh
-cargo install --locked --git https://github.com/horizon-rust/horizon --rev <sdk commit> cargo-horizon-mod
+cargo install --locked --git https://github.com/foundry-rust/foundry --rev <sdk commit> cargo-foundry-mod
 ```
 
 A mod carries native code or wasm code, not both. A wasm mod has no `[native]` table.
@@ -93,8 +93,8 @@ transport changed between the 2026-11-18 Nightly (`dd67b76`) and the 2026-11-19 
 on the 2026-11-20 game, and players of the 18 November Nightly needed a build of their own.
 
 `mod.wasm` is a build output and stays out of Git, so in the
-[horizon-mods](https://github.com/horizon-rust/horizon-mods) registry a wasm mod's source sits under
-`native/` beside the native mods. Its `horizon-mod.toml` has a `[wasm]` table and no `[native]` one,
+[foundry-mods](https://github.com/foundry-rust/foundry-mods) registry a wasm mod's source sits under
+`native/` beside the native mods. Its `foundry-mod.toml` has a `[wasm]` table and no `[native]` one,
 and its registry entry's kind is `mod`, not `native-mod`.
 
 A dependency group shares its handler table and cache budget. A handler registered by one
@@ -107,13 +107,13 @@ usual (`try_reserve` returns an error, an infallible allocation ends the call wi
 give back what a cache can rebuild. It must free memory and must not allocate. Registering the same function twice is
 harmless; `false` means all 29 slots are taken.
 
-A wasm mod must not declare its own `#[global_allocator]`: `cargo horizon-mod build --wasm` fails with rustc's error
+A wasm mod must not declare its own `#[global_allocator]`: `cargo foundry-mod build --wasm` fails with rustc's error
 "the `#[global_allocator]` in this crate conflicts with global allocator in: mod_api". Allocate through the standard
 collections and let the group's allocator do the rest.
 
 ## Dependencies
 
-`[dependencies]` work as for native mods. List the library mod in `horizon-mod.toml` and its
+`[dependencies]` work as for native mods. List the library mod in `foundry-mod.toml` and its
 crate in `Cargo.toml`. The tool stages the resolved mod packages into one Cargo workspace:
 each library's single compiler unit produces both its rlib and its position-independent member,
 and dependents use that exact rlib through Cargo's ordinary dependency edges. Cargo owns
@@ -124,7 +124,7 @@ Ordinary Rust calls such as `my_library::function()`, statics, generics and owne
 no generated interface or export annotations. Members export their public definitions without
 symbol interposition: duplicate definitions are refused, rather than overriding another mod.
 Each member records its compiler, target, settings,
-rlib digest and dependency artifact identities in `horizon.build` metadata covered by its module
+rlib digest and dependency artifact identities in `foundry.build` metadata covered by its module
 hash. Mod crate disambiguators use the mod ID, version and resolved Cargo features rather than
 the temporary workspace path. Std crate disambiguators use only the pinned toolchain, the crate
 and its features, so a mod built on Windows, macOS or Linux links against the game's one std
@@ -134,7 +134,7 @@ library and its consumers were built separately. Changing a library's source, to
 features or settings requires rebuilding its consumers.
 
 The build packages every member of the resolved group into the invoking project's
-`target/horizon-mod/` directory. A consumer build does not replace another project's previously
+`target/foundry-mod/` directory. A consumer build does not replace another project's previously
 packaged `.hmod`. To include additional local roots in the same Cargo invocation, repeat
 `--with path/to/another/mod`. The game links a mod with its
 dependencies at load, one copy of each library shared by every mod that uses it, and refuses a
@@ -156,14 +156,14 @@ member constructors run after linking. Groups do not share memory with one anoth
 The build step moves a core start function to the explicit `__wasm_start` export. The loader
 instantiates members, fills self-referencing GOT entries from their actual exports, then runs
 `__wasm_start`, data relocations and constructors in that order. A raw core start is refused:
-it would execute before its own addresses could be relocated. `horizon.private` metadata lists
+it would execute before its own addresses could be relocated. `foundry.private` metadata lists
 compiler implementation exports that remain local to a member (for example an upstream inline
 method emitted in several members). Their original symbols can resolve that member's own GOT,
 but are not published as library definitions. This is symbol visibility metadata, not function
 glue or another Rust interface.
 
 Pointers and lengths below are wasm32 `u32` values. The game provides these imports in the
-`horizon` module:
+`foundry` module:
 
 - `Owner::method#signature(in_ptr, in_len, out_ptr, out_cap) -> u32`: one import per API call
   (`held-Owner::method#signature` for a method of a handler another mod gave the game).
@@ -179,10 +179,10 @@ Pointers and lengths below are wasm32 `u32` values. The game provides these impo
 
 Each guest exports:
 
-- `horizon_layout() -> u64`: the hash of what every call shares: the reserved IDs, group state,
+- `foundry_layout() -> u64`: the hash of what every call shares: the reserved IDs, group state,
   the prepared ABI and the hand-written codecs. A mismatch is refused.
-- `horizon_in(len) -> ptr`: the buffer into which the game writes the next call's input.
-- `horizon_hook(id) -> u64`: runs export `id` after the input is written. An export's ID is a hash
+- `foundry_in(len) -> ptr`: the buffer into which the game writes the next call's input.
+- `foundry_hook(id) -> u64`: runs export `id` after the input is written. An export's ID is a hash
   of its name (`Owner::method`), the same in every build. The high 32 bits are the reply pointer
   and the low 32 bits its length; `u32::MAX` as the length denotes an error, with a Wire string at
   the pointer. The reply remains valid until the next call at the same depth. A handler call
@@ -218,7 +218,7 @@ group. APIs marked `Not on wasm` in their Rust documentation cannot be used by w
 ### Memory
 
 A group's members share one linear memory: their heaps, stacks and static data together. Its limit is
-the largest `wasm_memory_mib` a member's `horizon-mod.toml` declares (1 to 4096 MiB, wasm32's 4 GiB),
+the largest `wasm_memory_mib` a member's `foundry-mod.toml` declares (1 to 4096 MiB, wasm32's 4 GiB),
 so a library declares what it and its addons need. Without a declaration, the limit is
 1 GiB or the instance cap, whichever is smaller. The limit is a ceiling, not memory taken: the group
 uses what it grows to. It bounds that used memory only: on 64-bit systems the runtime still reserves
@@ -227,7 +227,7 @@ not shrink that reservation. Past the limit, or past what the system gives, `mem
 guest and the call goes on; Rust's allocator then reports the failure as usual (`try_reserve` returns an
 error; an infallible allocation ends the call with a trap and the log names the group and its limit).
 
-Each instance caps every group with `wasm.memory_cap_mib:<MiB>` in `horizon-mods.txt`, beside `options.txt`:
+Each instance caps every group with `wasm.memory_cap_mib:<MiB>` in `foundry-mods.txt`, beside `options.txt`:
 4096 unless the player lowers it. A group whose members declare more than the cap is refused at load, and
 the Mods page names the group, what it declares and the cap.
 
@@ -237,7 +237,7 @@ Wasm threads and shared memory are off for wasm mods. A module that declares or 
 
 ## Compiled module cache
 
-The game caches compiled wasm modules in `<game_dir>/.horizon-cache/wasm/`, keyed by the
+The game caches compiled wasm modules in `<game_dir>/.foundry-cache/wasm/`, keyed by the
 wasm bytes, Wasmtime compatibility and engine settings. Hits map the compiled file into memory;
 files shipped beside a mod are never loaded as compiled code.
 
@@ -272,7 +272,7 @@ when saving its options; no launcher rebuild or game argument is needed.
 
 The unset default is `5 + 300 / available_threads` seconds (at least one thread):
 **1 → 305 s; 2 → 155 s; 8 → 42.5 s; 64 → 9.6875 s**.
-Issue arismoko/horizon#3673 measured a 30 MB module at roughly 30 s on one thread and 3 s on eight.
+Issue arismoko/foundry#3673 measured a 30 MB module at roughly 30 s on one thread and 3 s on eight.
 The 300 s single-thread allowance is ten times the former, plus 5 s fixed headroom.
 The eight-thread default remains above the previous 37.743749290 s limit, which
 was ten times a 3.774374929 s compile of a 67,998,240-byte module on a Ryzen 7 5700X.

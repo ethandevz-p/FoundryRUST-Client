@@ -143,10 +143,10 @@ storage writes/restores do not manufacture notifications; game-held vanilla cont
 retain implicit root-commit coalescing. Keep storage in the transaction journal: a handler that
 ignores it can lose an extracted item on abort. The hopper does not guard or repair that loss.
 
-The ignored `horizon-client` library tests under
+The ignored `foundry-client` library tests under
 `game::machines::native_items::storage_attempt_tests::` exercise real ticks and Parts storage,
 including literal attempt/commit/abort/restore/mark traces, cooldowns, comparator scheduling,
-direct vanilla/saved-pot paths, writable notification callbacks and the minecart fallback. They require prepared `HORIZON_TEST_RESOURCES`
+direct vanilla/saved-pot paths, writable notification callbacks and the minecart fallback. They require prepared `FOUNDRY_TEST_RESOURCES`
 and scratch homes/cwd.
 The comparator regression uses a supported comparator in a forced, lit chunk with its 3x3
 neighbours loaded. It drives the real scheduler before each hopper tick, retaining literal
@@ -154,7 +154,7 @@ comparator executions on game ticks 3 and 5 rather than manually firing those ti
 
 `game::machines::native_items::storage_attempt_wasm_tests::compiled_guest_storage_notifies_reentrantly_before_actual_hopper_abort`
 loads the repository's compiled `wasm-fixture` package and matching shared standard library
-(`HORIZON_WASM_FIXTURE`, `HORIZON_WASM_STD`). Its pull and push cases invoke real guest storage,
+(`FOUNDRY_WASM_FIXTURE`, `FOUNDRY_WASM_STD`). Its pull and push cases invoke real guest storage,
 reenter that same active guest through `contents_changed`, and retain the callback observations
 across actual Game transaction aborts.
 
@@ -169,9 +169,9 @@ level without those effects. The capability also journals its composter-local ra
 so an aborted transfer attempt and its retry have the same chance outcome, without rewinding
 unrelated world randomness. This ownership follows NeoForge's public
 [`TransactionalRandom` contract](https://aldak0.ru/javadoc/26.3.x/net/neoforged/neoforge/transfer/item/TransactionalRandom.html).
-Horizon initializes each position's stream once by copying the current level random state;
+Foundry Client initializes each position's stream once by copying the current level random state;
 capability composting then neither advances nor rewinds the ordinary level stream. This
-initialization is Horizon's mapping, not a claim about NeoForge's unspecified initial seed.
+initialization is Foundry Client's mapping, not a claim about NeoForge's unspecified initial seed.
 Cached streams retire with their chunk or world epoch. Direct hand, villager and vanilla
 container paths keep their existing level-random behavior.
 

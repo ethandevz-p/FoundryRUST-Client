@@ -1,11 +1,11 @@
 use super::*;
-use horizon_platform::mod_package::sdk::{Build, Mixins, Surface, Toolchain};
-use horizon_release_sign::{sha256_hex, sums_file, SigningKey};
+use foundry_platform::mod_package::sdk::{Build, Mixins, Surface, Toolchain};
+use foundry_release_sign::{sha256_hex, sums_file, SigningKey};
 
 const COMMIT: &str = "0123456789abcdef0123456789abcdef01234567";
 const TRIPLE: &str = "x86_64-unknown-linux-gnu";
 /// An xz tar the packager wrote, holding `deps/a.rmeta`.
-const SLICE: &[u8] = include_bytes!("../../../crates/horizon-mod-package/src/sdk/fixture.tar.xz");
+const SLICE: &[u8] = include_bytes!("../../../crates/foundry-mod-package/src/sdk/fixture.tar.xz");
 
 fn runtime() -> String {
     Asset::name(Kind::Runtime, TRIPLE, Side::Client)
@@ -46,7 +46,7 @@ fn index_of(files: &[(&str, &[u8])], rust: &str) -> Index {
         },
         package_format: sdk::PACKAGE_FORMAT,
         toolchain: Toolchain { rust: rust.into() },
-        content_api: horizon_platform::mod_package::manifest::API.into(),
+        content_api: foundry_platform::mod_package::manifest::API.into(),
         surface: Surface {
             hash: "ab".repeat(16),
             previous: None,
@@ -55,8 +55,8 @@ fn index_of(files: &[(&str, &[u8])], rust: &str) -> Index {
             notes: Vec::new(),
         },
         mixins: Mixins {
-            rev: horizon_platform::mod_package::mixins_tool::REV.into(),
-            patch: horizon_platform::mod_package::mixins_tool::patch_hash(),
+            rev: foundry_platform::mod_package::mixins_tool::REV.into(),
+            patch: foundry_platform::mod_package::mixins_tool::patch_hash(),
         },
         assets,
         inputs: sdk::inputs(),
@@ -144,8 +144,8 @@ fn a_base_is_a_url_or_a_folder() {
         Base::Url("http://localhost:8000".into())
     );
     assert_eq!(
-        Base::parse(Some("/media/usb/horizon-sdk".into())),
-        Base::Folder("/media/usb/horizon-sdk".into())
+        Base::parse(Some("/media/usb/foundry-sdk".into())),
+        Base::Folder("/media/usb/foundry-sdk".into())
     );
 }
 
@@ -177,7 +177,7 @@ fn an_index_is_refused_by_name_when_its_signature_or_contents_do_not_hold() {
     assert_eq!(
         read().unwrap_err(),
         Refusal::NoSdk {
-            build: "your Horizon version".into()
+            build: "your Foundry Client version".into()
         }
     );
     let good = index_of(&[], rust_toolchain::VERSION).to_json();
@@ -618,7 +618,7 @@ fn a_game_release_names_its_build_through_its_signed_index() {
     let current = "nightly-2026-11-14-0123456";
     publish(
         &base,
-        horizon_release_sign::NIGHTLY,
+        foundry_release_sign::NIGHTLY,
         current,
         &fixture.key,
         index.as_bytes(),
@@ -662,7 +662,7 @@ fn a_game_release_names_its_build_through_its_signed_index() {
     // A snapshot is never read as a Nightly: a snapshot's index and signature served under the
     // Nightly's tags, for a Nightly version of the same date and commit, are refused.
     let as_nightly = "nightly-2026-11-15-0123456";
-    for tag in [horizon_release_sign::NIGHTLY, "nightly-2026-11-15"] {
+    for tag in [foundry_release_sign::NIGHTLY, "nightly-2026-11-15"] {
         publish(
             &base,
             tag,
@@ -727,7 +727,7 @@ fn sizes_and_builds_read_plainly() {
     assert_eq!(megabytes(71_000_000), "71 MB");
     assert_eq!(megabytes(1), "1 MB");
     // A build with no name here is never shown as its commit.
-    assert_eq!(shown(COMMIT, None), "your Horizon version");
+    assert_eq!(shown(COMMIT, None), "your Foundry Client version");
     // A pin from a mod's manifest is cut only where a character ends.
     assert_eq!(shown("ééééé", None), "ééééé");
 }

@@ -5,7 +5,7 @@ name: mojang republish
 #   gh workflow run "mojang republish" -f dry_run=true
 on:
   schedule:
-    - cron: '23 * * * *'  # hourly: a republished JSON breaks horizon-prepare for every new player until accepted
+    - cron: '23 * * * *'  # hourly: a republished JSON breaks foundry-prepare for every new player until accepted
   workflow_dispatch:
     inputs:
       dry_run:
@@ -21,8 +21,8 @@ concurrency:
 
 jobs:
   check:
-    # One of our small runners (label horizon-light, docs/ci-runners.md): main's script, Mojang's public manifest.
-    runs-on: ${{ vars.SELF_HOSTED_CI != 'off' && fromJSON('["self-hosted", "linux", "horizon-light"]') || 'blacksmith-2vcpu-ubuntu-2404' }}
+    # One of our small runners (label foundry-light, docs/ci-runners.md): main's script, Mojang's public manifest.
+    runs-on: ${{ vars.SELF_HOSTED_CI != 'off' && fromJSON('["self-hosted", "linux", "foundry-light"]') || 'blacksmith-2vcpu-ubuntu-2404' }}
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

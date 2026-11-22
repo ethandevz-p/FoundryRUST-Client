@@ -7,7 +7,7 @@
 //!
 //! The page is by kind (mods, modpacks, resource packs, shader packs, data packs); each kind
 //! searches its own source. Resource packs, shader packs and data packs can switch between
-//! Horizon and Modrinth. A Java instance's supported files come from Modrinth. Kept in the mockup's
+//! Foundry Client and Modrinth. A Java instance's supported files come from Modrinth. Kept in the mockup's
 //! patterns: Show everything, the filters, which instance or world installs go to (under the
 //! search); the
 //! project's page, its rating and why it runs or not (in the project's card); adding a native mod
@@ -16,7 +16,7 @@
 
 use super::*;
 use crate::glass_ui::{self as ui, white};
-use horizon_theme::glass::{ink, radius};
+use foundry_theme::glass::{ink, radius};
 
 /// The project card's width (`lg:grid-cols-[minmax(0,1fr)_360px]`).
 const DETAIL: f32 = 360.;
@@ -25,7 +25,7 @@ impl Launcher {
     /// The search's placeholder: the registry's count when it is listed whole.
     pub(super) fn mods_placeholder(&self) -> SharedString {
         let m = &self.mods;
-        let registry = m.source() == SourceId::Horizon;
+        let registry = m.source() == SourceId::Foundry Client;
         if registry
             && m.kind == PackKind::Mod
             && m.searched
@@ -34,10 +34,10 @@ impl Launcher {
         {
             // Results come in pages: only a last page gives the real count.
             if m.more {
-                return tr("Search Horizon mods").into();
+                return tr("Search Foundry Client mods").into();
             }
             trf(
-                "Search {count} Horizon mods",
+                "Search {count} Foundry Client mods",
                 &[("count", &m.results.len().to_string())],
             )
             .into()
@@ -50,7 +50,7 @@ impl Launcher {
         let t = self.theme;
         let instance = self
             .selected_instance()
-            .map_or_else(|| "Horizon".to_owned(), |i| i.name.clone());
+            .map_or_else(|| "Foundry Client".to_owned(), |i| i.name.clone());
         let head = ui::page_head(
             tr("Mods"),
             trf(
@@ -251,7 +251,7 @@ impl Launcher {
                 .bg(white(if open { 0.11 } else { 0.07 }))
                 .hover(|s| s.bg(white(0.11)))
                 .cursor_pointer()
-                .font_family(horizon_theme::glass::FONT)
+                .font_family(foundry_theme::glass::FONT)
                 .text_size(px(14.))
                 .text_color(white(ink::FULL))
                 .child(trf("Sort by: {order}", &[("order", tr(name))]))
@@ -308,14 +308,14 @@ impl Launcher {
         wrap
     }
 
-    /// A quiet line under Horizon's mod list when the registry holds mods this Horizon can't
+    /// A quiet line under Foundry Client's mod list when the registry holds mods this Foundry Client can't
     /// use yet (made for the earlier mod system), with how many.
     fn mods_left_out_note(&self) -> Option<Div> {
         let m = &self.mods;
-        if m.source() != SourceId::Horizon || m.kind != PackKind::Mod {
+        if m.source() != SourceId::Foundry Client || m.kind != PackKind::Mod {
             return None;
         }
-        let count = browser::horizon::projects_left_out().filter(|n| *n > 0)?;
+        let count = browser::foundry::projects_left_out().filter(|n| *n > 0)?;
         Some(
             div()
                 .flex()
@@ -324,7 +324,7 @@ impl Launcher {
                 .px(px(4.))
                 .child(ui::icon("information-circle", 14., white(ink::QUIET)))
                 .child(ui::text(13., FontWeight::NORMAL, ink::QUIET).child(trf(
-                    "{count} more mods made for Horizon's earlier mod system are hidden until their authors update them.",
+                    "{count} more mods made for Foundry Client's earlier mod system are hidden until their authors update them.",
                     &[("count", &count.to_string())],
                 ))),
         )
@@ -338,9 +338,9 @@ impl Launcher {
             // A failed search stays as an amber card: what happened in plain words, Try again,
             // and the error's own words on request.
             let details = m.error_details;
-            let horizon = m.source() == SourceId::Horizon;
-            let what = if horizon {
-                tr("Couldn't load Horizon's mod list.")
+            let foundry = m.source() == SourceId::Foundry Client;
+            let what = if foundry {
+                tr("Couldn't load Foundry Client's mod list.")
             } else {
                 tr("The search didn't go through.")
             };
@@ -394,7 +394,7 @@ impl Launcher {
             let line = if m.kind == PackKind::Shader && m.java.is_some() {
                 tr("Shader packs for Java instances aren't supported yet.").to_string()
             } else if !m.results.is_empty() {
-                tr("Nothing found that runs in Horizon. Show everything lists the rest.")
+                tr("Nothing found that runs in Foundry Client. Show everything lists the rest.")
                     .to_string()
             } else if m.searching || !m.searched {
                 tr("Searching…").to_string()
@@ -408,12 +408,12 @@ impl Launcher {
                     "Nothing matches “{query}”.",
                     &[("query", m.text.text().trim())],
                 )
-            } else if m.source() == SourceId::Horizon {
-                tr("Nothing in Horizon's registry matches yet.").to_string()
+            } else if m.source() == SourceId::Foundry Client {
+                tr("Nothing in Foundry Client's registry matches yet.").to_string()
             } else if m.everything || !m.can_show_everything() {
                 tr("Nothing found.").to_string()
             } else {
-                tr("Nothing found that runs in Horizon. Show everything lists the rest.")
+                tr("Nothing found that runs in Foundry Client. Show everything lists the rest.")
                     .to_string()
             };
             let line = ui::text(14., FontWeight::NORMAL, 0.6)
@@ -485,7 +485,7 @@ impl Launcher {
                 div().flex_none().w(px(20.)).into_any_element()
             };
             // The registry's rows end with downloads, the others' with how they run (`compat`).
-            let right = if p.source == SourceId::Horizon {
+            let right = if p.source == SourceId::Foundry Client {
                 ui::text(13., FontWeight::NORMAL, 0.5)
                     .flex()
                     .items_center()
@@ -615,7 +615,7 @@ impl Launcher {
         let about = m
             .about
             .get(&p.id)
-            .filter(|_| p.source == SourceId::Horizon)
+            .filter(|_| p.source == SourceId::Foundry Client)
             .map(|lines| lines.join(" · "));
         let registry = about.is_some();
 
@@ -699,7 +699,7 @@ impl Launcher {
                 .child(
                     div()
                         .mt(px(20.))
-                        .font_family(horizon_theme::glass::DISPLAY_FONT)
+                        .font_family(foundry_theme::glass::DISPLAY_FONT)
                         .font_weight(FontWeight::SEMIBOLD)
                         .text_size(px(24.))
                         .line_height(px(30.))
@@ -712,7 +712,7 @@ impl Launcher {
                         .child(by.join(" · ")),
                 )
                 .children(
-                    (p.source == SourceId::Horizon)
+                    (p.source == SourceId::Foundry Client)
                         .then(|| stars(&p.id, &t))
                         .flatten()
                         .map(|s| s.mt(px(8.))),
@@ -736,7 +736,7 @@ impl Launcher {
                         .font_weight(FontWeight::MEDIUM)
                         .text_color(tone)
                         .child(trf(
-                            "{support} in Horizon",
+                            "{support} in Foundry Client",
                             &[("support", tr(support.label()))],
                         )),
                 )
@@ -772,8 +772,8 @@ impl Launcher {
                 .when(registry, |d| {
                     d.child(
                         div().flex().justify_center().mt(px(4.)).child(
-                            ui::link("mods-detail-policy", tr("Horizon's mod policy"))
-                                .on_click(|_, _, cx| cx.open_url(browser::horizon::POLICY)),
+                            ui::link("mods-detail-policy", tr("Foundry Client's mod policy"))
+                                .on_click(|_, _, cx| cx.open_url(browser::foundry::POLICY)),
                         ),
                     )
                 }),

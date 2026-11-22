@@ -63,10 +63,10 @@ jobs:
         uses: useblacksmith/stickydisk@3f6be1451e3cad893b778bc93495c80452a5da26 # v1.7.2
         with:
           key: ${{ github.repository }}-testbox-target
-          path: ~/horizon-target
+          path: ~/foundry-target
           commit: false
       - name: Build in it, rebuilding only what changed
-        run: tools/ci/build_folder.sh ~/horizon-target
+        run: tools/ci/build_folder.sh ~/foundry-target
       # Commands arrive over SSH: they see neither GITHUB_ENV (later steps only) nor ~/.bashrc (interactive shells
       # only), but Cargo reads $CARGO_HOME/config.toml in any shell. The repository's .cargo/config.toml wins for keys
       # both set; it sets neither target-dir nor these [env] keys, and its build.rustflags is replaced (not joined) by
@@ -83,14 +83,14 @@ jobs:
           mkdir -p "$HOME/.cargo"
           cat <<'EOF' > "$HOME/.cargo/config.toml"
           [build]
-          target-dir = "/home/runner/horizon-target"
+          target-dir = "/home/runner/foundry-target"
 
           [target.x86_64-unknown-linux-gnu]
           rustflags = ["-C", "linker-features=-lld", "-C", "link-arg=-fuse-ld=mold", "-Zthreads=8"]
 
           [env]
-          HORIZON_NO_AUDIO = "1"
-          HORIZON_TELEMETRY_URL = "off"
+          FOUNDRY_NO_AUDIO = "1"
+          FOUNDRY_TELEMETRY_URL = "off"
           EOF
       - name: Run Testbox
         uses: useblacksmith/run-testbox@9b976c32aa3bcbffb348889673585a5deee1b2f3 # v2

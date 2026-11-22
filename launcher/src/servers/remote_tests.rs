@@ -13,7 +13,7 @@ fn the_command_runs_horizon_server_in_the_folder_there() {
     assert!(rest.windows(2).any(|w| w == ["-o", "BatchMode=yes"]));
     assert_eq!(
         line,
-        "PATH=\"$HOME/.local/bin:$PATH\" exec horizon-server --dir '/srv/minecraft' 'config' 'set' \
+        "PATH=\"$HOME/.local/bin:$PATH\" exec foundry-server --dir '/srv/minecraft' 'config' 'set' \
          'world.motd=Hi there'"
     );
     // A folder in the home folder: the command starts there.
@@ -61,7 +61,7 @@ fn problems_say_what_to_do() {
         "ssh: connect to host vps port 22: Connection timed out"
     )
     .contains("Can't reach"));
-    assert!(says(127, "sh: 1: exec: horizon-server: not found").contains("has no horizon-server"));
+    assert!(says(127, "sh: 1: exec: foundry-server: not found").contains("has no foundry-server"));
     assert!(says(3, NO_SERVER).contains("no server in /srv/mc"));
     assert_eq!(
         says(
@@ -73,7 +73,7 @@ fn problems_say_what_to_do() {
     assert_eq!(
         says(
             1,
-            "horizon-server: the game is starting or stopping: try again in a moment"
+            "foundry-server: the game is starting or stopping: try again in a moment"
         ),
         "The game is starting or stopping: try again in a moment"
     );
@@ -84,7 +84,7 @@ fn problems_say_what_to_do() {
 #[test]
 fn the_check_reads_the_status_there() {
     use std::os::unix::fs::PermissionsExt;
-    let root = std::env::temp_dir().join(format!("horizon-remote-{}", std::process::id()));
+    let root = std::env::temp_dir().join(format!("foundry-remote-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&root);
     let bin = root.join("bin");
     let server = root.join("srv");
@@ -100,7 +100,7 @@ fn the_check_reads_the_status_there() {
         ),
     )
     .unwrap();
-    let program = bin.join("horizon-server");
+    let program = bin.join("foundry-server");
     std::fs::write(
         &program,
         "#!/bin/sh\necho '{\"phase\":\"running\",\"sample\":{\"game\":{\"players\":[{\"name\":\"Alex\"}],\"max_players\":20}}}'\n",
@@ -119,7 +119,7 @@ fn the_check_reads_the_status_there() {
     assert_eq!(status.max_players, Some(20));
     std::fs::remove_file(&program).unwrap();
     let err = check_with(&ssh, "box", &dir).unwrap_err();
-    assert!(err.contains("has no horizon-server"), "{err}");
+    assert!(err.contains("has no foundry-server"), "{err}");
     std::fs::remove_dir_all(&root).unwrap();
 }
 

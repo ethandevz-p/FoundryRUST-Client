@@ -6,7 +6,7 @@
 its `entityInside`. `CactusBlock.entityInside` hurts the entity by 1, and `VehicleEntity.hurtServer` adds 10 damage
 to a boat or a minecart, which breaks over 40.
 
-A vanilla dedicated server and Horizon's each load a copy of one flat world vanilla generated first. Ticking is
+A vanilla dedicated server and Foundry Client's each load a copy of one flat world vanilla generated first. Ticking is
 frozen; only chunk (10, 0) is forced, so chunk (11, 0) (x 176 and on) does not tick its entities: a vehicle there
 never ticks, and its damage never wears off. Each lane is a piston at x 177 facing east, powered as the lane is
 built, and a boat or a minecart beside its head. Its box reaches into the block of a cactus at x 179 without
@@ -104,17 +104,17 @@ def proves(vanilla):
 
 
 def main():
-    lock, build, vanilla_server, horizon_server, _client = locator.sides(NAME)
+    lock, build, vanilla_server, foundry_server, _client = locator.sides(NAME)
     world = locator.generate_world(vanilla_server, build)
     vanilla = run('vanilla', vanilla_server, world, build)
     (build / 'vanilla.txt').write_text('\n'.join(vanilla) + '\n', encoding='utf-8')
     why = proves(vanilla)
     if why:
         raise AssertionError(f'vanilla is no proof: {why}:\n' + '\n'.join(vanilla))
-    horizon = run('horizon', horizon_server, world, build)
-    (build / 'horizon.txt').write_text('\n'.join(horizon) + '\n', encoding='utf-8')
-    if vanilla != horizon:
-        differ = [f'- {v}\n+ {h}' for v, h in zip(vanilla, horizon) if v != h]
+    foundry = run('foundry', foundry_server, world, build)
+    (build / 'foundry.txt').write_text('\n'.join(foundry) + '\n', encoding='utf-8')
+    if vanilla != foundry:
+        differ = [f'- {v}\n+ {h}' for v, h in zip(vanilla, foundry) if v != h]
         raise AssertionError(f'{len(differ)} lines differ from vanilla:\n' + '\n'.join(differ[:24]))
     print(f'piston cactus vehicles: {len(vanilla)} lines identical')
 

@@ -15,8 +15,8 @@ ROOT = Path(__file__).resolve().parents[1]
 class ClientStopgap(unittest.TestCase):
     def test_wrapper_command_threads_for_canonical_and_direct_selectors(self):
         selectors = ignored_shards.expand(ignored_shards.SHARDS) + [
-            "horizon-client", "horizon-client#1of1", "horizon-client#1of3",
-            "horizon-client#2of3", "horizon-client#3of3", "horizon-client-lib#1of2",
+            "foundry-client", "foundry-client#1of1", "foundry-client#1of3",
+            "foundry-client#2of3", "foundry-client#3of3", "foundry-client-lib#1of2",
         ]
         for selector in selectors:
             with self.subTest(selector=selector):
@@ -30,7 +30,7 @@ class ClientStopgap(unittest.TestCase):
                 with patch.object(ignored_tests.subprocess, 'run', side_effect=execute), contextlib.redirect_stdout(io.StringIO()):
                     self.assertEqual(ignored_tests.run(package, ['suite::case'], number, count), {})
                 command = commands[-1]
-                client_half = selector in ("horizon-client#1of2", "horizon-client#2of2")
+                client_half = selector in ("foundry-client#1of2", "foundry-client#2of2")
                 expected = 8 if client_half else 4
                 self.assertEqual(len(commands), 2 if number is not None else 1)
                 for invocation in commands:

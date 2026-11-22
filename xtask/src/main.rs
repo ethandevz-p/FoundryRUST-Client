@@ -1,26 +1,26 @@
 //! Repository tasks, run with `cargo run -p xtask -- TASK`.
 //!
-//! `package BINARY OUTDIR`: a playable Horizon folder with the game binary, horizon-ctl,
-//! horizon-prepare and horizon-server (built beside it: cargo build --release -p horizon-game -p horizon-client-lib
-//! --bins -p horizon-prepare -p horizon-server), the exporters horizon-prepare compiles, its sources (the launcher compares
+//! `package BINARY OUTDIR`: a playable Foundry Client folder with the game binary, foundry-ctl,
+//! foundry-prepare and foundry-server (built beside it: cargo build --release -p foundry-game -p foundry-client-lib
+//! --bins -p foundry-prepare -p foundry-server), the exporters foundry-prepare compiles, its sources (the launcher compares
 //! them to its own), and PLAY.txt. It holds none of Minecraft's files: players prepare those
 //! from their own copy. .github/workflows/release.yml makes the release folders with it.
 //! First build the shared wasm standard library beside the programs with
-//! `cargo run --locked -p cargo-horizon-mod -- wasm-std PROGRAM_FOLDER/horizon-wasm-std.wasm`.
+//! `cargo run --locked -p cargo-foundry-mod -- wasm-std PROGRAM_FOLDER/foundry-wasm-std.wasm`.
 //! Both package routes require and copy it; preflight never silently omits it.
 //!
 //! `package-server ENGINE OUTDIR`: a server folder (docs/server.md): the server build of the game
-//! (`cargo build --release -p horizon-game --no-default-features`, without sound or controllers)
-//! as horizon-engine, with horizon-prepare and horizon-server from beside it and the same sources.
+//! (`cargo build --release -p foundry-game --no-default-features`, without sound or controllers)
+//! as foundry-engine, with foundry-prepare and foundry-server from beside it and the same sources.
 //!
-//! `tokens`: writes `crates/horizon-theme/tokens.css`, the design tokens of `crates/horizon-theme` as CSS
-//! custom properties (a horizon-theme test fails when the file is out of date).
+//! `tokens`: writes `crates/foundry-theme/tokens.css`, the design tokens of `crates/foundry-theme` as CSS
+//! custom properties (a foundry-theme test fails when the file is out of date).
 //!
 //! `icons`: renders the icon masters in `docs/media/brand` (with `rsvg-convert`, from librsvg)
-//! into every size the platforms and the website use, and packs `packaging/icons/horizon.ico`
-//! and `horizon.icns`. `docs/media/brand/README.md` lists what goes where.
+//! into every size the platforms and the website use, and packs `packaging/icons/foundry.ico`
+//! and `foundry.icns`. `docs/media/brand/README.md` lists what goes where.
 //!
-//! `mixins-tool release | patch SOURCE | identity TARGET`: the pinned horizon-mixins tool's
+//! `mixins-tool release | patch SOURCE | identity TARGET`: the pinned foundry-mixins tool's
 //! delivery contract. `release` prints its tag, pinned commit and source archive as `name=value`
 //! lines; `patch` applies the carried patch to an unpacked source with the same applier as the
 //! launcher's source build; `identity` prints the lines checked in a prebuilt's `identity.txt`.
@@ -28,10 +28,10 @@
 //! `sdk-index DIST COMMIT DATE [--nightly NAME] [--previous BUILD DIFF]`: writes `DIST/sdk.json`,
 //! the mod SDK's index, over the release assets in DIST (`tools/prebuilt_game.py index` calls it),
 //! then reads it back and checks every asset against it. `--previous` names the SDK published
-//! before this one and DIFF the `horizon-stage surface-diff --json` of its surface against this
+//! before this one and DIFF the `foundry-stage surface-diff --json` of its surface against this
 //! one's, which fill the index's surface comparison.
-//! `perf-wasm`: builds `crates/horizon-perf` for `wasm32-unknown-unknown` with the `wasm` feature
-//! and writes `target/perf-wasm/{horizon_perf.wasm,horizon_perf.js}`, which horizon-rust/horizon-site imports into
+//! `perf-wasm`: builds `crates/foundry-perf` for `wasm32-unknown-unknown` with the `wasm` feature
+//! and writes `target/perf-wasm/{foundry_perf.wasm,foundry_perf.js}`, which foundry-rust/foundry-site imports into
 //! its static assets (docs/perf-platform.md §7.1).
 
 mod mod_api;
@@ -47,18 +47,18 @@ const USAGE: &str = "usage: cargo run -p xtask -- package BINARY OUTDIR | packag
 /// both beside the program) and the MIT notice of the code released before the change.
 const ARCHIVED: [&str; 6] = [
     "tools",
-    "mods/horizon/src/test/java",
-    "crates/horizon-prepare",
+    "mods/foundry/src/test/java",
+    "crates/foundry-prepare",
     "research-lock.json",
     "LICENSE",
     "LICENSES",
 ];
 
-// The programs that sit beside the client (horizon-ctl, the command line and MCP server that play
-// the game; horizon-prepare, which prepares the resources from the player's own Minecraft;
-// horizon-server, which hosts a server with the client as its engine, docs/server.md) and the
+// The programs that sit beside the client (foundry-ctl, the command line and MCP server that play
+// the game; foundry-prepare, which prepares the resources from the player's own Minecraft;
+// foundry-server, which hosts a server with the client as its engine, docs/server.md) and the
 // wasm runtime are listed, with the checkout's exporters, in the SDK's required inputs
-// (`horizon_mod_package::sdk::inputs`): routes `package` and `package-server`.
+// (`foundry_mod_package::sdk::inputs`): routes `package` and `package-server`.
 
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
@@ -76,18 +76,18 @@ fn main() -> ExitCode {
         [task] if task == "tokens" => tokens(),
         [task] if task == "icons" => icons(),
         [task, what] if task == "mixins-tool" && what == "release" => {
-            use horizon_mod_package::mixins_tool::{REV, release_tag};
+            use foundry_mod_package::mixins_tool::{REV, release_tag};
             println!("tag={}\nrev={REV}", release_tag());
-            println!("source={}/{REV}", horizon_addresses::HORIZON_MIXINS_SOURCE);
+            println!("source={}/{REV}", foundry_addresses::FOUNDRY_MIXINS_SOURCE);
             Ok(())
         }
         [task, what, source] if task == "mixins-tool" && what == "patch" => {
-            use horizon_mod_package::mixins_tool::{PATCH, PATCH_NAME, apply};
+            use foundry_mod_package::mixins_tool::{PATCH, PATCH_NAME, apply};
             apply(Path::new(source), PATCH)
                 .map_err(|why| format!("{PATCH_NAME} does not apply to {source}: {why}"))
         }
         [task, what, target] if task == "mixins-tool" && what == "identity" => {
-            print!("{}", horizon_mod_package::mixins_tool::identity(target));
+            print!("{}", foundry_mod_package::mixins_tool::identity(target));
             Ok(())
         }
         [task] if task == "perf-wasm" => perf_wasm(),
@@ -108,7 +108,7 @@ fn main() -> ExitCode {
 fn repo_root() -> Result<PathBuf, String> {
     let here = std::env::current_dir().map_err(|e| format!("current directory: {e}"))?;
     checkout_above(&here)
-        .ok_or_else(|| format!("{}: not inside a Horizon checkout", here.display()))
+        .ok_or_else(|| format!("{}: not inside a Foundry Client checkout", here.display()))
 }
 
 fn checkout_above(start: &Path) -> Option<PathBuf> {
@@ -148,7 +148,7 @@ fn perf_wasm() -> Result<(), String> {
             "--release",
             "--lib",
             "-p",
-            "horizon-perf",
+            "foundry-perf",
             "--features",
             "wasm",
             "--target",
@@ -164,29 +164,29 @@ fn perf_wasm() -> Result<(), String> {
     }
     let target =
         std::env::var_os("CARGO_TARGET_DIR").map_or_else(|| repo.join("target"), PathBuf::from);
-    let wasm = target.join("wasm32-unknown-unknown/release/horizon_perf.wasm");
-    let script = repo.join("crates/horizon-perf/web/horizon_perf.js");
+    let wasm = target.join("wasm32-unknown-unknown/release/foundry_perf.wasm");
+    let script = repo.join("crates/foundry-perf/web/foundry_perf.js");
     let out = target.join("perf-wasm");
     fs::create_dir_all(&out).map_err(|e| format!("{}: {e}", out.display()))?;
-    fs::copy(&wasm, out.join("horizon_perf.wasm"))
+    fs::copy(&wasm, out.join("foundry_perf.wasm"))
         .map_err(|e| format!("{}: {e}", wasm.display()))?;
-    fs::copy(&script, out.join("horizon_perf.js"))
+    fs::copy(&script, out.join("foundry_perf.js"))
         .map_err(|e| format!("{}: {e}", script.display()))?;
-    let size = fs::metadata(out.join("horizon_perf.wasm"))
+    let size = fs::metadata(out.join("foundry_perf.wasm"))
         .map(|m| m.len())
         .unwrap_or(0);
     println!(
-        "wrote {} ({} KiB) and horizon_perf.js",
-        out.join("horizon_perf.wasm").display(),
+        "wrote {} ({} KiB) and foundry_perf.js",
+        out.join("foundry_perf.wasm").display(),
         size / 1024
     );
     Ok(())
 }
 
 fn tokens() -> Result<(), String> {
-    let path = repo_root()?.join("crates/horizon-theme/tokens.css");
-    fs::write(&path, horizon_theme::css()).map_err(|e| format!("{}: {e}", path.display()))?;
-    println!("wrote crates/horizon-theme/tokens.css");
+    let path = repo_root()?.join("crates/foundry-theme/tokens.css");
+    fs::write(&path, foundry_theme::css()).map_err(|e| format!("{}: {e}", path.display()))?;
+    println!("wrote crates/foundry-theme/tokens.css");
     Ok(())
 }
 
@@ -276,31 +276,31 @@ fn icons() -> Result<(), String> {
     for size in HICOLOR {
         let png = render(&square, (size, size))?;
         write(
-            &packaging.join(format!("hicolor/{size}x{size}/apps/horizon.png")),
+            &packaging.join(format!("hicolor/{size}x{size}/apps/foundry.png")),
             &png,
         )?;
     }
     write(
-        &packaging.join("hicolor/scalable/apps/horizon.svg"),
+        &packaging.join("hicolor/scalable/apps/foundry.svg"),
         &fs::read(&square).map_err(|e| format!("{}: {e}", square.display()))?,
     )?;
     let images = ICO
         .iter()
         .map(|&s| render(&square, (s, s)).map(|png| (s, png)))
         .collect::<Result<Vec<_>, _>>()?;
-    write(&packaging.join("horizon.ico"), &ico(&images))?;
+    write(&packaging.join("foundry.ico"), &ico(&images))?;
     let macos = brand.join("icon-macos.svg");
     let entries = ICNS
         .iter()
         .map(|&(kind, s)| render(&macos, (s, s)).map(|png| (kind, png)))
         .collect::<Result<Vec<_>, _>>()?;
-    write(&packaging.join("horizon.icns"), &icns(&entries))?;
+    write(&packaging.join("foundry.icns"), &icns(&entries))?;
     // The window icon the game and the launcher set at run time (X11 and Windows title bars).
     write(
-        &repo.join("crates/horizon-theme/icons/horizon-64.png"),
+        &repo.join("crates/foundry-theme/icons/foundry-64.png"),
         &render(&square, (64, 64))?,
     )?;
-    // Avatars, and the website's icons (horizon-site copies docs/media/brand/web/ into its public/).
+    // Avatars, and the website's icons (foundry-site copies docs/media/brand/web/ into its public/).
     let avatar = brand.join("avatar.svg");
     for (svg, size, out) in [
         (
@@ -324,7 +324,7 @@ fn icons() -> Result<(), String> {
 }
 
 fn sdk_index(dist: &Path, commit: &str, date: &str, options: &[String]) -> Result<(), String> {
-    use horizon_mod_package::sdk::{Build, GAME, INDEX, Index};
+    use foundry_mod_package::sdk::{Build, GAME, INDEX, Index};
     let (mut nightly, mut previous) = (None, None);
     let mut rest = options;
     loop {
@@ -383,14 +383,14 @@ fn package_server(engine: &Path, out: &Path) -> Result<(), String> {
     preflight("package-server", engine)?;
     let repo = new_folder(out)?;
     copy_exporters(&repo.join("exporters"), &out.join("exporters"))?;
-    copy(engine, &out.join(program_name(engine, "horizon-engine")))?;
+    copy(engine, &out.join(program_name(engine, "foundry-engine")))?;
     copy_runtime("package-server", engine, out)
 }
 
 /// Every required input of `route` (the SDK's one list) is there before anything is emptied,
 /// built or copied; the refusal names all the missing ones.
 fn preflight(route: &str, program: &Path) -> Result<(), String> {
-    horizon_mod_package::sdk::inputs()
+    foundry_mod_package::sdk::inputs()
         .check(route, program, &repo_root()?)
         .map_err(|refusal| refusal.to_string())
 }
@@ -439,7 +439,7 @@ fn program_name(program: &Path, name: &str) -> String {
 /// Copies the files `route` needs beside `program` (its companion programs and the wasm
 /// runtime) into `out`.
 fn copy_runtime(route: &str, program: &Path, out: &Path) -> Result<(), String> {
-    let inputs = horizon_mod_package::sdk::inputs();
+    let inputs = foundry_mod_package::sdk::inputs();
     let route = inputs.route(route).map_err(|e| e.to_string())?;
     for path in route.program_files(program) {
         copy_into(&path, out)?;
@@ -625,11 +625,11 @@ mod tests {
         for checkout in [&one, &two] {
             fs::create_dir_all(checkout.join("xtask")).unwrap();
             fs::write(checkout.join("xtask/Cargo.toml"), "").unwrap();
-            fs::create_dir_all(checkout.join("crates/horizon-client/src")).unwrap();
+            fs::create_dir_all(checkout.join("crates/foundry-client/src")).unwrap();
         }
         assert_eq!(checkout_above(&one), Some(one.clone()));
         assert_eq!(
-            checkout_above(&two.join("crates/horizon-client/src")),
+            checkout_above(&two.join("crates/foundry-client/src")),
             Some(two.clone())
         );
         assert_eq!(checkout_above(&base), None);
@@ -681,19 +681,19 @@ mod tests {
         let bin = base.join("bin");
         fs::create_dir_all(&bin).unwrap();
         for name in [
-            "horizon-client",
-            "horizon-ctl",
-            "horizon-prepare",
-            "horizon-server",
+            "foundry-client",
+            "foundry-ctl",
+            "foundry-prepare",
+            "foundry-server",
         ] {
             fs::write(bin.join(name), b"").unwrap();
         }
         let out = base.join("out");
         fs::create_dir_all(&out).unwrap();
         fs::write(out.join("kept"), b"").unwrap();
-        let error = package(&bin.join("horizon-client"), &out).unwrap_err();
-        assert!(error.contains("horizon-wasm-std.wasm"), "{error}");
-        assert!(!error.contains("horizon-ctl,"), "{error}");
+        let error = package(&bin.join("foundry-client"), &out).unwrap_err();
+        assert!(error.contains("foundry-wasm-std.wasm"), "{error}");
+        assert!(!error.contains("foundry-ctl,"), "{error}");
         assert!(
             out.join("kept").is_file(),
             "the packager ran before the check"

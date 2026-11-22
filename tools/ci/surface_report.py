@@ -1,9 +1,9 @@
 """The mod API surface report: what a pull request changes in what mods can name, and in what wasm mods are checked by.
 
-Exports the surface of the merge base and of the checked-out tree with the head's `horizon-stage`, each with its calls
+Exports the surface of the merge base and of the checked-out tree with the head's `foundry-stage`, each with its calls
 and core (`--calls`: what the game compares when a wasm mod loads), diffs them, and writes the classified report to the
 job summary. It also compares what both builds compiled (`--layouts`): the core layout and every call's hash, as the
-game compares them, which `crates/horizon-mod-api/examples/wire_layouts.rs` prints. The head's are built here; the
+game compares them, which `crates/foundry-mod-api/examples/wire_layouts.rs` prints. The head's are built here; the
 base's are read from the build folder's store (`--store-layouts`, which only main's pushes fill, one file per commit;
 a symlink, another schema, no calls or a call count other than the one written beside them is a miss) or built by checking the base
 out in place, with its own copy of the example, then the head again. A base without the example is compared by source
@@ -33,8 +33,8 @@ import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-NOTES = "crates/horizon-mod-vocab/changes"
-LAYOUTS_EXAMPLE = "crates/horizon-mod-api/examples/wire_layouts.rs"
+NOTES = "crates/foundry-mod-vocab/changes"
+LAYOUTS_EXAMPLE = "crates/foundry-mod-api/examples/wire_layouts.rs"
 LAYOUTS_SCHEMA = 1
 # Stored compiled layouts kept in the build folder, newest first; one is about 200 KB.
 LAYOUTS_KEPT = 300
@@ -97,7 +97,7 @@ def target_dir() -> Path:
 
 def build_layouts() -> str:
     """The checked-out tree's compiled layouts (the `wire_layouts` example's output)."""
-    subprocess.run(["cargo", "build", "--locked", "--quiet", "-p", "horizon-mod-api", "--example", "wire_layouts"],
+    subprocess.run(["cargo", "build", "--locked", "--quiet", "-p", "foundry-mod-api", "--example", "wire_layouts"],
                    cwd=ROOT, check=True)
     binary = target_dir() / "debug" / "examples" / ("wire_layouts.exe" if os.name == "nt" else "wire_layouts")
     return subprocess.run([str(binary)], cwd=ROOT, check=True, capture_output=True, text=True).stdout
@@ -192,8 +192,8 @@ def store_layouts(store: Path, build=build_layouts, run_git=git) -> Path:
 
 
 # The gate's own code: a pull request that changes it is checked by the code it changes.
-GATE_PATHS = ("tools/ci/surface_report.py", "tools/ci/surface.toml", "crates/horizon-mod-surface/",
-              "crates/horizon-mod-api-gen/src/bin/horizon-stage.rs", LAYOUTS_EXAMPLE)
+GATE_PATHS = ("tools/ci/surface_report.py", "tools/ci/surface.toml", "crates/foundry-mod-surface/",
+              "crates/foundry-mod-api-gen/src/bin/foundry-stage.rs", LAYOUTS_EXAMPLE)
 WORKFLOW = ".github/workflows/ci.yml"
 
 
@@ -235,7 +235,7 @@ def report(tool: str, base: Path, head: Path, work: Path, gate_on: bool, layouts
     if exports["head"].returncode != 0:
         return 1, f"The surface export of this tree failed: {last_line(results['head'][1])}.\n"
     if exports["base"].returncode != 0:
-        return unchecked(gate_on, f"the head's horizon-stage cannot read the base tree ({last_line(results['base'][1])})")
+        return unchecked(gate_on, f"the head's foundry-stage cannot read the base tree ({last_line(results['base'][1])})")
     compiled, said = False, ""
     if layouts is not None:
         try:
@@ -254,7 +254,7 @@ def report(tool: str, base: Path, head: Path, work: Path, gate_on: bool, layouts
     # A base surface of another schema is an unreadable base, like a tree the exporter cannot read.
     base_schema = f"{work / 'base.json'}: surface schema "
     if diff.returncode == 2 and base_schema in diff.stderr:
-        return unchecked(gate_on, f"the head's horizon-stage cannot read the base surface ({last_line(diff.stderr)})")
+        return unchecked(gate_on, f"the head's foundry-stage cannot read the base surface ({last_line(diff.stderr)})")
     text = said + diff.stdout + diff.stderr
     return (0 if diff.returncode == 0 else 1), text
 
@@ -289,7 +289,7 @@ def main() -> int:
         print(f"Stored {store_layouts(Path(sys.argv[2]))}")
         return 0
     started = time.monotonic()
-    tool = os.environ["HORIZON_STAGE_TOOL"]
+    tool = os.environ["FOUNDRY_STAGE_TOOL"]
     gate_on = gate(ROOT / "tools/ci/surface.toml")
     with tempfile.TemporaryDirectory(dir=os.environ.get("RUNNER_TEMP")) as directory:
         work = Path(directory)

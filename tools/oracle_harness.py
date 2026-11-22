@@ -20,7 +20,7 @@ except ImportError:
 def run_logged(command, build, name, timeout=900, **kwargs):
     path = build / (name + '.log')
     with path.open('w') as log:
-        runner = run_game if Path(command[0]).name == 'horizon-client' else subprocess.run
+        runner = run_game if Path(command[0]).name == 'foundry-client' else subprocess.run
         try:
             runner([str(c) for c in command], cwd=lab.ROOT, check=True, timeout=timeout,
                    stdout=log, stderr=subprocess.STDOUT, **kwargs)
@@ -36,7 +36,7 @@ def run_logged(command, build, name, timeout=900, **kwargs):
 
 def compile_only(command):
     """A cargo command that only compiles (`cargo build`, `cargo test --no-run`): its log holds Cargo's and the
-    compiler's messages about Horizon's own code. Anything that runs a program (a test run, a Java oracle, the game)
+    compiler's messages about Foundry Client's own code. Anything that runs a program (a test run, a Java oracle, the game)
     can print vanilla game data, which never goes into the public artifact, so its log is never shown."""
     words = [str(word) for word in command]
     if not words or Path(words[0]).name not in ('cargo', 'cargo.exe') or len(words) < 2:
@@ -88,19 +88,19 @@ def redact(line):
 
 
 def compile_oracle(build, oracle_name, jars, libraries, java_major):
-    oracle = lab.ROOT / 'mods/horizon/src/test/java/dev/horizonlab/parity' / (oracle_name + '.java')
+    oracle = lab.ROOT / 'mods/foundry/src/test/java/dev/foundrylab/parity' / (oracle_name + '.java')
     classes = build / 'classes'
     classes.mkdir(parents=True, exist_ok=True)
     dependencies = os.pathsep.join(map(str, [jars['client'], *libraries]))
     run_logged(['javac', '--release', java_major, '-proc:none', '-sourcepath',
-                lab.ROOT / 'mods/horizon/src/test/java', '-cp', dependencies, '-d', classes, oracle],
+                lab.ROOT / 'mods/foundry/src/test/java', '-cp', dependencies, '-d', classes, oracle],
                build, 'compile-java-' + oracle_name)
     return classes, dependencies, oracle
 
 
 def build_probe(build, example):
-    """Build the horizon-client probe binary; returns the command that runs probe `example`."""
-    run_logged(['cargo', 'build', '--locked', '-p', 'horizon-client-lib', '--example', 'client_probe'],
+    """Build the foundry-client probe binary; returns the command that runs probe `example`."""
+    run_logged(['cargo', 'build', '--locked', '-p', 'foundry-client-lib', '--example', 'client_probe'],
                build, 'compile-rust-' + example, env=dict(os.environ, CARGO_BUILD_JOBS='3'))
     import json
     metadata = json.loads(subprocess.check_output(
@@ -110,7 +110,7 @@ def build_probe(build, example):
 
 def java_run(build, classes, dependencies, main_class, args, name, jvm=()):
     run_logged(['java', '-Xmx2g', '-Djava.awt.headless=true', *jvm, '-cp', str(classes) + os.pathsep + dependencies,
-                'dev.horizonlab.parity.' + main_class, *args], build, name)
+                'dev.foundrylab.parity.' + main_class, *args], build, name)
 
 
 def compare(client_out, rust_out, expected_lines):
@@ -129,11 +129,11 @@ def differential(name, oracle, probe, make_input, scope, sources=(), expected_li
     build.mkdir(exist_ok=True)
     report = build / 'report.json'
     report.unlink(missing_ok=True)
-    oracle_path = lab.ROOT / 'mods/horizon/src/test/java/dev/horizonlab/parity' / (oracle + '.java')
+    oracle_path = lab.ROOT / 'mods/foundry/src/test/java/dev/foundrylab/parity' / (oracle + '.java')
     all_sources = [Path(__file__).resolve(), lab.ROOT / 'tools/oracle_harness.py', lab.ROOT / 'tools/test_rust_parity.py',
                    lab.ROOT / 'tools/lab.py', oracle_path, lab.ROOT / 'Cargo.toml', lab.ROOT / 'Cargo.lock',
-                   lab.ROOT / 'crates/horizon-client/Cargo.toml', lab.ROOT / 'crates/horizon-client/src/lib.rs',
-                   lab.ROOT / f'crates/horizon-client/examples/probe/{probe}.rs', *map(Path, sources)]
+                   lab.ROOT / 'crates/foundry-client/Cargo.toml', lab.ROOT / 'crates/foundry-client/src/lib.rs',
+                   lab.ROOT / f'crates/foundry-client/examples/probe/{probe}.rs', *map(Path, sources)]
     tested = base.source_hashes(all_sources)
     input_path, units = make_input(build)
     input_hash = lab.digest(input_path, 'sha256') if input_path.is_file() else None

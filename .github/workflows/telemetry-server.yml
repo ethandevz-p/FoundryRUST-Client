@@ -1,17 +1,17 @@
 name: telemetry-server
-# The ingest server is its own workspace (crates/horizon-telemetry-server), so the checks job doesn't build
+# The ingest server is its own workspace (crates/foundry-telemetry-server), so the checks job doesn't build
 # it: this one does, when it or the crate it shares with the launcher and the game changes.
 on:
   push:
     branches: [main]
     paths:
-      - 'crates/horizon-telemetry/**'
-      - 'crates/horizon-telemetry-server/**'
+      - 'crates/foundry-telemetry/**'
+      - 'crates/foundry-telemetry-server/**'
       - '.github/workflows/telemetry-server.yml'
   pull_request:
     paths:
-      - 'crates/horizon-telemetry/**'
-      - 'crates/horizon-telemetry-server/**'
+      - 'crates/foundry-telemetry/**'
+      - 'crates/foundry-telemetry-server/**'
       - '.github/workflows/telemetry-server.yml'
 permissions:
   contents: read
@@ -20,16 +20,16 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   check:
-    # Our checks runners (label horizon-checks, docs/ci-runners.md); SELF_HOSTED_CI=light or off: GitHub's. A fork's
+    # Our checks runners (label foundry-checks, docs/ci-runners.md); SELF_HOSTED_CI=light or off: GitHub's. A fork's
     # pull request sees no repository variable, so it always runs on GitHub's (it would wait for the CI VPS when it is down).
     runs-on: >-
       ${{ vars.SELF_HOSTED_CI != 'off' && vars.SELF_HOSTED_CI != 'light' &&
       (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) &&
-      fromJSON('["self-hosted", "linux", "horizon-checks"]') || 'blacksmith-4vcpu-ubuntu-2404' }}
+      fromJSON('["self-hosted", "linux", "foundry-checks"]') || 'blacksmith-4vcpu-ubuntu-2404' }}
     timeout-minutes: 20
     defaults:
       run:
-        working-directory: crates/horizon-telemetry-server
+        working-directory: crates/foundry-telemetry-server
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - run: rustup toolchain install stable --profile minimal --component rustfmt --component clippy
@@ -37,7 +37,7 @@ jobs:
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         if: (runner.environment == 'github-hosted' || startsWith(runner.name, 'blacksmith-'))
         with:
-          workspaces: crates/horizon-telemetry-server
+          workspaces: crates/foundry-telemetry-server
           save-if: ${{ github.ref == 'refs/heads/main' }}
       - run: cargo +stable fmt --check
       - run: cargo +stable clippy --all-targets --locked -- -D warnings

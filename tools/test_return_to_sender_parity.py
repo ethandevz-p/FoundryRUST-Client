@@ -42,12 +42,12 @@ TITLE = 'advancements.nether.return_to_sender.title'
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('--bin-dir', help='prebuilt horizon-client and horizon-ctl (default: build them with the fast profile)')
+    parser.add_argument('--bin-dir', help='prebuilt foundry-client and foundry-ctl (default: build them with the fast profile)')
     parser.add_argument('--keep', action='store_true', help='keep the run folder')
     args = parser.parse_args()
     bin_dir = Path(args.bin_dir).resolve() if args.bin_dir else None
     if bin_dir is None:
-        subprocess.run(fast_bins.command('horizon-client', 'horizon-ctl'), cwd=ROOT, check=True)
+        subprocess.run(fast_bins.command('foundry-client', 'foundry-ctl'), cwd=ROOT, check=True)
         bin_dir = ROOT / os.environ.get('CARGO_TARGET_DIR', 'target') / 'fast'
     shutil.rmtree(RUN, ignore_errors=True)
     RUN.mkdir(parents=True)
@@ -59,15 +59,15 @@ def main():
         socket = Path(tempfile.mkdtemp(prefix='hzrs')) / 'control.sock'  # sockets need short paths
 
         def ctl(*words, check=True):
-            result = subprocess.run([str(lab.binary(bin_dir, 'horizon-ctl')), '--socket', str(socket), '--timeout', '600',
+            result = subprocess.run([str(lab.binary(bin_dir, 'foundry-ctl')), '--socket', str(socket), '--timeout', '600',
                                      *map(str, words)], cwd=folder, env=env, capture_output=True, text=True)
             if check and result.returncode:
-                sys.exit(f'horizon-ctl {" ".join(map(str, words))} failed: {result.stdout}{result.stderr}')
+                sys.exit(f'foundry-ctl {" ".join(map(str, words))} failed: {result.stdout}{result.stderr}')
             return json.loads(result.stdout) if result.stdout.strip().startswith('{') else result.stdout
 
         # The game keeps launch's output handles, so it writes to a file: a pipe would not close.
         with open(folder / 'launch.txt', 'w') as out:
-            subprocess.run([str(lab.binary(bin_dir, 'horizon-ctl')), '--socket', str(socket), '--timeout', '600', 'launch',
+            subprocess.run([str(lab.binary(bin_dir, 'foundry-ctl')), '--socket', str(socket), '--timeout', '600', 'launch',
                             '--resources', str(RESOURCES), '--world', 'world', '--seed', '1', '--render-distance', '4',
                             *flags, *extra], cwd=folder, env=env, stdout=out, stderr=subprocess.STDOUT, check=True)
         try:

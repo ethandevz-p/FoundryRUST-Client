@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Foundry Client
+Comment=Minecraft: Java Edition 26.3, rewritten in Rust
+Exec=foundry-client
+Icon=foundry
+Terminal=false
+Categories=Game;
+StartupWMClass=foundry
+NoDisplay=true

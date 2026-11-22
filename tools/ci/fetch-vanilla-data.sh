@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # The vanilla data for a hosted runner (.github/workflows/parity-hosted.yml): datasets of the private repository
-# horizon-rust/vanilla-data, the maintainers' own game files, encrypted, each unpacked into DESTINATION, a folder
-# outside the checkout. Horizon's code never downloads the game; this reads only that repository.
+# foundry-rust/vanilla-data, the maintainers' own game files, encrypted, each unpacked into DESTINATION, a folder
+# outside the checkout. Foundry Client's code never downloads the game; this reads only that repository.
 #
 #   VANILLA_DATA_DEPLOY_KEY=... VANILLA_DATA_PASSPHRASE=... bash tools/ci/fetch-vanilla-data.sh DESTINATION DATASET...
 #
@@ -43,7 +43,7 @@ export GIT_TERMINAL_PROMPT=0
 
 started=$SECONDS
 # Only these datasets' blobs: a shallow, blobless clone with a sparse checkout of their folders.
-git clone -q --depth 1 --filter=blob:none --sparse git@github.com:horizon-rust/vanilla-data.git "$work/repo"
+git clone -q --depth 1 --filter=blob:none --sparse git@github.com:foundry-rust/vanilla-data.git "$work/repo"
 cache=${VANILLA_DATA_CACHE:-}
 from=$work/repo
 if [ -n "$cache" ]; then

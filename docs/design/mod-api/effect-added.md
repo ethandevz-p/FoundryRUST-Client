@@ -1,10 +1,10 @@
 # Design: effect added
 
-**Accepted with changes** for [arismoko/horizon#835](https://github.com/arismoko/horizon/issues/835), per the [maintainer decision](https://github.com/arismoko/horizon/pull/2329#issuecomment-6729847069). This remains a provisional design, not an implemented contract. The [additional requirement](https://github.com/arismoko/horizon/pull/2329#issuecomment-6729860519) withholds adoption of the pre-apply Added moment until the public NeoForge 26.3 contract is verified.
+**Accepted with changes** for [arismoko/foundry#835](https://github.com/arismoko/foundry/issues/835), per the [maintainer decision](https://github.com/arismoko/foundry/pull/2329#issuecomment-6729847069). This remains a provisional design, not an implemented contract. The [additional requirement](https://github.com/arismoko/foundry/pull/2329#issuecomment-6729860519) withholds adoption of the pre-apply Added moment until the public NeoForge 26.3 contract is verified.
 
 ## Evidence and vanilla moment
 
-Inspected at base `95672cb54f` using `python3 tools/rea_vanilla.py` from `/workspace/horizon`: `LivingEntity.addEffect` overload 1, `LivingEntity.onEffectAdded`, and `MobEffectInstance.update`. No NeoForge source, patches or other project's source were consulted.
+Inspected at base `95672cb54f` using `python3 tools/rea_vanilla.py` from `/workspace/foundry`: `LivingEntity.addEffect` overload 1, `LivingEntity.onEffectAdded`, and `MobEffectInstance.update`. No NeoForge source, patches or other project's source were consulted.
 
 Vanilla 26.3 first calls canBeAffected; refusal returns false. It looks up the active instance. An absent effect is inserted, onEffectAdded runs, changed becomes true, and the incoming instance's onEffectAdded runs. An existing instance is updated; only a true update result calls onEffectUpdated with forced=true and sets changed. Afterwards incoming.onEffectStarted runs even when update returned false. LivingEntity.onEffectAdded marks effects dirty, adds attribute modifiers and sends to passengers on the server. These are three distinct moments: first insertion, update, and accepted application attempt. Hidden-chain updates may mutate state while update returns false; false does not mean nothing changed. Stronger short effects preserve the former active instance in the hidden chain; equal-strength longer effects extend duration. Visibility/icon/ambient changes can count as updates.
 
@@ -28,7 +28,7 @@ Define API-owned snapshots for incoming and previous full instances, effect keys
 
 ## Route owners to migrate
 
-Paths below are relative to `crates/horizon-client/src/`; line numbers identify inspected current owners, not promised APIs. All rows enter the same coordinator; no producer gets its own Added dispatch.
+Paths below are relative to `crates/foundry-client/src/`; line numbers identify inspected current owners, not promised APIs. All rows enter the same coordinator; no producer gets its own Added dispatch.
 
 | Route | Verified owner |
 | --- | --- |
@@ -58,9 +58,9 @@ All living holders use stable handles: local authoritative player, LAN guest, or
 
 ## Residency, safety and cost
 
-Use the existing residency boundary from [arismoko/horizon#1606](https://github.com/arismoko/horizon/issues/1606) and the [placement design](multi-block-placement.md). Within a pass, retain lifted ownership and use the read rows and queued writes at the entity exit apply point; reacquire by generation there. Do not require restoring all lifted rows before dispatch or describe the planned write queue as already built. Balance lifted-pass leases on success, refusal and unwinding; no duplicate raw entity-list path. Preserve listener-spawned entities and attachment/join identities; defer retirement and publication to root commit. Saving while a lifted pass/action is open must refuse rather than persist partial state.
+Use the existing residency boundary from [arismoko/foundry#1606](https://github.com/arismoko/foundry/issues/1606) and the [placement design](multi-block-placement.md). Within a pass, retain lifted ownership and use the read rows and queued writes at the entity exit apply point; reacquire by generation there. Do not require restoring all lifted rows before dispatch or describe the planned write queue as already built. Balance lifted-pass leases on success, refusal and unwinding; no duplicate raw entity-list path. Preserve listener-spawned entities and attachment/join identities; defer retirement and publication to root commit. Saving while a lifted pass/action is open must refuse rather than persist partial state.
 
-[PR arismoko/horizon#2297](https://github.com/arismoko/horizon/pull/2297) and [PR arismoko/horizon#1863](https://github.com/arismoko/horizon/pull/1863) were OPEN when inspected. The former carries the latter and modifies consume, fox and native effect integration. Neither establishes complete effect-add unification. Coordinate with their paused mob continuations and preserve their ownership restoration; recheck merged owners before implementation. Do not introduce a competing mob lift. [PR arismoko/horizon#2112](https://github.com/arismoko/horizon/pull/2112) is also OPEN; its mob-listener unwind restoration and stack are dependencies to coordinate with, not merged guarantees.
+[PR arismoko/foundry#2297](https://github.com/arismoko/foundry/pull/2297) and [PR arismoko/foundry#1863](https://github.com/arismoko/foundry/pull/1863) were OPEN when inspected. The former carries the latter and modifies consume, fox and native effect integration. Neither establishes complete effect-add unification. Coordinate with their paused mob continuations and preserve their ownership restoration; recheck merged owners before implementation. Do not introduce a competing mob lift. [PR arismoko/foundry#2112](https://github.com/arismoko/foundry/pull/2112) is also OPEN; its mob-listener unwind restoration and stack are dependencies to coordinate with, not merged guarantees.
 
 Mod input is untrusted: validate registry ownership, handle generation, dimension, duration (-1 infinite or nonnegative ticks), amplifier clamped to 0..=255 and flags at the handle boundary. Reject duration below -1 and unknown effect keys without changing unrelated no-op behavior. Validate finite numeric inputs before conversion where an adapter accepts floats; measure hidden-chain/nesting budgets without rejecting vanilla-valid instances or silently truncating valid state. Catch native unwinding and guest traps at dispatch, abort the action transaction, restore lifts and use runtime failure reporting/disable policy. Process-aborting panic cannot be recovered.
 
@@ -98,7 +98,7 @@ File no issues from this list.
 1. **Before any code, verify the public NeoForge 26.3 Added contract.** Confirm timing, cancellation, payload, side and mutability using public docs only; record the exact signature and observation guarantees. The pre-apply moment is not adopted until then. Complete the vanilla caller census, phase classification and holder capability fixtures.
 2. Introduce pure lower-store decisions and the Game-owned coordinator with stale checks for producers outside lifted passes first: commands, beacon, conduit, item use and consumption outside passes. Require payload/Wire coverage and refusal behavior before exposing the API.
 3. Wait for entity read rows and the write queue before migrating mob-pass producers, including attacks, raids, sculk and other mob AI. Apply queued writes at entity exit and reuse accepted mob-listener unwind restoration; never restore rows mid-pass or migrate these producers first. Remove duplicate/content-only dispatch as each route migrates and update generated API/docs atomically.
-4. Run the full route/holder/server matrix, per-producer in-pass panic and balanced-lift fixtures, nested rollback/result mapping, save refusal and allocation/budget measurements before claiming arismoko/horizon#835 complete.
+4. Run the full route/holder/server matrix, per-producer in-pass panic and balanced-lift fixtures, nested rollback/result mapping, save refusal and allocation/budget measurements before claiming arismoko/foundry#835 complete.
 
 ## Open questions
 

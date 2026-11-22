@@ -77,6 +77,6 @@ if __name__ == '__main__':
         'environment-system-parity', 'VanillaEnvironmentSystemOracle', 'environment_system_fixture', cases,
         'EnvironmentAttributeSystem (constant, biome, timeline and weather layers, bakeLayerSampler, sanitize), '
         'WeatherAttributes, SpatialAttributeInterpolator and GaussianSampler',
-        sources=[lab.ROOT / 'crates/horizon-world/src/environment_attributes.rs',
-                 lab.ROOT / 'crates/horizon-world/src/environment_system.rs',
-                 lab.ROOT / 'crates/horizon-world/src/environment_timeline.rs'])
+        sources=[lab.ROOT / 'crates/foundry-world/src/environment_attributes.rs',
+                 lab.ROOT / 'crates/foundry-world/src/environment_system.rs',
+                 lab.ROOT / 'crates/foundry-world/src/environment_timeline.rs'])

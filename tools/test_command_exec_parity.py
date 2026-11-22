@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Compare Horizon's command execution with vanilla's real command implementations.
+"""Compare Foundry Client's command execution with vanilla's real command implementations.
 
 Java (VanillaCommandExecOracle) starts a stand-in integrated server: a real
 MinecraftServer with a generated world, Commands.CommandSelection.INTEGRATED
 and one single-player owner named Player. Rust runs the same script through
-Horizon's integrated server with a connected headless client (HORIZON_COMMAND_SCRIPT). Both run each command as
+Foundry Client's integrated server with a connected headless client (FOUNDRY_COMMAND_SCRIPT). Both run each command as
 the player through Commands.performPrefixedCommand and record every system or
 chat message the player receives (text and resolved style: colour, bold,
 italic, underlined, strikethrough, obfuscated) together with the results the
@@ -12,7 +12,7 @@ command reported to the player's CommandResultCallback. World, entity and item
 changes are observed through probe commands whose feedback reports them
 (execute if, clear with a zero count, data get, scoreboard queries...).
 Messages that depend on time or a random UUID are compared after masking.
-The explicitly scoped vanilla_help comparison projects declared Horizon-only
+The explicitly scoped vanilla_help comparison projects declared Foundry Client-only
 native root usage after checking its complete raw callback count; both raw
 captures and the projection boundary are retained in the report.
 Direct falling-block probes also compare the physical entities in each level,
@@ -47,7 +47,7 @@ SEED = 1
 # vanilla::session_dispatcher adds this documented platform command outside the
 # reference vanilla dispatcher. Do not infer exclusions from unexpected output:
 # any new extension must be declared here explicitly.
-HORIZON_ONLY_COMMAND_ROOTS = frozenset({'modprofile'})
+FOUNDRY_ONLY_COMMAND_ROOTS = frozenset({'modprofile'})
 
 
 def install_datapack_fixtures(world, predicates, functions, jar, advancements=None, loot_tables=None, recipes=None):
@@ -117,7 +117,7 @@ def main():
     parser.add_argument('--sulfur-power-load-diagnostic', action='store_true',
                         help='retain the immediate-load powered sulfur cube H249 diagnostic')
     parser.add_argument('--merchant-gate-fixture', action='store_true')
-    parser.add_argument('--binary', type=Path, help='use an already built Horizon game instead of building it')
+    parser.add_argument('--binary', type=Path, help='use an already built Foundry Client game instead of building it')
     parser.add_argument('--trader-llama-discard-fixture', action='store_true',
                         help='an AI trader llama is gone after the tick its delay runs out (H182)')
     parser.add_argument('--hurt-cooldown-incoming-fixture', action='store_true',
@@ -216,7 +216,7 @@ def main():
     if args.prepare:
         lab.prepare()
     lock, jars, libraries = base.verify_artifacts()
-    oracle = lab.ROOT / 'mods/horizon/src/test/java/dev/horizonlab/parity/VanillaCommandExecOracle.java'
+    oracle = lab.ROOT / 'mods/foundry/src/test/java/dev/foundrylab/parity/VanillaCommandExecOracle.java'
     classes = build / 'classes'
     classes.mkdir(exist_ok=True)
     dependency_path = os.pathsep.join(map(str, libraries))
@@ -542,7 +542,7 @@ def main():
     advancements = corpus_module.advancement_reward_fixtures([name for name, _ in groups])
     loot_advancements, loot_tables = corpus_module.advancement_loot_fixtures([name for name, _ in groups])
     advancements.update(loot_advancements)
-    if os.environ.get('HORIZON_FISHING_FALLBACK_FIXTURE') == '1':
+    if os.environ.get('FOUNDRY_FISHING_FALLBACK_FIXTURE') == '1':
         # No random_sequence: FishingHook.retrieve must use the level stream.
         loot_tables['minecraft:gameplay/fishing'] = {
             'type': 'minecraft:fishing', 'pools': [{'rolls': 1, 'entries': [
@@ -576,7 +576,7 @@ def main():
     if synced:
         java_options.append(seed_agent.java_option(build, lock['minecraft']['java_major']))
     run(['java', '-Xmx3G', '-Duser.timezone=UTC', *(['-Dhorizon.loadedFixture=true'] if args.loaded_fixture else []), *java_options, '-cp', os.pathsep.join([str(classes), str(jars['server']), dependency_path]),
-         'dev.horizonlab.parity.VanillaCommandExecOracle', vanilla_dir / 'universe', script_path, build / 'vanilla.jsonl', SEED], 'java', cwd=vanilla_dir)
+         'dev.foundrylab.parity.VanillaCommandExecOracle', vanilla_dir / 'universe', script_path, build / 'vanilla.jsonl', SEED], 'java', cwd=vanilla_dir)
 
     if any(op['op'] == 'raid_state' for op in script):
         from raid_village_corpus import validate_java_inputs
@@ -613,9 +613,9 @@ def main():
     if args.binary:
         binary = args.binary.resolve(strict=True)
     else:
-        run(fast_bins.command('horizon-client'), 'compile-rust', cwd=lab.ROOT)
+        run(fast_bins.command('foundry-client'), 'compile-rust', cwd=lab.ROOT)
         metadata = json.loads(subprocess.check_output(['cargo', 'metadata', '--no-deps', '--format-version', '1'], cwd=lab.ROOT, text=True))
-        binary = Path(metadata['target_directory']) / 'fast' / ('horizon-client.exe' if os.name == 'nt' else 'horizon-client')
+        binary = Path(metadata['target_directory']) / 'fast' / ('foundry-client.exe' if os.name == 'nt' else 'foundry-client')
     rust_dir = build / 'rust'
     shutil.rmtree(rust_dir, ignore_errors=True)
     rust_dir.mkdir()
@@ -627,18 +627,18 @@ def main():
         shutil.copyfile(source, target)
     # The oracle's Services resolve no profile (/fetchprofile fails on the next tick): the game gets no services
     # either, a discovery address that refuses at once, rather than Mojang's over the network.
-    env = lab.game_env(HORIZON_PLAYER_NAME="Player", HORIZON_COMMAND_SCRIPT=script_path,
-                       HORIZON_COMMAND_OUTPUT=build / 'rust.jsonl', HORIZON_API_DISCOVERY='http://127.0.0.1:9/')
+    env = lab.game_env(FOUNDRY_PLAYER_NAME="Player", FOUNDRY_COMMAND_SCRIPT=script_path,
+                       FOUNDRY_COMMAND_OUTPUT=build / 'rust.jsonl', FOUNDRY_API_DISCOVERY='http://127.0.0.1:9/')
     if synced:
         env.update(seed_agent.ENV)
     if args.raid_village_fixture and not args.raid_release_command_diagnostic:
-        env['HORIZON_DEV_COMMANDS'] = '1'
+        env['FOUNDRY_DEV_COMMANDS'] = '1'
     elif args.raid_release_command_diagnostic:
-        env.pop('HORIZON_DEV_COMMANDS', None)
+        env.pop('FOUNDRY_DEV_COMMANDS', None)
     if args.loaded_fixture:
-        env['HORIZON_HARNESS_LOADED_FIXTURE'] = '1'
-        env['HORIZON_HARNESS_CLIENT_CONFIG'] = str(build / 'rust-client-config.json')
-    run([binary, '--resources', Path(os.environ.get('HORIZON_TEST_RESOURCES', lab.RESOURCES)), '--world', 'harness', '--seed', SEED, '--radius', 2 if args.loaded_fixture else 4], 'rust', game=True, cwd=rust_dir, env=env)
+        env['FOUNDRY_HARNESS_LOADED_FIXTURE'] = '1'
+        env['FOUNDRY_HARNESS_CLIENT_CONFIG'] = str(build / 'rust-client-config.json')
+    run([binary, '--resources', Path(os.environ.get('FOUNDRY_TEST_RESOURCES', lab.RESOURCES)), '--world', 'harness', '--seed', SEED, '--radius', 2 if args.loaded_fixture else 4], 'rust', game=True, cwd=rust_dir, env=env)
 
     if any(op['op'] == 'raid_state' for op in script):
         from raid_village_corpus import validate_native_inputs
@@ -728,13 +728,13 @@ def main():
                    'vanilla_results': v['results'], 'rust_results': r['results']}
                   for op, v, r in zip(recorded_ops, vanilla, rust) if op.get('comparison')],
               'vanilla_help_projection': {
-                  'excluded_native_roots': sorted(HORIZON_ONLY_COMMAND_ROOTS),
+                  'excluded_native_roots': sorted(FOUNDRY_ONLY_COMMAND_ROOTS),
                   'native_count_guard': 'One successful integer callback must equal the complete raw usage-line count before subtracting excluded lines.',
                   'raw_records': ['vanilla.jsonl', 'rust.jsonl']},
-              'scope': 'Feedback and failure messages (text and resolved style), chat lines, and CommandResultCallback results of commands run by the single-player owner of an integrated server; world, entity and item effects through probe commands. Explicit positive_result operations compare presence only; vanilla_help projects only declared Horizon-only native root usage after validating the complete raw callback count. Vanilla expected records are unchanged; unmodified raw counts remain in the records and comparison_overrides.'}
+              'scope': 'Feedback and failure messages (text and resolved style), chat lines, and CommandResultCallback results of commands run by the single-player owner of an integrated server; world, entity and item effects through probe commands. Explicit positive_result operations compare presence only; vanilla_help projects only declared Foundry Client-only native root usage after validating the complete raw callback count. Vanilla expected records are unchanged; unmodified raw counts remain in the records and comparison_overrides.'}
     for override in report['comparison_overrides']:
         print(f'{override["comparison"]}: {override["cmd"]}: '
-              f'Java {override["vanilla_results"]}, Horizon {override["rust_results"]}', flush=True)
+              f'Java {override["vanilla_results"]}, Foundry Client {override["rust_results"]}', flush=True)
     lab.write_json(report_path, report)
     if mismatches and not args.allow_gaps:
         sys.exit(f'{len(mismatches)} command execution mismatches; see {build}')
@@ -933,7 +933,7 @@ def vanilla_help(record):
                 not isinstance(line[0][0], str) or not line[0][0].startswith('/')):
             return None
         root = line[0][0][1:].split(' ', 1)[0]
-        if root in HORIZON_ONLY_COMMAND_ROOTS:
+        if root in FOUNDRY_ONLY_COMMAND_ROOTS:
             if root in excluded:
                 return None
             excluded.add(root)

@@ -18,7 +18,7 @@ full logical test path.
 The legacy rows and physical-source checks agree both ways (read with tools/ci/rust_tests.py): every function marked
 `#[ignore = "daily"]` in a workspace package's sources has a daily row of that package whose test path ends in its
 name, and every daily row names a function of that name marked so in its package's sources. A source file compiled
-into two targets (horizon-client-render's gfx/sunrise_fan.rs, also built by its `sunrise_shader` test) has one
+into two targets (foundry-client-render's gfx/sunrise_fan.rs, also built by its `sunrise_shader` test) has one
 attribute and a row per target; both rows find it. The limit: rows carry no file and the source has no module path
 (a `#[path]` or a game area's derived module can place a file anywhere), so the match is by package and function
 name. Two marked functions of one name in one package are satisfied by one row naming either; the daily run, which
@@ -57,7 +57,7 @@ def daily_problems(rows, targets, matrix):
 
 def source_packages():
     """Each member's source folder, in every workspace (the launcher's too) -> the packages whose sources it holds
-    (the deepest folder wins, and crates/horizon-client also builds horizon-client-lib:
+    (the deepest folder wins, and crates/foundry-client also builds foundry-client-lib:
     tools/ci/ignored_shards.py SHARED_SOURCES)."""
     return {member: set(ignored_shards.SHARED_SOURCES.get(Path(member).name, (name,))) | {name}
             for name, (member, _) in ignored_shards.workspace_members().items()}

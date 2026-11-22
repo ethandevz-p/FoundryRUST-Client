@@ -1,12 +1,12 @@
 //! The GUI bridge: preparation off the UI thread, one consent for the complete missing set.
 use gpui::{AnyWindowHandle, AppContext, Context, PromptLevel};
-use horizon_launcher::{
+use foundry_launcher::{
     backend::Msg,
     i18n::{tr, trf},
     jars::{self, Permission},
     launch::{self, Launch},
 };
-use horizon_platform::mod_package::manifest::JarRef;
+use foundry_platform::mod_package::manifest::JarRef;
 use std::{
     process::Command,
     sync::mpsc::{self, Sender},

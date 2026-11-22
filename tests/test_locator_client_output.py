@@ -58,12 +58,12 @@ class Deadline(unittest.TestCase):
 class Snapshot(unittest.TestCase):
     def test_the_snapshot_is_the_transcript_kept_and_the_later_one_moves_aside(self):
         with tempfile.TemporaryDirectory() as folder:
-            out = Path(folder) / 'horizon.txt'
+            out = Path(folder) / 'foundry.txt'
             out.write_text('Alice step=free-near chat ok\nAlice step=end disconnected\n', encoding='utf-8')
             lines = locator.keep_snapshot(out, 'Alice step=free-near chat ok\n')
             self.assertEqual(lines, ['Alice step=free-near chat ok'])
             self.assertEqual(out.read_text(encoding='utf-8'), 'Alice step=free-near chat ok\n')
-            self.assertIn('disconnected', (Path(folder) / 'horizon-end.txt').read_text(encoding='utf-8'))
+            self.assertIn('disconnected', (Path(folder) / 'foundry-end.txt').read_text(encoding='utf-8'))
 
 
 if __name__ == '__main__':

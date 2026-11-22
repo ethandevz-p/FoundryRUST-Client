@@ -1,6 +1,6 @@
 //! A native build started from the launcher's window whose base version isn't prepared runs the
 //! window's own Prepare for that version first, then builds (#18659). The command line keeps
-//! its hint to run `horizon-launcher prepare` ([`crate::backend::prepare_hint`]).
+//! its hint to run `foundry-launcher prepare` ([`crate::backend::prepare_hint`]).
 
 use crate::backend::NotReady;
 use crate::i18n::trf;
@@ -284,12 +284,12 @@ mod tests {
         assert_eq!(
             failed().said(crate::native_mods::Caller::CommandLine),
             format!(
-                "v0 is not prepared yet. Prepare it first: `horizon-launcher prepare --version v0` uses your own Minecraft {v}, or downloads it from Mojang for the signed-in account that owns it."
+                "v0 is not prepared yet. Prepare it first: `foundry-launcher prepare --version v0` uses your own Minecraft {v}, or downloads it from Mojang for the signed-in account that owns it."
             )
         );
         assert_eq!(String::from(failed()), crate::backend::prepare_hint("v0"));
         // The window never names a command.
         let window = failed().said(crate::native_mods::Caller::Window);
-        assert!(!window.contains("horizon-launcher"), "{window}");
+        assert!(!window.contains("foundry-launcher"), "{window}");
     }
 }

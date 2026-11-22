@@ -106,14 +106,14 @@ class BinaryTests(unittest.TestCase):
     def test_a_built_program_is_found_with_or_without_exe(self):
         with tempfile.TemporaryDirectory() as tmp:
             folder = Path(tmp)
-            (folder / "horizon-client.exe").touch()
+            (folder / "foundry-client.exe").touch()
             # Only lab's os.name: pathlib keeps this machine's path flavour.
             with mock.patch.object(lab, "os", SimpleNamespace(name="nt")):
-                self.assertEqual(lab.binary(folder, "horizon-client"), folder / "horizon-client.exe")
-                (folder / "horizon-client").touch()
-                self.assertEqual(lab.binary(folder, "horizon-client"), folder / "horizon-client")
+                self.assertEqual(lab.binary(folder, "foundry-client"), folder / "foundry-client.exe")
+                (folder / "foundry-client").touch()
+                self.assertEqual(lab.binary(folder, "foundry-client"), folder / "foundry-client")
             with mock.patch.object(lab, "os", SimpleNamespace(name="posix")):
-                self.assertEqual(lab.binary(folder, "horizon-ctl"), folder / "horizon-ctl")
+                self.assertEqual(lab.binary(folder, "foundry-ctl"), folder / "foundry-ctl")
 
 
 if __name__ == "__main__":

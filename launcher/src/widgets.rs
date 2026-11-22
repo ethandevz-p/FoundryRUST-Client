@@ -74,7 +74,7 @@ pub(crate) fn hover_fade(
     layer: impl FnOnce() -> Div,
     paint: impl Fn(Div, f32) -> Div + 'static,
 ) -> AnyElement {
-    hover_ease(id, layer, paint, horizon_theme::QUICK)
+    hover_ease(id, layer, paint, foundry_theme::QUICK)
 }
 
 /// [`hover_fade`] on any motion: the spring for the site's moving parts, QUICK for colour.
@@ -82,7 +82,7 @@ pub(crate) fn hover_ease(
     id: &SharedString,
     layer: impl FnOnce() -> Div,
     paint: impl Fn(Div, f32) -> Div + 'static,
-    on: horizon_theme::Motion,
+    on: foundry_theme::Motion,
 ) -> AnyElement {
     let state = HOVER.lock().unwrap();
     // Each transition gets its own animation id, from when it started, so it plays once.
@@ -173,13 +173,13 @@ pub(crate) fn version_tag(tag: &str) -> Div {
         .line_height(px(28.))
         .font_weight(FontWeight::MEDIUM)
         .child(
-            horizon_launcher::nightly::label(tag)
+            foundry_launcher::nightly::label(tag)
                 .or_else(|| build_import::label(tag))
                 .unwrap_or_else(|| tag.trim_start_matches('v').to_string()),
         )
 }
 
-/// Horizon's mark: two stems, their reflection below, and the horizon across in the accent.
+/// Foundry Client's mark: two stems, their reflection below, and the foundry across in the accent.
 pub(crate) fn mark(size: f32, t: &Theme) -> Div {
     let u = size / 16.;
     let stem = |x: f32, y: f32, color: Hsla| {
@@ -300,14 +300,14 @@ pub(crate) fn button(
     keyboard(track_hover(base, id), &t).active(|s| s.opacity(theme::PRESSED).top(px(1.)))
 }
 
-/// Copies to the clipboard, or into `HORIZON_LAUNCHER_CLIPBOARD` when a test run sets it
-/// (`horizon_launcher::desktop_seams`).
+/// Copies to the clipboard, or into `FOUNDRY_LAUNCHER_CLIPBOARD` when a test run sets it
+/// (`foundry_launcher::desktop_seams`).
 pub(crate) fn copy_to_clipboard(cx: &mut App, item: gpui::ClipboardItem) {
     match item.text() {
         Some(text) => glass_toast::say(trf("Copied {text}", &[("text", &text)])),
         None => glass_toast::say(tr("Copied the picture")),
     }
-    if let Some(file) = horizon_launcher::desktop_seams::clipboard_file() {
+    if let Some(file) = foundry_launcher::desktop_seams::clipboard_file() {
         let bytes = match item.entries().first() {
             Some(gpui::ClipboardEntry::Image(image)) => image.bytes.clone(),
             _ => item.text().unwrap_or_default().into_bytes(),
@@ -783,7 +783,7 @@ pub(crate) fn thousands(n: u64) -> String {
 pub(crate) fn caps(s: impl AsRef<str>) -> Div {
     // The glass look writes these as the mockup's small headings (`h3`): 13 px, medium.
     if glass_ui::on() {
-        return glass_ui::text(13., FontWeight::MEDIUM, horizon_theme::glass::ink::BODY)
+        return glass_ui::text(13., FontWeight::MEDIUM, foundry_theme::glass::ink::BODY)
             .line_height(px(19.5))
             .child(s.as_ref().to_string());
     }
@@ -802,7 +802,7 @@ pub(crate) fn short(path: &std::path::Path) -> String {
 /// address and the system's error code; any other error stays as it is.
 pub(crate) fn download_error(error: &str) -> String {
     if error.starts_with("No connection") {
-        tr("Horizon couldn't reach the internet. Check your connection, then try again.")
+        tr("Foundry Client couldn't reach the internet. Check your connection, then try again.")
             .to_string()
     } else {
         error.to_string()
@@ -843,7 +843,7 @@ pub(crate) fn progress_bar(fraction: Option<(f32, f32)>, t: &Theme) -> Div {
         .when(t.glass, |d| {
             d.h(px(4.))
                 .rounded_full()
-                .bg(glass_ui::white(horizon_theme::glass::fill::ACTIVE))
+                .bg(glass_ui::white(foundry_theme::glass::fill::ACTIVE))
         });
     match fraction {
         Some((from, to)) => {

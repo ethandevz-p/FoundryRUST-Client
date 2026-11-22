@@ -3,13 +3,13 @@ use crate::native_cache::{Error, LockMode, Release};
 use cap_std::fs::Dir;
 use std::{fs, path::Path, process::Command, sync::Arc};
 
-pub(crate) const SOURCE: &str = "HORIZON_RUNTIME_SOURCE";
+pub(crate) const SOURCE: &str = "FOUNDRY_RUNTIME_SOURCE";
 
 pub(crate) fn mark(command: &mut Command, source: &Path) {
     command.env(SOURCE, source);
 }
 
-/// Whether `command` is Horizon's own game, [`mark`]ed with the folder it runs from.
+/// Whether `command` is Foundry Client's own game, [`mark`]ed with the folder it runs from.
 pub(crate) fn is_horizon(command: &Command) -> bool {
     override_value(command, SOURCE).flatten().is_some()
 }
@@ -23,14 +23,14 @@ fn override_value<'a>(command: &'a Command, key: &str) -> Option<Option<&'a std:
 }
 
 // This adapter owns localized launcher errors; the kernel protocol lives below game/launcher.
-pub(crate) struct Registry(Arc<horizon_platform::mod_package::runtime_leases::Registry>);
-pub(crate) use horizon_platform::mod_package::runtime_leases::Claim;
+pub(crate) struct Registry(Arc<foundry_platform::mod_package::runtime_leases::Registry>);
+pub(crate) use foundry_platform::mod_package::runtime_leases::Claim;
 impl Registry {
     fn at(data: &Path) -> Result<Arc<Self>, Error> {
         Self::with_release(data, Release::Unlock)
     }
     pub(crate) fn with_release(data: &Path, release: Release) -> Result<Arc<Self>, Error> {
-        horizon_platform::mod_package::runtime_leases::Registry::with_release(data, release)
+        foundry_platform::mod_package::runtime_leases::Registry::with_release(data, release)
             .map(|registry| Arc::new(Self(registry)))
             .map_err(|error| Error::from(error).on(data))
     }
@@ -91,19 +91,19 @@ pub(crate) fn game_units_in(
     data: &Path,
 ) -> Result<Vec<Claim>, Error> {
     let snapshot = game_snapshot(command)?;
-    let selection = horizon_platform::mod_package::selection::LaunchArguments::for_command(
+    let selection = foundry_platform::mod_package::selection::LaunchArguments::for_command(
         snapshot.as_ref().unwrap_or(command),
     )?;
     let data = data.canonicalize()?;
     let cwd = std::path::absolute(command.get_current_dir().unwrap_or(Path::new(".")))?;
-    horizon_platform::mod_package::runtime_leases::lease_units(executable, &selection, &data, &cwd)
+    foundry_platform::mod_package::runtime_leases::lease_units(executable, &selection, &data, &cwd)
         .map_err(Into::into)
 }
 
 /// Launcher-owned primitives-in-use; this is not a standalone cleanup safety guarantee.
 pub(crate) fn shared(command: &Command) -> Result<Vec<Claim>, Error> {
-    let logs = override_value(command, "HORIZON_HOME").map_or_else(
-        || std::env::var_os("HORIZON_HOME").map(std::path::PathBuf::from),
+    let logs = override_value(command, "FOUNDRY_HOME").map_or_else(
+        || std::env::var_os("FOUNDRY_HOME").map(std::path::PathBuf::from),
         |value| value.map(std::path::PathBuf::from),
     );
     let source = override_value(command, SOURCE)
@@ -134,12 +134,12 @@ pub(crate) fn shared(command: &Command) -> Result<Vec<Claim>, Error> {
                 .and_then(|directory| registry.lock(&directory, LockMode::Shared))
                 .map_err(|error| naming(&home, error))?,
         );
-        for relative in [".horizon-cache", "wasm-cache", "cache"] {
+        for relative in [".foundry-cache", "wasm-cache", "cache"] {
             stamp(&home.join(relative))?;
         }
-        use horizon_platform::mod_package::{mod_list, Package};
+        use foundry_platform::mod_package::{mod_list, Package};
         for folder in [mod_list::DIR, mod_list::NATIVE_DIR] {
-            for path in horizon_platform::mod_package::find(&home.join(folder)) {
+            for path in foundry_platform::mod_package::find(&home.join(folder)) {
                 if let Ok(package) = Package::read(&path) {
                     if crate::browser::java::is_enabled(&home, &package.manifest.id) {
                         for jar in package.manifest.jar {
@@ -197,7 +197,7 @@ pub(crate) fn shared(command: &Command) -> Result<Vec<Claim>, Error> {
 /// folders and every `--resources`. Native clients read prepared data from a different installed
 /// version, so that tree is held as well as the executable's.
 fn argument_paths(command: &Command) -> std::io::Result<Vec<std::path::PathBuf>> {
-    use horizon_platform::mod_package::selection::{Argument, LaunchArguments};
+    use foundry_platform::mod_package::selection::{Argument, LaunchArguments};
     let cwd = command.get_current_dir().unwrap_or(Path::new("."));
     let (rest, mut paths) = match game_snapshot(command)? {
         // The words before wrappers: a wrapper's own words shift the parser's option/value
@@ -265,12 +265,12 @@ fn naming(path: &Path, error: Error) -> Error {
 #[cfg(test)]
 mod tests;
 
-pub(crate) const GAME: &str = "HORIZON_LAUNCHER_GAME_COMMAND";
+pub(crate) const GAME: &str = "FOUNDRY_LAUNCHER_GAME_COMMAND";
 
 /// Preserve the engine-owned argument grammar before wrappers obscure it.
 pub(crate) fn snapshot(command: &mut Command) {
-    // Only Horizon's game ([`mark`]ed) has that grammar: Minecraft: Java Edition's arguments
-    // read as Horizon's fail to pair up (#17950).
+    // Only Foundry Client's game ([`mark`]ed) has that grammar: Minecraft: Java Edition's arguments
+    // read as Foundry Client's fail to pair up (#17950).
     if !is_horizon(command) {
         return;
     }
@@ -402,7 +402,7 @@ fn spawn_inner(command: &mut Command, piped: bool) -> std::io::Result<std::proce
     let _ = piped;
     #[cfg(unix)]
     {
-        use horizon_platform::mod_package::{holder, selection::LaunchArguments};
+        use foundry_platform::mod_package::{holder, selection::LaunchArguments};
         let encoded = override_value(command, GAME)
             .flatten()
             .map(std::ffi::OsStr::to_owned);
@@ -451,7 +451,7 @@ fn spawn_inner(command: &mut Command, piped: bool) -> std::io::Result<std::proce
                 };
                 let prepared =
                     holder::Prepared::new(data.clone(), trees, program, &selection.context)?;
-                let marker = horizon_platform::mod_package::local_control::Marker::runtime()?;
+                let marker = foundry_platform::mod_package::local_control::Marker::runtime()?;
                 let mut holder_command = Command::new(executable);
                 // Private bootstrap ignores arguments; retaining the final command's arguments
                 // also permits receiver harnesses whose process entry parses test filters first.
@@ -529,9 +529,9 @@ pub(crate) fn publish(path: &Path) -> Result<(), Error> {
         .map(Path::to_owned)
         .collect();
     for relative in [
-        ".local/horizon-client/26.3",
+        ".local/foundry-client/26.3",
         "resources",
-        ".horizon-cache",
+        ".foundry-cache",
         "wasm-cache",
         "cache",
         "logs",
@@ -578,9 +578,9 @@ pub(crate) fn publish_existing() -> Result<(), Error> {
                         let path = entry.path();
                         units.push(path.clone());
                         for relative in [
-                            ".local/horizon-client/26.3",
+                            ".local/foundry-client/26.3",
                             "resources",
-                            ".horizon-cache",
+                            ".foundry-cache",
                             "wasm-cache",
                             "cache",
                             "logs",
@@ -612,8 +612,8 @@ pub(crate) fn publish_existing() -> Result<(), Error> {
 
 /// Held from before an executable becomes visible through its completion publication.
 pub(crate) fn installation(
-) -> Result<horizon_platform::mod_package::runtime_leases::Publication, Error> {
-    use horizon_platform::mod_package::{
+) -> Result<foundry_platform::mod_package::runtime_leases::Publication, Error> {
+    use foundry_platform::mod_package::{
         locks::{LockMode, Release},
         runtime_leases::Registry,
     };

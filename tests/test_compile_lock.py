@@ -156,7 +156,7 @@ class CompileLockTests(unittest.TestCase):
         command = ("import subprocess, sys; subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(60)'], "
                    "start_new_session=True, close_fds=False, stdout=subprocess.DEVNULL)")
         wrapper = subprocess.run([sys.executable, str(ROOT / "tools/compile_lock.py"), "build", "--", sys.executable,
-                                  "-c", command], env=dict(os.environ, HORIZON_COMPILE_LOCK_DIR=self.folder),
+                                  "-c", command], env=dict(os.environ, FOUNDRY_COMPILE_LOCK_DIR=self.folder),
                                  stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True, timeout=60)
         self.assertEqual(wrapper.returncode, 0)
         self.assertIn("compile lock: taken, no wait", wrapper.stdout)
@@ -703,7 +703,7 @@ class CompileLockTests(unittest.TestCase):
 
     def test_the_wrapper_says_once_that_it_takes_no_turn_off_the_mac(self):
         environ = {key: value for key, value in os.environ.items()
-                   if key not in ("HORIZON_COMPILE_LOCK_DIR", "RUNNER_ENVIRONMENT")}
+                   if key not in ("FOUNDRY_COMPILE_LOCK_DIR", "RUNNER_ENVIRONMENT")}
         result = subprocess.run([sys.executable, str(ROOT / "tools/compile_lock.py"), "pr", "--", sys.executable,
                                  "-c", "raise SystemExit(5)"], env=environ, capture_output=True, text=True, timeout=60)
         self.assertEqual(result.returncode, 5)
@@ -725,7 +725,7 @@ class CompileLockTests(unittest.TestCase):
             sys.exit(compile_lock.main(sys.argv[2:]))
         """)
         wrapper = subprocess.Popen([sys.executable, "-c", script, str(ROOT), "build", "--", sys.executable, "-c",
-                                    command], env=dict(os.environ, HORIZON_COMPILE_LOCK_DIR=self.folder),
+                                    command], env=dict(os.environ, FOUNDRY_COMPILE_LOCK_DIR=self.folder),
                                    stdout=subprocess.PIPE, text=True)
         self.addCleanup(lambda: (wrapper.poll() is None and wrapper.kill(), wrapper.stdout.close()))
         self.assertIn("taken", wrapper.stdout.readline())
@@ -845,16 +845,16 @@ class CompileLockTests(unittest.TestCase):
         def load(name):
             return yaml.safe_load((ROOT / ".github/workflows" / name).read_text(encoding="utf-8"))
         game = load("game-build.yml")
-        self.assertEqual(game["env"]["HORIZON_COMPILE_LOCK_ROLE"], "build")  # vanilla-data.sh's preparer build too
+        self.assertEqual(game["env"]["FOUNDRY_COMPILE_LOCK_ROLE"], "build")  # vanilla-data.sh's preparer build too
         jobs = game["jobs"]
         # Each Mac cargo compile is its step's entry process (exec), in the turn: the preparer, the game, xtask.
-        wrapped = "exec bash tools/ci/compile-lock.sh build -- cargo build --release --locked -p horizon-prepare"
+        wrapped = "exec bash tools/ci/compile-lock.sh build -- cargo build --release --locked -p foundry-prepare"
         steps = [step.get("run", "") for step in jobs["exporters"]["steps"]]
         self.assertTrue(any(run.rstrip().endswith(wrapped) for run in steps))
         compiles = [run for run in steps if "cargo build" in run]
         self.assertEqual(len(compiles), 1, "no other cargo build in exporters")
         build = {step.get("name"): step for step in jobs["build"]["steps"]}
-        game_build = build["Build the official game, horizon-ctl, horizon-prepare and horizon-server"]["run"]
+        game_build = build["Build the official game, foundry-ctl, foundry-prepare and foundry-server"]["run"]
         self.assertIn('if [ -f tools/ci/compile-lock.sh ]; then lock="bash tools/ci/compile-lock.sh build --"',
                       game_build)
         self.assertIn('if [ "${{ matrix.mac }}" = true ]; then', game_build)
@@ -871,11 +871,11 @@ class CompileLockTests(unittest.TestCase):
         main = load("parity-main.yml")["jobs"]["parity-main"]
         # 20 min of waiting and the 240 min prebuild limit (tools/parity.py) leave setup and the harnesses 100.
         self.assertEqual(main["timeout-minutes"], 360)
-        self.assertEqual(main["env"]["HORIZON_COMPILE_LOCK_ROLE"], "main")
+        self.assertEqual(main["env"]["FOUNDRY_COMPILE_LOCK_ROLE"], "main")
         harnesses = next(step for step in main["steps"] if step.get("id") == "harnesses")
         self.assertIn("\nexec python3 tools/parity.py --changed", harnesses["run"])
         verdict = next(step for step in main["steps"] if "verdict" in step.get("run", ""))
-        self.assertEqual(verdict["env"]["HORIZON_COMPILE_LOCK_ROLE"], "off")
+        self.assertEqual(verdict["env"]["FOUNDRY_COMPILE_LOCK_ROLE"], "off")
         parity = [step.get("run", "") for step in load("parity.yml")["jobs"]["parity"]["steps"]]
         self.assertEqual(len([run for run in parity if run.startswith("exec python3 tools/parity.py")]), 2)
         # The launcher's Mac leg on main: tests and launcher in one turn, before the steps that run them; branch
@@ -892,7 +892,7 @@ class CompileLockTests(unittest.TestCase):
         self.assertEqual(launcher["timeout-minutes"],
                          "${{ matrix.mac && needs.decide.outputs.main == 'true' && 90 || matrix.mac && 60 || 40 }}")
         vanilla = (ROOT / "tools/ci/vanilla-data.sh").read_text(encoding="utf-8")
-        self.assertIn('in_turn="bash tools/ci/compile-lock.sh ${HORIZON_COMPILE_LOCK_ROLE:-pr} --"', vanilla)
+        self.assertIn('in_turn="bash tools/ci/compile-lock.sh ${FOUNDRY_COMPILE_LOCK_ROLE:-pr} --"', vanilla)
         self.assertEqual(vanilla.count("$in_turn "), 2)
         # `lock` stays the preparation lock's folder, which the mkdir fallback's EXIT trap removes.
         self.assertEqual([line.strip() for line in vanilla.splitlines() if line.strip().startswith("lock=")],

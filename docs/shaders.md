@@ -1,42 +1,42 @@
-# Horizon shader packs
+# Foundry Client shader packs
 
-Horizon has its own shader packs: WGSL written against stages of Horizon's renderer, checked before they run. This page
+Foundry Client has its own shader packs: WGSL written against stages of Foundry Client's renderer, checked before they run. This page
 is the guide for pack authors. The design and the pack format are in [api/shaders.md](api/shaders.md); every stage's
 signature, input, resource and limit is in the generated
 [api/shaders-reference-0.2.md](api/shaders-reference-0.2.md).
 
-**Shader API 0.1 is retired (#15886).** A 0.1 pack is refused with `needs shader API 0.1; this Horizon serves 0.2`:
+**Shader API 0.1 is retired (#15886).** A 0.1 pack is refused with `needs shader API 0.1; this Foundry Client serves 0.2`:
 it stays in the list, and the game draws without it. To move one, set `api = "0.2"` and treat colours as linear light,
 as [api/shaders.md](api/shaders.md#shader-api-02) describes; the example pack Golden Hour 2.0.0 was moved
 that way.
 
 Shader packs in the Iris/OptiFine format are a separate feature with its own loader; this page is only about
-Horizon's own format.
+Foundry Client's own format.
 
 | Part | Where | State |
 |---|---|---|
-| Format, stages, check | `crates/horizon-shader-api` | API 0.2, final (preview) |
-| Authoring tool | `horizon-shader` (same crate) | `new`, `check`, `pack` |
-| Templates | `crates/horizon-shader-api/templates/` | post, sky, material |
-| Example pack | `crates/horizon-shader-api/packs/golden_hour` | a warm sky and two post passes |
-| Horizon's HDR look as a pack | `crates/horizon-shader-api/packs/horizon_hdr` | material, entity and tonemap stages over the look file the renderer itself starts with |
+| Format, stages, check | `crates/foundry-shader-api` | API 0.2, final (preview) |
+| Authoring tool | `foundry-shader` (same crate) | `new`, `check`, `pack` |
+| Templates | `crates/foundry-shader-api/templates/` | post, sky, material |
+| Example pack | `crates/foundry-shader-api/packs/golden_hour` | a warm sky and two post passes |
+| Foundry Client's HDR look as a pack | `crates/foundry-shader-api/packs/foundry_hdr` | material, entity and tonemap stages over the look file the renderer itself starts with |
 | In the game: every stage | Options > Video Settings > Shaders > Shader Packs | sky, material, post passes, hot reload |
 | The registry and the launcher | `shader` kind ([modding/src/reference/registry-index.md](modding/src/reference/registry-index.md)); the Mods page's Shader packs tab | checked, then installed into `shaderpacks/` |
 
 ## Quick start
 
 ```sh
-cargo install --path crates/horizon-shader-api      # or: cargo run -p horizon-shader-api --bin horizon-shader -- <command>
-horizon-shader new my_pack --template post          # also: --template sky, --template material; --name "My Pack"
-horizon-shader check my_pack                        # what the game, the launcher and the registry will check
-horizon-shader pack my_pack                         # check, then write my_pack-0.1.0.hshader beside the folder
+cargo install --path crates/foundry-shader-api      # or: cargo run -p foundry-shader-api --bin foundry-shader -- <command>
+foundry-shader new my_pack --template post          # also: --template sky, --template material; --name "My Pack"
+foundry-shader check my_pack                        # what the game, the launcher and the registry will check
+foundry-shader pack my_pack                         # check, then write my_pack-0.1.0.hshader beside the folder
 ```
 
 `check` prints each stage with its cost, and the pack's SHA-256:
 
 ```
 golden_hour 2.0.0 (shader API 0.2): ok
-  sky       Warm horizon                    131 expressions, 0 texture reads
+  sky       Warm foundry                    131 expressions, 0 texture reads
   post      Glow                            346 expressions, 5 texture reads
   post      Colour grade                    367 expressions, 4 texture reads
   sha256 0b990082...
@@ -54,10 +54,10 @@ my_pack 0.1.0 (shader API 0.2): FAILED
 ## Trying a pack in the game
 
 Put the pack folder (or its `.hshader`) in `shaderpacks/` beside `options.txt` (Open Pack Folder opens it) and pick
-it on Options > Video Settings > Shaders > Shader Packs..., which lists Horizon's packs, marked (Horizon), beside packs in the
-`shaders/` format; one runs at a time, and clicking it again turns it off. `HORIZON_SHADER_PACK=<its folder or file
-name>` runs a pack whatever the page says, for development. `HORIZON_TERRAIN_LOOKS=1` makes terrain keep each quad's
-own tint, directional shade, ambient occlusion and face beside its vertices while one of Horizon's packs
+it on Options > Video Settings > Shaders > Shader Packs..., which lists Foundry Client's packs, marked (Foundry Client), beside packs in the
+`shaders/` format; one runs at a time, and clicking it again turns it off. `FOUNDRY_SHADER_PACK=<its folder or file
+name>` runs a pack whatever the page says, for development. `FOUNDRY_TERRAIN_LOOKS=1` makes terrain keep each quad's
+own tint, directional shade, ambient occlusion and face beside its vertices while one of Foundry Client's packs
 runs, as a pack whose material or vertex stage reads `tint`, `shade`, `ao` or `face` does, for the engine's
 own tests: they take a third again the terrain's memory, and the world loads again when such a pack starts or stops. The game checks the pack first, and refuses one that
 fails, with its problems in the chat. While it runs, the game looks at the pack twice a second: save a file
@@ -71,20 +71,20 @@ there are more than it has room for, they collapse into one `‹ Name ›` row t
 bumpers step through); deeper screens open from their links, and Escape goes back. A click, Enter or Right picks an
 option's next value, a Shift click or Left the one before, and the options the pack lists in
 `sliders` are sliders. Pointing at one shows what the pack says of it (`option.NAME.comment`); the search finds an
-option on any screen. Undo puts back the pick, the Shadow Cache, the Horizon packs' options and the options of the
+option on any screen. Undo puts back the pick, the Shadow Cache, the Foundry Client packs' options and the options of the
 `shaders/` pack that was picked when the screen opened; another `shaders/` pack keeps what was saved for it (picking
 away from it saves its changes, as Apply does). A `shaders/` pack's
 options are saved to `shaderpacks/<pack>.txt` (`NAME=value` lines), and the pack loads again with them, with Apply
-(shown while they differ from the saved ones) or on leaving the screen; a Horizon pack's apply at once.
+(shown while they differ from the saved ones) or on leaving the screen; a Foundry Client pack's apply at once.
 
 ## Testing a pack frame by frame
 
 A pack that keeps something from frame to frame (kept resources, eased values) draws a little differently in every run,
-as frames come when they come. With `HORIZON_STILL=1` and the world frozen the scene holds still
+as frames come when they come. With `FOUNDRY_STILL=1` and the world frozen the scene holds still
 ([agent-control.md](agent-control.md#repeatable-screenshots)), and
 
 ```sh
-horizon-ctl screenshot-sequence 64 50 frame64.png
+foundry-ctl screenshot-sequence 64 50 frame64.png
 ```
 
 starts the pack over as if just loaded (eased values from the start) and draws 64 frames 50 ms
@@ -96,7 +96,7 @@ cancel` stops one.
 
 ## A pack
 
-A folder (or the same files zipped as a `.hshader`) with `horizon-shaders.toml` and WGSL files:
+A folder (or the same files zipped as a `.hshader`) with `foundry-shaders.toml` and WGSL files:
 
 ```toml
 schema = 1
@@ -121,18 +121,18 @@ Every key is in [api/shaders.md](api/shaders.md#the-pack-format-schema-1).
 
 ## Stages
 
-A stage is one function your file defines. Horizon puts its prelude (the structs, `frame`, the stage's resources and
+A stage is one function your file defines. Foundry Client puts its prelude (the structs, `frame`, the stage's resources and
 helpers) before your file and calls the function from its own pass, so the world is still culled, batched and meshed
-by Horizon: a pack changes how things look, not how they are drawn.
+by Foundry Client: a pack changes how things look, not how they are drawn.
 
 | Stage | Your function | What it does |
 | --- | --- | --- |
 | `[sky]` | `fn sky(input: SkyInput) -> vec4<f32>` | the sky's colour along each view ray, opaque (alpha is ignored), drawn where vanilla draws its sky dome (the Overworld's sky; not the Nether's or the End's); the sun, moon, stars and clouds are drawn over it |
 | `[material]` | `fn material(input: MaterialInput) -> Surface` | the lit colour of each point of a block's surface, before the alpha test and fog: every terrain section and distant tile, solid, cutout and translucent (not entities, block entities or particles) |
-| `[entity]` | `fn entity(input: EntityInput) -> Surface` | the lit colour of each point of an entity or a block entity (mobs, players, armour, chests, banners), before the alpha test, the enchantment glint and fog; `input.kind` says which. Items and particles keep Horizon's lighting for now |
-| `[weather]` | `fn weather(input: WeatherInput) -> vec4<f32>` | the colour of each point of a rain or snow streak, blended over the world with its alpha; Horizon's light and fog aren't applied, so the pack applies its own |
+| `[entity]` | `fn entity(input: EntityInput) -> Surface` | the lit colour of each point of an entity or a block entity (mobs, players, armour, chests, banners), before the alpha test, the enchantment glint and fog; `input.kind` says which. Items and particles keep Foundry Client's lighting for now |
+| `[weather]` | `fn weather(input: WeatherInput) -> vec4<f32>` | the colour of each point of a rain or snow streak, blended over the world with its alpha; Foundry Client's light and fog aren't applied, so the pack applies its own |
 | `[[post]]` | `fn post(input: PostInput) -> vec4<f32>` | a full-screen pass over the world's picture (up to 12, in order), under the hand and HUD; its alpha is ignored |
-| `[tonemap]` | `fn tonemap(input: TonemapInput) -> vec3<f32>` | the post chain's picture for the display, from 0 to `frame.headroom`; without it Horizon's curve runs |
+| `[tonemap]` | `fn tonemap(input: TonemapInput) -> vec3<f32>` | the post chain's picture for the display, from 0 to `frame.headroom`; without it Foundry Client's curve runs |
 
 A pack has at least one stage; a stage it leaves out keeps vanilla's look. Each input says what vanilla would draw
 (`input.color` in the sky and post stages; `albedo * shaded_tint * vec4(lightmap, 1.0)` for a material, `shaded_tint`
@@ -140,7 +140,7 @@ being vanilla's vertex colour, the quad's `tint` times its `shade` and `ao`), so
 from vanilla and change only what it means to.
 
 Every colour a stage reads or returns is linear light: 1.0 is vanilla's white, and more is brighter, on SDR and HDR
-displays alike. Horizon decodes vanilla's gamma values on the way in and encodes what the frame stores, so a constant
+displays alike. Foundry Client decodes vanilla's gamma values on the way in and encodes what the frame stores, so a constant
 written for display values is decoded first (`pow(c, vec3(2.2))`), and luminance is `dot(c, frame.luminance)`.
 
 Every stage can read `frame`: the camera's matrices and position, the sun and moon directions, the time of day,
@@ -149,7 +149,7 @@ Post passes also read `scene_color`, `scene_depth`, `previous` (the last pass's 
 `depth_at(uv)` and `view_position(uv, depth)`.
 
 Rules the check enforces: your files declare no bindings (`@group`/`@binding`), no entry points and no names starting
-with `horizon_`. Code shared by several stages goes in files listed in `shared`, put before every stage.
+with `foundry_`. Code shared by several stages goes in files listed in `shared`, put before every stage.
 
 ## Sprite tags
 
@@ -253,7 +253,7 @@ fresh meshes for loaded sections. A hit without a usable look record uses baked 
 as `view_position` gives them, and
 rays pass through the clear texels of leaves and plants, and through water, stained glass and ice, which are in a
 [layer of their own](#layers). `frame.ray_distance` is the distance the scene covers in every direction; a longer ray
-is allowed and may still hit geometry toward the corners, and no clamp is needed. Horizon keeps the scene; the look is the pack's: Horizon
+is allowed and may still hit geometry toward the corners, and no clamp is needed. Foundry Client keeps the scene; the look is the pack's: Foundry Client
 adds no shadows, bounce light or denoising of its own. The pack never sees the acceleration structure or a ray query,
 and the check refuses a pack that names one itself.
 
@@ -261,7 +261,7 @@ and the check refuses a pack that names one itself.
 | --- | --- |
 | In the scene today | Terrain within 8 chunks of the camera, in two layers: solid terrain (cut-outs and lava included), which `trace` reads, and translucent terrain (water, stained glass, ice), which [`trace_layers`](#layers) reads; `frame.ray_distance` is how far it surely reaches. For a pack that names `RAY_ENTITY`, a third layer: [the entities within that reach](#entities), in view or not. For a pack with `lights = true` under `[ray_tracing]`, [the light sources around the camera](#light-sources) |
 | Not in it yet | Block entities at rest (a closed chest) or out of view, the hand, distant terrain tiles |
-| Turning it on | Pick the pack and start the game with it, on a GPU and graphics API with hardware ray queries: the device needs them from its creation, so in a game started without them a pack picked while it runs traces from the next start, and the shader pack screen says so. `HORIZON_RAY_TRACING=1` asks for ray queries and keeps the scene with any pack or none; any other value of it turns ray tracing off |
+| Turning it on | Pick the pack and start the game with it, on a GPU and graphics API with hardware ray queries: the device needs them from its creation, so in a game started without them a pack picked while it runs traces from the next start, and the shader pack screen says so. `FOUNDRY_RAY_TRACING=1` asks for ray queries and keeps the scene with any pack or none; any other value of it turns ray tracing off |
 | Without it | The pack loads and runs as it is: `frame.has_ray_tracing` is 0, `trace` misses and `trace_any` is false. Branch on `has_ray_tracing` and keep a look that works without rays. It is also 0 in a pack none of whose stages calls a trace function |
 | Graphics APIs | Vulkan; DirectX 12 where it compiles shaders with DXC (integrated GPUs, or `WGPU_DX12_COMPILER=dxc`), as FXC has no ray queries; Metal on macOS 15 and later where the GPU traces rays from render passes (untested). OpenGL has none |
 | Video memory | About 450 MB more for solid terrain on an RTX 5070 Ti, the same at render distance 12 and 32, since the scene holds 8 chunks whatever the render distance: its vertex store (384 MiB there; it starts at 24 MiB, doubles when full and grows to at most 1.5 GiB) and its acceleration structures (65 MB; 190 MB on DirectX 12). More with water, glass and ice in view: their copy shares the store, which then doubles earlier (+192 MB where it first does) |
@@ -282,7 +282,7 @@ let color = hit.albedo.rgb * hit.tint.rgb * (hit.light.y + hit.emission) + vec3<
 ```
 
 The scene trails the world by a frame or two where chunks load or blocks change, and is empty for the first frames in
-a world. The smallest working pack is `crates/horizon-shader-api/packs/traced_shadows`: the sun's shadows, one ray a
+a world. The smallest working pack is `crates/foundry-shader-api/packs/traced_shadows`: the sun's shadows, one ray a
 pixel.
 
 ### Layers
@@ -323,13 +323,13 @@ made with `trace` and `trace_any` alone is the same with the layer as without it
 #### Entities
 
 `RAY_ENTITY` is the entities' layer. Only a pack whose files name it has it, anywhere outside a comment (dead code
-too): Horizon then builds it every frame, and binds it to the pack's traced stages, which also get `RayHit.entity`.
+too): Foundry Client then builds it every frame, and binds it to the pack's traced stages, which also get `RayHit.entity`.
 Every other pack is built and runs as without it.
 
 | | |
 | --- | --- |
 | In it | Within the scene's reach, mobs, players (third person, and the others), armour stands, item frames, paintings, projectiles, vehicles, falling blocks and block displays, whether the camera draws them this frame or not (behind it, beside it, hidden behind terrain), so turning the camera changes nothing; the block entities at rest that the block entity cache keeps (on in every graphics preset: closed chests, shulker boxes, bells, decorated pots, banners, within vanilla's 64 blocks), in view or not; and the other block entities the camera draws (a chest while it opens) |
-| Not in it | Particles, world text and name tags, the hand, the camera's own body in first person, items Horizon draws itself (a dropped item, a framed one), translucent items, breaking cracks, entity shadows, energy swirls, beams, portals, lightning, glowing outlines, additive glows; other block entities out of view (a chest opening behind the camera) |
+| Not in it | Particles, world text and name tags, the hand, the camera's own body in first person, items Foundry Client draws itself (a dropped item, a framed one), translucent items, breaking cracks, entity shadows, energy swirls, beams, portals, lightning, glowing outlines, additive glows; other block entities out of view (a chest opening behind the camera) |
 | A hit | `entity` true. `albedo` the entity texture's texel in linear light, `tint`, `light` and `uv` its vertices' (the colour vanilla multiplies in, alpha included; block and sky light; the atlas position), `normal` the face's against the ray, `tangent` from its uvs, `shade` vanilla's entity shade for the face (the Nether's in the Nether), `ao` 1; `material`, `tags`, `emission` and `fluid` 0, `translucent` false, and `hit_normal_map` and `hit_specular_map` give their defaults |
 | A ray stops | Where vanilla's alpha test keeps the entity's pixel, `(texel * tint).a` 0.1 or more, from either side of the face (on the dying dragon's dissolve, where vanilla's mask keeps it). A pack's own `[entity]` alpha is not the layer's: the scene runs no pack code |
 | Cost | For a pack that names the layer: the models of the entities within reach that the camera doesn't draw, posed on the CPU every frame, and one BLAS of the frame's entity quads and the TLAS built again every frame. The cached block entities have a BLAS a section, built again only when that section's change (a chest opens or closes, one is placed or broken) |
@@ -386,7 +386,7 @@ for (var i = 0u; i < near.y; i++) {
 }
 ```
 
-`crates/horizon-shader-api/packs/traced_lights` is that pass as a pack.
+`crates/foundry-shader-api/packs/traced_lights` is that pass as a pack.
 
 **In the material stage.** Translucent terrain (water, stained glass, ice) is blended where `material` shades it and
 leaves no surface for a post pass to light, so that is where its rays go. `input.position` and `input.normal` are
@@ -413,7 +413,7 @@ if input.translucent && frame.has_ray_tracing == 1u {
   function is built as without `[ray_tracing]`; one that does is built twice, the one with the rays drawing in frames
   that have the scene.
 
-`crates/horizon-shader-api/packs/traced_water` is the smallest pack that traces from `material`: water that mixes in
+`crates/foundry-shader-api/packs/traced_water` is the smallest pack that traces from `material`: water that mixes in
 what a reflected ray hits.
 
 **In the entity stage.** `entity` traces as `material` does, with the same functions, the same cost per fragment and
@@ -442,11 +442,11 @@ Keep them out of a `shared` file that a sky, weather, tonemap or vertex stage al
 | --- | --- |
 | The pack's | `struct RayState { ... }`, any type (an `alias` too; a spectral pack's array of bands), and `fn ray_step(c: RayCandidate, state: ptr<function, RayState>) -> u32` |
 | What `ray_step` returns | `RAY_PASS`: go on past the surface. `RAY_STOP`: keep it as the nearest hit so far, which ends the ray at it. `RAY_END`: end the query now, the hit being the nearest kept by then. `RAY_STOP \| RAY_END`: keep this one, then end |
-| `RayCandidate` | `distance` along the ray, `layer` (`RAY_SOLID`, `RAY_TRANSLUCENT` or `RAY_ENTITY`); its other fields are Horizon's |
+| `RayCandidate` | `distance` along the ray, `layer` (`RAY_SOLID`, `RAY_TRANSLUCENT` or `RAY_ENTITY`); its other fields are Foundry Client's |
 | Read where called | `candidate_stops(c)`, whether `trace_layers` stops there; `candidate_albedo(c)`, `candidate_tint(c)`, `candidate_material(c)`, `candidate_tags(c)`, `candidate_fluid(c)`, each the `RayHit` field of its name at the candidate. A step pays for those it calls |
 | The result | The nearest surface a step kept, as `trace_layers` gives a hit; `distance` negative where it kept none |
 | Order | None: surfaces don't come nearest first, and one beyond the surface kept in the end may have been stepped before it was kept. A step that gathers (multiplies, adds) keeps nothing, so everything out to `max_distance` counts, or records each contribution's `c.distance` in its state and drops those past the result's `distance` |
-| Repeats | A surface may reach the step more than once in one query: the graphics APIs allow it, and Horizon's scene doesn't forbid it yet. A step that only keeps, ends or takes a minimum is unaffected; one that multiplies can count a pane more than once |
+| Repeats | A surface may reach the step more than once in one query: the graphics APIs allow it, and Foundry Client's scene doesn't forbid it yet. A step that only keeps, ends or takes a minimum is unaffected; one that multiplies can count a pane more than once |
 | Without the scene | No surface reaches the step: the result misses and `state` stays as passed |
 | Refused | A `ray_step` that reaches a trace function (`trace_step` too), a stage without `RayState` or with another `ray_step`, a pack that builds a `RayCandidate` |
 
@@ -512,7 +512,7 @@ what a `[[before_world]]` pass wrote since.
 
 `[entity] reads` and `[sky] reads` work the same way, so mobs, block entities and the sky can use the light the
 terrain gets. The entities and the sky draw after `[[before_world]]` and before `[[post]]`, as the terrain does, and
-read the same versions. Only their fragments read them: the shadow map's entities are Horizon's own draw, with no
+read the same versions. Only their fragments read them: the shadow map's entities are Foundry Client's own draw, with no
 kept resources.
 
 ```toml
@@ -609,11 +609,11 @@ stage draws in a pass of its own (it shares the world's pass otherwise), so its 
 material stage runs inside terrain's own draws, so it has no time of its own: compare the frame's GPU time with and
 without the pack.
 
-With F3 shut, offscreen or from a script, `horizon-ctl gpu-passes on` times the same passes: `horizon-ctl bench 5`
-then replies with `shader_passes`, the pack's passes by the names F3 shows, beside `gpu_passes`, Horizon's own, and
+With F3 shut, offscreen or from a script, `foundry-ctl gpu-passes on` times the same passes: `foundry-ctl bench 5`
+then replies with `shader_passes`, the pack's passes by the names F3 shows, beside `gpu_passes`, Foundry Client's own, and
 with `gpu`, the whole frame's percentiles (`gpu_ms`, every frame, with `bench 5 raw`; `gpu-passes off` stops it).
-`horizon-client --benchmark` records them as `shader_pass.<scene>.<pass>_ms`, and `horizon-ctl profile client start
---gpu` into a capture (`horizon-perf query gpu`).
+`foundry-client --benchmark` records them as `shader_pass.<scene>.<pass>_ms`, and `foundry-ctl profile client start
+--gpu` into a capture (`foundry-perf query gpu`).
 
 ## Next
 

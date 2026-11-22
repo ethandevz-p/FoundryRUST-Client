@@ -7,7 +7,7 @@ through (`Entity.applyEffectsFromBlocks`): a pressure plate the moved box now to
 else. A redstone machine that lets one of several stacked entities through this way (the plate opens a trapdoor over
 the others) depends on it.
 
-A vanilla dedicated server and Horizon's each load a copy of one flat world vanilla generated first. Ticking is
+A vanilla dedicated server and Foundry Client's each load a copy of one flat world vanilla generated first. Ticking is
 frozen. An upward piston in the floor lifts a stone under a snowball with no gravity and no motion, floating over
 the stone's east edge. Its second push carries the snowball's box onto a light weighted pressure plate standing on a
 cobblestone wall in the next column; an iron trapdoor stands beside the plate. The piston is powered and the server
@@ -99,17 +99,17 @@ def proves(vanilla):
 
 
 def main():
-    lock, build, vanilla_server, horizon_server, _client = locator.sides(NAME)
+    lock, build, vanilla_server, foundry_server, _client = locator.sides(NAME)
     world = locator.generate_world(vanilla_server, build)
     vanilla = run('vanilla', vanilla_server, world, build)
     (build / 'vanilla.txt').write_text('\n'.join(vanilla) + '\n', encoding='utf-8')
     why = proves(vanilla)
     if why:
         raise AssertionError(f'vanilla is no proof: {why}:\n' + '\n'.join(vanilla))
-    horizon = run('horizon', horizon_server, world, build)
-    (build / 'horizon.txt').write_text('\n'.join(horizon) + '\n', encoding='utf-8')
-    if vanilla != horizon:
-        differ = [f'- {v}\n+ {h}' for v, h in zip(vanilla, horizon) if v != h]
+    foundry = run('foundry', foundry_server, world, build)
+    (build / 'foundry.txt').write_text('\n'.join(foundry) + '\n', encoding='utf-8')
+    if vanilla != foundry:
+        differ = [f'- {v}\n+ {h}' for v, h in zip(vanilla, foundry) if v != h]
         raise AssertionError(f'{len(differ)} lines differ from vanilla:\n' + '\n'.join(differ[:20]))
     print(f'piston push plate: {len(vanilla)} lines identical')
 

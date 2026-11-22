@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""List what a set of functions uses on `Game` (crates/horizon-client), before they are moved out of `impl Game`.
+"""List what a set of functions uses on `Game` (crates/foundry-client), before they are moved out of `impl Game`.
 
 Moving logic out of the large `impl Game` blocks needs a trait or borrow struct in a lower crate that carries exactly
 what the functions touch. For each function, or line range, this prints:
 - the `Game` fields read and written (`self.field`, `self.field.x`, `&mut self.field`), with counts and lines, and the
   `impl Game` methods it calls (`self.method(`, `Self::assoc(`), each with where it is defined and whether it is a mod
   point candidate;
-- the free functions, types and constants it names, split into horizon-client and other crates, by `use` resolution;
+- the free functions, types and constants it names, split into foundry-client and other crates, by `use` resolution;
 - the markers that make order matter: random draws, entity ids, spawns, hook fires, sends, packet and event pushes;
 - with --transitive N, the same field uses of the Game methods it calls, N levels down.
 
@@ -25,13 +25,13 @@ There is no type information, so:
 - `use` resolution follows explicit imports and `super::*`/`crate::m::*` globs textually, then falls back to a name
   index of every crate, marked "by name" when it is a guess.
 
-    python3 tools/game_uses.py crates/horizon-client/src/game/mobs/creatures/mod.rs::handle_mob_events_pending
+    python3 tools/game_uses.py crates/foundry-client/src/game/mobs/creatures/mod.rs::handle_mob_events_pending
     python3 tools/game_uses.py game/administration/commands/difficulty.rs::cmd_difficulty --transitive 1
     python3 tools/game_uses.py game/mobs/creatures/mod.rs:2208-2400 --json
     python3 tools/game_uses.py cmd_difficulty        # a bare name, if one Game method has it
 
 A spec is `FILE::NAME[,NAME...]` (FILE is a path from the repository root, or the end of one under
-crates/horizon-client/src), `FILE:FIRST-LAST` for a line range, or a bare method name.
+crates/foundry-client/src), `FILE:FIRST-LAST` for a line range, or a bare method name.
 """
 
 import argparse
@@ -45,7 +45,7 @@ import sys
 
 ROOT = Path(__file__).resolve().parent.parent
 CRATES = ROOT / "crates"
-CLIENT = CRATES / "horizon-client"
+CLIENT = CRATES / "foundry-client"
 SRC = CLIENT / "src"
 
 # Methods that change the value they are called on (receiver `&mut self`), so `self.field.push(x)` is a write.
@@ -359,7 +359,7 @@ class Fn:
 
 
 class Index:
-    """Every `fn` of horizon-client, the `impl Game` ones by name, plus the Game fields and a name index."""
+    """Every `fn` of foundry-client, the `impl Game` ones by name, plus the Game fields and a name index."""
 
     def __init__(self, src_root=SRC, root=ROOT):
         self.src_root = src_root
@@ -494,7 +494,7 @@ class Index:
                     self.fields.append(fm.group(1))
             self.struct_at = src.at(m.start())
             return
-        raise SystemExit("game_uses: struct Game not found under crates/horizon-client/src")
+        raise SystemExit("game_uses: struct Game not found under crates/foundry-client/src")
 
     # --- lookups
     def find(self, spec):
@@ -539,7 +539,7 @@ class Index:
         hits = [s for s in self.sources.values()
                 if s.rel.replace(os.sep, "/").endswith("/" + wanted) or s.rel.replace(os.sep, "/") == wanted]
         if len(hits) != 1:
-            raise SystemExit(f"game_uses: `{file}` matches {len(hits)} files of horizon-client"
+            raise SystemExit(f"game_uses: `{file}` matches {len(hits)} files of foundry-client"
                              + "".join("\n  " + s.rel for s in hits[:8]))
         return hits[0]
 
@@ -746,9 +746,9 @@ class Resolver:
         return self.items[crate]
 
     def find_items(self, name, crate=None, within=()):
-        """[(crate, file, line, kind)] of items called `name`: in `crate`, else horizon-client first, then every crate.
+        """[(crate, file, line, kind)] of items called `name`: in `crate`, else foundry-client first, then every crate.
         `within` are path segments the file's path should contain (a module path), to narrow a match."""
-        pools = [crate] if crate else ["horizon-client"]
+        pools = [crate] if crate else ["foundry-client"]
         hits = []
         for c in pools:
             hits = [(c, *h) for h in self.crate_items(c).get(name, [])]
@@ -817,7 +817,7 @@ class Resolver:
         return found
 
     def resolve(self, src, name, depth=0, seen=None, at=None):
-        """(origin, detail, how): origin is a crate dir name, 'std', 'external:X' or 'horizon-client'.
+        """(origin, detail, how): origin is a crate dir name, 'std', 'external:X' or 'foundry-client'.
         `at` is the offset of the reference: it picks the `use` declarations in scope there."""
         binds, globs = self.uses_of(src, at)
         key = (src.path, name, binds.get(name), tuple(globs))
@@ -838,7 +838,7 @@ class Resolver:
         head = segs[0]
         if head in ("std", "core", "alloc"):
             return ("std", path, "use")
-        if head == "horizon_client":
+        if head == "foundry_client":
             segs = ["crate"] + segs[1:]
             path = "::".join(segs)
             head = "crate"
@@ -853,12 +853,12 @@ class Resolver:
             if target and target in self.index.sources:
                 tsrc = self.index.sources[target]
                 inner = self.resolve(tsrc, segs[-1], depth + 1, seen)
-                if inner and inner[0] != "horizon-client":
+                if inner and inner[0] != "foundry-client":
                     return inner
                 local = self.local_item(tsrc, segs[-1])
                 if local:
-                    return ("horizon-client", local, "use")
-            return ("horizon-client", path, "use")
+                    return ("foundry-client", local, "use")
+            return ("foundry-client", path, "use")
         if head in self.deps:
             pkg = self.deps[head]
             if pkg.replace("-", "_") in self.crates or pkg in self.crates.values():
@@ -870,7 +870,7 @@ class Resolver:
         if bound and bound != path:
             return self.classify(src, bound + ("::" + "::".join(segs[1:]) if len(segs) > 1 else ""), depth + 1, seen, at)
         if head in self.module_heads:
-            return ("horizon-client", path, "use (relative)")
+            return ("foundry-client", path, "use (relative)")
         return ("unresolved", path, "use")
 
     def local_item(self, src, name):
@@ -883,7 +883,7 @@ class Resolver:
             return self.classify(src, binds[name], depth, seen)
         local = self.local_item(src, name)
         if local:
-            return ("horizon-client", local, "defined in this file")
+            return ("foundry-client", local, "defined in this file")
         for glob in globs:
             if glob.split("::")[0] in ("std", "core", "alloc"):
                 continue
@@ -910,17 +910,17 @@ class Resolver:
             return ("std", path, "")
         if head in ("super", "crate", "self"):
             return self.classify(src, path, 0, set(), at)
-        own = head == "horizon_client"
+        own = head == "foundry_client"
         if own:
             via = self.classify(src, path, 0, set())
-            if via[0] != "horizon-client":
+            if via[0] != "foundry-client":
                 return self.final(src, via[1], at)
         pkg = self.deps.get(head, head)
         crate = self.crates.get(pkg.replace("-", "_"))
         if head in self.deps and not crate and head not in self.uses_of(src, at)[0]:
             return ("external:" + pkg, path, "")
         if own or (crate and head not in self.uses_of(src, at)[0]):
-            crate = "horizon-client" if own else crate
+            crate = "foundry-client" if own else crate
             name = segs[-1]
             hits = self.find_items(name, crate, within=[s_ for s_ in segs[1:-1]])
             if len(hits) >= 1:
@@ -929,7 +929,7 @@ class Resolver:
         got = self.resolve(src, head, at=at)
         if got:
             return got
-        if len(segs) == 1 and head[0].islower() and not self.find_items(head, "horizon-client"):
+        if len(segs) == 1 and head[0].islower() and not self.find_items(head, "foundry-client"):
             return ("unresolved", "", "")
         hits = self.find_items(head)
         crates = sorted({h[0] for h in hits})
@@ -1184,9 +1184,9 @@ def render(entry):
             p(f"  (+{len(entry['whole_self']) - 12} more)")
     p("\nFree functions, types and constants named")
     names = entry["names"]
-    for origin in sorted(names, key=lambda o: (o != "horizon-client", o in ("unresolved", "ambiguous"), o)):
+    for origin in sorted(names, key=lambda o: (o != "foundry-client", o in ("unresolved", "ambiguous"), o)):
         rows = names[origin]
-        label = {"horizon-client": "horizon-client", "unresolved": "unresolved (local closure, generic, macro-made?)"}.get(origin, origin)
+        label = {"foundry-client": "foundry-client", "unresolved": "unresolved (local closure, generic, macro-made?)"}.get(origin, origin)
         p(f"  {label} ({len(rows)}):")
         for r in rows:
             tail = f"  {r['at']}" if r["at"] else ""

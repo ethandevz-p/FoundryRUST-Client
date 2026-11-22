@@ -7,7 +7,7 @@ is a string, a styled one a compound) and `Entity.load` reads it back the same w
 `custom_data` (saved as `data`). A dispenser spawns a pig from an egg and an axolotl from a bucket, pigs are
 summoned with a plain, a styled and a translated name, the world is saved and reloaded
 (tools/entity_save_reload.py), and each one's `CustomName` and `data` are read with `/data get` (which saves the
-mob again) on vanilla's server and Horizon's.
+mob again) on vanilla's server and Foundry Client's.
 """
 try:
     from . import entity_save_reload as harness

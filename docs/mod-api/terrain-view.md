@@ -38,7 +38,7 @@ Nearby ready columns are prepared ahead of demand, with space reserved for regul
 Interior edits in a neighbour keep the cached packet when the faces the transform read and the
 light occupancy mask still match. Bounded queues and caches can defer a send. A pending protected
 column is never replaced by an ordinary body. Lighting, heightmaps and biomes describe the
-authoritative terrain. The separate Horizon LOD service withholds replies for a protected dimension
+authoritative terrain. The separate Foundry Client LOD service withholds replies for a protected dimension
 because its top, under-surface and vertical span samples carry authoritative state IDs.
 
 Replaced cells omit their original block-entity records. Block updates, prediction corrections
@@ -58,7 +58,7 @@ own named imports. Native builds should use the SDK from their target runtime re
 To check the example from the repository root, run
 `cargo check --manifest-path tests/terrain-view-mod/Cargo.toml`. To build a packaged Wasm mod,
 copy the fixture to a temporary directory inside this checkout's `target/` and run
-`cargo horizon-mod build --wasm` there. The packager links the mod for Horizon's shared Wasm runtime.
+`cargo foundry-mod build --wasm` there. The packager links the mod for Foundry Client's shared Wasm runtime.
 
 ## Existing paths and gaps
 
@@ -68,8 +68,8 @@ copy the fixture to a temporary directory inside this checkout's `target/` and r
 | Neighbour break, bulk edit and reveal | `Hub::broadcast_block_changes` groups the block log by section, sends state changes and builds tags. Bulk edits and `chunk_resend` go through full columns. | `block_changed` and block Parts observe authoritative writes. They lack per-recipient application and do not observe streaming admission, saved reads or every bulk storage write. `block_entity_update_tag` supplies the entity's data without any recipient, and a change tag consumes transient fields. |
 | Direct correction | Use-on and aborted mining correct client prediction. The hub also corrects support blocks. | The existing `player_show_block` is an immediate mod-authored override. It cannot intercept engine sends or establish a consistent view. The interaction hooks describe gameplay decisions. |
 | Saved and resident far ring | `lan/far.rs` reads a saved column on a reader. A resident far chunk uses the all-light body. | A protected reader needs a view-keyed result and immutable neighbouring faces. Nonloading reads and chunk load tickets do not control the bytes the reader returns. |
-| Cross-dimension view | `viewed_levels/send.rs` encodes columns and wraps column and delta bodies in `horizon:levels` runs. | Its recipient's current dimension is independent of the dimension of the work. The same view key must be applied before wrapping. |
-| Horizon LOD | `lod_net/server.rs` services a separate request queue. | Its coarse surface and span format contains block states even though it does not carry block-entity tags. |
+| Cross-dimension view | `viewed_levels/send.rs` encodes columns and wraps column and delta bodies in `foundry:levels` runs. | Its recipient's current dimension is independent of the dimension of the work. The same view key must be applied before wrapping. |
+| Foundry Client LOD | `lod_net/server.rs` services a separate request queue. | Its coarse surface and span format contains block states even though it does not carry block-entity tags. |
 
 The API injection catalog covers eligible `Game` methods, including gameplay actions. Those
 points do not cover the lower-level `Hub` and saved-read worker and cannot establish stream-wide

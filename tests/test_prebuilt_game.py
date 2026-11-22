@@ -40,8 +40,8 @@ def write_build_data(root: Path, identity: dict | None = None, commit: str = COM
         (root / name).write_text(json.dumps({"schema": 1, "build": {"commit": commit}}))
     so, exe = prebuilt_game.dylib_suffix(), ".exe" if sys.platform == "win32" else ""
     lib = prebuilt_game.dylib_prefix()
-    members = {"runtime": [f"bin/horizon-client{exe}",
-                           f"deps/{lib}horizon_mod_host{so}", f"deps/{lib}horizon_mod_wasm{so}",
+    members = {"runtime": [f"bin/foundry-client{exe}",
+                           f"deps/{lib}foundry_mod_host{so}", f"deps/{lib}foundry_mod_wasm{so}",
                            *[f"deps/{lib}{crate}{so}" for crate in ("mod_api", "mod_vocab", "mod_points")]],
                "api": [prebuilt_game.NATIVE_MODS_TEMPLATE, "deps/libmod_api-1.rmeta", "deps/libmod_points-1.rmeta"]}
     for name in members["runtime"] + members["api"]:
@@ -61,7 +61,7 @@ class StageToolTests(unittest.TestCase):
             source.mkdir()
             committed = b"fn first() {}\nfn second() {}\n"
             (source / "tracked.rs").write_bytes(committed)
-            manifest = source / "crates/horizon-mod-wasm/Cargo.toml"
+            manifest = source / "crates/foundry-mod-wasm/Cargo.toml"
             manifest.parent.mkdir(parents=True)
             manifest.write_text("[package]\nname = 'fixture'\n")
             git = ["git", "-c", "user.name=t", "-c", "user.email=t@t", "-c", "core.autocrlf=false"]
@@ -74,7 +74,7 @@ class StageToolTests(unittest.TestCase):
             (source / "tracked.rs").write_bytes(committed.replace(b"\n", b"\r\n") + b"fn edited() {}\r\n")
             (source / "untracked.rs").write_text("not copied")
             target = root / "output"
-            tool = root / "unused" / ".." / "horizon-stage"
+            tool = root / "unused" / ".." / "foundry-stage"
             calls = []
             real_run = prebuilt_game.run
 
@@ -149,7 +149,7 @@ class SyncUnchangedTests(unittest.TestCase):
             self.assertEqual((dest / "target" / "stale.o").read_bytes(), b"object")
 
     # A timing comparison, so it is a measurement rather than a check: a busy runner can reorder it.
-    @unittest.skipUnless(os.environ.get("HORIZON_MEASURE_STAGE") == "1", "set HORIZON_MEASURE_STAGE=1 to measure")
+    @unittest.skipUnless(os.environ.get("FOUNDRY_MEASURE_STAGE") == "1", "set FOUNDRY_MEASURE_STAGE=1 to measure")
     def test_measure_syncing_unchanged_files_against_rewriting_them(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -232,7 +232,7 @@ class RegistryPatchTests(unittest.TestCase):
             declared = patch / "Cargo.toml"
             declared.write_text("manifest")
             (sdk / "deps").mkdir()
-            for crate in ("horizon_mod_wasm", "horizon_mod_host"):
+            for crate in ("foundry_mod_wasm", "foundry_mod_host"):
                 (sdk / "deps" / f"lib{crate}.so").write_bytes(b"")
             write_build_data(sdk, {"patch_files": {
                 "patches/allocator-sys/Cargo.toml": prebuilt_game.sha256(declared)}})
@@ -252,10 +252,10 @@ class RegistryPatchTests(unittest.TestCase):
 
 
 class SdkAssetTests(unittest.TestCase):
-    RUNTIME = ["deps/libhorizon_mod_host.so", "deps/libhorizon_mod_wasm.so", "bin/horizon-client",
+    RUNTIME = ["deps/libhorizon_mod_host.so", "deps/libhorizon_mod_wasm.so", "bin/foundry-client",
                "deps/libmod_api.so", "deps/libmod_vocab.so", "deps/libmod_points.so"]
     API = ["deps/libmod_api-1.rmeta", "deps/libmod_points-1.rmeta", "host/libserde_derive.so"]
-    ENGINE = ["deps/libhorizon_client-1.rmeta", "native/libwindows.a"]
+    ENGINE = ["deps/libfoundry_client-1.rmeta", "native/libwindows.a"]
 
     def setUp(self):
         # The fixture is a Linux build (`out`), so its executable has no ".exe" on whatever OS the tests run:
@@ -283,7 +283,7 @@ class SdkAssetTests(unittest.TestCase):
             self.assertEqual(command[-3:], ["surface", str(prebuilt_game.ROOT), str(dist / "surface.json")])
             (dist / "surface.json").write_text('{"hash": "ab"}')
         with patch.object(prebuilt_game, "head", return_value=COMMIT), patch.object(prebuilt_game, "run", side_effect=run):
-            prebuilt_game.pack(out, dist, stage_tool=Path("horizon-stage"))
+            prebuilt_game.pack(out, dist, stage_tool=Path("foundry-stage"))
 
     @packs_the_linux_fixture
     def test_pack_writes_three_archives_that_split_the_package_and_the_same_every_run(self):
@@ -381,36 +381,36 @@ class SdkAssetTests(unittest.TestCase):
             return ({"id": name, "name": name, "targets": [{"kind": [kind]}]},
                     {"id": name, "deps": [{"pkg": dep, "dep_kinds": [{"kind": dep_kind}]} for dep, dep_kind in deps]})
         packages, nodes = zip(
-            package("horizon-mod-api", deps=[("vocab", None), ("macros", None), ("tool", "build")]),
-            package("horizon-mod-points", deps=[("vocab", None)]),
+            package("foundry-mod-api", deps=[("vocab", None), ("macros", None), ("tool", "build")]),
+            package("foundry-mod-points", deps=[("vocab", None)]),
             package("vocab", deps=[("serde", None)]),
             package("serde"),
             package("macros", "proc-macro", deps=[("syn", None)]),
             package("syn"),
             package("tool"),
-            package("horizon-mod-host", "dylib", deps=[("horizon-mod-api", None), ("engine", None)]),
-            package("horizon-mod-wasm", "dylib"),
+            package("foundry-mod-host", "dylib", deps=[("foundry-mod-api", None), ("engine", None)]),
+            package("foundry-mod-wasm", "dylib"),
             package("engine"),
         )
         metadata = {"packages": list(packages), "resolve": {"nodes": list(nodes)}}
         self.assertEqual(prebuilt_game.api_closure(metadata),
-                         {"horizon-mod-api", "horizon-mod-points", "vocab", "serde", "macros"})
-        copied = {name: [f"deps/lib{name}-1.rmeta"] for name in ("horizon-mod-api", "horizon-mod-points", "vocab",
+                         {"foundry-mod-api", "foundry-mod-points", "vocab", "serde", "macros"})
+        copied = {name: [f"deps/lib{name}-1.rmeta"] for name in ("foundry-mod-api", "foundry-mod-points", "vocab",
                                                                   "serde", "syn", "tool", "engine")}
         copied["macros"] = ["host/libmacros-1.so"]
-        copied["horizon-mod-host"] = ["deps/libhorizon_mod_host.so"]
-        copied["horizon-mod-wasm"] = ["deps/libhorizon_mod_wasm.so"]
-        sliced = prebuilt_game.slices(metadata, copied, ["bin/horizon-client"])
-        self.assertEqual(sliced["runtime"], sorted([prebuilt_game.IDENTITY, "bin/horizon-client",
+        copied["foundry-mod-host"] = ["deps/libhorizon_mod_host.so"]
+        copied["foundry-mod-wasm"] = ["deps/libhorizon_mod_wasm.so"]
+        sliced = prebuilt_game.slices(metadata, copied, ["bin/foundry-client"])
+        self.assertEqual(sliced["runtime"], sorted([prebuilt_game.IDENTITY, "bin/foundry-client",
                                                     "deps/libhorizon_mod_host.so", "deps/libhorizon_mod_wasm.so"]))
         self.assertEqual(sliced["api"], sorted([
             "deps/libhorizon-mod-api-1.rmeta", "deps/libhorizon-mod-points-1.rmeta", "deps/libvocab-1.rmeta",
             "deps/libserde-1.rmeta", "host/libmacros-1.so", *prebuilt_game.API_BUILD_DATA,
             prebuilt_game.NATIVE_MODS_TEMPLATE]))
         # Each slice unpacks to its own folder, so a game library inside the API closure is refused.
-        nodes[1]["deps"].append({"pkg": "horizon-mod-wasm", "dep_kinds": [{"kind": None}]})
-        with self.assertRaisesRegex(SystemExit, "horizon-mod-wasm"):
-            prebuilt_game.slices(metadata, copied, ["bin/horizon-client"])
+        nodes[1]["deps"].append({"pkg": "foundry-mod-wasm", "dep_kinds": [{"kind": None}]})
+        with self.assertRaisesRegex(SystemExit, "foundry-mod-wasm"):
+            prebuilt_game.slices(metadata, copied, ["bin/foundry-client"])
 
     @packs_the_linux_fixture
     def test_gather_takes_every_legs_archives_once_and_one_build_data_that_all_copies_match(self):
@@ -458,22 +458,22 @@ class SdkAssetTests(unittest.TestCase):
             refused("no build-data.tar.xz", lambda leg: (leg / "build-data.tar.xz").unlink())
 
     def test_pack_exports_the_surface_with_the_tool_staging_built(self):
-        # Staging builds horizon-stage in <target>/prebuilt/tools: the surface export runs that binary, and builds one
+        # Staging builds foundry-stage in <target>/prebuilt/tools: the surface export runs that binary, and builds one
         # in the same place only when staging left none, never a second copy in <target>/release.
         with tempfile.TemporaryDirectory() as directory:
             target = Path(directory) / "cargo-target"
             tools = (target / "prebuilt" / "tools").resolve()
-            for platform, name in (("linux", "horizon-stage"), ("darwin", "horizon-stage"), ("win32", "horizon-stage.exe")):
+            for platform, name in (("linux", "foundry-stage"), ("darwin", "foundry-stage"), ("win32", "foundry-stage.exe")):
                 with self.subTest(platform=platform), patch.object(sys, "platform", platform), \
                         patch.dict(os.environ, {"CARGO_TARGET_DIR": str(target)}), \
                         contextlib.redirect_stdout(io.StringIO()):
                     # No staged tool: Cargo builds it in staging's target folder.
                     command, env = prebuilt_game.surface_tool()
                     self.assertEqual(command, ["cargo", "run", "--locked", "--release", "-q", "-p",
-                                               "horizon-mod-api-gen", "--bin", "horizon-stage", "--"])
+                                               "foundry-mod-api-gen", "--bin", "foundry-stage", "--"])
                     self.assertEqual(env["CARGO_TARGET_DIR"], str(tools))
                     # Another platform's name is not this platform's tool.
-                    other = tools / "release" / ("horizon-stage" if name.endswith(".exe") else "horizon-stage.exe")
+                    other = tools / "release" / ("foundry-stage" if name.endswith(".exe") else "foundry-stage.exe")
                     other.parent.mkdir(parents=True, exist_ok=True)
                     other.write_bytes(b"")
                     self.assertEqual(prebuilt_game.surface_tool()[0][0], "cargo")
@@ -492,7 +492,7 @@ class SdkAssetTests(unittest.TestCase):
             self.assertFalse((root / "dist").exists())
 
     def test_the_rust_reader_fixture_is_what_pack_writes(self):
-        # crates/horizon-mod-package/src/sdk/fixture.tar.xz is unpacked by the Rust reader's test: the two agree.
+        # crates/foundry-mod-package/src/sdk/fixture.tar.xz is unpacked by the Rust reader's test: the two agree.
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             (root / "deps").mkdir()
@@ -500,7 +500,7 @@ class SdkAssetTests(unittest.TestCase):
             for path in (root / "deps", root / "deps/a.rmeta"):
                 os.utime(path, (0, 0))
             prebuilt_game.tar_xz(root, prebuilt_game.tree(root), root / "fixture.tar.xz")
-            fixture = prebuilt_game.ROOT / "crates/horizon-mod-package/src/sdk/fixture.tar.xz"
+            fixture = prebuilt_game.ROOT / "crates/foundry-mod-package/src/sdk/fixture.tar.xz"
             written = (root / "fixture.tar.xz").read_bytes()
             if os.name == "nt":
                 # Windows has no POSIX modes (a folder stats as 0o777, a file as 0o666) and the archive keeps the
@@ -529,7 +529,7 @@ class AllocatorSelectionTests(unittest.TestCase):
     def test_package_format_comes_from_its_one_place(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            number = root / "crates/horizon-mod-package/src/sdk/package-format"
+            number = root / "crates/foundry-mod-package/src/sdk/package-format"
             number.parent.mkdir(parents=True)
             for good in ("7\n", "7\r\n", "7"):
                 number.write_bytes(good.encode())
@@ -559,7 +559,7 @@ class AllocatorSelectionTests(unittest.TestCase):
             if command[:2] == ["cargo", "metadata"]:
                 return json.dumps({"packages": [], "resolve": {"nodes": []}})
             self.assertEqual(command[command.index("--target") + 1], "fixture-host")
-            self.assertEqual(kwargs["env"]["HORIZON_GAME_BUILD_ID"], "fixture-commit")
+            self.assertEqual(kwargs["env"]["FOUNDRY_GAME_BUILD_ID"], "fixture-commit")
             self.assertIn("-C prefer-dynamic", kwargs["env"]["RUSTFLAGS"])
             # Single keys only: a failure must never print the caller's whole environment.
             self.assertFalse("CARGO_ENCODED_RUSTFLAGS" in kwargs["env"], "encoded flags would override RUSTFLAGS")
@@ -577,9 +577,9 @@ class AllocatorSelectionTests(unittest.TestCase):
                  patch.object(prebuilt_game.sys, "platform", "win32"), \
                  patch.dict(prebuilt_game.os.environ, {"CARGO_ENCODED_RUSTFLAGS": "-Cprefer-dynamic=no",
                                                        "CARGO_PROFILE_RELEASE_LTO": "fat-sentinel"}):
-                prebuilt_game.os.environ.pop("HORIZON_SDK_TIMINGS", None)
+                prebuilt_game.os.environ.pop("FOUNDRY_SDK_TIMINGS", None)
                 if timings:
-                    prebuilt_game.os.environ["HORIZON_SDK_TIMINGS"] = timings
+                    prebuilt_game.os.environ["FOUNDRY_SDK_TIMINGS"] = timings
                 with self.assertRaises(Captured):
                     prebuilt_game.build(Path("unused-sdk"), server)
         self.assertEqual(["--timings" in command for command in commands], [False, True, False])
@@ -606,7 +606,7 @@ class AllocatorSelectionTests(unittest.TestCase):
             artifacts = [
                 {"reason": "compiler-artifact", "filenames": [str(deps / "libhorizon_official-1.rmeta")]},
                 {"reason": "compiler-artifact", "filenames": [str(deps / "libserde-2.rlib"), str(deps / "libserde-2.rmeta")]},
-                {"reason": "compiler-artifact", "filenames": [str(deps / "horizon_mod_host.dll")]},
+                {"reason": "compiler-artifact", "filenames": [str(deps / "foundry_mod_host.dll")]},
                 {"reason": "build-script-executed"},
             ]
             folder = prebuilt_game.official_link(artifacts, target, root / "official-link")
@@ -626,7 +626,7 @@ class AllocatorSelectionTests(unittest.TestCase):
             with self.subTest(crate), self.assertRaisesRegex(SystemExit, crate):
                 prebuilt_game.compiled_once([*once, artifact(crate, "b")], target)
         # A host build of the same crate (a build script's) is not a second copy in the game.
-        host = {**artifact("horizon_hooks", "h"), "filenames": [str(Path("elsewhere/libhorizon_hooks-h.rlib"))]}
+        host = {**artifact("foundry_hooks", "h"), "filenames": [str(Path("elsewhere/libhorizon_hooks-h.rlib"))]}
         prebuilt_game.compiled_once([*once, host], target)
 
     def test_a_client_executable_registers_the_official_parts_and_a_server_one_does_not(self):
@@ -650,10 +650,10 @@ class AllocatorSelectionTests(unittest.TestCase):
                     prebuilt_game.api_route(out, [], link if official else None)
                 [command] = commands
                 self.assertEqual("--cfg" in command, official)
-                self.assertEqual(any(arg.startswith("horizon_official=") for arg in command), official)
+                self.assertEqual(any(arg.startswith("foundry_official=") for arg in command), official)
                 if official:
-                    self.assertEqual(command[command.index("--cfg") + 1], "horizon_official")
-                    self.assertIn(f"horizon_official={link / 'libhorizon_official-0123.rlib'}", command)
+                    self.assertEqual(command[command.index("--cfg") + 1], "foundry_official")
+                    self.assertIn(f"foundry_official={link / 'libhorizon_official-0123.rlib'}", command)
                     self.assertIn(f"dependency={link}", command)
 
 
@@ -669,10 +669,10 @@ class ExecutableLinkPolicyTests(unittest.TestCase):
             # Isolate unrelated code generation/resource compilation, but execute the actual
             # engine build script and its real shared link policy, as the SDK build does.
             stubs = {
-                "horizon_game_discovery": 'pub fn declarations(_: &std::path::Path, _: &[&str]) '
+                "foundry_game_discovery": 'pub fn declarations(_: &std::path::Path, _: &[&str]) '
                     '-> std::io::Result<String> { Ok(String::new()) } '
                     'pub fn folder_modules(_: &std::path::Path)->Result<String,String>{Ok(String::new())}',
-                "horizon_mod_api_gen": 'pub enum Target { Client } '
+                "foundry_mod_api_gen": 'pub enum Target { Client } '
                     'pub fn generate(_: &std::path::Path, _: &std::path::Path, _: Target) '
                     '-> std::io::Result<()> { Ok(()) } '
                     'pub fn mob_turn(_: &std::path::Path) -> Option<&\'static str> { None }',
@@ -691,7 +691,7 @@ class ExecutableLinkPolicyTests(unittest.TestCase):
                 externs.extend(["--extern", f"{name}={library}"])
             binary = root / ("producer.exe" if sys.platform == "win32" else "producer")
             subprocess.run([compiler, "--edition=2024",
-                            str(prebuilt_game.ROOT / "crates/horizon-client/build.rs"),
+                            str(prebuilt_game.ROOT / "crates/foundry-client/build.rs"),
                             *externs, "-o", str(binary)], check=True)
             for target_os, env, expected in [("windows", "msvc", ["/STACK:142606336"]),
                                       ("windows", "gnu", ["-Wl,--stack,142606336"]),
@@ -700,8 +700,8 @@ class ExecutableLinkPolicyTests(unittest.TestCase):
                     output = root / "output"
                     output.write_text(subprocess.check_output([str(binary)], text=True, env={
                         **os.environ,
-                        "CARGO_MANIFEST_DIR": str(prebuilt_game.ROOT / "crates/horizon-client"),
-                        "OUT_DIR": str(root), "CARGO_PKG_NAME": "horizon-client",
+                        "CARGO_MANIFEST_DIR": str(prebuilt_game.ROOT / "crates/foundry-client"),
+                        "OUT_DIR": str(root), "CARGO_PKG_NAME": "foundry-client",
                         "CARGO_CFG_TARGET_OS": target_os, "CARGO_CFG_TARGET_ENV": env,
                     }))
                     identity = {"link_args": prebuilt_game.executable_link_args(output)}
@@ -723,7 +723,7 @@ class PrebuiltContentsTests(unittest.TestCase):
             "cache/host/release/deps/libshared-target.rmeta",
             "cache/host/release/deps/libshared-second-version.rmeta",
             "cache/host/release/deps/libshared-target.rlib",
-            "cache/host/release/deps/libhorizon_client.so",
+            "cache/host/release/deps/libfoundry_client.so",
         )
         output, macros = root / "sdk/deps", root / "sdk/host"
         output.mkdir(parents=True)
@@ -737,18 +737,18 @@ class PrebuiltContentsTests(unittest.TestCase):
             artifact("cache/host/release/deps/libshared-target.rmeta", "lib"),
             artifact("cache/host/release/deps/libshared-second-version.rmeta", "lib"),
             artifact("cache/host/release/deps/libshared-target.rlib", "lib"),
-            artifact("cache/host/release/deps/libhorizon_client.so", "dylib"),
+            artifact("cache/host/release/deps/libfoundry_client.so", "dylib"),
             {"reason": "build-finished", "success": True},
         ], output, macros, root / "cache/host")
         self.assertEqual({path.name for path in output.iterdir()}, {
-            "libshared-target.rmeta", "libshared-second-version.rmeta", "libhorizon_client.so",
+            "libshared-target.rmeta", "libshared-second-version.rmeta", "libfoundry_client.so",
         })
         self.assertEqual({path.name for path in macros.iterdir()}, {"libderive.so"})
         # Each copied file is recorded under its package, as the slices read them.
         self.assertEqual(copied, {"libderive.so": ["host/libderive.so"],
                                   "libshared-target.rmeta": ["deps/libshared-target.rmeta"],
                                   "libshared-second-version.rmeta": ["deps/libshared-second-version.rmeta"],
-                                  "libhorizon_client.so": ["deps/libhorizon_client.so"]})
+                                  "libfoundry_client.so": ["deps/libfoundry_client.so"]})
         # Multiple legitimate target versions remain available to rustc's transitive lookup.
         # Only explicit extern/facade lookup must reject ambiguous names.
         with self.assertRaises(ValueError):
@@ -778,30 +778,30 @@ class PrebuiltContentsTests(unittest.TestCase):
             ]}
 
         metadata = {
-            "packages": [package("horizon-mod-host", "dylib"), package("horizon-client"),
-                         package("horizon-mod-wasm", "rlib"), package("point_shape"), package("horizon_core"),
+            "packages": [package("foundry-mod-host", "dylib"), package("foundry-client"),
+                         package("foundry-mod-wasm", "rlib"), package("point_shape"), package("foundry_core"),
                          package("build_tool"), package("derive", "proc-macro"), package("macro_helper")],
             "resolve": {"nodes": [
-                node("horizon-mod-host", ("horizon-client", None), ("horizon-mod-wasm", None),
-                     ("build_tool", "build")), node("horizon-mod-wasm"),
-                node("horizon-client", ("point_shape", None), ("horizon_core", None), ("derive", None)),
-                node("point_shape"), node("horizon_core"), node("build_tool"),
+                node("foundry-mod-host", ("foundry-client", None), ("foundry-mod-wasm", None),
+                     ("build_tool", "build")), node("foundry-mod-wasm"),
+                node("foundry-client", ("point_shape", None), ("foundry_core", None), ("derive", None)),
+                node("point_shape"), node("foundry_core"), node("build_tool"),
                 node("derive", ("macro_helper", None)), node("macro_helper"),
             ]},
         }
-        runtime = prebuilt_game.runtime_crates(metadata, "horizon-mod-host")
-        self.assertEqual(runtime, {"horizon_mod_host", "horizon_mod_wasm", "horizon_client", "point_shape", "horizon_core"})
+        runtime = prebuilt_game.runtime_crates(metadata, "foundry-mod-host")
+        self.assertEqual(runtime, {"foundry_mod_host", "foundry_mod_wasm", "foundry_client", "point_shape", "foundry_core"})
         deps = self.folder("libpoint_shape-host.rmeta", "libpoint_shape-target.rmeta",
                            "libhorizon_core-one.rmeta", "libbuild_tool-one.rmeta", "libmacro_helper-one.rmeta",
-                           "libhorizon_mod_host.so", "libhorizon_mod_wasm-one.rmeta", "libhorizon_client-one.rmeta")
+                           "libhorizon_mod_host.so", "libhorizon_mod_wasm-one.rmeta", "libfoundry_client-one.rmeta")
         eligible = prebuilt_game.facade_crates(deps, runtime)
-        self.assertEqual(eligible, ["horizon_client", "horizon_core", "horizon_mod_host", "horizon_mod_wasm"])
+        self.assertEqual(eligible, ["foundry_client", "foundry_core", "foundry_mod_host", "foundry_mod_wasm"])
 
     def test_native_link_inventory_uses_package_identity_not_a_same_named_host_variant(self):
         def package(package_id, version, library=None):
-            return {"id": package_id, "name": "native-sys" if library else "horizon-mod-host",
+            return {"id": package_id, "name": "native-sys" if library else "foundry-mod-host",
                     "version": version, "links": library,
-                    "targets": [{"name": "native_sys" if library else "horizon_client", "kind": ["lib"]}]}
+                    "targets": [{"name": "native_sys" if library else "foundry_client", "kind": ["lib"]}]}
         metadata = {
             "packages": [package("game", "1.0.0"), package("target", "1.0.0", "native"),
                          package("host", "2.0.0", "native")],
@@ -811,29 +811,29 @@ class PrebuiltContentsTests(unittest.TestCase):
                 {"id": "target", "deps": []}, {"id": "host", "deps": []},
             ]},
         }
-        self.assertEqual(prebuilt_game.native_links(metadata, "horizon-mod-host"), [
+        self.assertEqual(prebuilt_game.native_links(metadata, "foundry-mod-host"), [
             {"name": "native-sys", "version": "1.0.0", "library": "native"},
         ])
 
     def test_sdk_assertion_refuses_a_duplicate_eligible_facade_on_every_os(self):
         root = self.folder("deps/libhorizon_core-one.rmeta", "deps/libmod_api-one.rmeta",
                            "deps/libhorizon_mod_package-one.rmeta")
-        prebuilt_game.assert_externs(root, ["horizon_core"])
+        prebuilt_game.assert_externs(root, ["foundry_core"])
         (root / "deps/libhorizon_core-two.rmeta").write_bytes(b"")
-        with self.assertRaisesRegex(ValueError, "expected exactly one SDK metadata for horizon_core"):
-            prebuilt_game.assert_externs(root, ["horizon_core"])
+        with self.assertRaisesRegex(ValueError, "expected exactly one SDK metadata for foundry_core"):
+            prebuilt_game.assert_externs(root, ["foundry_core"])
 
     def test_native_extern_lookup_refuses_a_second_package_variant(self):
         root = self.folder("libhorizon_mod_package-runtime.rmeta")
-        self.assertEqual(prebuilt_game.extern_args(root, "horizon_mod_package"), [
-            "--extern", f"horizon_mod_package={root / 'libhorizon_mod_package-runtime.rmeta'}",
+        self.assertEqual(prebuilt_game.extern_args(root, "foundry_mod_package"), [
+            "--extern", f"foundry_mod_package={root / 'libhorizon_mod_package-runtime.rmeta'}",
         ])
         (root / "libhorizon_mod_package-build.rmeta").write_bytes(b"")
-        with self.assertRaisesRegex(ValueError, "expected exactly one SDK metadata for horizon_mod_package"):
-            prebuilt_game.extern_args(root, "horizon_mod_package")
+        with self.assertRaisesRegex(ValueError, "expected exactly one SDK metadata for foundry_mod_package"):
+            prebuilt_game.extern_args(root, "foundry_mod_package")
 
     def test_host_macros_pass_but_host_dependency_metadata_is_refused(self):
-        root = self.folder("deps/libhorizon_client.so", "deps/libhorizon_mod_wasm.so", "deps/libhorizon_mod_host.so",
+        root = self.folder("deps/libfoundry_client.so", "deps/libhorizon_mod_wasm.so", "deps/libhorizon_mod_host.so",
                            "host/libderive.so", "host/derive.dll", "host/libderive.dylib")
         write_build_data(root)
         prebuilt_game.check(root)
@@ -849,10 +849,10 @@ class PrebuiltContentsTests(unittest.TestCase):
 
     def test_compiler_outputs_pass(self):
         root = self.folder(
-            "horizon-prebuilt.json", "Cargo.lock", "native_main.rs.template", "deps/libhorizon_client.so", "deps/libmod_api-1.rmeta",
+            "foundry-prebuilt.json", "Cargo.lock", "native_main.rs.template", "deps/libfoundry_client.so", "deps/libmod_api-1.rmeta",
             "native/libwindows.0.52.0.a",
-            "deps/libserde_derive-2.so", "deps/libhorizon_client.dll.a", "deps/libhorizon_mod_wasm.so",
-            "deps/horizon_mod_wasm.dll", "deps/libhorizon_mod_wasm.dylib", "deps/libhorizon_mod_host.so",
+            "deps/libserde_derive-2.so", "deps/libfoundry_client.dll.a", "deps/libhorizon_mod_wasm.so",
+            "deps/foundry_mod_wasm.dll", "deps/libhorizon_mod_wasm.dylib", "deps/libhorizon_mod_host.so",
         )
         write_build_data(root)
         prebuilt_game.check(root)
@@ -874,21 +874,21 @@ class PrebuiltContentsTests(unittest.TestCase):
     def test_anything_else_is_refused(self):
         for stray in ("assets/minecraft/lang/en_us.json", "deps/Cargo.lock", "deps/client.jar", "deps/libmod_api-3.rlib", "native/libfoo.so", "deps/internals.json", "notes.txt"):
             with self.subTest(stray), self.assertRaises(SystemExit):
-                prebuilt_game.check(self.folder("deps/libhorizon_client.so", "deps/libhorizon_mod_wasm.so", stray))
+                prebuilt_game.check(self.folder("deps/libfoundry_client.so", "deps/libhorizon_mod_wasm.so", stray))
 
     def test_a_folder_without_either_runtime_is_refused(self):
-        for present, missing in (("horizon_mod_host", "horizon-mod-wasm"), ("horizon_mod_wasm", "horizon-mod-host")):
+        for present, missing in (("foundry_mod_host", "foundry-mod-wasm"), ("foundry_mod_wasm", "foundry-mod-host")):
             with self.subTest(present), self.assertRaisesRegex(SystemExit, missing):
                 prebuilt_game.check(self.folder(f"deps/lib{present}.so"))
 
     def test_host_carries_engine_code_with_engine_metadata_for_mods(self):
-        root = self.folder("deps/libhorizon_mod_host.so", "deps/libhorizon_mod_wasm.so", "deps/libhorizon_client-123.rmeta")
+        root = self.folder("deps/libhorizon_mod_host.so", "deps/libhorizon_mod_wasm.so", "deps/libfoundry_client-123.rmeta")
         write_build_data(root)
         prebuilt_game.check(root)
 
     def test_engine_and_wasm_without_host_are_refused(self):
-        with self.assertRaisesRegex(SystemExit, "horizon-mod-host"):
-            prebuilt_game.check(self.folder("deps/libhorizon_client.so", "deps/libhorizon_mod_wasm.so"))
+        with self.assertRaisesRegex(SystemExit, "foundry-mod-host"):
+            prebuilt_game.check(self.folder("deps/libfoundry_client.so", "deps/libhorizon_mod_wasm.so"))
 
     def dll(self, root: Path, name: str, count: int, pe64: bool = True) -> None:
         # One PE section: RVA 0x1000 maps to raw offset 0x200, holding the export directory.
@@ -906,20 +906,20 @@ class PrebuiltContentsTests(unittest.TestCase):
         (root / "deps" / name).write_bytes(data)
 
     def test_exports_reports_every_dll(self):
-        root = self.folder("deps/libhorizon_client.so")
-        self.dll(root, "horizon_client.dll", 45000)
-        self.dll(root, "horizon_mod_wasm.dll", 12000)
+        root = self.folder("deps/libfoundry_client.so")
+        self.dll(root, "foundry_client.dll", 45000)
+        self.dll(root, "foundry_mod_wasm.dll", 12000)
         self.dll(root, "serde_derive.dll", 1, pe64=False)
         output = io.StringIO()
         with contextlib.redirect_stdout(output):
             prebuilt_game.exports(root)
-        for name, count in (("horizon_client", 45000), ("horizon_mod_wasm", 12000), ("serde_derive", 1)):
+        for name, count in (("foundry_client", 45000), ("foundry_mod_wasm", 12000), ("serde_derive", 1)):
             self.assertIn(f"{name}.dll: {count} exported names", output.getvalue())
 
     def test_exports_warns_past_80_percent_without_failing(self):
-        for large in ("horizon_client", "horizon_mod_wasm"):
-            root = self.folder("deps/libhorizon_client.so")
-            for name in ("horizon_client", "horizon_mod_wasm"):
+        for large in ("foundry_client", "foundry_mod_wasm"):
+            root = self.folder("deps/libfoundry_client.so")
+            for name in ("foundry_client", "foundry_mod_wasm"):
                 self.dll(root, f"{name}.dll", 52429 if name == large else 52428)
             output = io.StringIO()
             with self.subTest(large), contextlib.redirect_stdout(output):
@@ -930,21 +930,21 @@ class PrebuiltContentsTests(unittest.TestCase):
             self.assertEqual(output.getvalue().count("exported names (Windows' limit"), 2)
 
     def test_exports_fails_past_90_percent_after_reporting_every_dll(self):
-        root = self.folder("deps/libhorizon_client.so")
-        self.dll(root, "horizon_client.dll", 58982)
-        self.dll(root, "horizon_mod_wasm.dll", 58981)
+        root = self.folder("deps/libfoundry_client.so")
+        self.dll(root, "foundry_client.dll", 58982)
+        self.dll(root, "foundry_mod_wasm.dll", 58981)
         self.dll(root, "mod_api.dll", 171)
         output = io.StringIO()
         with contextlib.redirect_stdout(output), self.assertRaises(SystemExit) as failed:
             prebuilt_game.exports(root)
-        self.assertIn("horizon_client.dll (58,982)", str(failed.exception.code))
-        self.assertNotIn("horizon_mod_wasm", str(failed.exception.code))
+        self.assertIn("foundry_client.dll (58,982)", str(failed.exception.code))
+        self.assertNotIn("foundry_mod_wasm", str(failed.exception.code))
         self.assertEqual(output.getvalue().count("exported names (Windows' limit"), 3)
 
     def test_exports_is_silent_without_dlls(self):
         output = io.StringIO()
         with contextlib.redirect_stdout(output):
-            prebuilt_game.exports(self.folder("deps/libhorizon_client.so", "deps/libhorizon_mod_wasm.so"))
+            prebuilt_game.exports(self.folder("deps/libfoundry_client.so", "deps/libhorizon_mod_wasm.so"))
         self.assertEqual(output.getvalue(), "")
 
 
@@ -962,7 +962,7 @@ class SmokeStartTests(unittest.TestCase):
                 (root / "out" / prebuilt_game.IDENTITY).write_text(json.dumps({"side": "client"}))
                 result = subprocess.CompletedProcess(
                     [], code, stdout=f"{prebuilt_game.NO_RESOURCES}\n{prebuilt_game.OFFICIAL_PARTS}: download it")
-                with patch.dict(sys.modules, {"lab": SimpleNamespace(game_env=lambda **_: {"HORIZON_HOME": "/inherited"})}), \
+                with patch.dict(sys.modules, {"lab": SimpleNamespace(game_env=lambda **_: {"FOUNDRY_HOME": "/inherited"})}), \
                      patch.object(prebuilt_game.subprocess, "run", return_value=result) as run, \
                      contextlib.redirect_stdout(io.StringIO()):
                     if code == 1:
@@ -971,13 +971,13 @@ class SmokeStartTests(unittest.TestCase):
                         with self.assertRaises(SystemExit):
                             prebuilt_game.start(root / "out")
                 environment = run.call_args.kwargs["env"]
-                for key in ("HORIZON_HOME", "HORIZON_LAUNCHER_HOME", "XDG_DATA_HOME", "XDG_CONFIG_HOME"):
+                for key in ("FOUNDRY_HOME", "FOUNDRY_LAUNCHER_HOME", "XDG_DATA_HOME", "XDG_CONFIG_HOME"):
                     self.assertTrue(Path(environment[key]).is_relative_to(root))
 
     def test_a_client_without_the_official_parts_or_a_server_with_them_fails(self):
         from types import SimpleNamespace
         # Only the official parts' hooks point the missing-files error at the launcher (#19384).
-        missing = f"{prebuilt_game.NO_RESOURCES}: no horizon-resources.json in /x\n"
+        missing = f"{prebuilt_game.NO_RESOURCES}: no foundry-resources.json in /x\n"
         official = missing + f"{prebuilt_game.OFFICIAL_PARTS}: download it at https://example.org (Download)."
         for side, stdout, passes in (("client", official, True), ("client", missing, False),
                                      ("server", missing, True), ("server", official, False)):
@@ -1037,7 +1037,7 @@ class PublicationInventoryTests(unittest.TestCase):
                     "third_party/fix/Cargo.toml": "[package]\nname='fix'\nversion='0.1.0'\n",
                     "third_party/fix/src/lib.rs": "pub fn fixed() {}\n",
                     "tools/ci/rust-version": "1.99.1\n",
-                    "crates/horizon-mod-package/src/sdk/package-format": "6\n"}.items():
+                    "crates/foundry-mod-package/src/sdk/package-format": "6\n"}.items():
                 path = source / name
                 path.parent.mkdir(parents=True, exist_ok=True)
                 # LF as the commit keeps it: Windows' text mode would write CRLF, which the patch copy carries and

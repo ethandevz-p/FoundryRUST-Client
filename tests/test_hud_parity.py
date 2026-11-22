@@ -7,14 +7,14 @@ from tools import test_hud_parity as hud
 class RecursiveCloseTests(unittest.TestCase):
     def test_nested_dict_in_list_accepts_float_rounding(self):
         vanilla = {'runs': [{'scale': 0.1 + 0.2}]}
-        horizon = {'runs': [{'scale': 0.3}]}
-        self.assertTrue(hud.close(vanilla, horizon))
-        self.assertTrue(hud.same(vanilla, horizon))
+        foundry = {'runs': [{'scale': 0.3}]}
+        self.assertTrue(hud.close(vanilla, foundry))
+        self.assertTrue(hud.same(vanilla, foundry))
 
     def test_deeply_mixed_containers_accept_float_rounding(self):
         vanilla = {'draws': [{'matrix': [1.0, 0.1 + 0.2, {'t': 0.1 + 0.2}]}, {'type': 'text'}]}
-        horizon = {'draws': [{'matrix': [1.0, 0.3, {'t': 0.3}]}, {'type': 'text'}]}
-        self.assertTrue(hud.same(vanilla, horizon))
+        foundry = {'draws': [{'matrix': [1.0, 0.3, {'t': 0.3}]}, {'type': 'text'}]}
+        self.assertTrue(hud.same(vanilla, foundry))
 
     def test_non_numeric_and_structure_still_compare_exactly(self):
         self.assertFalse(hud.same({'runs': [{'type': 'sprite'}]}, {'runs': [{'type': 'text'}]}))

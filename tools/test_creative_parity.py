@@ -2,13 +2,13 @@
 """Compare the creative inventory's tabs and search with the vanilla client's.
 
 The Java oracle (VanillaCreativeSearchOracle) writes the creative-inventory.json
-that horizon-prepare exports (VanillaCreativeTabsExporter: every
+that foundry-prepare exports (VanillaCreativeTabsExporter: every
 tab built by vanilla's CreativeModeTabs over the vanilla data pack's
 registries), then what the vanilla client shows: every tab's display items
 and, for each search query, CreativeModeInventoryScreen.refreshSearchResults'
 items, searched through the client's own SessionSearchTrees.
 examples/probe/creative_search_fixture loads the export into
-horizon_client::creative::Creative. The tabs it shows (id, title, icon,
+foundry_client::creative::Creative. The tabs it shows (id, title, icon,
 position, every stack with its components), the search tab's stacks and the
 results of every query must agree. The queries are QUERIES below, then every
 search stack's item path and tooltip lines, every item tag with and without
@@ -38,7 +38,7 @@ except ImportError:
     import test_rust_parity as base
     import test_model_baking_parity as baking
 
-PARITY = lab.ROOT / 'mods/horizon/src/test/java/dev/horizonlab/parity'
+PARITY = lab.ROOT / 'mods/foundry/src/test/java/dev/foundrylab/parity'
 # Players' reports (anvil, crafting table, smithing table), other blocks of the
 # functional tab, case, spaces, colons and tag searches.
 QUERIES = ['', 'anvil', 'Anvil', 'ANVIL', 'crafting', 'crafting table', 'smithing', 'smithing table', 'table', 'chest',
@@ -95,11 +95,11 @@ def main():
 
 def compare(args, build, classes, dependencies, queries, run, mode):
     suffix = '-' + mode if mode else ''
-    run(['java', '-Xmx2G', '-cp', str(classes) + os.pathsep + dependencies, 'dev.horizonlab.parity.VanillaCreativeSearchOracle',
+    run(['java', '-Xmx2G', '-cp', str(classes) + os.pathsep + dependencies, 'dev.foundrylab.parity.VanillaCreativeSearchOracle',
          queries, build / 'creative-inventory.json', build / f'vanilla{suffix}.json', lib.RESOURCES,
          *([mode] if mode else [])],
         'vanilla' + suffix)
-    lib.cargo_example('horizon-client', 'creative_search_fixture', lib.RESOURCES, build / 'creative-inventory.json',
+    lib.cargo_example('foundry-client', 'creative_search_fixture', lib.RESOURCES, build / 'creative-inventory.json',
                       build / f'vanilla{suffix}.json', build / f'rust{suffix}.json', *([mode] if mode else []))
     vanilla = json.loads((build / f'vanilla{suffix}.json').read_text(encoding='utf-8'))
     rust = json.loads((build / f'rust{suffix}.json').read_text(encoding='utf-8'))
@@ -107,17 +107,17 @@ def compare(args, build, classes, dependencies, queries, run, mode):
     shown = [{k: t[k] for k in ('id', 'title', 'icon', 'row', 'column', 'items')} for t in vanilla['tabs'] if t['shown']]
     if [t['id'] for t in shown] != [t['id'] for t in rust['tabs']]:
         bad += 1
-        print('TABS vanilla', [t['id'] for t in shown], '\n     horizon', [t['id'] for t in rust['tabs']])
+        print('TABS vanilla', [t['id'] for t in shown], '\n     foundry', [t['id'] for t in rust['tabs']])
     for v, r in zip(shown, rust['tabs']):
         for k in ('title', 'icon', 'row', 'column'):
             if v[k] != r[k]:
-                bad += 1; print(f'TAB {v["id"]} {k}: vanilla {v[k]!r} | horizon {r[k]!r}')
+                bad += 1; print(f'TAB {v["id"]} {k}: vanilla {v[k]!r} | foundry {r[k]!r}')
         if v['items'] != r['items']:
             bad += 1
             i = next((i for i, (a, b) in enumerate(zip(v['items'], r['items'])) if a != b), min(len(v['items']), len(r['items'])))
-            print(f'TAB {v["id"]}: {len(v["items"])} vanilla stacks, {len(r["items"])} horizon; first difference at {i}:')
+            print(f'TAB {v["id"]}: {len(v["items"])} vanilla stacks, {len(r["items"])} foundry; first difference at {i}:')
             print('   vanilla', v['items'][i] if i < len(v['items']) else None)
-            print('   horizon', r['items'][i] if i < len(r['items']) else None)
+            print('   foundry', r['items'][i] if i < len(r['items']) else None)
         print(f'  {v["id"]}: {len(v["items"])} stacks')
     search = next(t['items'] for t in vanilla['tabs'] if t['type'] == 'SEARCH')
     channeling = next(q['results'] for q in vanilla['frenchSearches'] if q['query'] == 'canalisation')
@@ -125,14 +125,14 @@ def compare(args, build, classes, dependencies, queries, run, mode):
     if [search[i] for i in channeling] != [expected_book]:
         sys.exit('Vanilla did not find the Channeling book in French; check the prepared fr_fr language file')
     if search != rust['search']:
-        bad += 1; print(f'SEARCH TAB: {len(search)} vanilla stacks, {len(rust["search"])} horizon')
+        bad += 1; print(f'SEARCH TAB: {len(search)} vanilla stacks, {len(rust["search"])} foundry')
     for label, key in [('English', 'searches'), ('French', 'frenchSearches')]:
         expected, actual = vanilla[key], rust[key]
         wrong = [(v, r) for v, r in zip(expected, actual) if v != r]
         for v, r in wrong[:args.detail]:
             missing = [search[i] for i in v['results'] if i not in r['results']][:3]
             extra = [search[i] for i in r['results'] if i not in v['results']][:3]
-            print(f'{label} SEARCH {v["query"]!r}: vanilla {len(v["results"])} results, horizon {len(r["results"])}; '
+            print(f'{label} SEARCH {v["query"]!r}: vanilla {len(v["results"])} results, foundry {len(r["results"])}; '
                   f'missing {missing} extra {extra}')
         bad += len(wrong) + abs(len(expected) - len(actual))
         print(f'{len(expected) - len(wrong)}/{len(expected)} {label} searches match')
@@ -158,10 +158,10 @@ def compare_display_copies(vanilla, rust):
                 print(f'REMOVED STACK LIMIT: expected vanilla fallback 1, got {v["count"]}')
                 bad += 1
             elif r != v:
-                print(f'REMOVED STACK LIMIT: vanilla {v["copy"]}, Horizon {r["copy"]} (known gap)')
+                print(f'REMOVED STACK LIMIT: vanilla {v["copy"]}, Foundry Client {r["copy"]} (known gap)')
             continue
         if v['count'] != DISPLAY_COUNTS[stack] or v != r:
-            print(f'DISPLAY COPY {stack}: vanilla {v["copy"]}, Horizon {r["copy"]}, expected count {DISPLAY_COUNTS[stack]}')
+            print(f'DISPLAY COPY {stack}: vanilla {v["copy"]}, Foundry Client {r["copy"]}, expected count {DISPLAY_COUNTS[stack]}')
             bad += 1
     if not bad:
         print(f'{len(DISPLAY_COUNTS)} display copies match')

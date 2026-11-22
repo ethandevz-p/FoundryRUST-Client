@@ -8,7 +8,7 @@ from tools.ci import triage_command as tc
 
 ROOT = Path(__file__).resolve().parents[1]
 NOW = datetime(2026, 10, 28, 12, tzinfo=timezone.utc)
-URL = "https://github.com/horizon-rust/horizon/issues/5#issuecomment-1"
+URL = "https://github.com/foundry-rust/foundry/issues/5#issuecomment-1"
 # Fixture accounts: the decision is by numeric ID, so each test login has one. Ludovic's real ID may not be filled in
 # yet (tools/ci/resolve_reviewer_ids.py), so tests use their own unless it is.
 LUDOVIC_ID = ns.OWNER_ID or 1

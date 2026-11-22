@@ -1,4 +1,4 @@
-"""Source-only ignored-test inventory, using horizon-game-discovery's canonical module traversal.
+"""Source-only ignored-test inventory, using foundry-game-discovery's canonical module traversal.
 
 The small Rust tool parses source with syn and calls the same game-area discovery as the build script.
 It never builds the game or loads prepared data. One invocation covers every workspace and test target.
@@ -115,9 +115,9 @@ def target_roots(root=ROOT):
 def tests(root=ROOT):
     """Canonical full identities and original ignore reasons, in one batched source-only invocation."""
     root = Path(root).resolve()
-    binary = os.environ.get("HORIZON_GAME_DISCOVERY")
-    command = [binary] if binary else ["cargo", "run", "--quiet", "--locked", "-p", "horizon-game-discovery",
-                                      "--bin", "horizon-game-discovery", "--"]
+    binary = os.environ.get("FOUNDRY_GAME_DISCOVERY")
+    command = [binary] if binary else ["cargo", "run", "--quiet", "--locked", "-p", "foundry-game-discovery",
+                                      "--bin", "foundry-game-discovery", "--"]
     inputs = "".join("\t".join(row) + "\n" for row in target_roots(root))
     result = subprocess.run([*command, str(root)], input=inputs, capture_output=True, text=True, cwd=ROOT)
     if result.returncode:

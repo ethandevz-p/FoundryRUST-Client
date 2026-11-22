@@ -49,7 +49,7 @@ pub(super) fn classify(folder: &Path, base: Option<&str>) -> Result<Routes, Fail
     if projects.is_empty() {
         return Ok(result);
     }
-    let base = base.ok_or_else(|| tr("Install Horizon first.").to_string())?;
+    let base = base.ok_or_else(|| tr("Install Foundry Client first.").to_string())?;
     let built_on = checked_about(base)?;
     let origin = built_on.as_ref().map_or(base, |about| about.base.as_str());
     let revision = build_revision(base, built_on.as_ref())?;
@@ -61,7 +61,7 @@ pub(super) fn classify(folder: &Path, base: Option<&str>) -> Result<Routes, Fail
         return Ok(result);
     }
     let sdk_base = sdk_cache::Base::from_env();
-    let keys = horizon_release_sign::sdk_keys_for(backend::REPO);
+    let keys = foundry_release_sign::sdk_keys_for(backend::REPO);
     let sdk = match sdk_cache::index(&sdk_base, &revision, &keys) {
         Ok(sdk) => sdk,
         Err(refusal) => {
@@ -102,7 +102,7 @@ pub(super) fn classify(folder: &Path, base: Option<&str>) -> Result<Routes, Fail
         Err(refusal) => {
             for project in &projects {
                 let id = &project.bundle.manifest.id;
-                if project.bundle.native().horizon != revision {
+                if project.bundle.native().foundry != revision {
                     said(
                         id.as_str(),
                         Route::Invalid {
@@ -155,7 +155,7 @@ pub fn update_check(home: &Path, to: &str) -> Result<UpdateCheck, Failed> {
         .collect();
     let revision = build_revision(to, None)?;
     let sdk_base = sdk_cache::Base::from_env();
-    let keys = horizon_release_sign::sdk_keys_for(backend::REPO);
+    let keys = foundry_release_sign::sdk_keys_for(backend::REPO);
     let sdk = sdk_cache::index(&sdk_base, &revision, &keys).map_err(|r| r.to_string())?;
     let verdicts = judge_all(&projects, &sdk, &sdk_base).map_err(|r| r.to_string())?;
     let shown = sdk.shown();
@@ -175,7 +175,7 @@ pub fn update_check(home: &Path, to: &str) -> Result<UpdateCheck, Failed> {
         .map(|bundle| {
             dependencies::from_manifest(
                 &bundle.manifest.dependencies,
-                horizon_platform::mod_package::manifest::Side::Both,
+                foundry_platform::mod_package::manifest::Side::Both,
             )
         })
         .collect();

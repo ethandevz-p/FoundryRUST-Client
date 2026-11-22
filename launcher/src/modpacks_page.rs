@@ -1,10 +1,10 @@
 //! Imported modpacks, on the Mods page's Modpacks tab: import a pack, read its coverage report,
-//! port what this computer can and play it as its own profile (`horizon_launcher::modpacks`).
+//! port what this computer can and play it as its own profile (`foundry_launcher::modpacks`).
 use super::*;
-use horizon_launcher::browser::horizon::pack as horizon_pack;
-use horizon_launcher::modpacks::{self, Imported};
-use horizon_launcher::other_launchers::Found;
-use horizon_port_pack::report::Status;
+use foundry_launcher::browser::foundry::pack as foundry_pack;
+use foundry_launcher::modpacks::{self, Imported};
+use foundry_launcher::other_launchers::Found;
+use foundry_port_pack::report::Status;
 use std::path::{Path, PathBuf};
 
 /// The report's filter: every row, or one status.
@@ -229,7 +229,7 @@ impl Launcher {
         self.found_scanning = true;
         let tx = self.tx.clone();
         std::thread::spawn(move || {
-            use horizon_launcher::sources::{Folders, Os};
+            use foundry_launcher::sources::{Folders, Os};
             let found = Folders::current()
                 .map(|f| modpacks::found_on_this_computer(Os::current(), &f))
                 .unwrap_or_default();
@@ -242,7 +242,7 @@ impl Launcher {
     pub(super) fn load_packs(&mut self) {
         if self.packs_loaded.is_none() {
             self.scan_found_packs();
-            self.registry_packs = horizon_pack::list();
+            self.registry_packs = foundry_pack::list();
             self.reload_instances();
             // On a thread: a pack's reports and carried mods can be tens of thousands of files,
             // and the sidebar asks for them on the first frame (#18074).
@@ -299,7 +299,7 @@ impl Launcher {
             .child(pick("import-folder", "Import an instance folder…", true))
             .child(text(theme::CAPTION).w_full().text_color(t.muted).child(tr(
                 ".mrpack (Modrinth), .zip (CurseForge), or a Prism, MultiMC or CurseForge instance. \
-                 Horizon ports what it can on this computer, from your own downloads, and plays \
+                 Foundry Client ports what it can on this computer, from your own downloads, and plays \
                  the pack as its own profile. Nothing is uploaded or shared.",
             )));
         let mut page = div().flex().flex_col().gap(px(16.));
@@ -404,14 +404,14 @@ impl Launcher {
             .child(list)
     }
 
-    /// The modpacks installed from Horizon's registry: each plays its own profile.
+    /// The modpacks installed from Foundry Client's registry: each plays its own profile.
     fn registry_pack_rows(&self, cx: &mut Context<Self>) -> Div {
         let t = self.theme;
         let mut list = div().flex().flex_col();
         for (i, p) in self.registry_packs.iter().enumerate() {
             let (play, remove) = (p.work.clone(), p.work.clone());
             let id = p.id.clone();
-            let key = format!("horizon:{id}");
+            let key = format!("foundry:{id}");
             let confirming = self.confirm_remove.as_deref() == Some(key.as_str());
             let right = div()
                 .flex()
@@ -443,7 +443,7 @@ impl Launcher {
                     .on_click(cx.listener(
                         move |this, _: &ClickEvent, _, cx| {
                             if this.confirm_remove.as_ref() == Some(&key) {
-                                match horizon_pack::remove(&remove) {
+                                match foundry_pack::remove(&remove) {
                                     Ok(()) => this.packs_loaded = None,
                                     Err(e) => this.pack_error = Some(e),
                                 }
@@ -456,7 +456,7 @@ impl Launcher {
                     )),
                 );
             let detail = trf(
-                "{version} from Horizon's registry, its own profile: {mods}",
+                "{version} from Foundry Client's registry, its own profile: {mods}",
                 &[("version", &p.version), ("mods", &p.mods.join(", "))],
             );
             list = list.child(index_row(
@@ -627,9 +627,9 @@ impl Launcher {
             notes.push(trf("Left off: {line}.", &[("line", line)]));
         }
         if !can_play {
-            notes.push(tr("Playing needs a prepared Horizon version (Play page).").into());
+            notes.push(tr("Playing needs a prepared Foundry Client version (Play page).").into());
         }
-        let mut rows: Vec<&horizon_port_pack::report::Row> = p
+        let mut rows: Vec<&foundry_port_pack::report::Row> = p
             .rows
             .iter()
             .filter(|r| self.pack_filter.is_none_or(|s| r.status == s))

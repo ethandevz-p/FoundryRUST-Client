@@ -1,14 +1,14 @@
 [package]
-name = "horizon-launcher"
+name = "foundry-launcher"
 version = "0.2.0"
 edition = "2021"
 license = "LGPL-3.0-or-later"
-description = "Downloads, prepares and starts Horizon builds"
+description = "Downloads, prepares and starts Foundry Client builds"
 
 [workspace]
 
 [dependencies]
-horizon-addresses = { path = "../crates/horizon-addresses" }
+foundry-addresses = { path = "../crates/foundry-addresses" }
 # Reads the object members out of the mods' rlibs for the API route's C link (`native_mods/api_route.rs`).
 object = { version = "0.39", default-features = false, features = ["read_core", "archive", "pe", "std"] }
 # The catalog and mod-owned trait injections share their generation rules.
@@ -46,27 +46,27 @@ dirs = "5"
 sys-locale = "0.3"
 clap = { version = "4", features = ["derive"] }
 clap_complete = "4"
-horizon-server-launch = { path = "../crates/horizon-server-launch" }
-horizon-theme = { path = "../crates/horizon-theme" }
+foundry-server-launch = { path = "../crates/foundry-server-launch" }
+foundry-theme = { path = "../crates/foundry-theme" }
 # The sunset scene, painted skies, rain and frosted glass (`scenery/`).
-horizon-launcher-scenery = { path = "scenery" }
+foundry-launcher-scenery = { path = "scenery" }
 # The engine, through the platform's public API (docs/layers.md): the pinned version, No AI, the preparer,
 # level.dat and servers.dat (the worlds and server lists of instances), and the official server's SRV record.
-horizon-platform = { path = "../crates/horizon-platform", features = ["prepare", "protocol", "world", "mod-build", "mod-index", "mod-prebuilt", "mod-runtime-process"] }
-horizon-cosmetics = { path = "../crates/horizon-cosmetics" }
+foundry-platform = { path = "../crates/foundry-platform", features = ["prepare", "protocol", "world", "mod-build", "mod-index", "mod-prebuilt", "mod-runtime-process"] }
+foundry-cosmetics = { path = "../crates/foundry-cosmetics" }
 glam = "0.30"
-# `horizon-launcher mcp`: the Model Context Protocol, shared with horizon-ctl and horizon-server.
-horizon-mcp = { path = "../crates/horizon-mcp" }
+# `foundry-launcher mcp`: the Model Context Protocol, shared with foundry-ctl and foundry-server.
+foundry-mcp = { path = "../crates/foundry-mcp" }
 # Join a friend: invite codes (the game does the joining).
-horizon-friends = { path = "../crates/horizon-friends" }
+foundry-friends = { path = "../crates/foundry-friends" }
 # Import modpack: the porting pipeline, run on the player's own files (docs/modpacks.md).
-horizon-port-pack = { path = "../crates/horizon-port-pack" }
+foundry-port-pack = { path = "../crates/foundry-port-pack" }
 # Use the game's manifest validation for native shader identities.
-horizon-shader-api = { path = "../crates/horizon-shader-api" }
+foundry-shader-api = { path = "../crates/foundry-shader-api" }
 # Signed updates: archives are checked against the release's signed checksums (docs/security.md).
-horizon-release-sign = { path = "../crates/horizon-release-sign" }
+foundry-release-sign = { path = "../crates/foundry-release-sign" }
 # Opt-in data collection: the consent, the outbox and its upload (docs/telemetry.md).
-horizon-telemetry = { path = "../crates/horizon-telemetry" }
+foundry-telemetry = { path = "../crates/foundry-telemetry" }
 # Deleting a world moves it to the system's trash
 trash = "5"
 # Backup names carry the local time, as vanilla's do
@@ -120,8 +120,8 @@ winresource = "0.1"
 
 [dev-dependencies]
 # The mod inventory's `Side` in tests (`mod_api::Side`, which the launcher does not depend on).
-horizon-mod-vocab = { path = "../crates/horizon-mod-vocab" }
-horizon-mod-api-gen = { path = "../crates/horizon-mod-api-gen" }
+foundry-mod-vocab = { path = "../crates/foundry-mod-vocab" }
+foundry-mod-api-gen = { path = "../crates/foundry-mod-api-gen" }
 libc = "0.2"
 # Tokenize source strings for the translation completeness test, including multiline calls.
 syn = "2"
@@ -134,5 +134,5 @@ strip = true
 
 # The scenery's pixel loops (blurring a sky, baking the frosted plates) are optimised in debug
 # builds too: unoptimised, one Blur step took 0.7-1 s and one Glass step 70 ms.
-[profile.dev.package.horizon-launcher-scenery]
+[profile.dev.package.foundry-launcher-scenery]
 opt-level = 3

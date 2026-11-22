@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """An item teleported into another level from a dedicated server's console, against vanilla's.
 
-A vanilla dedicated server and Horizon's (`horizon-client --dedicated --nogui`) each serve a copy of one flat
+A vanilla dedicated server and Foundry Client's (`foundry-client --dedicated --nogui`) each serve a copy of one flat
 world vanilla generated first. With no player online, the console force-loads the chunk at 0, 0 of the Overworld
 and of the Nether, clears the air there, and summons a floating stick item (a fixed UUID, no gravity, moving) in
 the Overworld. It then runs `execute in minecraft:the_nether run tp @e[type=minecraft:item] 0.5 100 0.5`:
@@ -92,17 +92,17 @@ def main():
     report = build / 'report.json'
     report.unlink(missing_ok=True)
     dependencies = os.pathsep.join(map(str, [jars['server'], *libraries]))
-    subprocess.run(fast_bins.command('horizon-client'),
+    subprocess.run(fast_bins.command('foundry-client'),
                    cwd=lab.ROOT, check=True, capture_output=True)
-    binary = lab.cargo_target() / 'fast' / ('horizon-client.exe' if os.name == 'nt' else 'horizon-client')
+    binary = lab.cargo_target() / 'fast' / ('foundry-client.exe' if os.name == 'nt' else 'foundry-client')
     vanilla_server = ['java', '-Xmx2g', '-Duser.timezone=UTC', '-cp', dependencies, 'net.minecraft.server.Main', 'nogui']
-    horizon_server = [binary, '--resources', lab.RESOURCES, '--dedicated', '--nogui']
+    foundry_server = [binary, '--resources', lab.RESOURCES, '--dedicated', '--nogui']
     world = generate_world(vanilla_server, build)
     vanilla = run_side('vanilla', vanilla_server, build, world)
-    horizon = run_side('horizon', horizon_server, build, world)
+    foundry = run_side('foundry', foundry_server, build, world)
     normal = lambda s: re.sub(r'\s+', ' ', s).strip()
-    problems = [f'{step}: {command}\n  vanilla: {vanilla[step, command]}\n  horizon: {horizon[step, command]}'
-                for step, command in vanilla if normal(vanilla[step, command]) != normal(horizon[step, command])]
+    problems = [f'{step}: {command}\n  vanilla: {vanilla[step, command]}\n  foundry: {foundry[step, command]}'
+                for step, command in vanilla if normal(vanilla[step, command]) != normal(foundry[step, command])]
     if problems:
         raise AssertionError('the item teleport differs:\n' + '\n'.join(problems))
     if 'passed' not in vanilla[('after', f'execute in {LEVELS[1]} if entity {ITEM}')]:

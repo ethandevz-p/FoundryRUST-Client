@@ -4,10 +4,10 @@
 //!   `pack.mcmeta`. The ones turned on are `options.txt`'s `resourcePacks` list (vanilla's
 //!   format, `"file/<name>"`, the bottom first), so the game's Resource Packs screen shows the
 //!   same choice. A pack turned on here goes on top, as the screen puts a newly picked one.
-//! - Shader packs: `shaderpacks/`, Horizon's own (a folder with `horizon-shaders.toml`, or a
+//! - Shader packs: `shaderpacks/`, Foundry Client's own (a folder with `foundry-shaders.toml`, or a
 //!   `.hshader`) and those in the `shaders/` format (a `.zip`, or a folder with `shaders/`), as
 //!   the game's Shader Packs page lists them (`shader_pack_list`). One at most is on:
-//!   `pickedShaderPack` in `horizon-graphics.txt`.
+//!   `pickedShaderPack` in `foundry-graphics.txt`.
 //!
 //! Every other line of both files is written back as it was.
 use std::fs;
@@ -15,8 +15,8 @@ use std::io::Read;
 use std::path::{Path, PathBuf};
 
 const OPTIONS: &str = "options.txt";
-const GRAPHICS: &str = "horizon-graphics.txt";
-const SHADER_MANIFEST: &str = "horizon-shaders.toml";
+const GRAPHICS: &str = "foundry-graphics.txt";
+const SHADER_MANIFEST: &str = "foundry-shaders.toml";
 const SHADER_PACKAGE: &str = "hshader";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -40,37 +40,37 @@ pub struct Pack {
     /// Its file or folder name in the pack folder: the id commands take.
     pub file: String,
     pub path: PathBuf,
-    /// A Horizon shader pack's own name, else the file's.
+    /// A Foundry Client shader pack's own name, else the file's.
     pub title: String,
     /// `pack.mcmeta`'s description as plain text; a shader pack's format.
     pub description: String,
     /// `pack.png`, a resource pack's picture.
     pub icon: Option<Vec<u8>>,
     pub enabled: bool,
-    /// Why the game can't run it: a Horizon shader pack made for another shader API.
+    /// Why the game can't run it: a Foundry Client shader pack made for another shader API.
     pub unsupported: Option<String>,
 }
 
 fn shader_key(path: &Path) -> Option<String> {
-    if !horizon_shader_api::package::is_pack(path) {
+    if !foundry_shader_api::package::is_pack(path) {
         return None;
     }
     let manifest = if path.is_dir() {
-        horizon_shader_api::Pack::read_manifest(path)
+        foundry_shader_api::Pack::read_manifest(path)
     } else {
-        let mut zip = horizon_port_pack::zip_intake::open(fs::File::open(path).ok()?).ok()?;
-        horizon_shader_api::Pack::read_zip_manifest(&mut zip)
+        let mut zip = foundry_port_pack::zip_intake::open(fs::File::open(path).ok()?).ok()?;
+        foundry_shader_api::Pack::read_zip_manifest(&mut zip)
     }
     .ok()?;
-    Some(format!("horizon:{}", manifest.id))
+    Some(format!("foundry:{}", manifest.id))
 }
 
 fn migrate_shader_values(home: &Path, pack: &Path, key: &str) -> std::io::Result<()> {
-    let Some(id) = key.strip_prefix("horizon:") else {
+    let Some(id) = key.strip_prefix("foundry:") else {
         return Ok(());
     };
     let dir = home.join(Kind::Shader.folder());
-    let target = dir.join(".horizon-options").join(format!("{id}.txt"));
+    let target = dir.join(".foundry-options").join(format!("{id}.txt"));
     if target.exists() {
         return Ok(());
     }
@@ -79,7 +79,7 @@ fn migrate_shader_values(home: &Path, pack: &Path, key: &str) -> std::io::Result
         "pickedShaderPack",
     )
     .filter(|picked| {
-        !picked.starts_with("horizon:")
+        !picked.starts_with("foundry:")
             && (shader_key(&dir.join(picked)).as_deref() == Some(key)
                 || (!dir.join(picked).exists()
                     && picked
@@ -169,7 +169,7 @@ fn enabled(home: &Path, kind: Kind) -> Vec<String> {
                                 .iter()
                                 .filter_map(|path| shader_key(path))
                                 .find(|key| {
-                                    stem.strip_prefix(key.strip_prefix("horizon:").unwrap())
+                                    stem.strip_prefix(key.strip_prefix("foundry:").unwrap())
                                         .is_some_and(|v| v.starts_with('-') && v.len() > 1)
                                 })
                         })
@@ -213,10 +213,10 @@ fn read(path: &Path, kind: Kind, on: &[String]) -> Option<Pack> {
                         .iter()
                         .any(|line| line == api)
                 })
-                .map(crate::browser::horizon::made_for_other_shader_api);
+                .map(crate::browser::foundry::made_for_other_shader_api);
             (
                 name.unwrap_or_else(|| file.clone()),
-                "Horizon shader pack".into(),
+                "Foundry Client shader pack".into(),
                 None,
             )
         }
@@ -248,7 +248,7 @@ pub(crate) fn entry(path: &Path, name: &str) -> Option<Vec<u8>> {
             .read_to_end(&mut out)
             .ok()?;
     } else {
-        let mut zip = horizon_port_pack::zip_intake::open(fs::File::open(path).ok()?).ok()?;
+        let mut zip = foundry_port_pack::zip_intake::open(fs::File::open(path).ok()?).ok()?;
         let entry = zip.by_name(name).ok()?;
         entry.take(4 << 20).read_to_end(&mut out).ok()?;
     }
@@ -366,7 +366,7 @@ pub fn set_enabled(home: &Path, pack: &Pack, on: bool) -> Result<(), String> {
                 &fs::read_to_string(home.join(GRAPHICS)).unwrap_or_default(),
                 "pickedShaderPack",
             )
-            .filter(|p| !p.is_empty() && !p.starts_with("horizon:"))
+            .filter(|p| !p.is_empty() && !p.starts_with("foundry:"))
             {
                 if let Some(key) = enabled(home, Kind::Shader).first() {
                     let path = home.join(Kind::Shader.folder()).join(previous);
@@ -391,7 +391,7 @@ pub fn find(home: &Path, kind: Kind, query: &str) -> Result<Pack, String> {
         .ok_or_else(|| format!("No pack {query} in {}", home.join(kind.folder()).display()))
 }
 
-/// What a dropped or picked file is: a resource pack (a zip with `pack.mcmeta`), a Horizon
+/// What a dropped or picked file is: a resource pack (a zip with `pack.mcmeta`), a Foundry Client
 /// shader pack (`.hshader`), or a shader pack in the `shaders/` format (a zip with `shaders/`).
 pub fn kind_of(file: &Path) -> Result<Kind, String> {
     let name = file
@@ -410,7 +410,7 @@ pub fn kind_of(file: &Path) -> Result<Kind, String> {
         }
     }
     let archive = fs::File::open(file).map_err(|e| format!("{}: {e}", file.display()))?;
-    let zip = horizon_port_pack::zip_intake::open(archive)
+    let zip = foundry_port_pack::zip_intake::open(archive)
         .map_err(|e| format!("{}: {e}", file.display()))?;
     if ext.as_deref() == Some(SHADER_PACKAGE) {
         Ok(Kind::Shader)

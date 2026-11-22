@@ -61,7 +61,7 @@ pub struct Found {
     pub launcher: &'static str,
     pub name: String,
     /// The Minecraft version: an id (`1.21.1`), `latest` or `latest-snapshot`; none when the
-    /// launcher keeps it where Horizon doesn't read.
+    /// launcher keeps it where Foundry Client doesn't read.
     pub minecraft: Option<String>,
     pub loader: Option<Loader>,
     /// Its game folder: saves, mods, packs, options.
@@ -334,10 +334,10 @@ fn child_holds(dir: &Path, file: &str) -> bool {
 
 /// `found` with the Minecraft version and loader its CurseForge instance records
 /// (`minecraftinstance.json`, else `manifest.json`). An instance that records neither, or a
-/// loader Horizon doesn't name, keeps none.
+/// loader Foundry Client doesn't name, keeps none.
 fn with_curseforge_target(mut found: Found) -> Found {
     let Some((minecraft, loader, version)) =
-        horizon_port_pack::import::curseforge_instance_target(&found.game)
+        foundry_port_pack::import::curseforge_instance_target(&found.game)
     else {
         return found;
     };
@@ -556,7 +556,7 @@ pub fn copy_game(found: &Found, to: &Path) -> std::io::Result<()> {
     Ok(())
 }
 
-/// The loader `found` runs, at the same version, when Horizon installs it ([`loaders::Kind`]).
+/// The loader `found` runs, at the same version, when Foundry Client installs it ([`loaders::Kind`]).
 pub fn loader(found: &Found) -> Option<loaders::Loader> {
     let l = found.loader.as_ref()?;
     Some(loaders::Loader {
@@ -566,7 +566,7 @@ pub fn loader(found: &Found) -> Option<loaders::Loader> {
 }
 
 /// A new Java instance named `name` playing what `found` plays (or `minecraft`, the version the
-/// player names), with its loader when Horizon installs it ([`loader`]) and a copy of its game
+/// player names), with its loader when Foundry Client installs it ([`loader`]) and a copy of its game
 /// folder.
 pub fn import(found: &Found, name: &str, minecraft: Option<&str>) -> Result<Instance, String> {
     let Some(minecraft) = minecraft.or(found.minecraft.as_deref()) else {

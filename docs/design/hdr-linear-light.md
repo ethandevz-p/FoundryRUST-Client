@@ -1,8 +1,8 @@
 # Linear light for HDR and shader packs (shader API 0.2)
 
 A design note, before any code: what a colour means to a shader pack from API 0.2 on, how the frame stores the
-picture, and how HDR output stops reading light from the frame's alpha. Part of [#3125](https://github.com/horizon-rust/horizon/issues/3125)
-and [#1441](https://github.com/horizon-rust/horizon/issues/1441). The shader API was experimental when this was written, which needs a
+picture, and how HDR output stops reading light from the frame's alpha. Part of [#3125](https://github.com/foundry-rust/foundry/issues/3125)
+and [#1441](https://github.com/foundry-rust/foundry/issues/1441). The shader API was experimental when this was written, which needs a
 design note for a new line ([api/stability.md](../api/stability.md)); this is that note.
 
 ## Why
@@ -55,7 +55,7 @@ below); where HDR's settings live (a later note).
 ## The colour rule (shader API 0.2)
 
 - **Every colour a 0.2 stage reads or returns is linear light**: BT.709 (sRGB) primaries by default,
-  scene-referred, **1.0 is vanilla's white at paper white**, more is brighter, up to half float's range. Horizon
+  scene-referred, **1.0 is vanilla's white at paper white**, more is brighter, up to half float's range. Foundry Client
   replaces negative values and NaN with 0 before the display.
 - **Decoding is vanilla's 2.2 power**, as `hdr.wgsl` decodes today, not the piecewise sRGB curve. Because a power is
   multiplicative, vanilla's lit colour `albedo * tint * lightmap` is the same in linear: decoding the product is the
@@ -79,15 +79,15 @@ below); where HDR's settings live (a later note).
 - **A `[tonemap]` stage**, `fn tonemap(input: TonemapInput) -> vec3<f32>`: the post chain's linear picture in, the
   picture for the display out, linear, 1.0 at paper white and at most `frame.headroom`. It runs once per pixel at
   the window's size, after the post chain and before the camera overlays and the HUD, and owns the look of
-  highlights. A pack that leaves it out gets Horizon's:
+  highlights. A pack that leaves it out gets Foundry Client's:
   in HDR a roll-off into the headroom (ITU-R BT.2390's EETF in PQ; HDR's black level already uses the same
-  recommendation's lift), in SDR a clip at white, as vanilla. A pack that only grades keeps Horizon's tone curve;
-  one that only tone maps needs no post chain. Horizon's curve keeps light as it is up to its knee, 60% of the peak
+  recommendation's lift), in SDR a clip at white, as vanilla. A pack that only grades keeps Foundry Client's tone curve;
+  one that only tone maps needs no post chain. Foundry Client's curve keeps light as it is up to its knee, 60% of the peak
   and at least paper white. The source's peak is where the EETF
   puts its knee there (13.7 times paper white at 203 and 1000 nits, PQ's 10 000 nits at most), and light past it
   shows at the peak. The curve acts on the brightest channel and scales the others with it, so light keeps its hue
   as it eases and no channel passes the peak.
-- **Horizon's display pass is always last** and can't be replaced: it clamps to the headroom, converts to BT.2020
+- **Foundry Client's display pass is always last** and can't be replaced: it clamps to the headroom, converts to BT.2020
   for HDR10, lifts the black level, encodes (PQ, scRGB, or 2.2 for SDR) and shows what the HUD and menus cover at
   UI Brightness, as today.
 
@@ -117,15 +117,15 @@ this case is held to the existing HDR-versus-SDR check (below).
 
 **Linear blending, if a pack asks.** `[frame] blend = "linear"` in the manifest stores linear light instead, for a
 physically based pack that wants glass, water and smoke to blend as light does. A 0.2 stage sees the same values
-either way; what changes is where Horizon converts:
+either way; what changes is where Foundry Client converts:
 
 | | `blend = "gamma"` (the default) | `blend = "linear"` |
 | --- | --- | --- |
 | The frame holds | vanilla's gamma, values above 1 kept | linear light |
 | A 0.2 stage's result | encoded before the frame stores and blends it | stored as it is |
-| Horizon's own draws (entities, particles, clouds, weather, stages the pack leaves out) | as today | decoded at the end of their shaders: solid ones look as with gamma, see-through ones blend in linear |
-| Horizon's multiplying draws (block breaking, `CRUMBLING_BLEND`) | as today | their factor given in linear terms, so they darken as vanilla's |
-| Horizon's fog | mixed in gamma, as vanilla's | mixed in gamma too: encoded, mixed, decoded |
+| Foundry Client's own draws (entities, particles, clouds, weather, stages the pack leaves out) | as today | decoded at the end of their shaders: solid ones look as with gamma, see-through ones blend in linear |
+| Foundry Client's multiplying draws (block breaking, `CRUMBLING_BLEND`) | as today | their factor given in linear terms, so they darken as vanilla's |
+| Foundry Client's fog | mixed in gamma, as vanilla's | mixed in gamma too: encoded, mixed, decoded |
 | What a 0.2 stage samples from the frame (`scene_color`, `opaque_color`) | decoded: once before the post chain (a full-screen pass), and in the copy `opaque_color` already is | as stored |
 
 The water mirror and `shadow_color` draw no blends, so they store linear in both.
@@ -180,7 +180,7 @@ Artifacts are not allowed: light showing through the HUD or a menu, light lost o
 meets written light, anti-aliasing or TAA history smearing or sparkling around it. Any other change of look is a
 separate pull request, with screenshots.
 
-Under a 0.2 pack Horizon lifts nothing: the pack gets vanilla's picture in linear light whatever the display, reads
+Under a 0.2 pack Foundry Client lifts nothing: the pack gets vanilla's picture in linear light whatever the display, reads
 `emission` in its material stage, and writes what shines. (Telling post stages which pixels are light sources is a
 likely 0.2 addition, not designed here. Wide colour is one that is: a pack asks for BT.2020 primaries with
 `[frame] primaries`, which the check takes and the game doesn't serve yet, #14584.)
@@ -198,7 +198,7 @@ With HDR on:
 
 - **Camera overlays belong to the world.** `hud_overlays::camera_overlays` (the vignette, the pumpkin and powder-snow
   overlays and the rest) and the hand draw onto the tone-mapped world before `keep_world` (today just after it),
-  converted as Horizon's own draws are under `blend = "linear"`, so they darken or cover light above white too, the
+  converted as Foundry Client's own draws are under `blend = "linear"`, so they darken or cover light above white too, the
   world border's red vignette included.
 - **`keep_world` becomes a pass** instead of a copy. The frame keeps the world, light above white included; the pass
   writes it clipped to white, in gamma, with alpha 0, into the HUD's target. That backdrop is what the HUD draws on,
@@ -231,7 +231,7 @@ With HDR on:
 Shader API 0.1, the gamma line before this one, was served beside 0.2 until step 5b, on the path it had: its frame,
 inputs and gamma values, and the marks its stages passed on in alpha. It is retired:
 
-- a 0.1 pack is refused with the message stability.md asks for (`needs shader API 0.1; this Horizon serves 0.2`);
+- a 0.1 pack is refused with the message stability.md asks for (`needs shader API 0.1; this Foundry Client serves 0.2`);
 - the registry lists 0.2 packs instead of 0.1 ones;
 - Golden Hour's 0.2 port replaced it as the example and test pack;
 - the changelog says so.
@@ -251,14 +251,14 @@ alone: their picture, on the swapchain's 8-bit frame, is shown at paper white wi
 HUD with it, as #3125 suggests. HDR values they could read (`hdr`, headroom,
 paper white) are a later, optional addition for pack authors.
 
-## Horizon's look
+## Foundry Client's look
 
-What Horizon lifts with HDR on and no pack (light sources, the sun, the tone curve's scene peak) is a look, and
+What Foundry Client lifts with HDR on and no pack (light sources, the sun, the tone curve's scene peak) is a look, and
 step 7 makes it one a pack could have written: its numbers and its maths in one WGSL file, drawn through shader
 API 0.2's public inputs.
 
 **Not yet a pack that runs by default.** The goal, approved in
-[#16126](https://github.com/horizon-rust/horizon/issues/16126), is that the look becomes a bundled pack that runs by
+[#16126](https://github.com/foundry-rust/foundry/issues/16126), is that the look becomes a bundled pack that runs by
 default and the engine carries none of it. Today a 0.2 pack, whatever its stages, turns off what the default path
 has and its own doesn't yet: the compact solid terrain layout (the world is meshed again), TAA, FXAA, upscaling and
 sharpening (`world_post`), frame generation, Improved Transparency and GPU posing of entities. Its bytes can't be
@@ -271,13 +271,13 @@ pack path keeps those features; #16126 lists each as its own step, and the flip 
 **One look file, two users.** `hdr_look.wgsl` holds the look's constants (the tiers' windows and gains,
 `HDR_SCENE_PEAK`, `HDR_SUN_CAP`) and pure functions (brightness, the lift's window and gain, `hdr_unshade`, the sun's
 peak from the headroom, the tone curve), with no engine name in it. There is one copy, in the pack's folder
-(`packs/horizon_hdr/hdr_look.wgsl`), which the renderer reads from there.
+(`packs/foundry_hdr/hdr_look.wgsl`), which the renderer reads from there.
 
 - Until the flip, the default pipelines compile it in: today's bytes and cost. The compiled-in copy is removed at the
   flip (step 16 of #16126); the file survives in the pack. The display reaches it as `Frame.headroom` does a
   pack (the sun's peak is the headroom clamped between `HDR_SCENE_PEAK` and `HDR_SUN_CAP`), so the uniforms that carry the
   windows and gains, and the duplicated functions in `terrain.wgsl` and `entity.wgsl`, go.
-- `packs/horizon_hdr` (in `horizon-shader-api`, beside Golden Hour) is a real 0.2 pack that lists the same file as
+- `packs/foundry_hdr` (in `foundry-shader-api`, beside Golden Hour) is a real 0.2 pack that lists the same file as
   its shared source: a material stage, an entity stage and a `[tonemap]` with the scene's peak. It is the proof
   that the API suffices, and the example to copy from. Render tests hold its material and entity stages to the
   default path's shaders (`gfx/look_pack_tests.rs`); the frame identity harness draws it in the game and holds it to
@@ -295,7 +295,7 @@ peak from the headroom, the tone curve), with no engine name in it. There is one
 
 An `[environment]` stage, for what adds light and is no lit surface (the sun, moon, stars, clouds, lightning,
 additive particles, beams), by `kind`, is step 9 of #16126 (it replaces the earlier `[glow]` idea, and settles that
-decision). Until then those stay Horizon's under a pack, at paper white, and the pack's gate leaves the sky out. The
+decision). Until then those stay Foundry Client's under a pack, at paper white, and the pack's gate leaves the sky out. The
 windows, gains and peaks need no route: they are the look's constants.
 
 **Fog.** Light sources lift before fog on both paths. Today the lift multiplies the fogged pixel, with
@@ -306,28 +306,28 @@ the sky and the light sources' overlays (its steps 9 and 10), a pull request of 
 **The lift's 8-bit steps** (`hdr_quantized_mark`) stay until step 11 of #16126, so every step until then is
 byte-identical, and then go in the same pull request as the fog change, with captures: a change of rounding too.
 
-**A pack owns the look.** A player's 0.2 pack and Horizon's lift don't compose: under a pack Horizon lifts
-nothing, as above, and a pack that wants Horizon's light copies it from `packs/horizon_hdr`.
+**A pack owns the look.** A player's 0.2 pack and Foundry Client's lift don't compose: under a pack Foundry Client lifts
+nothing, as above, and a pack that wants Foundry Client's light copies it from `packs/foundry_hdr`.
 
 **The HDR page** gets a **Look** row in place of HDR Lighting; nothing else moves, and packs are still picked on
 the Shaders page.
 
 | Running | The row reads | Greyed |
 | --- | --- | --- |
-| No pack | `Look: Horizon` or `Look: Vanilla` | as the rows above it |
+| No pack | `Look: Foundry Client` or `Look: Vanilla` | as the rows above it |
 | A 0.2 pack | `Look: <the pack's name>` | "The shader pack lights the world. Pick it under Shaders." |
 | A `shaders/` pack | `Look: <the pack's name>` | "The shader pack's picture is shown at Paper White." |
 
-Horizon is the lift. Vanilla is HDR output with nothing lifted, the SDR picture but where vanilla would have
+Foundry Client is the lift. Vanilla is HDR output with nothing lifted, the SDR picture but where vanilla would have
 clipped before a later blend (Why gamma storage); it stays as the one flag the engine keeps. Saved as
-`hdrLook:horizon` or `hdrLook:vanilla`. An old file's `hdrLighting:false` reads as `vanilla` and `true` as
-`horizon`, and only `hdrLook` is written; an older build ignores the new key and shows Horizon's look.
+`hdrLook:foundry` or `hdrLook:vanilla`. An old file's `hdrLighting:false` reads as `vanilla` and `true` as
+`foundry`, and only `hdrLook` is written; an older build ignores the new key and shows Foundry Client's look.
 
 ## Upscaling, anti-aliasing, frame generation
 
 They read the frame as it is stored and have no marks to keep, which fixes the alpha problems
 above. Native upscaling
-([#1403](https://github.com/horizon-rust/horizon/issues/1403)) should take the float frame. Horizon's TAA
+([#1403](https://github.com/foundry-rust/foundry/issues/1403)) should take the float frame. Foundry Client's TAA
 blends the gamma-stored frame as it is; a tone-weighted resolve is for passes that accumulate linear light (a 0.2
 pack's post chain, or the frame under linear storage), where bright pixels would otherwise sparkle. Frame generation
 interpolates the float frame's light before the tone curve, and the made frame goes through the tone curve, the HUD's
@@ -339,11 +339,11 @@ The rules such a pass keeps now are in [hdr-passes.md](../hdr-passes.md).
 1. **HDR off, no pack, bit for bit.** The frame format and pipelines for this case don't change (unit tests on
    `frame_format` and the pipelines' targets). A screenshot test pins the picture: pictures of the game hold
    Minecraft's textures and can't be committed, so it is differential. A runner with a copy of Minecraft and Mesa's
-   software Vulkan builds main and the change, captures fixed scenes offscreen with `HORIZON_STILL=1` (repeatable
-   frames, [#9398](https://github.com/horizon-rust/horizon/pull/9398), in review), and requires identical PNGs, also
+   software Vulkan builds main and the change, captures fixed scenes offscreen with `FOUNDRY_STILL=1` (repeatable
+   frames, [#9398](https://github.com/foundry-rust/foundry/pull/9398), in review), and requires identical PNGs, also
    after turning HDR on and off, and picking and dropping a 0.2 pack.
 2. **Golden Hour against main**: the same capture in SDR, and the offscreen HDR capture in HDR, identical.
-3. **HDR on, the Vanilla look, against SDR**: the offscreen HDR capture ([#8947](https://github.com/horizon-rust/horizon/pull/8947)),
+3. **HDR on, the Vanilla look, against SDR**: the offscreen HDR capture ([#8947](https://github.com/foundry-rust/foundry/pull/8947)),
    within one 8-bit step outside the spots vanilla clips.
 4. **HDR look against today**: the same captures within a tolerance, with the differences allowed above (Light above
    white without marks) shown, and screenshots in the pull request,
@@ -357,10 +357,10 @@ The rules such a pass keeps now are in [hdr-passes.md](../hdr-passes.md).
 
 ## Steps
 
-Behind `HORIZON_HDR_FRAME=float` until step 5, each a small pull request:
+Behind `FOUNDRY_HDR_FRAME=float` until step 5, each a small pull request:
 
 1. This note.
-2. Shader API 0.2 in `horizon-shader-api`: the rule, the `Frame` fields, `[tonemap]`, `[frame] blend`, both lines
+2. Shader API 0.2 in `foundry-shader-api`: the rule, the `Frame` fields, `[tonemap]`, `[frame] blend`, both lines
    served, the reference regenerated, Golden Hour's 0.2 port.
 3. The float frame with HDR on: the frame and the display pass decoding it; then the HUD's own layer, with the world
    still marked: a pass that turns the marks into light once, after the world and the hand are drawn (the lift the
@@ -409,7 +409,7 @@ Behind `HORIZON_HDR_FRAME=float` until step 5, each a small pull request:
      it instead of at S: min(light, the disc's peak), the identity up to it. The frame carries no mark for the
      disc, so light that adds up past S (additive particles over a light source, lightning's quads over a bright
      background, the moon over a bright sky) is held at the disc's peak there too. Where T is at most S the disc's
-     peak is S and every pass computes what it did. Light Horizon doesn't lift (the Vanilla look, the title, a 0.2 pack's own) has
+     peak is S and every pass computes what it did. Light Foundry Client doesn't lift (the Vanilla look, the title, a 0.2 pack's own) has
      no known peak, so there the curve's source still follows the display, as the 0.2 rule above describes. HDR off,
      the HUD, the black lift and the compatibility frame (HDR's default until step 5, whose look then changes once)
      don't change.
@@ -419,7 +419,7 @@ Behind `HORIZON_HDR_FRAME=float` until step 5, each a small pull request:
      made for a world lifted up to 3 times and now only darkened: white came out at 230 of 255. A knee just below
      white (0.9) keeps no more of a light source's shape in captures, and still darkens a noon sky.
 
-7. Horizon's look as a look file and a 0.2 pack (see Horizon's look). Each pull request keeps HDR off
+7. Foundry Client's look as a look file and a 0.2 pack (see Foundry Client's look). Each pull request keeps HDR off
    byte-identical and, unless it says otherwise, the HDR picture too:
    - 7a: the Look row in place of HDR Lighting, and `hdrLook`.
    - 7b (done): the lift's numbers and maths in `hdr_look.wgsl`, which the renderer's own shaders start with. The
@@ -435,7 +435,7 @@ Behind `HORIZON_HDR_FRAME=float` until step 5, each a small pull request:
    - 7d (done, #18410): `light_source_tier`, `light_source_whole`, `light_source_threshold`,
      `EntityInput.light_source_tier` and `full_lightmap` in the API and its reference, wired into the material and
      entity stages; the pack draws vanilla's colour from `shaded_tint`.
-   - 7f: `packs/horizon_hdr`, and its session in the frame identity harness, held to the default path. The pack
+   - 7f: `packs/foundry_hdr`, and its session in the frame identity harness, held to the default path. The pack
      is in (the SDK's, as Golden Hour is: the game doesn't ship or pick it), the look file moved into its folder
      and the renderer reads it there; render tests hold its material and entity stages to the default path's
      shaders, and the frame identity harness's sessions to the default path's picture. The gate widens as inputs
@@ -451,7 +451,7 @@ frame, nothing at the end can take it back out from under the HUD (`shows_world`
 without the tone curve it would clip at the peak instead of easing into it.
 
 Later, each its own note or pull request: values for `shaders/` packs. (The `[environment]` stage and running
-`packs/horizon_hdr` by default are steps 9 and 16 of #16126, approved.) Additions to 0.2 that break no pack, so
+`packs/foundry_hdr` by default are steps 9 and 16 of #16126, approved.) Additions to 0.2 that break no pack, so
 they can wait: telling post stages which
 pixels are light sources, and a full-screen peak for displays that dim large bright areas below `peak` (Windows
 reports it, DXGI's `MaxFullFrameLuminance`; other systems mostly don't).
@@ -462,6 +462,6 @@ Each has a recommendation; the step it blocks says when it's needed.
 
 | Decision | Options | Recommended | Why | Needed before |
 | --- | --- | --- | --- | --- |
-| Where the HDR-off screenshot test runs | **A.** The parity runners: build main and the change, capture fixed scenes with `HORIZON_STILL=1` on Mesa's software Vulkan, compare PNGs. **B.** A synthetic scene with generated textures and a committed digest. | A | It tests the real game with real resource packs; B's digest changes with every Mesa update and covers less. A costs a second build a run, and needs #9398. | Step 3, the first change to the frame |
-| How tone mapping is written | **A.** A `[tonemap]` stage of its own. **B.** The last post pass, with a flag. | A | A pack that only grades keeps Horizon's curve, and one that only tone maps needs no post chain; the check can hold the stage to its range (0 to `headroom`); upscaling and anti-aliasing can run between the post chain and the curve. | Step 2, the API |
+| Where the HDR-off screenshot test runs | **A.** The parity runners: build main and the change, capture fixed scenes with `FOUNDRY_STILL=1` on Mesa's software Vulkan, compare PNGs. **B.** A synthetic scene with generated textures and a committed digest. | A | It tests the real game with real resource packs; B's digest changes with every Mesa update and covers less. A costs a second build a run, and needs #9398. | Step 3, the first change to the frame |
+| How tone mapping is written | **A.** A `[tonemap]` stage of its own. **B.** The last post pass, with a flag. | A | A pack that only grades keeps Foundry Client's curve, and one that only tone maps needs no post chain; the check can hold the stage to its range (0 to `headroom`); upscaling and anti-aliasing can run between the post chain and the curve. | Step 2, the API |
 | `paper_white` and `peak` in SDR | **A.** 80 nits, sRGB's reference white (scRGB's 1.0). **B.** 0, for unknown. | A | A pack that divides by them never gets infinity or NaN; `hdr` = 0 already says they're nominal, and `headroom` is 1 either way. | Step 2, the API |

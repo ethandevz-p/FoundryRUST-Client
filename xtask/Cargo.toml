@@ -8,11 +8,11 @@ publish = false
 description = "Repository tasks: cargo run -p xtask -- package BINARY OUTDIR | tokens | mixins-tool"
 
 [dependencies]
-horizon-mod-api-gen = { path = "../crates/horizon-mod-api-gen" }
+foundry-mod-api-gen = { path = "../crates/foundry-mod-api-gen" }
 # `mixins-tool`: the pin, the carried patch and its applier, shared with the launcher.
-horizon-addresses = { path = "../crates/horizon-addresses" }
-horizon-mod-package = { path = "../crates/horizon-mod-package", default-features = false }
-horizon-theme = { path = "../crates/horizon-theme" }
+foundry-addresses = { path = "../crates/foundry-addresses" }
+foundry-mod-package = { path = "../crates/foundry-mod-package", default-features = false }
+foundry-theme = { path = "../crates/foundry-theme" }
 
 [lints]
 workspace = true

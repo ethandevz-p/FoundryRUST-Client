@@ -1,12 +1,12 @@
-//! fn-replace bench: one game function, `horizon_client::game::autosave_interval(rate: f32) -> i64`,
+//! fn-replace bench: one game function, `foundry_client::game::autosave_interval(rate: f32) -> i64`,
 //! called from outside the prebuilt game, built with rustc against the SDK folder alone.
 //!
 //! usage: bench <mode> [millions of calls]
 //!   plain    the same body in this crate, never inlined: no replacement check
 //!   idle     the game's function with nothing installed
 //!   patched  the patched copy installed through the typed installer
-extern crate horizon_mod_host;
-use horizon_client::game as g;
+extern crate foundry_mod_host;
+use foundry_client::game as g;
 use std::hint::black_box;
 use std::time::Instant;
 

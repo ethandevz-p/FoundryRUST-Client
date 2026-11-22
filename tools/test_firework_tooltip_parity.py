@@ -7,7 +7,7 @@ tooltip_display hides it. A deterministic edge corpus adds every flight duration
 explosions, interleaved runs, colour lists up to 32 entries (including custom, negative and duplicate colours), both
 components on one stack, firework components on non-rocket/non-star items and every combination of hidden components.
 Vanilla prints what `Fireworks.addToTooltip` and `FireworkExplosion.addToTooltip` add
-(VanillaFireworkTooltipOracle); Horizon what `item_tooltip::firework_lines` gives (examples/probe/firework_tooltip_fixture).
+(VanillaFireworkTooltipOracle); Foundry Client what `item_tooltip::firework_lines` gives (examples/probe/firework_tooltip_fixture).
 `--no-edges` leaves the edge corpus out and writes the random corpus exactly as before.
 """
 import random
@@ -157,6 +157,6 @@ if __name__ == '__main__':
         'Firework rocket and star tooltip lines: flight duration (every 0..255), explosions (counted runs up to 256), '
         'colours and fade lists to 32 entries, trail, twinkle, defaults, tooltip_display, both components on one stack '
         'and firework components on non-rocket/non-star items',
-        sources=[lab.ROOT / 'crates/horizon-items/src/enchant.rs',
-                 lab.ROOT / 'crates/horizon-client/src/item_tooltip.rs', lab.ROOT / 'crates/horizon-items/src/item_data.rs',
-                 lab.ROOT / 'crates/horizon-client-render/src/particles.rs'])
+        sources=[lab.ROOT / 'crates/foundry-items/src/enchant.rs',
+                 lab.ROOT / 'crates/foundry-client/src/item_tooltip.rs', lab.ROOT / 'crates/foundry-items/src/item_data.rs',
+                 lab.ROOT / 'crates/foundry-client-render/src/particles.rs'])

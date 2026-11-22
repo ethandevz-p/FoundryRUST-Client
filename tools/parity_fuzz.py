@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Differential scenario fuzzer: generated command scripts run in vanilla and Horizon, compared exactly (#12498).
+"""Differential scenario fuzzer: generated command scripts run in vanilla and Foundry Client, compared exactly (#12498).
 
 Each scenario comes from a seed: an area far from the player, forceloaded; a setup and an actor (summon with NBT,
 a block entity with NBT, a dispenser, a drop, an explosion, a piston); time steps; optionally an unload and reload of
@@ -34,14 +34,14 @@ RELOAD_TICKS = 60  # enough for both engines to save and drop a chunk whose forc
 # What a reload's witnesses expect from vanilla: `/execute unless loaded` succeeds once the chunk went, and
 # `/execute if entity` reports 0 entities once the entity is unloaded. Vanilla can keep a chunk's entities loaded
 # after the chunk reads as unloaded (#16772), so any other vanilla result makes the scenario invalid: nothing was
-# saved and loaded to compare. A Horizon result that differs from vanilla's is a divergence.
+# saved and loaded to compare. A Foundry Client result that differs from vanilla's is a divergence.
 GUARDS = {'chunk': [[True, 1]], 'entity': [[False, 0]]}
 
 
-def set_alike(vanilla, horizon):
+def set_alike(vanilla, foundry):
     """Absolute game times differ by the engines' clocks: only whether each is set (not 0 or -1) is compared."""
     unset = lambda v: v is None or str(v).rstrip('L') in ('0', '-1')  # noqa: E731
-    return vanilla is not None and horizon is not None and unset(vanilla) == unset(horizon)
+    return vanilla is not None and foundry is not None and unset(vanilla) == unset(foundry)
 
 
 # Differences that are not parity bugs: (regular expression on the normalised path, reason, test on the two values).
@@ -150,12 +150,12 @@ def normalise(path):
     return re.sub(r'\[\d+\]', '[]', path)
 
 
-def allowed(path, vanilla, horizon):
-    return any(re.fullmatch(pattern, normalise(path)) and test(vanilla, horizon) for pattern, _, test in ALLOWED)
+def allowed(path, vanilla, foundry):
+    return any(re.fullmatch(pattern, normalise(path)) and test(vanilla, foundry) for pattern, _, test in ALLOWED)
 
 
 def compare(vanilla, rust):
-    """The differences between two records of one read, as [(field, vanilla, horizon)], allowlisted ones left out."""
+    """The differences between two records of one read, as [(field, vanilla, foundry)], allowlisted ones left out."""
     if vanilla['cmd'].startswith('/data get '):
         left, right = read_data(vanilla), read_data(rust)
         if left is None or right is None:
@@ -291,7 +291,7 @@ def subject(scenario, step):
 # Running batches through the command-exec harness.
 
 def witness(family, op, vanilla, rust):
-    """Require the scenario's precondition in vanilla and compare the corresponding Horizon result."""
+    """Require the scenario's precondition in vanilla and compare the corresponding Foundry Client result."""
     guard = op['guard']
     if guard == 'shulker_hit':
         field, expected, reason = '<hit>', [[True, 26]], 'vanilla bullet did not deal four damage'
@@ -327,7 +327,7 @@ class Runner:
             command += ['--binary', str(self.binary)]
         result = subprocess.run(command, cwd=ROOT, capture_output=True, encoding='utf-8', errors='replace',
                                 # The game's script deadline (600 s by default) is for the fixed corpus.
-                                env={**os.environ, 'HORIZON_HARNESS_TIMEOUT': str(30 * len(scenarios) + 600)})
+                                env={**os.environ, 'FOUNDRY_HARNESS_TIMEOUT': str(30 * len(scenarios) + 600)})
         (batch / 'harness.log').write_text(result.stdout + result.stderr, encoding='utf-8')
         if result.returncode:
             if len(scenarios) == 1:
@@ -485,7 +485,7 @@ def main():
     source.add_argument('--smoke', action='store_true', help='fixed scenarios that must match: the tool works')
     parser.add_argument('--batch', type=int, default=40, help='scenarios per harness run')
     parser.add_argument('--shrink-rounds', type=int, default=6)
-    parser.add_argument('--binary', type=Path, help='an already built Horizon game')
+    parser.add_argument('--binary', type=Path, help='an already built Foundry Client game')
     parser.add_argument('--work-dir', type=Path, default=lab.LOCAL / 'parity-fuzz')
     args = parser.parse_args()
     work = args.work_dir.resolve()

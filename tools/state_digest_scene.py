@@ -11,7 +11,7 @@ from pathlib import Path
 
 import lab
 
-GATE = os.environ.get('HORIZON_SCENE_GATE')  # optional script that exits 0 when the machine is free to run
+GATE = os.environ.get('FOUNDRY_SCENE_GATE')  # optional script that exits 0 when the machine is free to run
 PROPERTIES = {
     'online-mode': 'false', 'level-seed': '12345', 'level-type': 'minecraft\\:flat', 'generate-structures': 'false',
     'gamemode': 'survival', 'difficulty': 'normal', 'view-distance': '4', 'simulation-distance': '4',
@@ -205,15 +205,15 @@ def hold_gate():
 
 def scratch_env(home, digest, detail):
     folders = {}
-    for key in ('HORIZON_HOME', 'HORIZON_LAUNCHER_HOME', 'XDG_DATA_HOME', 'XDG_CONFIG_HOME'):
+    for key in ('FOUNDRY_HOME', 'FOUNDRY_LAUNCHER_HOME', 'XDG_DATA_HOME', 'XDG_CONFIG_HOME'):
         path = home / key.lower()
         path.mkdir(parents=True, exist_ok=True)
         folders[key] = path
-    env = lab.game_env(**folders, HORIZON_TEST_SEEDS='1', DISPLAY=':99')
+    env = lab.game_env(**folders, FOUNDRY_TEST_SEEDS='1', DISPLAY=':99')
     if digest:
-        env['HORIZON_STATE_DIGEST'] = str(digest)
+        env['FOUNDRY_STATE_DIGEST'] = str(digest)
     if detail:
-        env['HORIZON_STATE_DIGEST_DETAIL'] = '1'
+        env['FOUNDRY_STATE_DIGEST_DETAIL'] = '1'
     return env
 
 

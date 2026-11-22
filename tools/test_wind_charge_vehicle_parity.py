@@ -7,7 +7,7 @@ damage wears off by one a tick, so four charges landing in the same tick leave t
 A broken vehicle is gone for the charges that tick after it (`Entity.canBeHitByProjectile`): they meet the next
 vehicle in their way, or fly on.
 
-A vanilla dedicated server and Horizon's each load a copy of one flat world vanilla generated first. Ticking is
+A vanilla dedicated server and Foundry Client's each load a copy of one flat world vanilla generated first. Ticking is
 frozen. Each lane holds one or two boats or minecarts on the floor (two share one spot) with breeze wind charges
 just over them, moving down. The servers are stepped; after every step each lane's vehicles, its item drops and its
 remaining charges are counted. The transcripts must match vanilla's (the oracle) line for line, and vanilla's must
@@ -97,17 +97,17 @@ def proves(vanilla):
 
 
 def main():
-    lock, build, vanilla_server, horizon_server, _client = locator.sides(NAME)
+    lock, build, vanilla_server, foundry_server, _client = locator.sides(NAME)
     world = locator.generate_world(vanilla_server, build)
     vanilla = run('vanilla', vanilla_server, world, build)
     (build / 'vanilla.txt').write_text('\n'.join(vanilla) + '\n', encoding='utf-8')
     why = proves(vanilla)
     if why:
         raise AssertionError(f'vanilla is no proof: {why}:\n' + '\n'.join(vanilla))
-    horizon = run('horizon', horizon_server, world, build)
-    (build / 'horizon.txt').write_text('\n'.join(horizon) + '\n', encoding='utf-8')
-    if vanilla != horizon:
-        differ = [f'- {v}\n+ {h}' for v, h in zip(vanilla, horizon) if v != h]
+    foundry = run('foundry', foundry_server, world, build)
+    (build / 'foundry.txt').write_text('\n'.join(foundry) + '\n', encoding='utf-8')
+    if vanilla != foundry:
+        differ = [f'- {v}\n+ {h}' for v, h in zip(vanilla, foundry) if v != h]
         raise AssertionError(f'{len(differ)} lines differ from vanilla:\n' + '\n'.join(differ[:20]))
     print(f'wind charge on vehicles: {len(vanilla)} lines identical')
 

@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """The wire_loopback test root gains no module line and no test.
 
-crates/horizon-mod-wasm/wire-loopback/build.rs declares one module per file of its tests/wire_loopback/, so
+crates/foundry-mod-wasm/wire-loopback/build.rs declares one module per file of its tests/wire_loopback/, so
 the root may not name one of them with a hand-written `#[path = "wire_loopback/..."]` line, and its number of
 `#[test]` attributes may not exceed the number at the branch's merge base. Independent pull requests that each
-appended to the root kept conflicting; a file of their own does not. The target's old place in horizon-mod-wasm's
+appended to the root kept conflicting; a file of their own does not. The target's old place in foundry-mod-wasm's
 tests/ may not come back: nothing compiles a file there, so a test carried to it would vanish silently. The guest's one
 `Hooks` object is assembled by build.rs from the folder's files: a feature writes its hook methods in
 `impl <Feature>Hooks { pub(super) fn <hook>(&self, ..) }` (inherent, on a unit struct of its own file) and never hand-writes `impl Hooks for Mod`
@@ -28,10 +28,10 @@ _spec = importlib.util.spec_from_file_location("merge_base", ROOT / "tools" / "m
 merge_base = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(merge_base)
 
-ROOT_FILE = "crates/horizon-mod-wasm/wire-loopback/tests/wire_loopback.rs"
-FOLDER = "crates/horizon-mod-wasm/wire-loopback/tests/wire_loopback/"
+ROOT_FILE = "crates/foundry-mod-wasm/wire-loopback/tests/wire_loopback.rs"
+FOLDER = "crates/foundry-mod-wasm/wire-loopback/tests/wire_loopback/"
 ADVICE = f"add {FOLDER}<topic>.rs; it is discovered"
-RETIRED = ("crates/horizon-mod-wasm/tests/wire_loopback.rs", "crates/horizon-mod-wasm/tests/wire_loopback")
+RETIRED = ("crates/foundry-mod-wasm/tests/wire_loopback.rs", "crates/foundry-mod-wasm/tests/wire_loopback")
 MODULE_LINE = re.compile(r'#\[path\s*=\s*"wire_loopback/')
 HOOKS_ADVICE = (f"put the hook methods in `impl <Feature>Hooks {{ pub(super) fn <hook>(&self, ..) }}` (a unit struct of that file) in "
                 f"{FOLDER}<topic>.rs; build.rs assembles the one Hooks object (`register` is the one method several "

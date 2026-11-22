@@ -15,7 +15,7 @@ import perf_bench as bench
 import stress_scenes as stress
 
 # Keep this run isolated from the normal benchmark workspace.
-bench.WORK = Path('/tmp/horizon-entity-occlusion-release-quick')
+bench.WORK = Path('/tmp/foundry-entity-occlusion-release-quick')
 shutil.rmtree(bench.WORK, ignore_errors=True)
 bench.WORK.mkdir(parents=True)
 
@@ -87,7 +87,7 @@ original_write_options = bench.write_options
 
 def write_options(game_dir, distance, version=None):
     text = original_write_options(game_dir, distance, version)
-    (game_dir / 'horizon-graphics.txt').write_text(
+    (game_dir / 'foundry-graphics.txt').write_text(
         f'entityCulling:{CURRENT_MODE}\n'
         'entityCullingPrecheck:64\n'
         'graphicsApi:opengl\n'
@@ -100,7 +100,7 @@ bench.write_options = write_options
 original_game_env = lab.game_env
 
 def game_env(base=None, **extra):
-    extra['HORIZON_OCCLUSION_CULL_COUNTS'] = '1'
+    extra['FOUNDRY_OCCLUSION_CULL_COUNTS'] = '1'
     return original_game_env(base, **extra)
 
 bench.lab.game_env = game_env
@@ -139,7 +139,7 @@ def percentile(values, fraction):
 def args_for():
     return Namespace(
         build=str(ROOT / 'target/release'),
-        game='horizon',
+        game='foundry',
         resources=str(lab.RESOURCES),
         width=1280,
         height=720,

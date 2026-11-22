@@ -6,7 +6,7 @@ impl Launcher {
         let mut changed = false;
         // A game said which shader API it serves: the packs judged by the launcher's own line
         // while it was asked are judged again.
-        let answers = horizon_launcher::game_shader_api::answers();
+        let answers = foundry_launcher::game_shader_api::answers();
         if answers != self.shader_answers {
             self.shader_answers = answers;
             self.game_packs.stale();
@@ -36,7 +36,7 @@ impl Launcher {
                         self.perf.record_since("launcher.release_list_ms", checked);
                     }
                     if let Ok(list) = &r {
-                        horizon_launcher::nightly::note_published(list);
+                        foundry_launcher::nightly::note_published(list);
                         // Nightlies of one day are ordered by when they came out, known now.
                         self.installed = backend::installed();
                     }
@@ -44,7 +44,7 @@ impl Launcher {
                     self.notes.clear();
                 }
                 Msg::ReleasesFromNetwork(list) => {
-                    horizon_launcher::nightly::note_published(&list);
+                    foundry_launcher::nightly::note_published(&list);
                     self.installed = backend::installed();
                     self.stable_failed = None;
                     self.releases = Load::Ready(list);
@@ -117,7 +117,7 @@ impl Launcher {
                     self.starting_client = None;
                     self.starting_instance = None;
                     let stop = self.pre_launch_stop.take();
-                    let cmd = horizon_launcher::launch::unless_stopped(cmd, stop.as_deref());
+                    let cmd = foundry_launcher::launch::unless_stopped(cmd, stop.as_deref());
                     let spawned = cmd.and_then(|(cmd, vars)| {
                         self.client_vars = vars;
                         backend::spawn(Job::Client, cmd, self.tx.clone())
@@ -156,7 +156,7 @@ impl Launcher {
                     self.starting_client = None;
                     self.starting_instance = None;
                     let stop = self.pre_launch_stop.take();
-                    match horizon_launcher::launch::unless_stopped(*prepared, stop.as_deref()) {
+                    match foundry_launcher::launch::unless_stopped(*prepared, stop.as_deref()) {
                         Ok(cmd) => {
                             self.client_home = cmd.get_current_dir().map(|d| d.to_path_buf());
                             match backend::spawn(Job::Client, cmd, self.tx.clone()) {
@@ -200,14 +200,14 @@ impl Launcher {
                     match result {
                         Ok(()) => {
                             if as_update.is_some()
-                                && horizon_launcher::nightly::date_of(&tag).is_some()
+                                && foundry_launcher::nightly::date_of(&tag).is_some()
                             {
                                 if let Err(e) = backend::mark_auto_installed(&tag) {
                                     eprintln!("Could not mark updated Nightly {tag}: {e}");
                                 }
                             }
-                            if self.updates.horizon.as_ref().is_some_and(|r| r.tag == tag) {
-                                self.updates.horizon = None;
+                            if self.updates.foundry.as_ref().is_some_and(|r| r.tag == tag) {
+                                self.updates.foundry = None;
                             }
                             let before: Vec<String> = self
                                 .installed
@@ -235,10 +235,10 @@ impl Launcher {
                             // selection follows the newest. Home's Stable update never moves it.
                             let instance = (for_instance || stable.is_some()).then(|| {
                                 stable.is_none()
-                                    && horizon_launcher::instances::list().iter().any(|i| {
+                                    && foundry_launcher::instances::list().iter().any(|i| {
                                         i.java.is_none()
                                             && i.channel
-                                                == horizon_launcher::instances::Channel::Nightly
+                                                == foundry_launcher::instances::Channel::Nightly
                                             && i.version.as_deref() == Some(tag.as_str())
                                     })
                             });
@@ -381,7 +381,7 @@ impl Launcher {
                     };
                     self.self_update = match result {
                         Ok(staged) => {
-                            horizon_launcher::update_handoff::set_pending(staged);
+                            foundry_launcher::update_handoff::set_pending(staged);
                             SelfUpdate::Ready(version)
                         }
                         Err(e) => SelfUpdate::Failed(e),
@@ -494,7 +494,7 @@ impl Launcher {
                                 }
                                 if let Some(i) = instances::list().into_iter().find(|i| i.id == id)
                                 {
-                                    horizon_launcher::launch::run_after_exit(
+                                    foundry_launcher::launch::run_after_exit(
                                         &i.launch, &i.home, &vars,
                                     );
                                 }
@@ -504,7 +504,7 @@ impl Launcher {
                             let home = self.client_home.clone().unwrap_or_else(backend::game_home);
                             let since = self.client_started.take();
                             let report =
-                                horizon_launcher::refusals::crash_report(leases_refused, || {
+                                foundry_launcher::refusals::crash_report(leases_refused, || {
                                     since
                                         .and_then(|since| backend::crash_report_since(&home, since))
                                 });
@@ -515,7 +515,7 @@ impl Launcher {
                             };
                             if let Some((crashed, api)) = switched {
                                 self.client_error = Some(trf(
-                                    "Horizon's {crashed} renderer crashed while starting on this \
+                                    "Foundry Client's {crashed} renderer crashed while starting on this \
                                      graphics card, so the game now uses {api}. Press Play to \
                                      start it again. Video Settings > Graphics API switches back.",
                                     &[("crashed", crashed), ("api", api)],

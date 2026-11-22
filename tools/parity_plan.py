@@ -33,7 +33,7 @@ except ImportError:
 # runner time per harness, nearly all of it in the vanilla oracle. other: probes nothing recorded names.
 GROUPS = ("game", "client", "world", "other")
 SHARD_SIZES = {"game": 50, "client": 100, "world": 150, "other": 50}
-GAME_PACKAGES = {"horizon-game", "horizon-client", "horizon-client-lib"}
+GAME_PACKAGES = {"foundry-game", "foundry-client", "foundry-client-lib"}
 # GitHub starts at most 256 jobs from one matrix.
 MATRIX_LIMIT = 256
 # The lines parity.py --list prints for what it leaves out (a test pins them to parity.py's own wording).
@@ -81,9 +81,9 @@ def probe_group(built):
         return "game"
     names = {artifact[1] for artifact in built}
     every = set().union(*map(packages, built)) if built else set()
-    if "client_probe" in names or every & {"horizon-client", "horizon-client-lib"}:
+    if "client_probe" in names or every & {"foundry-client", "foundry-client-lib"}:
         return "client"
-    if "world_probe" in names or "horizon-world" in every:
+    if "world_probe" in names or "foundry-world" in every:
         return "world"
     return "other"
 
@@ -122,7 +122,7 @@ def plan(names, groups, count):
 
 def hosted_left_out(names, config):
     """{name: reason} for the selected harnesses hosted runners don't run: those the "hosted" entry of
-    tools/parity_hosts.json excludes (data their runners lack), left out as playhorizon's excludes are there, and
+    tools/parity_hosts.json excludes (data their runners lack), left out as playfoundry's excludes are there, and
     the known failing and named-only ones."""
     reasons = {**{name: f"named only: {why}" for name, why in parity.named_only(config).items()},
                **{name: f"known failing: {why}" for name, why in parity.known_failing(config).items()},

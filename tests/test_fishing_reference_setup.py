@@ -19,7 +19,7 @@ class FishingReferenceSetupTests(unittest.TestCase):
                 self.assertEqual(command[command.index("--only") + 1], "scoreboard")
                 self.assertNotIn("cargo", command)
                 self.assertIn("-Dhorizon.fishingReference=true", kwargs["env"]["JAVA_TOOL_OPTIONS"])
-                for key in ("HORIZON_HOME", "HORIZON_LAUNCHER_HOME", "XDG_DATA_HOME", "XDG_CONFIG_HOME"):
+                for key in ("FOUNDRY_HOME", "FOUNDRY_LAUNCHER_HOME", "XDG_DATA_HOME", "XDG_CONFIG_HOME"):
                     self.assertTrue(Path(kwargs["env"][key]).is_relative_to(work))
                 for name in ("fishing-reference.json", "fishing-casts-reference.json"):
                     (work / name).write_text('[{"synthetic_setup_case": 1}]')
@@ -28,9 +28,9 @@ class FishingReferenceSetupTests(unittest.TestCase):
             with patch.object(fishing.subprocess, "run", side_effect=produce):
                 environment = fishing.prepare_reference(work)
             self.assertEqual(environment, {
-                "HORIZON_FISHING_RESOURCES": str(fishing.lab.RESOURCES),
-                "HORIZON_FISHING_REFERENCE": str(work / "fishing-reference.json"),
-                "HORIZON_FISHING_CAST_REFERENCE": str(work / "fishing-casts-reference.json"),
+                "FOUNDRY_FISHING_RESOURCES": str(fishing.lab.RESOURCES),
+                "FOUNDRY_FISHING_REFERENCE": str(work / "fishing-reference.json"),
+                "FOUNDRY_FISHING_CAST_REFERENCE": str(work / "fishing-casts-reference.json"),
             })
 
     def test_a_failed_producer_keeps_payloads_only_in_its_private_log(self):

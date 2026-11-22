@@ -1,14 +1,14 @@
 """The one Cargo selection the harnesses build their fast-profile programs with.
 
-Cargo settles the features of shared dependencies over every package a command selects, so horizon-client built
+Cargo settles the features of shared dependencies over every package a command selects, so foundry-client built
 under two selections is compiled twice, and the parity prebuild (tools/parity.py, prebuild_commands) makes one Cargo
-run per selection. Every harness that builds horizon-client, horizon-ctl, horizon-server, horizon-official or
-horizon-relay in the fast profile goes through `command`, naming only the programs it runs. Examples stay in Cargo
-runs of their own: building one turns on horizon-client-lib's dev-dependencies, which compile test-only code into the
+run per selection. Every harness that builds foundry-client, foundry-ctl, foundry-server, foundry-official or
+foundry-relay in the fast profile goes through `command`, naming only the programs it runs. Examples stay in Cargo
+runs of their own: building one turns on foundry-client-lib's dev-dependencies, which compile test-only code into the
 game.
 """
 
-PACKAGES = ('horizon-game', 'horizon-client-lib', 'horizon-server', 'horizon-official', 'horizon-relay')
+PACKAGES = ('foundry-game', 'foundry-client-lib', 'foundry-server', 'foundry-official', 'foundry-relay')
 
 
 def command(*programs):

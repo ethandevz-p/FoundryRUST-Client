@@ -36,8 +36,8 @@ def clients(build):
     classes=build/'classes'
     if not classes.exists():
         classes.mkdir()
-        subprocess.run(['javac','--release',str(lock['minecraft']['java_major']),'-proc:none','-nowarn','-sourcepath',str(net.lab.ROOT/'mods/horizon/src/test/java'),'-cp',cp,'-d',str(classes),str(net.lab.ROOT/'mods/horizon/src/test/java/dev/horizonlab/parity/LocatorBarClient.java')],check=True)
-    return ['java','-Xmx2g','-Duser.timezone=UTC','-cp',cp,'net.minecraft.server.Main','nogui'],['java','-Xmx1g','-cp',str(classes)+os.pathsep+cp,'dev.horizonlab.parity.LocatorBarClient']
+        subprocess.run(['javac','--release',str(lock['minecraft']['java_major']),'-proc:none','-nowarn','-sourcepath',str(net.lab.ROOT/'mods/foundry/src/test/java'),'-cp',cp,'-d',str(classes),str(net.lab.ROOT/'mods/foundry/src/test/java/dev/foundrylab/parity/LocatorBarClient.java')],check=True)
+    return ['java','-Xmx2g','-Duser.timezone=UTC','-cp',cp,'net.minecraft.server.Main','nogui'],['java','-Xmx1g','-cp',str(classes)+os.pathsep+cp,'dev.foundrylab.parity.LocatorBarClient']
 
 def generate(java,build):
     # No clients connect during generation: let the server bind an OS-assigned port without a probe/bind race.
@@ -156,7 +156,7 @@ def main():
         a.build.mkdir(parents=True,exist_ok=True);return side(a.side,a.binary,a.build)
     build=net.lab.LOCAL/'exploration_map_command';shutil.rmtree(build,ignore_errors=True)
     # Builds the classes into build/classes and the game binary; each phase writes fresh folders under build.
-    _,build,_,horizon,_=net.sides('exploration_map_command',a.binary)
-    return side('java',None,build) or side('native',horizon[0],build)
+    _,build,_,foundry,_=net.sides('exploration_map_command',a.binary)
+    return side('java',None,build) or side('native',foundry[0],build)
 
 if __name__=='__main__':raise SystemExit(main())

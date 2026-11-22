@@ -1,5 +1,5 @@
 //! Explicit player consent for local unsigned game commands.
-use horizon_launcher::{
+use foundry_launcher::{
     backend, build_import, developer_install,
     i18n::{tr, trf},
 };
@@ -11,9 +11,9 @@ use std::path::{Path, PathBuf};
 /// Select this base explicitly with settings selected-version.
 #[derive(clap::Args)]
 pub(super) struct DeveloperInstall {
-    #[arg(help = tr("The trusted clean Horizon checkout to package"))]
+    #[arg(help = tr("The trusted clean Foundry Client checkout to package"))]
     checkout: PathBuf,
-    #[arg(long, help = tr("The real horizon-client executable built from that committed checkout"))]
+    #[arg(long, help = tr("The real foundry-client executable built from that committed checkout"))]
     program: PathBuf,
     #[arg(long, required = true, help = tr("Allow executing this checkout's build code and unsigned game with your rights"))]
     trust_unsigned: bool,
@@ -37,7 +37,7 @@ pub(super) fn import(
     as_json: bool,
 ) -> Result<(), String> {
     if !trust_unsigned {
-        return Err(tr("An imported build is unsigned: Horizon can't check where it came from. If you trust it, pass --trust-unsigned.").into());
+        return Err(tr("An imported build is unsigned: Foundry Client can't check where it came from. If you trust it, pass --trust-unsigned.").into());
     }
     let tag = build_import::import(path, version)?;
     let prepared = backend::check_prepared(&tag);
@@ -46,7 +46,7 @@ pub(super) fn import(
     } else if prepared {
         println!("{}", trf("Imported {version} and selected it. It is prepared already, from another installed version.", &[("version", &tag)]));
     } else {
-        println!("{}", trf("Imported {version} and selected it. Prepare it next: horizon-launcher prepare --version {version}", &[("version", &tag)]));
+        println!("{}", trf("Imported {version} and selected it. Prepare it next: foundry-launcher prepare --version {version}", &[("version", &tag)]));
     }
     Ok(())
 }

@@ -1,9 +1,9 @@
-//! Instances in the window (`horizon_launcher::instances`): the sidebar's list, by group, and the
+//! Instances in the window (`foundry_launcher::instances`): the sidebar's list, by group, and the
 //! dialog that makes one (empty, or a copy of the selected one) or changes its name, group and
 //! icon.
 use super::*;
 use gpui::RenderImage;
-use horizon_launcher::instances::{self, Icon, Instance, Kind as InstanceKind};
+use foundry_launcher::instances::{self, Icon, Instance, Kind as InstanceKind};
 use servers_page::Field;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -37,7 +37,7 @@ pub(super) const TEXTURES: [&str; 24] = [
     "book",
 ];
 
-/// Colours offered as icons: Horizon's accent and a few that sit beside it in both themes.
+/// Colours offered as icons: Foundry Client's accent and a few that sit beside it in both themes.
 const COLOURS: [&str; 8] = [
     "#5b3fd6", "#3f7fd6", "#2f9e8f", "#4f9e2f", "#c9a227", "#d9732f", "#c4405a", "#7d7591",
 ];
@@ -53,9 +53,9 @@ pub(super) struct InstanceDialog {
     pub(super) picture: Option<Option<instance_icons::Chosen>>,
     pub(super) error: Option<String>,
     pub(super) busy: bool,
-    /// Horizon, or the Java game it plays.
+    /// Foundry Client, or the Java game it plays.
     pub(super) java: new_instance::JavaChoice,
-    /// The Horizon version it keeps (`Instance::version`); None follows the launcher's.
+    /// The Foundry Client version it keeps (`Instance::version`); None follows the launcher's.
     pub(super) pin: Option<String>,
     /// The builds "latest" follows (`Instance::channel`); a new instance starts on Stable.
     pub(super) channel: instances::Channel,
@@ -117,7 +117,7 @@ impl Launcher {
             // the installed builds; else the launcher's version (which follows the newest
             // Nightly; also what is left offline).
             None => match instance.channel {
-                instances::Channel::Stable => horizon_launcher::nightly::stable_latest(
+                instances::Channel::Stable => foundry_launcher::nightly::stable_latest(
                     &self.installed,
                     self.launcher_version().map(String::as_str),
                 )
@@ -237,9 +237,9 @@ impl Launcher {
                         }
                         (None, None, None) => tr("No version installed").into(),
                         (None, Some(tag), _)
-                            if horizon_launcher::developer_install::uses_developer(tag) =>
+                            if foundry_launcher::developer_install::uses_developer(tag) =>
                         {
-                            horizon_launcher::developer_install::instance_status(tag, prepared)
+                            foundry_launcher::developer_install::instance_status(tag, prepared)
                                 .unwrap_or_default()
                         }
                         (None, Some(_), _) if !prepared => tr("Needs preparing").into(),
@@ -247,7 +247,7 @@ impl Launcher {
                             let build = self.native_build_of(tag).unwrap_or_default();
                             trf(
                                 "Native build · {version}",
-                                &[("version", &build.horizon_short())],
+                                &[("version", &build.foundry_short())],
                             )
                         }
                         (None, Some(tag), Some(_)) => format!("{} · {tag}", tr("Ready")),
@@ -262,9 +262,9 @@ impl Launcher {
                         summary.map_or_else(|| tr("Modpack").into(), |p| p.summary()),
                     )
                 }
-                InstanceKind::Pack => (false, tr("From Horizon's registry").into()),
+                InstanceKind::Pack => (false, tr("From Foundry Client's registry").into()),
             };
-            // Java instances have nothing of Horizon's to prepare: no state square.
+            // Java instances have nothing of Foundry Client's to prepare: no state square.
             let state = (matches!(i.kind, InstanceKind::Default | InstanceKind::Own)
                 && i.java.is_none())
             .then_some(if prepared { t.success } else { t.warn });
@@ -340,7 +340,7 @@ impl Launcher {
                 loader: j
                     .loader
                     .as_ref()
-                    .map_or(horizon_launcher::loaders::Kind::Fabric, |l| l.kind),
+                    .map_or(foundry_launcher::loaders::Kind::Fabric, |l| l.kind),
                 version: Some(j.minecraft.clone()),
                 ..Default::default()
             },
@@ -363,7 +363,7 @@ impl Launcher {
             java,
         });
         self.servers.text(Field::InstanceVersion).set(String::new());
-        // A new one starts with the name it would get ("My Horizon"), until the player types one.
+        // A new one starts with the name it would get ("My Foundry Client"), until the player types one.
         if !editing_one {
             self.change(|_| {});
         }
@@ -458,7 +458,7 @@ impl Launcher {
                 return;
             }
         };
-        // A Horizon version picked but not installed downloads once the instance is saved.
+        // A Foundry Client version picked but not installed downloads once the instance is saved.
         let download = self
             .draft_horizon()
             .and_then(|tag| self.release_to_install(&tag));
@@ -498,10 +498,10 @@ impl Launcher {
         let copy = selected.filter(|_| d.copy);
         // The picture choice this save keeps: once kept, it is no longer an unsaved edit.
         let sent_picture = picture.clone();
-        // The Horizon version is Horizon's instances' alone: a Java one plays its own game.
-        let plays_horizon = d.java.kind == new_instance::NewKind::Horizon;
+        // The Foundry Client version is Foundry Client's instances' alone: a Java one plays its own game.
+        let plays_horizon = d.java.kind == new_instance::NewKind::Foundry Client;
         // A new Java instance: what it plays, and its name when none is typed.
-        let java = (editing.is_none() && d.java.kind != new_instance::NewKind::Horizon)
+        let java = (editing.is_none() && d.java.kind != new_instance::NewKind::Foundry Client)
             .then(|| d.java.clone());
         let minecraft = java.as_ref().map(|j| {
             j.minecraft(match &self.instances.versions {
@@ -547,7 +547,7 @@ impl Launcher {
                 instances::set_picture(
                     &instance.home,
                     png.as_deref(),
-                    &horizon_launcher::desktop_seams::to_trash,
+                    &foundry_launcher::desktop_seams::to_trash,
                 )?;
             }
             let instance = instances::edit(&id, |m| {
@@ -636,11 +636,11 @@ impl Launcher {
             d.busy,
             d.java.kind,
         );
-        let java = !editing && kind != new_instance::NewKind::Horizon;
+        let java = !editing && kind != new_instance::NewKind::Foundry Client;
         let n = t.night;
         let from = self
             .selected_instance()
-            .map_or_else(|| "Horizon".into(), |i| i.name.clone());
+            .map_or_else(|| "Foundry Client".into(), |i| i.name.clone());
         let row = |label: &'static str, control: AnyElement| {
             div()
                 .flex()
@@ -744,7 +744,7 @@ impl Launcher {
                     .into_any_element(),
             );
         }
-        // Nothing chosen: the instance's mark (its loader's, Horizon's), when it has one.
+        // Nothing chosen: the instance's mark (its loader's, Foundry Client's), when it has one.
         let mark = instance.as_ref().and_then(|i| self.instance_mark(i, 28.));
         tiles.push(
             tile("instance-icon-none".into(), icon.is_none() && !pictured)
@@ -1014,7 +1014,7 @@ impl Launcher {
 }
 
 impl Launcher {
-    /// Delete…, for every instance but Horizon's own (the game's home); not while a game runs.
+    /// Delete…, for every instance but Foundry Client's own (the game's home); not while a game runs.
     pub(super) fn delete_button(
         &self,
         instance: &Instance,
@@ -1101,7 +1101,7 @@ impl Launcher {
                 }
                 self.instances.confirm_delete = None;
                 self.instances.delete_error = None;
-                // Play starts Horizon again; the window's copy of the settings says so too.
+                // Play starts Foundry Client again; the window's copy of the settings says so too.
                 if self.settings.instance.as_deref() == Some(id) {
                     self.settings.instance = None;
                     self.save_settings();

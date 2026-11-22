@@ -114,7 +114,7 @@ loot tables are resource identifiers. Compostability is boolean.
 Builtin reads return canonical NBT compounds with the field above, rather than the
 input's shorthand: distances are `Float`, frequencies `Int`, compostability `Byte`, and
 identifiers `String`. Infinity remains an NBT Float, never JSON null. Biome values
-are queryable through `BiomeKey`; typed game-event coverage remains in arismoko/horizon#4199.
+are queryable through `BiomeKey`; typed game-event coverage remains in arismoko/foundry#4199.
 Registering these stores and firing `data_maps_updated` does not sync them to clients.
 
 The gameplay readers and structure generation use immutable world-owned snapshots.
@@ -145,7 +145,7 @@ files on every server data load, merged as your own maps are, and each load repl
 The axe reads the inverse maps before its own transform table: the oxidation inverse scrapes one
 stage back, the waxing inverse takes the wax off. They are derived from the forward maps on every
 load, never declared. Where several blocks share a next stage or a waxed twin, the one with the
-lowest block registry id is the one given back. That is a Horizon choice: NeoForge keeps whichever
+lowest block registry id is the one given back. That is a Foundry Client choice: NeoForge keeps whichever
 its map iteration met last.
 
 Random-tick oxidation, honeycomb, dispenser waxing and the axe each move exactly one step, so a
@@ -157,7 +157,7 @@ back to a block it already passed. Lightning's waxed check, the carved pumpkin a
 keep vanilla's own lists. A block the maps don't name keeps vanilla's behaviour.
 
 `generate_block_transform`, `neoforge:transformables` and `block_transform_appenders` are not read
-yet ([arismoko/horizon#3359](https://github.com/arismoko/horizon/issues/3359)).
+yet ([arismoko/foundry#3359](https://github.com/arismoko/foundry/issues/3359)).
 
 `host.biome_key("minecraft:plains")` resolves a `BiomeKey` in the installed
 server world registry. Its `id(host)` returns `Ok(canonical_id)`, and

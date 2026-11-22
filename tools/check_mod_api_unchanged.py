@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """Check that a change leaves the generated mod API as it was (docs/layers.md#the-mod-api-stays-put).
 
-This tool builds and runs the `hook_snapshot` example of `horizon-mod-api-gen` on the base and on the working tree, then
+This tool builds and runs the `hook_snapshot` example of `foundry-mod-api-gen` on the base and on the working tree, then
 compares what it wrote: the published loops (loops.json), the game internals a native mod may declare (internals.json),
 the hook catalog (catalog.json, hook-notes.md) and the guest's generated hook dispatch. It fails on:
 - a difference in loops.json;
 - a removed internals.json entry (one becoming `shape_only` too), unless a line of tools/mod_api_removed_internals.txt
   lists it (`path  #issue`, or `path  kind=<kind>  cfg=<cfg>  #issue` for some of a path's entries), and a line that
   lists an entry the head still has; with --allow-added, added and changed entries are listed and pass
-  (`cargo horizon-mod update` reports signature-hash changes for declared internals);
+  (`cargo foundry-mod update` reports signature-hash changes for declared internals);
 - a path a native mod could declare without a kind that gains a second kind (E_INTERNAL_AMBIGUOUS), always;
 - any other difference in the generated files, except a catalog hook added with --allow-added, which explains its
   generated catalog, new hook-notes sections (the others unchanged) and its own guest dispatch, and a host call added
@@ -26,9 +26,9 @@ removed (#19576), and a base that still writes them compares without them. The m
     python3 tools/check_mod_api_unchanged.py --store-snapshot DIR # CI, main's pushes and the merge queue: keep HEAD's
 
 `--store-snapshot` builds and runs the generator on HEAD and keeps its output in DIR/<commit>, beside a marker that
-records the key (STORE_FORMAT, the commit, the checkout's `rustc -vV`, HORIZON_POINT_NAMES, RUSTC, RUSTUP_TOOLCHAIN),
+records the key (STORE_FORMAT, the commit, the checkout's `rustc -vV`, FOUNDRY_POINT_NAMES, RUSTC, RUSTUP_TOOLCHAIN),
 the checkout's path and every file's SHA-256, with a digest over all of it; it writes under a temporary name and
-renames, and keeps the newest KEEP_SNAPSHOTS. A staged copy (`.horizon-source-staged`) stores nothing. CI passes DIR on
+renames, and keeps the newest KEEP_SNAPSHOTS. A staged copy (`.foundry-source-staged`) stores nothing. CI passes DIR on
 the build folder's sticky disk, which only main's pushes and the merge queue save, so a pull request (whose own copy of
 this script runs) can never leave a snapshot there; this script also refuses to store unless SAVE_BUILD_DISK is `true`.
 With `--snapshots`, a snapshot whose marker matches its digest and the base's key, and whose files all match their
@@ -585,7 +585,7 @@ def cargo(root, target_dir, side, verb, *extra):
     """`cargo build` or `cargo run` of the hook_snapshot example in the tree at `root`, quiet, and the seconds it took.
     Cargo's and the example's output is captured: nothing on success, the end of stderr on failure."""
     env = dict(os.environ, CARGO_TARGET_DIR=str(target_dir))
-    command = ["cargo", verb, "--locked", "--quiet", "-p", "horizon-mod-api-gen", "--example", "hook_snapshot", *extra]
+    command = ["cargo", verb, "--locked", "--quiet", "-p", "foundry-mod-api-gen", "--example", "hook_snapshot", *extra]
     start = time.monotonic()
     result = subprocess.run(command, cwd=root, env=env, capture_output=True, text=True, errors="replace")
     if result.returncode == 0:
@@ -616,7 +616,7 @@ KEEP_SNAPSHOTS = 30
 TEMPORARY = ".partial-"
 
 
-STAGED_STAMP = ".horizon-source-staged"
+STAGED_STAMP = ".foundry-source-staged"
 
 
 def toolchain(root):
@@ -651,7 +651,7 @@ def selects_base_toolchain(base, root=ROOT):
 def snapshot_key(commit, rustc, env=None):
     """Everything that decides a snapshot besides the commit's tree: the stored and the looked-up key must be equal."""
     env = os.environ if env is None else env
-    return {"format": STORE_FORMAT, "commit": commit, "rustc": rustc, "point_names": env.get("HORIZON_POINT_NAMES"),
+    return {"format": STORE_FORMAT, "commit": commit, "rustc": rustc, "point_names": env.get("FOUNDRY_POINT_NAMES"),
             "rustc_env": env.get("RUSTC"), "rustup_toolchain": env.get("RUSTUP_TOOLCHAIN")}
 
 

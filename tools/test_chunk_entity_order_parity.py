@@ -46,16 +46,16 @@ def vanilla():
         lock['minecraft']['java_major'])
     return subprocess.check_output([
         'java', '-cp', str(classes) + os.pathsep + dependencies,
-        'dev.horizonlab.parity.VanillaChunkEntityOrderOracle'], text=True)
+        'dev.foundrylab.parity.VanillaChunkEntityOrderOracle'], text=True)
 
 
 def engine():
-    resources = os.environ.get('HORIZON_TEST_RESOURCES') or str(lab.RESOURCES)
+    resources = os.environ.get('FOUNDRY_TEST_RESOURCES') or str(lab.RESOURCES)
     return subprocess.check_output([
-        'cargo', 'test', '-p', 'horizon-client', '--lib', TEST,
+        'cargo', 'test', '-p', 'foundry-client', '--lib', TEST,
         '--', '--ignored', '--exact', f'game::persist::lookup_order_tests::{TEST}',
         '--nocapture'],
-        cwd=lab.ROOT, text=True, env={**os.environ, 'HORIZON_TEST_RESOURCES': resources})
+        cwd=lab.ROOT, text=True, env={**os.environ, 'FOUNDRY_TEST_RESOURCES': resources})
 
 
 def main():

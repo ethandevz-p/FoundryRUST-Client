@@ -1,6 +1,6 @@
 //! The Wardrobe page (top bar, between Servers and Versions), in the glass look, shown when the
-//! cosmetics service has a founder set to show (`horizon_launcher::shop`, `watch_shop`), or with
-//! `HORIZON_COSMETICS=1`: the signed-in Microsoft account's skin wearing its items in 3D
+//! cosmetics service has a founder set to show (`foundry_launcher::shop`, `watch_shop`), or with
+//! `FOUNDRY_COSMETICS=1`: the signed-in Microsoft account's skin wearing its items in 3D
 //! (`viewer`: drag to turn, scroll to zoom, a hovered card tries its item on), a
 //! row per slot, what the account owns for the chosen slot, the purchase history, one plain button
 //! to the Shop tab ("Get more cosmetics"; `shop.rs`: browsing, prices, the
@@ -8,18 +8,18 @@
 //! `Claim::here`, decided by the service), and three switches:
 //! Show my cosmetics (the account's, on the service), Hide
 //! other players' cosmetics and Hide other players' trails and auras (the game's
-//! `horizon-extras.txt`, `horizon_cosmetics::prefs`, also in its settings).
+//! `foundry-extras.txt`, `foundry_cosmetics::prefs`, also in its settings).
 //!
 //! It opens on the outfit kept on disk (`wardrobe::Saved`), so it shows offline and when the
 //! service fails; a change shows at once and waits on disk until the service takes it. The talking
-//! is `horizon_launcher::wardrobe`'s, on a background thread.
+//! is `foundry_launcher::wardrobe`'s, on a background thread.
 use super::*;
 use crate::glass_ui as ui;
 use gpui::RenderImage;
-use horizon_cosmetics::prefs::{self, Others, Prefs};
-use horizon_cosmetics::{Item, Slot, Texture};
-use horizon_launcher::wardrobe::{Catalogue, Change, ClaimState, Error, Saved, Service, Session};
-use horizon_theme::glass::{fill, ink, radius};
+use foundry_cosmetics::prefs::{self, Others, Prefs};
+use foundry_cosmetics::{Item, Slot, Texture};
+use foundry_launcher::wardrobe::{Catalogue, Change, ClaimState, Error, Saved, Service, Session};
+use foundry_theme::glass::{fill, ink, radius};
 use servers_page::Field;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -97,7 +97,7 @@ fn dir() -> std::path::PathBuf {
 
 /// The game language whose item names the launcher's language reads.
 fn game_language() -> &'static str {
-    match horizon_launcher::i18n::current().code() {
+    match foundry_launcher::i18n::current().code() {
         "fr" => "fr_fr",
         "de" => "de_de",
         _ => "en_us",
@@ -110,11 +110,11 @@ fn game_language() -> &'static str {
 fn skin(account: &account::Account, resources: &std::path::Path) -> Option<(Arc<Texture>, bool)> {
     let own = account.skin.as_ref().and_then(|(url, model)| {
         let cache = backend::data_dir().join("profile-heads");
-        let png = horizon_launcher::heads::cached_skin(url, &cache)?;
+        let png = foundry_launcher::heads::cached_skin(url, &cache)?;
         Some((skin_texture(&png)?, model == "slim"))
     });
     own.or_else(|| {
-        let (file, slim) = horizon_launcher::heads::default_skin_file(resources, &account.uuid)?;
+        let (file, slim) = foundry_launcher::heads::default_skin_file(resources, &account.uuid)?;
         Some((skin_texture(&std::fs::read(file).ok()?)?, slim))
     })
 }
@@ -150,7 +150,7 @@ fn plain() -> Texture {
     }
 }
 
-/// Horizon's stand-in player, the website shop's own (`standInSkin` in horizon-site's
+/// Foundry Client's stand-in player, the website shop's own (`standInSkin` in foundry-site's
 /// `components/shop/model.ts`): original art painted from rows, not Mojang's. The Shop dresses it
 /// when the account has no skin the preview can read, so its pictures match the website's.
 fn stand_in() -> Texture {
@@ -367,7 +367,7 @@ fn tell_the_game(uuid: &str, saved: &Saved) {
     let home = backend::game_home();
     // Whether it owns a cosmetic: the game shows others' to an owner who chose nothing.
     if let Err(e) = prefs::set_owned(&home, uuid, !me.owned.is_empty()) {
-        eprintln!("Horizon: the cosmetics ownership is not saved: {e}");
+        eprintln!("Foundry Client: the cosmetics ownership is not saved: {e}");
     }
     if saved
         .pending
@@ -377,7 +377,7 @@ fn tell_the_game(uuid: &str, saved: &Saved) {
         return;
     }
     if let Err(e) = prefs::set_confirmed(&home, uuid, me.visible) {
-        eprintln!("Horizon: the cosmetics confirmation is not saved: {e}");
+        eprintln!("Foundry Client: the cosmetics confirmation is not saved: {e}");
     }
     let wish = Prefs::load(&home);
     if wish.mine != me.visible {
@@ -386,7 +386,7 @@ fn tell_the_game(uuid: &str, saved: &Saved) {
             ..wish
         };
         if let Err(e) = switches.save(&home) {
-            eprintln!("Horizon: the cosmetics switches are not saved: {e}");
+            eprintln!("Foundry Client: the cosmetics switches are not saved: {e}");
         }
     }
 }
@@ -450,7 +450,7 @@ impl Launcher {
             };
             trip.result = refresh(&service, &account, &mut trip);
             if let Err(e) = trip.saved.save(&dir(), &account.uuid) {
-                eprintln!("Horizon: the outfit is not saved: {e}");
+                eprintln!("Foundry Client: the outfit is not saved: {e}");
             }
             // The account's own skin may have reached the profile heads' cache meanwhile (its
             // first download runs at start, beside this).
@@ -480,8 +480,8 @@ impl Launcher {
             .and_then(|w| w.saved.me.as_ref())
             .map(|m| &m.claim)
             .or(self.shop_kept.as_ref());
-        horizon_launcher::shop::in_top_bar(
-            horizon_cosmetics::forced(),
+        foundry_launcher::shop::in_top_bar(
+            foundry_cosmetics::forced(),
             self.shop_status.as_ref(),
             own,
         )
@@ -603,12 +603,12 @@ impl Launcher {
                 ..Prefs::load(&home)
             };
             if let Err(e) = switches.save(&home) {
-                eprintln!("Horizon: the cosmetics switches are not saved: {e}");
+                eprintln!("Foundry Client: the cosmetics switches are not saved: {e}");
             }
         }
         w.saved.change(change);
         if let Err(e) = w.saved.save(&dir(), &w.uuid) {
-            eprintln!("Horizon: the outfit is not saved: {e}");
+            eprintln!("Foundry Client: the outfit is not saved: {e}");
         }
         self.restyle = true;
         let Some(w) = self.wardrobe.as_mut() else {
@@ -630,7 +630,7 @@ impl Launcher {
         let task = cx.background_executor().spawn(async move {
             let result = Service::live().sync(&session, &mut saved);
             if let Err(e) = saved.save(&dir(), &uuid) {
-                eprintln!("Horizon: the outfit is not saved: {e}");
+                eprintln!("Foundry Client: the outfit is not saved: {e}");
             }
             Trip {
                 saved,
@@ -671,7 +671,7 @@ impl Launcher {
                 }
             }
             if let Err(e) = saved.save(&dir(), &uuid) {
-                eprintln!("Horizon: the outfit is not saved: {e}");
+                eprintln!("Foundry Client: the outfit is not saved: {e}");
             }
             let said = match &result {
                 Ok(()) => tr("The Founder Set is yours.").to_string(),
@@ -712,14 +712,14 @@ impl Launcher {
         .detach();
     }
 
-    /// `HORIZON_LAUNCHER_PAGE=wardrobe` (or `shop`) in a development build: the page for a made-up account
-    /// that owns the items of `HORIZON_COSMETICS_LOCAL` and wears the first of each slot, for
+    /// `FOUNDRY_LAUNCHER_PAGE=wardrobe` (or `shop`) in a development build: the page for a made-up account
+    /// that owns the items of `FOUNDRY_COSMETICS_LOCAL` and wears the first of each slot, for
     /// screenshots. Nothing is asked of Mojang or the service, and nothing is saved.
-    /// `HORIZON_WARDROBE_STATE=offline|failed|empty|no_paddle` shows that state instead, and
-    /// `HORIZON_COSMETICS_CATALOGUE=<file>` the shop of a saved `GET /v1/catalogue`.
+    /// `FOUNDRY_WARDROBE_STATE=offline|failed|empty|no_paddle` shows that state instead, and
+    /// `FOUNDRY_COSMETICS_CATALOGUE=<file>` the shop of a saved `GET /v1/catalogue`.
     pub(super) fn wardrobe_preview(&mut self) {
-        use horizon_launcher::wardrobe::{Claim, Entry, Me, Purchase};
-        let Some(dir) = std::env::var_os("HORIZON_COSMETICS_LOCAL") else {
+        use foundry_launcher::wardrobe::{Claim, Entry, Me, Purchase};
+        let Some(dir) = std::env::var_os("FOUNDRY_COSMETICS_LOCAL") else {
             return;
         };
         let mut items: Vec<Item> = std::fs::read_dir(dir)
@@ -730,33 +730,33 @@ impl Launcher {
             .collect();
         // The founder set's order: head, shirt, back, name tag.
         let order = |i: &Item| {
-            use horizon_cosmetics::Slot::*;
+            use foundry_cosmetics::Slot::*;
             [Head, Torso, Back, Shoulder, Companion, Trail, Aura, NameTag]
                 .iter()
                 .position(|s| *s == i.slot)
         };
         items.sort_by(|a, b| order(a).cmp(&order(b)).then(a.id.cmp(&b.id)));
         let slot = |i: &Item| match i.slot {
-            horizon_cosmetics::Slot::Head => "head",
-            horizon_cosmetics::Slot::Back => "back",
-            horizon_cosmetics::Slot::Torso => "torso",
-            horizon_cosmetics::Slot::Shoulder => "shoulder",
-            horizon_cosmetics::Slot::NameTag => "name_tag",
-            horizon_cosmetics::Slot::Emote => "emote",
-            horizon_cosmetics::Slot::Companion => "companion",
-            horizon_cosmetics::Slot::Trail => "trail",
-            horizon_cosmetics::Slot::Aura => "aura",
+            foundry_cosmetics::Slot::Head => "head",
+            foundry_cosmetics::Slot::Back => "back",
+            foundry_cosmetics::Slot::Torso => "torso",
+            foundry_cosmetics::Slot::Shoulder => "shoulder",
+            foundry_cosmetics::Slot::NameTag => "name_tag",
+            foundry_cosmetics::Slot::Emote => "emote",
+            foundry_cosmetics::Slot::Companion => "companion",
+            foundry_cosmetics::Slot::Trail => "trail",
+            foundry_cosmetics::Slot::Aura => "aura",
         };
-        let state = std::env::var("HORIZON_WARDROBE_STATE").unwrap_or_default();
+        let state = std::env::var("FOUNDRY_WARDROBE_STATE").unwrap_or_default();
         let mut equipped = std::collections::BTreeMap::new();
         for i in &items {
             equipped
                 .entry(slot(i).to_owned())
                 .or_insert_with(|| i.id.clone());
         }
-        // `HORIZON_COSMETICS_CATALOGUE=<file>`: a catalogue as the service answers it (prices,
+        // `FOUNDRY_COSMETICS_CATALOGUE=<file>`: a catalogue as the service answers it (prices,
         // sets, collections), the account owning only its founder set.
-        let sold: Option<Catalogue> = std::env::var_os("HORIZON_COSMETICS_CATALOGUE")
+        let sold: Option<Catalogue> = std::env::var_os("FOUNDRY_COSMETICS_CATALOGUE")
             .and_then(|f| serde_json::from_slice(&std::fs::read(f).ok()?).ok());
         let mut ids: Vec<String> = items.iter().map(|i| i.id.clone()).collect();
         if let Some(c) = &sold {
@@ -843,8 +843,8 @@ impl Launcher {
             });
         }
         // A page switch reads accounts.json again, which doesn't hold this one: switch first.
-        // `HORIZON_LAUNCHER_PAGE=shop`: the Shop, the founder set tried on.
-        let shop = std::env::var("HORIZON_LAUNCHER_PAGE").as_deref() == Ok("shop");
+        // `FOUNDRY_LAUNCHER_PAGE=shop`: the Shop, the founder set tried on.
+        let shop = std::env::var("FOUNDRY_LAUNCHER_PAGE").as_deref() == Ok("shop");
         self.go(if shop { Page::Shop } else { Page::Wardrobe });
         if shop {
             self.shop.preview();
@@ -860,14 +860,14 @@ impl Launcher {
                 .collect(),
             session: (state != "empty")
                 .then(|| Arc::new(Session::preview(&account.uuid, &account.name))),
-            // `HORIZON_COSMETICS_SKIN=<png>`: a skin to wear.
-            skin: std::env::var_os("HORIZON_COSMETICS_SKIN")
+            // `FOUNDRY_COSMETICS_SKIN=<png>`: a skin to wear.
+            skin: std::env::var_os("FOUNDRY_COSMETICS_SKIN")
                 .and_then(|f| skin_texture(&std::fs::read(f).ok()?))
                 .map(|s| (s, false)),
             status: match state.as_str() {
                 "offline" => Status::Offline,
                 "failed" => {
-                    Status::Failed("cosmetics.playhorizon.dev · 503 · 2026-11-02 21:40".into())
+                    Status::Failed("cosmetics.playfoundry.dev · 503 · 2026-11-02 21:40".into())
                 }
                 _ => Status::Ready,
             },
@@ -935,7 +935,7 @@ impl Launcher {
             .is_some_and(|me| me.owned.is_empty());
         let header = page_header(
             "Wardrobe",
-            "What you wear in every Horizon world and server. Changes reach other players the next \
+            "What you wear in every Foundry Client world and server. Changes reach other players the next \
              time they see you.",
             &t,
         );
@@ -1071,13 +1071,13 @@ impl Launcher {
                 .get_or_bake(id, hash, scale, || Self::wardrobe_mark(i, scale))
                 .clone()
         });
-        // As the game draws it: Horizon's mark before the name (unless the game's "Show me as a
-        // Horizon player" is off), the style's badge after it.
-        let horizon = prefs::listed(&backend::game_home()).then(|| {
+        // As the game draws it: Foundry Client's mark before the name (unless the game's "Show me as a
+        // Foundry Client player" is off), the style's badge after it.
+        let foundry = prefs::listed(&backend::game_home()).then(|| {
             let scale = self.scale;
             self.wardrobe_marks
-                .get_or_bake("horizon", "mark", scale, || {
-                    art::bake(&horizon_cosmetics::mark::texels(), 8, 8, 2., scale)
+                .get_or_bake("foundry", "mark", scale, || {
+                    art::bake(&foundry_cosmetics::mark::texels(), 8, 8, 2., scale)
                 })
                 .clone()
         });
@@ -1088,7 +1088,7 @@ impl Launcher {
             .px(px(8.))
             .py(px(3.))
             .bg(gpui::rgba(0x0000_0066))
-            .children(horizon.map(|m| gpui::img(m).size(px(16.))))
+            .children(foundry.map(|m| gpui::img(m).size(px(16.))))
             .child(
                 div()
                     .font_family(theme::MONO)
@@ -1318,7 +1318,7 @@ impl Launcher {
     }
 
     /// The Wardrobe's one way to the Shop tab, a plain secondary button (the Shop has the
-    /// cosmetics to try on and buy; paying happens on playhorizon.dev).
+    /// cosmetics to try on and buy; paying happens on playfoundry.dev).
     fn shop_link(&self, id: &'static str, cx: &mut Context<Self>) -> Stateful<Div> {
         let label = "Get more cosmetics";
         button(id, label, Kind::Secondary, &self.theme).on_click(cx.listener(
@@ -1516,7 +1516,7 @@ impl Launcher {
             let home = home.clone();
             move |_: &ClickEvent, _: &mut Window, cx: &mut App| {
                 if let Err(e) = prefs.save(&home) {
-                    eprintln!("Horizon: the cosmetics switches are not saved: {e}");
+                    eprintln!("Foundry Client: the cosmetics switches are not saved: {e}");
                 }
                 cx.refresh_windows();
             }
@@ -1544,7 +1544,7 @@ impl Launcher {
                     "wardrobe-others",
                     hidden,
                     "Hide other players' cosmetics",
-                    "Others look like plain players to you. Also in the game's Horizon settings.",
+                    "Others look like plain players to you. Also in the game's Foundry Client settings.",
                 )
                 .on_click(save(Prefs {
                     others: Some(if hidden {
@@ -1560,7 +1560,7 @@ impl Launcher {
                     "wardrobe-hide-fx",
                     prefs.hide_fx,
                     "Hide other players' trails and auras",
-                    "Off by default. Also in the game's Horizon settings.",
+                    "Off by default. Also in the game's Foundry Client settings.",
                 )
                 .on_click(save(Prefs {
                     hide_fx: !prefs.hide_fx,

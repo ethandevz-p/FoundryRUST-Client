@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Tame wolves left behind by their owner on a dedicated server, against vanilla's, seen by a vanilla client.
 
-A vanilla dedicated server and Horizon's (`horizon-client --dedicated --nogui`) each serve a copy of one flat world
+A vanilla dedicated server and Foundry Client's (`foundry-client --dedicated --nogui`) each serve a copy of one flat world
 vanilla generated first, with Alice an operator. Three standing wolves she owns wait near her: one free, one on a lead
 held by a pig that never moves (NoAI), one sitting in a boat. She then teleports 40 blocks away.
 `TamableAnimal.shouldTryTeleportToOwner` (12 blocks or more) sends a pet to its owner unless `unableToMoveToOwner`:
@@ -9,7 +9,7 @@ ordered to sit, `isPassenger`, `mayBeLeashed` or an owner who is a spectator. So
 Whether each wolf is within 16 blocks of Alice afterwards is compared. Where exactly a teleported wolf lands is a random
 draw, not under test, and so is what it does next: a tame wolf still strolls (`WaterAvoidingRandomStrollGoal`, up to 10
 blocks) and only follows its owner back from 10 blocks (`FollowOwnerGoal`), teleporting again from 12. A wolf that came
-can be 6 to 12 blocks from her a few seconds later, in vanilla as in Horizon; a wolf that stayed behind is 28 or more.
+can be 6 to 12 blocks from her a few seconds later, in vanilla as in Foundry Client; a wolf that stayed behind is 28 or more.
 """
 import re
 import sys
@@ -33,7 +33,7 @@ SCRIPT = [
                f'cmd Alice summon minecraft:wolf 2.5 -60 6.5 {{{WOLF},Tags:["leashed"],leash:{{UUID:{HOLDER}}}}}',
                # The boat stands 21 blocks from the free wolf, past one stroll: a boat takes in a mob that touches
                # it (AbstractBoat.tick), and a free wolf that strolled into it 6 blocks away stayed behind as a
-               # passenger: 3 of 40 vanilla runs, which `one_player` re-runs; Horizon's run never is (#18133).
+               # passenger: 3 of 40 vanilla runs, which `one_player` re-runs; Foundry Client's run never is (#18133).
                f'cmd Alice summon minecraft:oak_boat 0.5 -60 -14.5 '
                f'{{Passengers:[{{id:"minecraft:wolf",{WOLF},Tags:["boat"]}}]}}']),
     ('away', ['cmd Alice tp @s 0.5 -60 40.5']),

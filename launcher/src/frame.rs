@@ -6,8 +6,8 @@ use super::*;
 use crate::glass_ui::{self as ui, white, Tone};
 use crate::instances_page::java_line;
 use gpui::{anchored, canvas, deferred, point};
-use horizon_launcher::instances::{Icon, Instance, Kind as InstanceKind};
-use horizon_theme::glass::{fill, ink, radius};
+use foundry_launcher::instances::{Icon, Instance, Kind as InstanceKind};
+use foundry_theme::glass::{fill, ink, radius};
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -66,7 +66,7 @@ pub fn keep_clear(w: f32, h: f32, home: bool) -> rain::Keep {
 }
 
 /// How the rail opens and shuts: quick, settling from a little past its width.
-const RAIL_MOTION: horizon_theme::Motion = horizon_theme::Motion {
+const RAIL_MOTION: foundry_theme::Motion = foundry_theme::Motion {
     name: "rail",
     ms: 320,
     curve: [0.22, 0.9, 0.3, 1.08],
@@ -94,9 +94,9 @@ impl Rail {
     /// opened is still open (a row's menu), so it stays open without the pointer. Frames are asked
     /// for only while it moves; under reduced motion it jumps.
     pub fn progress(&mut self, window: &mut Window, pinned: bool) -> f32 {
-        // `HORIZON_LAUNCHER_RAIL_OPEN=1` holds it open, for screenshots.
+        // `FOUNDRY_LAUNCHER_RAIL_OPEN=1` holds it open, for screenshots.
         static HELD: std::sync::LazyLock<bool> =
-            std::sync::LazyLock::new(|| std::env::var_os("HORIZON_LAUNCHER_RAIL_OPEN").is_some());
+            std::sync::LazyLock::new(|| std::env::var_os("FOUNDRY_LAUNCHER_RAIL_OPEN").is_some());
         let want = self.hovered || pinned || *HELD;
         if want != self.open {
             self.open = want;
@@ -145,13 +145,13 @@ fn measure(rows: &Rc<RefCell<HashMap<String, Bounds<Pixels>>>>, id: String) -> i
 }
 
 impl Launcher {
-    /// An instance's icon (`InstanceIcon`), `size` square with no frame: Horizon's mark tile for
-    /// Horizon's own instance; else its picture or the block chosen for it, round at 26 %; else
+    /// An instance's icon (`InstanceIcon`), `size` square with no frame: Foundry Client's mark tile for
+    /// Foundry Client's own instance; else its picture or the block chosen for it, round at 26 %; else
     /// its loader's or Minecraft's mark; else its initial on its colour (the accent when none was
     /// chosen), as `ColorTile` draws it.
     pub(super) fn glass_instance_icon(&mut self, i: &Instance, size: f32) -> AnyElement {
         if i.kind == InstanceKind::Default && i.icon.is_none() {
-            return self.horizon_mark(size);
+            return self.foundry_mark(size);
         }
         if let Some(picture) = self.instance_picture(i, size) {
             return instance_icons::centred(picture, size, self.scale).into_any_element();
@@ -171,7 +171,7 @@ impl Launcher {
                         .into_any_element();
                 }
             }
-            // A Horizon instance with no icon of its own: its initial on a colour of the
+            // A Foundry Client instance with no icon of its own: its initial on a colour of the
             // picker's, the same each time for the same instance, so several read apart on
             // the rail. Java and modded ones keep their game's or loader's mark.
             None if i.java.is_none() && i.kind != InstanceKind::Port => {
@@ -198,9 +198,9 @@ impl Launcher {
             .rounded(r)
             .bg(ui::color(colour))
             .font_family(if letter >= 40. {
-                horizon_theme::glass::DISPLAY_FONT
+                foundry_theme::glass::DISPLAY_FONT
             } else {
-                horizon_theme::glass::HEADING_FONT
+                foundry_theme::glass::HEADING_FONT
             })
             .font_weight(FontWeight::SEMIBOLD)
             .text_size(px(letter))
@@ -235,7 +235,7 @@ impl Launcher {
                     ),
                     (None, None, None) => (Tone::Off, tr("No version installed").into()),
                     // Following the launcher's version, which has a newer one waiting.
-                    (None, Some(_), None) if self.updates.horizon.is_some() => (
+                    (None, Some(_), None) if self.updates.foundry.is_some() => (
                         Tone::Accent(self.look.accent_soft),
                         tr("Update available").into(),
                     ),
@@ -246,7 +246,7 @@ impl Launcher {
                             Tone::Live,
                             trf(
                                 "Native build · {version}",
-                                &[("version", &build.horizon_short())],
+                                &[("version", &build.foundry_short())],
                             ),
                         )
                     }
@@ -262,7 +262,7 @@ impl Launcher {
                     summary.map_or_else(|| tr("Modpack").into(), |p| p.summary()),
                 )
             }
-            InstanceKind::Pack => (Tone::Off, tr("From Horizon's registry").into()),
+            InstanceKind::Pack => (Tone::Off, tr("From Foundry Client's registry").into()),
         }
     }
 
@@ -310,7 +310,7 @@ impl Launcher {
                 &self.rooms,
                 &room_key,
                 &i.name,
-                horizon_theme::glass::FONT,
+                foundry_theme::glass::FONT,
                 14.,
                 FontWeight::SEMIBOLD,
             );
@@ -1400,7 +1400,7 @@ impl Launcher {
                     },
                 )),
             );
-        // Horizon's own instance can't be deleted, nor one while a game runs.
+        // Foundry Client's own instance can't be deleted, nor one while a game runs.
         let can_delete = instance.kind != InstanceKind::Default
             && self.client.is_none()
             && self.starting_client.is_none();

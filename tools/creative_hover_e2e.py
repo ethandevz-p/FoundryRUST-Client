@@ -22,8 +22,8 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--game', type=Path, default=lab.binary(ROOT / 'target/fast', 'horizon-client'))
-    parser.add_argument('--ctl', type=Path, default=lab.binary(ROOT / 'target/fast', 'horizon-ctl'))
+    parser.add_argument('--game', type=Path, default=lab.binary(ROOT / 'target/fast', 'foundry-client'))
+    parser.add_argument('--ctl', type=Path, default=lab.binary(ROOT / 'target/fast', 'foundry-ctl'))
     parser.add_argument('--resources', type=Path, default=lab.RESOURCES)
     parser.add_argument('--output', type=Path)
     args = parser.parse_args()
@@ -33,8 +33,8 @@ def main():
     classes, dependencies, _ = oracle.compile_oracle(
         output, 'VanillaSlotHoverOracle', jars, libraries, lock['minecraft']['java_major'])
     homes = {}
-    for key in ('HORIZON_HOME', 'HORIZON_LAUNCHER_HOME', 'XDG_DATA_HOME', 'XDG_CONFIG_HOME',
-                'HORIZON_LAUNCHER_TRASH', 'HORIZON_LAUNCHER_CLIPBOARD', 'HORIZON_LAUNCHER_DESKTOP'):
+    for key in ('FOUNDRY_HOME', 'FOUNDRY_LAUNCHER_HOME', 'XDG_DATA_HOME', 'XDG_CONFIG_HOME',
+                'FOUNDRY_LAUNCHER_TRASH', 'FOUNDRY_LAUNCHER_CLIPBOARD', 'FOUNDRY_LAUNCHER_DESKTOP'):
         homes[key] = output / key
         homes[key].mkdir(exist_ok=True)
     env = lab.game_env(**homes)

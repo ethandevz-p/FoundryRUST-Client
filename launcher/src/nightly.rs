@@ -1,6 +1,6 @@
-//! Nightly (docs/release-flow.md): the only build Horizon ships since 2026-10-28, main plus the pull
+//! Nightly (docs/release-flow.md): the only build Foundry Client ships since 2026-10-28, main plus the pull
 //! requests the trusted reviewers picked, published as the `nightly` pre-release a few times a day.
-//! Every launcher installs it as its update (`backend::horizon_update`), as its own version
+//! Every launcher installs it as its update (`backend::foundry_update`), as its own version
 //! `nightly-<date>-<commit>`, beside the player's worlds, which it never touches. Its checksums must
 //! be signed for the nightly channel (`signed::build_digest`).
 //!
@@ -8,7 +8,7 @@
 //! that instance, and its worlds, stay, and keep following the Nightly.
 use crate::backend::{self, Release};
 use crate::instances;
-use horizon_release_sign::NIGHTLY;
+use foundry_release_sign::NIGHTLY;
 
 /// The id of the instance (its folder in `instances/`) the opt-in Nightly played in.
 pub const INSTANCE: &str = "nightly";
@@ -232,7 +232,7 @@ pub struct StableBuild {
     pub week: Option<String>,
 }
 
-/// The last game release before Horizon shipped only Nightlies (docs/release-flow.md, "Nightly
+/// The last game release before Foundry Client shipped only Nightlies (docs/release-flow.md, "Nightly
 /// channel"). It and every older tag stay full releases on GitHub, so `releases/latest` keeps
 /// pointing at a game build for servers, but they are too old to be Stable.
 const LAST_BEFORE_NIGHTLIES: &str = "v0.2.97";
@@ -382,7 +382,7 @@ mod tests {
             body: String::new(),
             date: String::new(),
             time: String::new(),
-            asset: asset.then(|| ("horizon.tar.gz".into(), 1)),
+            asset: asset.then(|| ("foundry.tar.gz".into(), 1)),
             prerelease: false,
             nightly: nightly.then(|| "nightly".into()),
         }
@@ -558,7 +558,7 @@ mod tests {
             body: String::new(),
             date: date.into(),
             time: String::new(),
-            asset: Some(("https://example/horizon.zip".into(), 1)),
+            asset: Some(("https://example/foundry.zip".into(), 1)),
             prerelease: true,
             nightly: None,
         }
@@ -573,7 +573,7 @@ mod tests {
         assert_eq!(date_of(&version_of(&r)), Some("2026-10-28"));
         assert_eq!(date_of("v0.2.95"), None);
         assert_eq!(date_of("nightly"), None);
-        assert!(horizon_release_sign::is_nightly(&version_of(&r)));
+        assert!(foundry_release_sign::is_nightly(&version_of(&r)));
     }
 
     #[test]

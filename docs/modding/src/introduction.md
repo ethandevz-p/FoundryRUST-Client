@@ -1,15 +1,15 @@
-# Modding Horizon
+# Modding Foundry Client
 
-<p class="lede">Horizon is Minecraft: Java Edition 26.3 written in Rust. This book shows you how to make mods
+<p class="lede">Foundry Client is Minecraft: Java Edition 26.3 written in Rust. This book shows you how to make mods
 for it: new blocks and items from data files, and Rust code that hooks into the game.</p>
 
-![A Horizon mod is one .hmod package. Its horizon-mod.toml manifest, assets/ and data/ are read by every
+![A Foundry Client mod is one .hmod package. Its foundry-mod.toml manifest, assets/ and data/ are read by every
 game. A content mod stops there; a code mod adds a Rust crate, built either natively by the launcher or to
 mod.wasm for the game's sandbox.](images/mod-kinds.svg)
 
 ## Three kinds of mod, one package
 
-Every Horizon mod ships as one `.hmod` file: a zip holding a `horizon-mod.toml` manifest, the mod's
+Every Foundry Client mod ships as one `.hmod` file: a zip holding a `foundry-mod.toml` manifest, the mod's
 `assets/` and `data/` folders, and, for a code mod, its Rust source or compiled `mod.wasm`.
 
 | Kind | What it holds | How it runs |
@@ -18,7 +18,7 @@ Every Horizon mod ships as one `.hmod` file: a zip holding a `horizon-mod.toml` 
 | **Native mod** | A Rust crate using the mod API, beside its content | The launcher compiles it on the player's machine against the exact game build it runs with. Full speed, full trust. |
 | **WebAssembly mod** | `mod.wasm`, built from the same Rust source | The game runs it in a sandbox with limits on time and memory. No compiler on the player's machine. |
 
-Native and WebAssembly mods are written against the same API, `mod_api` (the `horizon-mod-api` crate),
+Native and WebAssembly mods are written against the same API, `mod_api` (the `foundry-mod-api` crate),
 with the same hooks, Parts, attachments and `[dependencies]`. The build target is the only difference.
 
 ## Where to start
@@ -48,5 +48,5 @@ The same Rust, built to `mod.wasm` and run in the game's sandbox.
 - **Reference** lists the manifest, the package and registry formats, and links the
   [API reference](reference/api.md), which documents every hook, event and `Host` method.
 
-An example mod lives at <https://github.com/arismoko/horizon-machine-sample>.
+An example mod lives at <https://github.com/arismoko/foundry-machine-sample>.
 A coding agent can start from [`llms.txt`](llms.txt).

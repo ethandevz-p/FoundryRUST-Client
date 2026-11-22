@@ -48,9 +48,9 @@ def main():
     report.unlink(missing_ok=True)
     classes = build / 'classes'
     classes.mkdir(exist_ok=True)
-    oracle = lab.ROOT / 'mods/horizon/src/test/java/dev/horizonlab/parity/VanillaServerAddressOracle.java'
-    sources = [oracle, lab.ROOT / 'crates/horizon-protocol/src/servers.rs',
-               lab.ROOT / 'crates/horizon-protocol/examples/server_address_parse_probe.rs',
+    oracle = lab.ROOT / 'mods/foundry/src/test/java/dev/foundrylab/parity/VanillaServerAddressOracle.java'
+    sources = [oracle, lab.ROOT / 'crates/foundry-protocol/src/servers.rs',
+               lab.ROOT / 'crates/foundry-protocol/examples/server_address_parse_probe.rs',
                lab.ROOT / 'tools/test_server_address_parity.py']
     hashes = base.source_hashes(sources)
     _, game = lab.config()
@@ -72,16 +72,16 @@ def main():
     run(['javac', '--release', lock['minecraft']['java_major'], '-proc:none',
          '-cp', classpath, '-d', classes, oracle], 'compile-java')
     expected = run(['java', '-cp', str(classes) + os.pathsep + classpath,
-                    'dev.horizonlab.parity.VanillaServerAddressOracle'], 'vanilla')
-    actual = run(['cargo', 'test', '-p', 'horizon-protocol', '--lib',
+                    'dev.foundrylab.parity.VanillaServerAddressOracle'], 'vanilla')
+    actual = run(['cargo', 'test', '-p', 'foundry-protocol', '--lib',
                   'resolver::tests::login_handshake_address_matches_vanilla', '--', '--nocapture'], 'rust')
     if len(expected) != 3 or actual != expected:
-        raise AssertionError(f'vanilla: {expected!r}; Horizon: {actual!r}')
+        raise AssertionError(f'vanilla: {expected!r}; Foundry Client: {actual!r}')
     inputs = address_cases()
     lab.write_json(build / 'addresses.json', inputs)
     run(['java', '-cp', str(classes) + os.pathsep + classpath,
-         'dev.horizonlab.parity.VanillaServerAddressOracle', build / 'addresses.json', build / 'java-parse.json'], 'vanilla-parse')
-    run(['cargo', 'run', '--locked', '-p', 'horizon-protocol', '--example', 'server_address_parse_probe', '--',
+         'dev.foundrylab.parity.VanillaServerAddressOracle', build / 'addresses.json', build / 'java-parse.json'], 'vanilla-parse')
+    run(['cargo', 'run', '--locked', '-p', 'foundry-protocol', '--example', 'server_address_parse_probe', '--',
          build / 'addresses.json', build / 'rust-parse.json'], 'rust-parse')
     java = json.loads((build / 'java-parse.json').read_text(encoding='utf-8'))
     rust = json.loads((build / 'rust-parse.json').read_text(encoding='utf-8'))

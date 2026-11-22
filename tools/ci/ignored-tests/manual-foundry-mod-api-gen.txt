@@ -1,0 +1,3 @@
+# foundry-mod-api-gen's ignored tests that never run in the daily shards, and who runs them (README.md: `manual`).
+foundry-mod-api-gen patch::census::refusal_census by-hand manual # measurement: prints the census
+foundry-mod-api-gen patch::spike::write_patch_crate by-hand manual # manual: writes a patch crate

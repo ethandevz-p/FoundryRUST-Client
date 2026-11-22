@@ -1,6 +1,6 @@
 name: parity
-# The vanilla harnesses a pull request's changes can affect, on the Mac mini's runner or playhorizon's, which hold the
-# maintainer's own Minecraft files (Horizon never downloads the game). Called by ci.yml for pull requests from this repository
+# The vanilla harnesses a pull request's changes can affect, on the Mac mini's runner or playfoundry's, which hold the
+# maintainer's own Minecraft files (Foundry Client never downloads the game). Called by ci.yml for pull requests from this repository
 # and by run-parity.yml when a maintainer labels a fork's pull request run-parity. See docs/release-flow.md.
 on:
   workflow_call:
@@ -16,7 +16,7 @@ on:
       full:
         description: >-
           The pull request carries the full-parity label (a change every harness reaches, such as a crate split): it
-          runs on playhorizon's runner only, so the Mac mini's runners stay free for the others. While that runner is
+          runs on playfoundry's runner only, so the Mac mini's runners stay free for the others. While that runner is
           busy the job waits for it.
         type: boolean
         default: false
@@ -30,12 +30,12 @@ permissions:
   contents: read
 env:
   # Test runs never reach the telemetry server: no live-count ping, no uploads (docs/telemetry.md).
-  HORIZON_TELEMETRY_URL: "off"
+  FOUNDRY_TELEMETRY_URL: "off"
 
 jobs:
   parity:
-    runs-on: ${{ inputs.full && fromJSON('["self-hosted", "horizon-game", "playhorizon"]') || fromJSON('["self-hosted", "horizon-game"]') }}
-    # A change to core crates reruns ~350 harnesses: ~60-90 min on the Mac mini; on playhorizon (4 of its 8 vCPUs, 4
+    runs-on: ${{ inputs.full && fromJSON('["self-hosted", "foundry-game", "playfoundry"]') || fromJSON('["self-hosted", "foundry-game"]') }}
+    # A change to core crates reruns ~350 harnesses: ~60-90 min on the Mac mini; on playfoundry (4 of its 8 vCPUs, 4
     # harnesses at a time) up to a few hours, and any pull request's job may land there. 180 min cut one off on the
     # Mac mini on 2026-11-20 (#18551). After the oracle shim's key changes, its records are rebuilt once, which adds
     # up to ~23 min.
@@ -85,7 +85,7 @@ jobs:
           BASE_SHA: ${{ steps.merge.outputs.base }}
         run: |
           # A head made before OUTPUT_VERSION (#1947) that conflicts with main has neither the tool nor the number.
-          if [ ! -f tools/prepare_output.py ] || ! grep -q OUTPUT_VERSION crates/horizon-prepare/src/lib.rs; then
+          if [ ! -f tools/prepare_output.py ] || ! grep -q OUTPUT_VERSION crates/foundry-prepare/src/lib.rs; then
             echo "This head's preparer has no OUTPUT_VERSION: nothing to check"
             exit 0
           fi

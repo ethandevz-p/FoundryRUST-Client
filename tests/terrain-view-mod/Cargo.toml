@@ -8,6 +8,6 @@ publish = false
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-horizon-mod-api = { path = "../../crates/horizon-mod-api" }
+foundry-mod-api = { path = "../../crates/foundry-mod-api" }
 
 [workspace]

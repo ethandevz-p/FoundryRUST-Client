@@ -53,7 +53,7 @@ class FarBenchWindowTests(unittest.TestCase):
                     patch.object(bench.time, 'time', side_effect=lambda: clock[0]), \
                     patch.object(bench.time, 'sleep', side_effect=delay):
                 result = bench.run(directory, 'test', 8, 'together', 32, None, directory,
-                                   out, False, 'horizon-bots', 90)
+                                   out, False, 'foundry-bots', 90)
         self.assertEqual(result['server_cpu_seconds'], 9.0)
         self.assertEqual(result['far_cpu_seconds'], 4.0)
         self.assertEqual(result['measured_seconds'], 9.0)

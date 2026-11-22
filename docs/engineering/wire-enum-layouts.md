@@ -11,7 +11,7 @@ matching entries from both fixture files in the SAME PR as the source change and
 record the identity in the manifest's `retired_identities`. Retiring an enum that
 still derives fieldless Wire is rejected. The retirement list is not a type
 registry and is never extended for new enums. The two keyframe animation enums
-intentionally became non-Wire in arismoko/horizon#2983; their obsolete pins are now retired.
+intentionally became non-Wire in arismoko/foundry#2983; their obsolete pins are now retired.
 There are 148 absolute hash pins plus a same-source equivalence guard for HookId.
 HookId is the only fieldless enum among these 151 defined in generator output;
 the other generated provider/host enums have payloads and are not in this set.
@@ -44,10 +44,10 @@ validation. Keep their artifacts together; do not substitute incompatible rlibs.
 mkdir -p target/wire-layout-capture
 # The diagnostic flag forces a recorded rustc invocation even with warm outputs.
 env -u RUSTC_WRAPPER RUSTC_BOOTSTRAP=1 CARGO_INCREMENTAL=0 \
-  cargo rustc --locked -p horizon-mod-vocab --lib -vv -- -Ztime-passes \
+  cargo rustc --locked -p foundry-mod-vocab --lib -vv -- -Ztime-passes \
   2> target/wire-layout-capture/build.log
 env -u RUSTC_WRAPPER RUSTC_BOOTSTRAP=1 cargo rustc --locked \
-  -p horizon-mod-vocab --lib -- -Zunpretty=expanded \
+  -p foundry-mod-vocab --lib -- -Zunpretty=expanded \
   > target/wire-layout-capture/expanded.rs
 python3 tools/capture_wire_enum_layouts.py \
   --base 5c6c41f19f64c26231e0e49be505c5e2b1439be9 \
@@ -73,10 +73,10 @@ replacement of expected values.
 ```sh
 mkdir -p target/wire-goldens
 env -u RUSTC_WRAPPER RUSTC_BOOTSTRAP=1 cargo rustc --locked \
-  -p horizon-mod-vocab --lib -- -Zunpretty=expanded \
+  -p foundry-mod-vocab --lib -- -Zunpretty=expanded \
   > target/wire-goldens/expanded.rs
 python3 tools/generate_wire_enum_goldens.py --expanded target/wire-goldens/expanded.rs --check
-cargo test --locked -p horizon-mod-vocab --lib existing_fieldless_enum_layouts_match_baseline
+cargo test --locked -p foundry-mod-vocab --lib existing_fieldless_enum_layouts_match_baseline
 ```
 
 Omit `--check` only to regenerate the ordinary Rust file from the frozen pins.
@@ -98,7 +98,7 @@ guard against mechanically captured implementation mistakes.
 
 ## Intentional ingredient-shape contract change
 
-Issue arismoko/horizon#3737 adds `Shape::CustomDisplay` at ordinal 3. Compound, intersection and
+Issue arismoko/foundry#3737 adds `Shape::CustomDisplay` at ordinal 3. Compound, intersection and
 difference retain ordinals 0, 1 and 2; `ingredient_shape_contract_keeps_existing_tags_and_adds_custom_display_at_three`
 checks their literal bytes. The Shape pin records the approved four-variant
 contract, independently mixing the literal variant names with the original
@@ -107,7 +107,7 @@ The other frozen pins and the identity inventory remain unchanged.
 
 ## Intentional explosion-interaction contract change
 
-Issue arismoko/horizon#3929 gives `ExplosionInteraction` vanilla's five values in vanilla's
+Issue arismoko/foundry#3929 gives `ExplosionInteraction` vanilla's five values in vanilla's
 order: `None` 0, `Block` 1, `Mob` 2, `Tnt` 3 (was 2) and `Trigger` 4, a clean
 break with the host call that takes it. `explosion_interactions_cross_in_vanillas_order`
 checks their literal bytes. The pin records the five-variant contract,

@@ -1,6 +1,6 @@
 name: parity-hosted
 # The vanilla harnesses on Blacksmith's runners instead of the Mac mini (docs/ci-runners.md#hosted-parity): the vanilla
-# data comes encrypted from the maintainers' private repository horizon-rust/vanilla-data; Horizon's code still never
+# data comes encrypted from the maintainers' private repository foundry-rust/vanilla-data; Foundry Client's code still never
 # downloads the game. Advisory for now: nothing waits for it, and its result is not the Mac's `parity / parity`. Runs
 # start from caches that only runs of main write; what is made from the data is sealed in them (see the run job).
 # Started by hand: gh workflow run parity-hosted.yml --ref <branch> -f harnesses="food light" (or -f base=<commit>).
@@ -19,7 +19,7 @@ permissions:
   contents: read
 env:
   # Test runs never reach the telemetry server: no live-count ping, no uploads (docs/telemetry.md).
-  HORIZON_TELEMETRY_URL: "off"
+  FOUNDRY_TELEMETRY_URL: "off"
 
 jobs:
   # Which harnesses, on how many runners: no secret and no game data here.
@@ -141,7 +141,7 @@ jobs:
           {
             echo "java=$(sed -n 's/.*"java_major": *\([0-9]*\).*/\1/p' research-lock.json | head -1)"
             echo "lock=$(sha256sum < Cargo.lock | cut -c1-12)"
-            echo "prepare=$(git ls-files -s crates/horizon-prepare mods/horizon/src/test/java research-lock.json tools/ci/vanilla-data.sh tools/ci/seed_prepared_extras.py tools/prepare_output.py | sha256sum | cut -c1-16)"
+            echo "prepare=$(git ls-files -s crates/foundry-prepare mods/foundry/src/test/java research-lock.json tools/ci/vanilla-data.sh tools/ci/seed_prepared_extras.py tools/prepare_output.py | sha256sum | cut -c1-16)"
           } >> "$GITHUB_OUTPUT"
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         if: steps.access.outputs.data == 'true'
@@ -209,7 +209,7 @@ jobs:
       matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
     env:
       # No compiler cache: sccache would keep what this job builds where nothing checks it.
-      HORIZON_NO_SCCACHE: "1"
+      FOUNDRY_NO_SCCACHE: "1"
       CARGO_BUILD_JOBS: "16"
       # dtolnay/rust-toolchain sets 0 when it is unset, which turns off the profiles' incremental builds: a cached
       # build then recompiles a changed crate whole (a one-line gameplay change: 162 s instead of 19 s).
@@ -227,8 +227,8 @@ jobs:
       - name: Folders for the data, outside the checkout
         run: |
           {
-            echo "HORIZON_SHARED_SOURCE=$RUNNER_TEMP/vanilla/shared-local"
-            echo "HORIZON_PREPARED_CACHE=$RUNNER_TEMP/vanilla/prepared"
+            echo "FOUNDRY_SHARED_SOURCE=$RUNNER_TEMP/vanilla/shared-local"
+            echo "FOUNDRY_PREPARED_CACHE=$RUNNER_TEMP/vanilla/prepared"
             echo "PARITY_SHARED=$RUNNER_TEMP/vanilla/parity-shared"
             echo "VANILLA_DATA_CACHE=$RUNNER_TEMP/vanilla-encrypted"
             echo "SEALED=$RUNNER_TEMP/sealed"
@@ -338,7 +338,7 @@ jobs:
             exit 1
           }
           isolated "VANILLA_DATA_DEPLOY_KEY VANILLA_DATA_PASSPHRASE" VANILLA_DATA_CACHE="$VANILLA_DATA_CACHE" -- \
-            "$private/fetch-vanilla-data.sh" "$HORIZON_SHARED_SOURCE" "$DATASET"
+            "$private/fetch-vanilla-data.sh" "$FOUNDRY_SHARED_SOURCE" "$DATASET"
       # The keys of this shard's sealed entries, from the parts above and the dataset's digest: the same strings name
       # an entry when it is restored, sealed (which authenticates it) and saved.
       - name: Keys of the sealed entries
@@ -652,8 +652,8 @@ jobs:
             exit 0
           }
           seal() { isolated VANILLA_DATA_PASSPHRASE -- "$private/sealed-cache.sh" seal "$@"; }
-          if [ "$SEAL_PREPARED" = true ] && [ -d "$HORIZON_PREPARED_CACHE/prepared/$PREPARE" ]; then
-            seal prepared "$PREPARED" "$SEALED/prepared/archive" "$HORIZON_PREPARED_CACHE/prepared/$PREPARE"
+          if [ "$SEAL_PREPARED" = true ] && [ -d "$FOUNDRY_PREPARED_CACHE/prepared/$PREPARE" ]; then
+            seal prepared "$PREPARED" "$SEALED/prepared/archive" "$FOUNDRY_PREPARED_CACHE/prepared/$PREPARE"
             echo "prepared=true" >> "$GITHUB_OUTPUT"
           fi
           if [ "$SEAL_ORACLE" = true ]; then

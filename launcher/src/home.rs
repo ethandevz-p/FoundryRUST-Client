@@ -28,16 +28,16 @@ impl Launcher {
             if tag.is_empty() {
                 "Minecraft"
             } else {
-                "Horizon"
+                "Foundry Client"
             },
             |i| i.name.as_str(),
         );
         let mut what = vec![format!("Minecraft: Java Edition {game}")];
         if !tag.is_empty() {
             what.push(format!(
-                "Horizon {}",
-                horizon_launcher::nightly::label(tag)
-                    .or_else(|| horizon_launcher::build_import::label(tag))
+                "Foundry Client {}",
+                foundry_launcher::nightly::label(tag)
+                    .or_else(|| foundry_launcher::build_import::label(tag))
                     .unwrap_or_else(|| tag.trim_start_matches('v').to_string())
             ));
         }
@@ -121,14 +121,14 @@ impl Launcher {
             .children(instance.map(|i| {
                 shell::text(night::UI, c(n.ink_soft)).child(instances_page::played_line(i))
             }));
-        // A Java instance (no Horizon tag) isn't offered Horizon's updates; a Stable one is offered
+        // A Java instance (no Foundry Client tag) isn't offered Foundry Client's updates; a Stable one is offered
         // its channel's build, as in the glass look.
         let stable = self
             .selected_instance()
-            .is_some_and(|i| i.channel == horizon_launcher::instances::Channel::Stable);
+            .is_some_and(|i| i.channel == foundry_launcher::instances::Channel::Stable);
         let offer = match stable {
             true => self.stable_update(tag),
-            false => self.updates.horizon.clone().filter(|_| !tag.is_empty()),
+            false => self.updates.foundry.clone().filter(|_| !tag.is_empty()),
         };
         if let Some(release) = offer.clone() {
             let installing = self.installing.as_ref().filter(|(t, _)| *t == release.tag);
@@ -213,7 +213,7 @@ impl Launcher {
         hero
     }
 
-    /// Play, then what else the instance offers: its version (Horizon), its mods, its folder.
+    /// Play, then what else the instance offers: its version (Foundry Client), its mods, its folder.
     /// `ready`: prepared, or a Java instance (its game comes with Play).
     pub(super) fn home_actions(&self, ready: bool, java: bool, cx: &mut Context<Self>) -> Div {
         let t = self.theme;
@@ -244,7 +244,7 @@ impl Launcher {
                     action("download-cancel", Action::Quiet, &t)
                         .child(label(tr("Cancel").to_string()))
                         .on_click(|_, _, _| {
-                            horizon_launcher::mojang::CANCEL.store(true, Ordering::Relaxed)
+                            foundry_launcher::mojang::CANCEL.store(true, Ordering::Relaxed)
                         })
                 }));
         }
@@ -262,7 +262,7 @@ impl Launcher {
             }));
         match play_press(
             ready,
-            if horizon_launcher::developer_offline::selected() {
+            if foundry_launcher::developer_offline::selected() {
                 Some(true)
             } else {
                 self.owner
@@ -304,7 +304,7 @@ impl Launcher {
                         cx.notify();
                     }))
             }))
-            // Horizon's versions don't apply to a Java instance.
+            // Foundry Client's versions don't apply to a Java instance.
             .children((!java).then(|| self.picker(cx)))
             .child(
                 action("home-mods", Action::Quiet, &t)
@@ -324,7 +324,7 @@ impl Launcher {
             }))
     }
 
-    /// The card beside the hero, for a Horizon version: a line from a release's notes, and
+    /// The card beside the hero, for a Foundry Client version: a line from a release's notes, and
     /// joining a friend with their invite code.
     pub(super) fn home_card(&self, tag: &str, cx: &mut Context<Self>) -> Div {
         let t = self.theme;
@@ -359,8 +359,8 @@ impl Launcher {
                         .relative()
                         .font_weight(FontWeight::BOLD)
                         .child(
-                            horizon_launcher::nightly::label(tag)
-                                .or_else(|| horizon_launcher::build_import::label(tag))
+                            foundry_launcher::nightly::label(tag)
+                                .or_else(|| foundry_launcher::build_import::label(tag))
                                 .unwrap_or_else(|| tag.trim_start_matches('v').to_string()),
                         ),
                 )
@@ -431,7 +431,7 @@ impl Launcher {
                 cx.notify();
             }));
         let field = line_edit::mouse(field, cx, |this| &mut this.friend_code);
-        let valid = horizon_friends::invite::parse(self.friend_code.text()).is_some();
+        let valid = foundry_friends::invite::parse(self.friend_code.text()).is_some();
         let mut join =
             action("join-friend", Action::Raised, &t).child(label(tr("Join").to_string()));
         if can_play && valid {
@@ -459,7 +459,7 @@ impl Launcher {
         if getting_ready_preview() {
             return Some(Duration::from_secs(70));
         }
-        let Some((done, total)) = horizon_launcher::mojang::progress() else {
+        let Some((done, total)) = foundry_launcher::mojang::progress() else {
             self.download_seen = None;
             return None;
         };
@@ -577,17 +577,17 @@ impl Launcher {
     }
 }
 
-/// `HORIZON_LAUNCHER_PAGE=getting-ready` opens Home as if Play had been pressed on a version that
+/// `FOUNDRY_LAUNCHER_PAGE=getting-ready` opens Home as if Play had been pressed on a version that
 /// downloads from Mojang, a third of the way through: for screenshots, nothing runs.
 pub(super) fn getting_ready_preview() -> bool {
     static PREVIEW: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
     *PREVIEW
-        .get_or_init(|| std::env::var("HORIZON_LAUNCHER_PAGE").as_deref() == Ok("getting-ready"))
+        .get_or_init(|| std::env::var("FOUNDRY_LAUNCHER_PAGE").as_deref() == Ok("getting-ready"))
 }
 
 /// The download under way, files done of how many.
 fn download_progress() -> Option<(usize, usize)> {
-    horizon_launcher::mojang::progress().or_else(|| getting_ready_preview().then_some((1754, 5160)))
+    foundry_launcher::mojang::progress().or_else(|| getting_ready_preview().then_some((1754, 5160)))
 }
 
 /// The time `total - done` files take at the pace of `done - from` in `spent`: none for the

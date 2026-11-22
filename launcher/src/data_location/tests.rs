@@ -25,7 +25,7 @@ impl Temp {
         };
         loop {
             let path = base.join(format!(
-                "horizon-location-{}-{}",
+                "foundry-location-{}-{}",
                 std::process::id(),
                 NEXT.fetch_add(1, Ordering::Relaxed)
             ));
@@ -290,9 +290,9 @@ fn two_earlier_stages_stay() {
 #[test]
 fn a_retry_leaves_reserved_build_folders_alone() {
     let f = Fixture::new("build");
-    // On Windows this name reserves a horizon-build-* sibling, which the stopped move keeps.
+    // On Windows this name reserves a foundry-build-* sibling, which the stopped move keeps.
     let target = f.temp.0.join("Игры");
-    let planted = f.temp.0.join("horizon-build-planted/build");
+    let planted = f.temp.0.join("foundry-build-planted/build");
     fs::create_dir_all(&planted).unwrap();
     fs::write(planted.join("compiled.bin"), b"other location").unwrap();
     stopped_move(&f, &target);
@@ -304,7 +304,7 @@ fn a_retry_leaves_reserved_build_folders_alone() {
                 path.file_name()
                     .unwrap()
                     .to_string_lossy()
-                    .starts_with("horizon-build-")
+                    .starts_with("foundry-build-")
             })
             .map(|path| (snapshot(&path), path))
             .collect::<Vec<_>>()
@@ -553,7 +553,7 @@ fn game_cache_links_are_left_out_of_the_move() {
         f.source.game.join("instances/a"),
         f.source.game.join("ports/p/home"),
     ] {
-        let stamp = instance.join(".horizon-cache/mod-content/0123456789abcdef");
+        let stamp = instance.join(".foundry-cache/mod-content/0123456789abcdef");
         fs::create_dir_all(&stamp).unwrap();
         fs::write(stamp.join("STAMP"), b"stamp").unwrap();
         let link = stamp.join("assets");
@@ -573,16 +573,16 @@ fn game_cache_links_are_left_out_of_the_move() {
     }
     fs::write(f.source.game.join("instances/a/options.txt"), b"options").unwrap();
     // A world may carry the cache's name; only the game's own caches are left out.
-    let world = f.source.game.join("saves/.horizon-cache");
+    let world = f.source.game.join("saves/.foundry-cache");
     fs::create_dir_all(&world).unwrap();
     fs::write(world.join("level.dat"), b"world").unwrap();
     let roots = migrate(&f.source, &f.target(), &f.bootstrap, |_| {}).unwrap();
     drop(links);
-    assert!(!roots.game.join(".horizon-cache").exists());
-    assert!(!roots.game.join("instances/a/.horizon-cache").exists());
-    assert!(!roots.game.join("ports/p/home/.horizon-cache").exists());
+    assert!(!roots.game.join(".foundry-cache").exists());
+    assert!(!roots.game.join("instances/a/.foundry-cache").exists());
+    assert!(!roots.game.join("ports/p/home/.foundry-cache").exists());
     assert_eq!(
-        fs::read(roots.game.join("saves/.horizon-cache/level.dat")).unwrap(),
+        fs::read(roots.game.join("saves/.foundry-cache/level.dat")).unwrap(),
         b"world"
     );
     assert_eq!(
@@ -690,15 +690,15 @@ fn dir_link(target: &Path, link: &Path) {
 fn server_runtime_moves_with_its_release() {
     let f = Fixture::new("build");
     let root = f.source.launcher.join("server-runtime");
-    let files = root.join("game-files/horizon-client");
+    let files = root.join("game-files/foundry-client");
     fs::create_dir_all(files.join("1.0")).unwrap();
     fs::write(files.join("1.0/data"), b"files").unwrap();
     // Two releases with their links; `current` picks the first, which is not the newest.
     for tag in ["v1", "v2"] {
         let release = root.join("releases").join(tag);
         fs::create_dir_all(release.join(".local")).unwrap();
-        fs::write(release.join("horizon-server"), tag).unwrap();
-        dir_link(&files, &release.join(".local/horizon-client"));
+        fs::write(release.join("foundry-server"), tag).unwrap();
+        dir_link(&files, &release.join(".local/foundry-client"));
     }
     fs::create_dir_all(root.join("releases/v3/.local")).unwrap();
     fs::write(root.join("current.switching"), b"mine").unwrap();
@@ -711,18 +711,18 @@ fn server_runtime_moves_with_its_release() {
         canonical(moved.join("releases/v1"))
     );
     assert_eq!(
-        fs::read(moved.join("current/horizon-server")).unwrap(),
+        fs::read(moved.join("current/foundry-server")).unwrap(),
         b"v1"
     );
     for tag in ["v1", "v2"] {
         let local = moved
             .join("releases")
             .join(tag)
-            .join(".local/horizon-client");
+            .join(".local/foundry-client");
         assert_eq!(fs::read(local.join("1.0/data")).unwrap(), b"files");
         assert_eq!(
             canonical(local),
-            canonical(moved.join("game-files/horizon-client"))
+            canonical(moved.join("game-files/foundry-client"))
         );
     }
     assert_eq!(
@@ -748,7 +748,7 @@ fn server_runtime_current_elsewhere_is_refused() {
     fs::create_dir_all(&root).unwrap();
     dir_link(&outside.0, &root.join("current"));
     let error = migrate(&f.source, &f.target(), &f.bootstrap, |_| {}).unwrap_err();
-    assert!(error.contains("a link Horizon did not make"), "{error}");
+    assert!(error.contains("a link Foundry Client did not make"), "{error}");
     assert_eq!(fs::read(&f.bootstrap).unwrap(), f.pointer);
     assert_eq!(fs::read(outside.0.join("sentinel")).unwrap(), b"untouched");
     #[cfg(unix)]
@@ -765,7 +765,7 @@ fn a_linked_server_runtime_is_refused() {
     fs::create_dir_all(&elsewhere).unwrap();
     dir_link(&elsewhere, &f.source.launcher.join("server-runtime"));
     let error = migrate(&f.source, &f.target(), &f.bootstrap, |_| {}).unwrap_err();
-    assert!(error.contains("a link Horizon did not make"), "{error}");
+    assert!(error.contains("a link Foundry Client did not make"), "{error}");
     assert_eq!(fs::read(&f.bootstrap).unwrap(), f.pointer);
 }
 
@@ -775,15 +775,15 @@ fn server_game_files_through_a_linked_folder_are_refused() {
     let f = Fixture::new("build");
     let root = f.source.launcher.join("server-runtime");
     fs::create_dir_all(root.join("releases/v1/.local")).unwrap();
-    fs::create_dir_all(f.source.launcher.join("elsewhere/horizon-client")).unwrap();
+    fs::create_dir_all(f.source.launcher.join("elsewhere/foundry-client")).unwrap();
     // A relative link the copy would keep, so the game files would end outside the runtime.
     std::os::unix::fs::symlink("../elsewhere", root.join("game-files")).unwrap();
     dir_link(
-        &root.join("game-files/horizon-client"),
-        &root.join("releases/v1/.local/horizon-client"),
+        &root.join("game-files/foundry-client"),
+        &root.join("releases/v1/.local/foundry-client"),
     );
     let error = migrate(&f.source, &f.target(), &f.bootstrap, |_| {}).unwrap_err();
-    assert!(error.contains("a link Horizon did not make"), "{error}");
+    assert!(error.contains("a link Foundry Client did not make"), "{error}");
     assert_eq!(fs::read(&f.bootstrap).unwrap(), f.pointer);
 }
 
@@ -800,10 +800,10 @@ fn server_links_spelled_through_a_linked_parent_move() {
     };
     let root = spelled.launcher.join("server-runtime");
     fs::create_dir_all(root.join("releases/v1/.local")).unwrap();
-    fs::create_dir_all(root.join("game-files/horizon-client")).unwrap();
+    fs::create_dir_all(root.join("game-files/foundry-client")).unwrap();
     dir_link(
-        &root.join("game-files/horizon-client"),
-        &root.join("releases/v1/.local/horizon-client"),
+        &root.join("game-files/foundry-client"),
+        &root.join("releases/v1/.local/foundry-client"),
     );
     dir_link(&root.join("releases/v1"), &root.join("current"));
     let roots = migrate(&spelled, &f.target(), &f.bootstrap, |_| {}).unwrap();
@@ -1077,7 +1077,7 @@ fn a_config_folder_behind_a_link_still_opens() {
     fs::create_dir_all(&real).unwrap();
     let config = temp.0.join("config");
     std::os::unix::fs::symlink(&real, &config).unwrap();
-    let bootstrap = config.join("horizon-launcher-location/location.json");
+    let bootstrap = config.join("foundry-launcher-location/location.json");
 
     assert_eq!(resolve_at(&bootstrap), Ok(None));
     assert_eq!(startup_error_at(&bootstrap), None);
@@ -1101,7 +1101,7 @@ fn a_config_folder_behind_a_link_still_opens() {
 
     // The lock behind the link is the one a worker takes through the real path.
     let reader = acquire_lock_at(&bootstrap).unwrap();
-    assert!(lock_at(&real.join("horizon-launcher-location/location.json"), true).is_err());
+    assert!(lock_at(&real.join("foundry-launcher-location/location.json"), true).is_err());
     drop(reader);
 }
 
@@ -1110,7 +1110,7 @@ fn a_config_folder_behind_a_link_still_opens() {
 #[cfg(unix)]
 #[test]
 fn a_link_above_the_root_is_followed() {
-    let base = std::env::temp_dir().join(format!("horizon-dl-link-{}", std::process::id()));
+    let base = std::env::temp_dir().join(format!("foundry-dl-link-{}", std::process::id()));
     let _ = fs::remove_dir_all(&base);
     fs::create_dir_all(base.join("disk/data")).unwrap();
     std::os::unix::fs::symlink(base.join("disk"), base.join("share")).unwrap();
@@ -1126,7 +1126,7 @@ fn a_link_above_the_root_is_followed() {
 
 /// No unit test reaches the player's real folders: a test's launcher data, build folders and
 /// native build log are all under the temporary folder ([`test_home`]), or under the home a run
-/// names in `HORIZON_LAUNCHER_HOME`, which takes its place (`backend::data_dir`;
+/// names in `FOUNDRY_LAUNCHER_HOME`, which takes its place (`backend::data_dir`;
 /// `tools/pr_ready.py` names one for the launcher's tests, #16877).
 #[test]
 fn unit_tests_never_resolve_the_real_profile() {
@@ -1136,7 +1136,7 @@ fn unit_tests_never_resolve_the_real_profile() {
         crate::native_mods::log_path(),
     ];
     // The named home as given (the data folder) and as the build folder resolves it.
-    let homes = match std::env::var_os("HORIZON_LAUNCHER_HOME").filter(|h| !h.is_empty()) {
+    let homes = match std::env::var_os("FOUNDRY_LAUNCHER_HOME").filter(|h| !h.is_empty()) {
         Some(home) => {
             let home = PathBuf::from(home);
             let real = home.canonicalize().map(crate::backend::plain);
@@ -1159,9 +1159,9 @@ fn unit_tests_never_resolve_the_real_profile() {
 fn windows_moves_unicode_and_spaced_data_with_a_physical_ascii_build_folder() {
     for build in ["build", "launcher", "launcher/native-build"] {
         let f = Fixture::new(build);
-        let missing = f.temp.0.join("My Games").join("Horizon");
-        let existing = f.temp.0.join("Users/Ирина/AppData/Local/Horizon");
-        let ordinary = f.temp.0.join("Horizon_Data-2");
+        let missing = f.temp.0.join("My Games").join("Foundry Client");
+        let existing = f.temp.0.join("Users/Ирина/AppData/Local/Foundry Client");
+        let ordinary = f.temp.0.join("Foundry_Data-2");
         fs::create_dir_all(&existing).unwrap();
         let mut source = f.source.clone();
         for target in [&missing, &existing, &ordinary] {
@@ -1213,7 +1213,7 @@ fn separate_build_copy_and_commit_failures_keep_the_original_pointer() {
         drop(guard);
         assert_eq!(committing, commit_failure);
         assert!(error.contains("Original data was kept"));
-        assert!(error.contains("horizon-build-"), "{error}");
+        assert!(error.contains("foundry-build-"), "{error}");
         f.old_pointer();
         let retry = f.temp.0.join("Retry Игры");
         let moved = migrate(&f.source, &retry, &f.bootstrap, |_| {}).unwrap();
@@ -1243,7 +1243,7 @@ fn separate_build_is_staged_without_publishing_until_preparation_succeeds() {
     )
     .unwrap_err();
     assert!(error.contains("fixture preparation failure"));
-    assert!(error.contains("horizon-build-"));
+    assert!(error.contains("foundry-build-"));
     f.old_pointer();
     let retry = f.temp.0.join("Retry Игры");
     let moved = migrate(&f.source, &retry, &f.bootstrap, |_| {}).unwrap();

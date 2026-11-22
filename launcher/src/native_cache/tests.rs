@@ -8,7 +8,7 @@ impl Temp {
         // Tests run on parallel threads of one process, where two can read the same clock value.
         static NEXT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
         let path = std::env::temp_dir().join(format!(
-            "horizon-native-cache-{}-{}-{}",
+            "foundry-native-cache-{}-{}-{}",
             std::process::id(),
             NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
             SystemTime::now()
@@ -56,8 +56,8 @@ fn clears_only_disposable_outputs_and_keeps_installed_games_and_player_data() {
         "saves/W/level.dat",
         "instances/A/options.txt",
         "mods/player-mod.hnmod",
-        "versions/native-game/horizon-client",
-        "native/server-builds/engine/horizon-engine",
+        "versions/native-game/foundry-client",
+        "native/server-builds/engine/foundry-engine",
         "native/stage/Cargo.toml",
         "native/cache/mod-output",
         "cargo/registry/crate",

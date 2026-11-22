@@ -82,12 +82,12 @@ jobs:
           if [[ -n "$previous" ]]; then
             echo "phase surface-diff start $(date -u +%T)"
             mkdir -p base
-            if git cat-file -e "$previous:crates/horizon-mod-vocab/changes" 2>/dev/null; then
-              git archive "$previous" crates/horizon-mod-vocab/changes | tar -x -C base
+            if git cat-file -e "$previous:crates/foundry-mod-vocab/changes" 2>/dev/null; then
+              git archive "$previous" crates/foundry-mod-vocab/changes | tar -x -C base
             fi
-            cargo run --locked --release -q -p horizon-mod-api-gen --bin horizon-stage -- surface-diff \
-              previous-surface.json dist/surface.json --notes crates/horizon-mod-vocab/changes \
-              --base-notes base/crates/horizon-mod-vocab/changes --json surface-diff.json | tee -a "$GITHUB_STEP_SUMMARY"
+            cargo run --locked --release -q -p foundry-mod-api-gen --bin foundry-stage -- surface-diff \
+              previous-surface.json dist/surface.json --notes crates/foundry-mod-vocab/changes \
+              --base-notes base/crates/foundry-mod-vocab/changes --json surface-diff.json | tee -a "$GITHUB_STEP_SUMMARY"
             test -s surface-diff.json
             echo "phase surface-diff end $(date -u +%T)"
           fi
@@ -186,7 +186,7 @@ jobs:
           PUBLISH: ${{ inputs.publish }}
         run: |
           key=(); [[ "$PUBLISH" != true ]] && key=(--key "$(cat key/ephemeral.pub)")
-          cargo run --locked --quiet -p horizon-release-sign -- verify --repository "$GITHUB_REPOSITORY" --tag "$TAG" \
+          cargo run --locked --quiet -p foundry-release-sign -- verify --repository "$GITHUB_REPOSITORY" --tag "$TAG" \
             "${key[@]}" dist
           expected=$(python3 tools/ci/nightly.py sdk-assets | sort)
           actual=$(ls dist | sort)

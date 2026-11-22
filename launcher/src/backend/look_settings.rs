@@ -50,13 +50,13 @@ mod tests {
     #[test]
     fn theme_accents_and_motion_survive_bad_entries() {
         let s = Settings::parse(
-            r##"{"theme_accents": {"sunrise": "#c2366f", "nord": 12, "horizon": "teal"},
+            r##"{"theme_accents": {"sunrise": "#c2366f", "nord": 12, "foundry": "teal"},
                 "reduce_motion": "yes", "game_args": "--x"}"##,
         );
         assert_eq!(s.game_args, "--x");
         assert_eq!(s.reduce_motion, None);
         assert_eq!(s.theme_accents.len(), 2);
-        assert_eq!(s.theme_accents["horizon"], crate::themes::Accent::TEAL);
+        assert_eq!(s.theme_accents["foundry"], crate::themes::Accent::TEAL);
         let s = Settings::parse(r#"{"theme_accents": [1], "reduce_motion": true}"#);
         assert!(s.theme_accents.is_empty());
         assert_eq!(s.reduce_motion, Some(true));

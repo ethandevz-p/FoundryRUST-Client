@@ -7,7 +7,7 @@
 top only for what stands above it (`ScaffoldingBlock.getCollisionShape`, `isAbove`), so from the sulfur's height it
 is empty: a waterlogged scaffolding holds the geyser's water, and the geyser launches what is over the scaffolding.
 
-A vanilla dedicated server and Horizon's each load a copy of one flat world vanilla generated first. Ticking is
+A vanilla dedicated server and Foundry Client's each load a copy of one flat world vanilla generated first. Ticking is
 frozen. Each lane is a continuous geyser (lava, potent sulfur) with an item or a primed TNT without gravity or
 motion three blocks over the sulfur. In the control lane the geyser's water is a water block; in the others it is a
 waterlogged scaffolding with a dry scaffolding on it. The servers are stepped; after every step each entity's exact
@@ -106,17 +106,17 @@ def proves(vanilla):
 
 
 def main():
-    lock, build, vanilla_server, horizon_server, _client = locator.sides(NAME)
+    lock, build, vanilla_server, foundry_server, _client = locator.sides(NAME)
     world = locator.generate_world(vanilla_server, build)
     vanilla = run('vanilla', vanilla_server, world, build)
     (build / 'vanilla.txt').write_text('\n'.join(vanilla) + '\n', encoding='utf-8')
     why = proves(vanilla)
     if why:
         raise AssertionError(f'vanilla is no proof: {why}:\n' + '\n'.join(vanilla))
-    horizon = run('horizon', horizon_server, world, build)
-    (build / 'horizon.txt').write_text('\n'.join(horizon) + '\n', encoding='utf-8')
-    if vanilla != horizon:
-        differ = [f'- {v}\n+ {h}' for v, h in zip(vanilla, horizon) if v != h]
+    foundry = run('foundry', foundry_server, world, build)
+    (build / 'foundry.txt').write_text('\n'.join(foundry) + '\n', encoding='utf-8')
+    if vanilla != foundry:
+        differ = [f'- {v}\n+ {h}' for v, h in zip(vanilla, foundry) if v != h]
         raise AssertionError(f'{len(differ)} lines differ from vanilla:\n' + '\n'.join(differ[:24]))
     print(f'geyser through scaffolding: {len(vanilla)} lines identical')
 

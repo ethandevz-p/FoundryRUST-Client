@@ -1,6 +1,6 @@
 # Structs a mod builds and structs a mod receives
 
-Contract for [arismoko/horizon#2862](https://github.com/arismoko/horizon/issues/2862). Every public struct in `horizon-mod-api`
+Contract for [arismoko/foundry#2862](https://github.com/arismoko/foundry/issues/2862). Every public struct in `foundry-mod-api`
 and its vocabulary crate that forms the mod-authoring surface is exactly one of two kinds.
 
 1. **A type a mod builds** (definitions, options, screens, declarations): public fields and `Default`. Write a

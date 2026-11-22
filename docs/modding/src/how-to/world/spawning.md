@@ -63,7 +63,7 @@ fn mob_spawn_placement_check(&self, _: &dyn mod_api::Host, event: &mut mod_api::
 ```
 
 The position check also gets `event.mob`, the mob about to spawn, as an `UnspawnedMobRef` with the same reads as
-`finalize_spawn`'s (no editor: the hook only reads). Vanilla creates the mob before this check; Horizon creates it there
+`finalize_spawn`'s (no editor: the hook only reads). Vanilla creates the mob before this check; Foundry Client creates it there
 only when the hook has a listener, the same way the spawn would, and the spawn then goes on with that very mob, so what
 the listener read is what joins the level. A refused check drops the mob: it never joins the level. Creating it draws
 nothing from the level's random, so a listener that answers `Default` changes no draw.
@@ -136,7 +136,7 @@ read it, change it, set it or clear it, and finalization reads what is left. Eac
 Chunk generation shares group data inside the generator, outside this hook. A group you set affects
 only this mob's finalization.
 
-See [the `finalize_spawn` contract](https://github.com/horizon-rust/horizon/blob/main/crates/horizon-mod-vocab/src/hooks/finalize_spawn.rs) for the spawn sites that fire the hook.
+See [the `finalize_spawn` contract](https://github.com/foundry-rust/foundry/blob/main/crates/foundry-mod-vocab/src/hooks/finalize_spawn.rs) for the spawn sites that fire the hook.
 
 ## Changing how large a spawn group grows
 
@@ -144,7 +144,7 @@ A natural spawn adds mobs of one type to a group until the group reaches the typ
 
 ```rust,ignore
 struct ZombiePacks;
-#[mod_api::horizon_part]
+#[mod_api::foundry_part]
 impl mod_api::EntityPart for ZombiePacks {
     fn spawn_cluster_size(
         &self,
@@ -175,7 +175,7 @@ fn mob_despawn(&self, _: &dyn mod_api::Host, event: &mut mod_api::MobDespawnEven
 
 The hook's scoped read host resolves the ticking mob directly and peers through the tick snapshot. An already-ticked peer exposes its post-turn state; a not-yet-ticked peer exposes its pre-turn state. A mob spawned during the pass does not resolve through this scoped view until the next pass. Removed mobs do not resolve, but a dead mob still present in the level is not removed and can still resolve. `living_change_target` uses the same view when fired inside this tick pass; outside it, that hook reads the entities available in the game host, not this snapshot.
 
-This is the accepted read-host scoped-view first step of arismoko/horizon#795, not the completed in-place ownership design. Write-host callbacks and the remaining ownership work are outside this contract.
+This is the accepted read-host scoped-view first step of arismoko/foundry#795, not the completed in-place ownership design. Write-host callbacks and the remaining ownership work are outside this contract.
 
 The wither and the ender dragon override `checkDespawn` in vanilla, so the event is not fired for them.
 
@@ -197,7 +197,7 @@ fn custom_spawner_tick(&self, host: &mut dyn mod_api::ServerHost, event: &mut mo
 }
 ```
 
-Every mod is asked about every key, so a mod ignores keys it does not own. See [the custom spawner contracts](https://github.com/horizon-rust/horizon/blob/main/crates/horizon-mod-vocab/src/hooks/custom_spawners.rs).
+Every mod is asked about every key, so a mod ignores keys it does not own. See [the custom spawner contracts](https://github.com/foundry-rust/foundry/blob/main/crates/foundry-mod-vocab/src/hooks/custom_spawners.rs).
 
 ## Spawning from a level
 
@@ -208,7 +208,7 @@ A level's natural spawning (`NaturalSpawner.spawnForChunk`) also has a policy a 
 
 - `spawn_limits(host)` and `set_spawn_limits(host, limits)`: a `SpawnLimits` with each spawning category's `getMaxInstancesPerChunk`, `SpawnLimits::VANILLA` (70 monsters, 10 creatures, 15 ambient, 5 axolotls, underground water and water creatures each, 20 water ambient) until a mod sets others. A limit caps the category twice, as vanilla's does: over the level, under `limit * spawnable chunks / 289`, and around each player near the chunk, under `limit`. A limit of 0 stops the category.
 - `spawn_flags(host)` and `set_spawn_flags(host, flags)`: a `SpawnFlags` with `monsters` and `friendlies`, both on until a mod turns one off. Off keeps that side out of the level's natural spawning; neither turns monsters on against the `spawn_monsters` rule or anything on with `spawn_mobs` off.
-- `can_spawn_entities_in_chunk(host, [x, z])`: `ServerLevel.canSpawnEntitiesInChunk`, the question natural spawning asks of a spawn position outside the chunk it started in. Horizon's spawner answers it as "the chunk is loaded", and so does this call.
+- `can_spawn_entities_in_chunk(host, [x, z])`: `ServerLevel.canSpawnEntitiesInChunk`, the question natural spawning asks of a spawn position outside the chunk it started in. Foundry Client's spawner answers it as "the chunk is loaded", and so does this call.
 
 ```rust,ignore
 fn level_load(&self, host: &mut dyn mod_api::ServerHost, event: &mut mod_api::LevelLoadEvent<'_>) {

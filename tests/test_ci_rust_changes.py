@@ -25,23 +25,23 @@ class RustChangesTests(unittest.TestCase):
             "tools/parity.py", "tools/test_tick_parity.py", "tests/test_ci_runners.py", "docs/setup.md",
         ]))
         for path in [
-            "crates/horizon-client/src/game.rs", "xtask/src/main.rs", "Cargo.lock",
+            "crates/foundry-client/src/game.rs", "xtask/src/main.rs", "Cargo.lock",
             ".cargo/config.toml", ".github/workflows/ci.yml", "tools/ci/rust_changes.py",
             "tools/release_train.py", "tools/ci/sign_release.sh", "tools/native-hook-fragments/a.json",
-            "tools/parity_hosts.json", "mods/horizon/src/x.py",
-            "research-lock.json", "crates/horizon-theme/tokens.css", "unknown-file",
+            "tools/parity_hosts.json", "mods/foundry/src/x.py",
+            "research-lock.json", "crates/foundry-theme/tokens.css", "unknown-file",
         ]:
             with self.subTest(path=path):
                 self.assertTrue(needs_rust(["README.md", path]))
 
     def test_launcher_checks_follow_the_crates_it_builds(self):
-        for path in ["crates/horizon-client/src/game.rs", "launcher/links.json", "launcher/docs/a.md",
+        for path in ["crates/foundry-client/src/game.rs", "launcher/links.json", "launcher/docs/a.md",
                      "launcher/README.md", "website/src/index.html", "tools/pr_ready.py"]:
             with self.subTest(path=path):
                 self.assertFalse(needs_launcher([path]))
-        for path in ["launcher/src/main.rs", "launcher/Cargo.lock", "crates/horizon-port-pack/src/net.rs",
-                     "crates/horizon-mcp/src/lib.rs", "crates/horizon-mod-api-gen/src/injection.rs",
-                     "crates/horizon-theme/src/lib.rs", "Cargo.toml", "Cargo.lock",
+        for path in ["launcher/src/main.rs", "launcher/Cargo.lock", "crates/foundry-port-pack/src/net.rs",
+                     "crates/foundry-mcp/src/lib.rs", "crates/foundry-mod-api-gen/src/injection.rs",
+                     "crates/foundry-theme/src/lib.rs", "Cargo.toml", "Cargo.lock",
                      ".github/workflows/ci.yml"]:
             with self.subTest(path=path):
                 self.assertTrue(needs_launcher(["README.md", path]))
@@ -55,28 +55,28 @@ class RustChangesTests(unittest.TestCase):
         self.assertEqual(selections([("M", "tools/ci/install_rust.sh")])["rust_required"], True)
 
     def test_the_server_build_clippy_follows_the_client_crates_and_manifests(self):
-        for path in ["crates/horizon-world/src/lib.rs", "crates/horizon-perf/src/lib.rs", "tools/parity.py",
+        for path in ["crates/foundry-world/src/lib.rs", "crates/foundry-perf/src/lib.rs", "tools/parity.py",
                      "docs/setup.md", "launcher/src/main.rs"]:
             with self.subTest(path=path):
                 self.assertFalse(needs_server_build([path]))
-        for path in ["crates/horizon-client/src/game.rs", "crates/horizon-client-render/src/hud.rs",
-                     "crates/horizon-client-core/src/lang.rs", "crates/horizon-world/Cargo.toml", "Cargo.lock",
+        for path in ["crates/foundry-client/src/game.rs", "crates/foundry-client-render/src/hud.rs",
+                     "crates/foundry-client-core/src/lang.rs", "crates/foundry-world/Cargo.toml", "Cargo.lock",
                      "Cargo.toml", ".cargo/config.toml", ".github/workflows/ci.yml", "tools/ci/rust_changes.py"]:
             with self.subTest(path=path):
                 self.assertTrue(needs_server_build(["docs/setup.md", path]))
 
     def test_windows_cache_checks_follow_the_crate_and_build_configuration(self):
         for path in [
-            "crates/horizon-mod-wasm/src/module_cache_windows.rs",
-            "crates/horizon-mod-wasm/src/module_cache_windows_tests.rs",
-            "crates/horizon-mod-wasm/Cargo.toml", "Cargo.toml", "Cargo.lock",
+            "crates/foundry-mod-wasm/src/module_cache_windows.rs",
+            "crates/foundry-mod-wasm/src/module_cache_windows_tests.rs",
+            "crates/foundry-mod-wasm/Cargo.toml", "Cargo.toml", "Cargo.lock",
             ".cargo/config.toml", "rust-toolchain.toml", "tools/ci/rust-version",
             ".github/workflows/ci.yml", "tools/ci/rust_changes.py",
         ]:
             with self.subTest(path=path):
                 self.assertTrue(needs_windows_wasm_cache(["docs/setup.md", path]))
-        for path in ["docs/setup.md", "crates/horizon-world/src/lib.rs", "crates/horizon-mod-api/Cargo.toml",
-                     "crates/horizon-mod-wasm-tool/src/lib.rs", "launcher/Cargo.toml",
+        for path in ["docs/setup.md", "crates/foundry-world/src/lib.rs", "crates/foundry-mod-api/Cargo.toml",
+                     "crates/foundry-mod-wasm-tool/src/lib.rs", "launcher/Cargo.toml",
                      "tests/test_ci_runners.py", ".github/workflows/launcher.yml"]:
             with self.subTest(path=path):
                 self.assertFalse(needs_windows_wasm_cache([path]))
@@ -88,7 +88,7 @@ class RustChangesTests(unittest.TestCase):
                 return subprocess.check_output(["git", "-C", directory, *args])
 
             git("init", "--quiet")
-            source = Path(directory, "crates/horizon-mod-wasm/src/module_cache.rs")
+            source = Path(directory, "crates/foundry-mod-wasm/src/module_cache.rs")
             source.parent.mkdir(parents=True)
             source.write_text("fn main() {}\n")
             git("add", ".")
@@ -107,7 +107,7 @@ class RustChangesTests(unittest.TestCase):
                 paths = changed_paths(base, "HEAD")
             finally:
                 os.chdir(previous)
-            self.assertIn("crates/horizon-mod-wasm/src/module_cache.rs", paths)
+            self.assertIn("crates/foundry-mod-wasm/src/module_cache.rs", paths)
             self.assertTrue(needs_rust(paths))
             selector = Path(__file__).resolve().parents[1] / "tools/ci/rust_changes.py"
             output = subprocess.check_output([sys.executable, str(selector), base, "HEAD"], cwd=directory, text=True)
@@ -118,7 +118,7 @@ class RustChangesTests(unittest.TestCase):
             "tools/README.md", "tests/fixtures/example.md", ".github/pull_request_template.md",
             "docs/modding/src/introduction.md", "roadmap/journal/example.md",
             "README.md", "ROADMAP.md", "docs/README.md",
-            "crates/horizon-client/src/game.rs", "packaging/server/start.sh", "research-lock.json",
+            "crates/foundry-client/src/game.rs", "packaging/server/start.sh", "research-lock.json",
             "unknown-file",
         ]:
             with self.subTest(path=path):
@@ -151,7 +151,7 @@ class RustChangesTests(unittest.TestCase):
             self.assertTrue(selected["launcher_required"])
             self.assertTrue(selected["tooling_required"])
         # A documentation change in a mod API crate selects no Rust checks.
-        self.assertFalse(selections([("M", "crates/horizon-mod-api/README.md")])["rust_required"])
+        self.assertFalse(selections([("M", "crates/foundry-mod-api/README.md")])["rust_required"])
 
     def test_git_status_and_cli_selections_for_actual_documentation_changes(self):
         selector = Path(__file__).resolve().parents[1] / "tools/ci/rust_changes.py"
@@ -246,7 +246,7 @@ def rust_embeds():
 class EmbeddedFileTests(unittest.TestCase):
     def test_files_rust_embeds_select_the_rust_checks(self):
         for path in ["docs/modpacks/atm10-mods.csv", "docs/parity/random-chance-seeded.jsonl",
-                     "crates/horizon-mod-api-gen/coverage-notes.md"]:
+                     "crates/foundry-mod-api-gen/coverage-notes.md"]:
             with self.subTest(path=path):
                 self.assertTrue(needs_rust([path]))
         self.assertTrue(needs_launcher(["docs/media/village.webp"]))
@@ -255,7 +255,7 @@ class EmbeddedFileTests(unittest.TestCase):
     def test_the_embedded_list_is_every_embed_the_rules_would_skip(self):
         embeds = rust_embeds()
         # The scan finds the embeds at all: one the list has always had.
-        self.assertIn("crates/horizon-port-pack/src/classify.rs", embeds["docs/modpacks/atm10-mods.csv"])
+        self.assertIn("crates/foundry-port-pack/src/classify.rs", embeds["docs/modpacks/atm10-mods.csv"])
         skipped = {
             target: sources for target, sources in embeds.items()
             if not needs_rust_alone([target]) and any(needs_rust_alone([source]) for source in sources)
@@ -265,51 +265,51 @@ class EmbeddedFileTests(unittest.TestCase):
 
 class ModApiSelectionTests(unittest.TestCase):
     def test_the_game_the_generator_and_the_check_select_it(self):
-        for path in ["crates/horizon-client/src/game/tick.rs", "crates/horizon-client/src/game.rs",
-                     "crates/horizon-mod-api-gen/src/points.rs", "crates/horizon-mod-api-macros/src/lib.rs",
+        for path in ["crates/foundry-client/src/game/tick.rs", "crates/foundry-client/src/game.rs",
+                     "crates/foundry-mod-api-gen/src/points.rs", "crates/foundry-mod-api-macros/src/lib.rs",
                      "tools/check_mod_api_unchanged.py", "tools/mod_api_removed_internals.txt",
-                     "crates/horizon-world/Cargo.toml", "Cargo.lock",
+                     "crates/foundry-world/Cargo.toml", "Cargo.lock",
                      UNKNOWN_CHANGE, ".github/workflows/ci.yml", "tools/ci/surface_report.py",
-                     "tools/ci/surface.toml", "crates/horizon-mod-vocab/changes/a-note.toml",
-                     "crates/horizon-core/src/nbt.rs"]:
+                     "tools/ci/surface.toml", "crates/foundry-mod-vocab/changes/a-note.toml",
+                     "crates/foundry-core/src/nbt.rs"]:
             with self.subTest(path=path):
                 self.assertTrue(needs_mod_api(["README.md", path]))
 
     def test_documentation_and_unrelated_changes_do_not(self):
-        for path in ["docs/layers.md", "crates/horizon-mod-api/README.md", "tools/parity.py", "launcher/src/main.rs",
-                     "crates/horizon-world/README.md"]:
+        for path in ["docs/layers.md", "crates/foundry-mod-api/README.md", "tools/parity.py", "launcher/src/main.rs",
+                     "crates/foundry-world/README.md"]:
             with self.subTest(path=path):
                 self.assertFalse(needs_mod_api([path]))
         self.assertFalse(needs_mod_api([]))
 
     def test_a_lower_crate_file_counts_only_when_it_mentions_replaceable(self):
-        self.assertFalse(needs_mod_api(["crates/horizon-world/src/lib.rs"]))
-        self.assertTrue(needs_mod_api(["crates/horizon-world/src/lib.rs"], lambda files: True))
+        self.assertFalse(needs_mod_api(["crates/foundry-world/src/lib.rs"]))
+        self.assertTrue(needs_mod_api(["crates/foundry-world/src/lib.rs"], lambda files: True))
         self.assertFalse(needs_mod_api(["docs/a.md"], lambda files: True))
 
     def test_the_entry_and_the_toolchain_select_it(self):
-        for path in ["crates/horizon-client/src/entry.rs", "rust-toolchain.toml", "rust-toolchain",
-                     ".cargo/config.toml", "crates/horizon-game-discovery/src/lib.rs"]:
+        for path in ["crates/foundry-client/src/entry.rs", "rust-toolchain.toml", "rust-toolchain",
+                     ".cargo/config.toml", "crates/foundry-game-discovery/src/lib.rs"]:
             with self.subTest(path=path):
                 self.assertTrue(needs_mod_api([path]))
 
     def test_a_file_that_holds_a_declared_internal_selects_it(self):
-        declared = {"horizon_client_render::world::World::is_air", "horizon_client_lib::vanillagen::shared_data_with",
-                    "horizon_world::worldgen::structure::legacy::PieceRandom"}
-        for path in ["crates/horizon-client-render/src/world.rs", "crates/horizon-client-render/src/world/edit.rs",
-                     "crates/horizon-client-render/src/lib.rs", "crates/horizon-client/src/vanillagen.rs",
-                     "crates/horizon-world/src/worldgen/structure/legacy.rs",
-                     "crates/horizon-world/src/worldgen/structure/legacy/pieces/mod.rs"]:
+        declared = {"foundry_client_render::world::World::is_air", "foundry_client_lib::vanillagen::shared_data_with",
+                    "foundry_world::worldgen::structure::legacy::PieceRandom"}
+        for path in ["crates/foundry-client-render/src/world.rs", "crates/foundry-client-render/src/world/edit.rs",
+                     "crates/foundry-client-render/src/lib.rs", "crates/foundry-client/src/vanillagen.rs",
+                     "crates/foundry-world/src/worldgen/structure/legacy.rs",
+                     "crates/foundry-world/src/worldgen/structure/legacy/pieces/mod.rs"]:
             with self.subTest(path=path):
                 self.assertTrue(needs_mod_api([path], declarations=declared))
         # Neither a module the declarations don't go through, nor a sibling of a module they only pass.
-        for path in ["crates/horizon-client-render/src/chat.rs", "crates/horizon-world/src/worldgen/noise.rs",
-                     "crates/horizon-world/src/worldgen/structure/village.rs", "crates/horizon-items/src/items.rs"]:
+        for path in ["crates/foundry-client-render/src/chat.rs", "crates/foundry-world/src/worldgen/noise.rs",
+                     "crates/foundry-world/src/worldgen/structure/village.rs", "crates/foundry-items/src/items.rs"]:
             with self.subTest(path=path):
                 self.assertFalse(needs_mod_api([path], declarations=declared))
 
     def test_unreadable_declarations_select_any_rust_change(self):
-        self.assertTrue(needs_mod_api(["crates/horizon-items/src/items.rs"], declarations=None))
+        self.assertTrue(needs_mod_api(["crates/foundry-items/src/items.rs"], declarations=None))
         self.assertFalse(needs_mod_api(["docs/a.md"], declarations=None))
         self.assertIsNone(declared_internals("HEAD", "no-such-revision-19576"))
 
@@ -319,7 +319,7 @@ class ModApiSelectionTests(unittest.TestCase):
                 return subprocess.check_output(["git", "-C", directory, *args]).decode().strip()
 
             git("init", "--quiet")
-            Path(directory, "a.rs").write_text("#[horizon_mod_api_macros::replaceable]\npub fn a() {}\n")
+            Path(directory, "a.rs").write_text("#[foundry_mod_api_macros::replaceable]\npub fn a() {}\n")
             Path(directory, "b.rs").write_text("pub fn b() {}\n")
             git("add", ".")
             commit = ["-c", "user.name=CI test", "-c", "user.email=ci@example.invalid",

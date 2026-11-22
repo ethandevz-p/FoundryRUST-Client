@@ -1,6 +1,6 @@
-//! Horizon: compiled shaders kept on disk between runs.
+//! Foundry Client: compiled shaders kept on disk between runs.
 //!
-//! FXC takes about 2.6 s to compile Horizon's ~65 pipelines on every start
+//! FXC takes about 2.6 s to compile Foundry Client's ~65 pipelines on every start
 //! (DXC about 1 s), while the in-memory [`super::ShaderCache`] only helps
 //! within one device. The application names one file with [`set_file`]. A
 //! shader compiled once is appended there, and the next run reads its bytecode
@@ -29,7 +29,7 @@ use hashbrown::HashMap;
 
 const MAGIC: &[u8; 8] = b"HZDXSC1\n";
 const HEADER: usize = 16 + 4 + 8;
-/// Past this the file is started over: Horizon's shaders take about 1 MB.
+/// Past this the file is started over: Foundry Client's shaders take about 1 MB.
 pub const MAX_BYTES: u64 = 64 << 20;
 
 static FILE: OnceLock<PathBuf> = OnceLock::new();

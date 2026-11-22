@@ -7,6 +7,6 @@ cd "$(dirname "$0")/.."
 unset RUSTFLAGS CARGO_ENCODED_RUSTFLAGS
 echo "$(rustc --version)"
 echo "dev: profile fast, incremental, lto off, codegen-units 16"
-cargo build --locked --profile fast -p horizon-game -p horizon-prepare
-echo "built binary: horizon-client"
-echo "built preparer: horizon-prepare"
+cargo build --locked --profile fast -p foundry-game -p foundry-prepare
+echo "built binary: foundry-client"
+echo "built preparer: foundry-prepare"

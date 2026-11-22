@@ -1,0 +1,33 @@
+[package]
+name = "foundry-gameplay"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+description = "Vanilla's logical side: the gameplay the server jar holds, common code included"
+
+[dependencies]
+foundry-assets = { path = "../foundry-assets" }
+foundry-client-core = { path = "../foundry-client-core" }
+foundry-client-lib = { path = "../foundry-client-lib", default-features = false }
+foundry-command = { path = "../foundry-command" }
+foundry-core = { path = "../foundry-core" }
+foundry-engine-slots = { path = "../foundry-engine-slots" }
+foundry-items = { path = "../foundry-items" }
+foundry-mod-package = { path = "../foundry-mod-package", default-features = false }
+foundry-mod-runtime = { path = "../foundry-mod-runtime" }
+foundry-protocol = { path = "../foundry-protocol" }
+foundry-threads = { path = "../foundry-threads" }
+foundry-world = { path = "../foundry-world" }
+log = "0.4"
+mod_api = { package = "foundry-mod-vocab", path = "../foundry-mod-vocab" }
+serde_json = { version = "1.0.151", features = ["raw_value"] }
+
+[features]
+# Source retention only, as in foundry-client: the helper-thread profiling hooks.
+upstream-parallel-mobs = []
+# Counters foundry-client's tests read (`api_values::damage`, `api_values::loot_values`, `boats::TYPE_BUILDS`); never in a game build.
+test-support = []
+
+[lints]
+workspace = true

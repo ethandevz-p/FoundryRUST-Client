@@ -5,9 +5,9 @@ whenever one of the world's saved lists exists, including empty and unchanged li
 added mods and `minecraft` are excluded. It fires once per open.
 
 A world records its code mods in `level.dat`'s `fml.LoadingModList` and its content mods in
-`horizon.ContentModList`, beside the namespaces of the mod block states registered when it was
-saved (`horizon.BlockNamespaces`) and the game commit that last saved it
-(`horizon.LastSavedCommit`).
+`foundry.ContentModList`, beside the namespaces of the mod block states registered when it was
+saved (`foundry.BlockNamespaces`) and the game commit that last saved it
+(`foundry.LastSavedCommit`).
 
 ## When a saved mod is missing
 

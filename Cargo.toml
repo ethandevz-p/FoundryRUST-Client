@@ -1,80 +1,80 @@
 [workspace]
-exclude = ["crates/horizon-telemetry-server", "launcher", "crates/horizon-mod-registry", "third_party/wgpu-hal", "third_party/naga", "third_party/libmimalloc-sys", "tools/fixtures/paper-trace-mod"]
+exclude = ["crates/foundry-telemetry-server", "launcher", "crates/foundry-mod-registry", "third_party/wgpu-hal", "third_party/naga", "third_party/libmimalloc-sys", "tools/fixtures/paper-trace-mod"]
 members = [
-    "crates/horizon-guest-stack",
-    "crates/horizon-mod-vocab",
-    "crates/horizon-game-discovery",
-    "crates/horizon-cosmetics",
-    "crates/horizon-telemetry",
-    "crates/horizon-hooks",
-    "crates/horizon-mod-host",
-    "crates/horizon-game",
-    "crates/horizon-official",
-    "crates/horizon-heartbeat",
+    "crates/foundry-guest-stack",
+    "crates/foundry-mod-vocab",
+    "crates/foundry-game-discovery",
+    "crates/foundry-cosmetics",
+    "crates/foundry-telemetry",
+    "crates/foundry-hooks",
+    "crates/foundry-mod-host",
+    "crates/foundry-game",
+    "crates/foundry-official",
+    "crates/foundry-heartbeat",
 
-    "crates/horizon-core",
-    "crates/horizon-platform",
-    "crates/horizon-addresses",
-    "crates/horizon-mod-runtime",
-    "crates/horizon-mod-render",
+    "crates/foundry-core",
+    "crates/foundry-platform",
+    "crates/foundry-addresses",
+    "crates/foundry-mod-runtime",
+    "crates/foundry-mod-render",
     "docs/modding/examples",
-    "crates/horizon-dualsense",
-    "crates/horizon-narrator",
-    "crates/horizon-threads",
-    "crates/horizon-hdr",
-    "crates/horizon-world",
-    "crates/horizon-client",
-    "crates/horizon-engine-slots",
-    "crates/horizon-mod-points",
-    "crates/horizon-internals",
-    "crates/horizon-client-lib",
-    "crates/horizon-gameplay",
-    "crates/horizon-client-gameplay",
-    "crates/horizon-client-core",
-    "crates/horizon-client-input",
-    "crates/horizon-client-render",
-    "crates/horizon-command",
-    "crates/horizon-items",
-    "crates/horizon-server-files",
-    "crates/horizon-java-properties",
-    "crates/horizon-anticheat",
-    "crates/horizon-chat-filter",
-    # The Model Context Protocol, shared by horizon-ctl, horizon-server and the launcher.
-    "crates/horizon-mcp",
-    "crates/horizon-server",
-    "crates/horizon-server-launch",
-    "crates/horizon-bots",
-    "crates/horizon-assets",
-    "crates/horizon-protocol",
-    "crates/horizon-theme",
-    "crates/horizon-prepare",
-    "crates/horizon-system",
-    "crates/horizon-bench",
-    "crates/horizon-perf-format",
-    "crates/horizon-perf",
-    "crates/horizon-perf-share",
-    "crates/horizon-friends",
-    "crates/horizon-relay",
-    "crates/horizon-mod-package",
-    "crates/horizon-mod-wasm",
-    "crates/horizon-mod-api-gen",
-    "crates/horizon-mod-api",
-    "crates/horizon-mod-dimension-game",
-    "crates/horizon-hot-paths-game",
-    "crates/horizon-mod-api-macros",
-    "crates/horizon-mod-source",
-    "crates/horizon-mod-surface",
-    "crates/horizon-mod-api-gen/dispatch-tests",
-    "crates/horizon-mod-wasm/wire-loopback",
-    "crates/cargo-horizon-mod",
-    "crates/horizon-port-pack",
-    "crates/horizon-port-pack-cli",
-    "crates/horizon-shaders",
-    "crates/horizon-optifine",
-    "crates/horizon-polytone",
-    "crates/horizon-shader-api",
-    "crates/horizon-release-sign",
-    "crates/horizon-mod-deps",
+    "crates/foundry-dualsense",
+    "crates/foundry-narrator",
+    "crates/foundry-threads",
+    "crates/foundry-hdr",
+    "crates/foundry-world",
+    "crates/foundry-client",
+    "crates/foundry-engine-slots",
+    "crates/foundry-mod-points",
+    "crates/foundry-internals",
+    "crates/foundry-client-lib",
+    "crates/foundry-gameplay",
+    "crates/foundry-client-gameplay",
+    "crates/foundry-client-core",
+    "crates/foundry-client-input",
+    "crates/foundry-client-render",
+    "crates/foundry-command",
+    "crates/foundry-items",
+    "crates/foundry-server-files",
+    "crates/foundry-java-properties",
+    "crates/foundry-anticheat",
+    "crates/foundry-chat-filter",
+    # The Model Context Protocol, shared by foundry-ctl, foundry-server and the launcher.
+    "crates/foundry-mcp",
+    "crates/foundry-server",
+    "crates/foundry-server-launch",
+    "crates/foundry-bots",
+    "crates/foundry-assets",
+    "crates/foundry-protocol",
+    "crates/foundry-theme",
+    "crates/foundry-prepare",
+    "crates/foundry-system",
+    "crates/foundry-bench",
+    "crates/foundry-perf-format",
+    "crates/foundry-perf",
+    "crates/foundry-perf-share",
+    "crates/foundry-friends",
+    "crates/foundry-relay",
+    "crates/foundry-mod-package",
+    "crates/foundry-mod-wasm",
+    "crates/foundry-mod-api-gen",
+    "crates/foundry-mod-api",
+    "crates/foundry-mod-dimension-game",
+    "crates/foundry-hot-paths-game",
+    "crates/foundry-mod-api-macros",
+    "crates/foundry-mod-source",
+    "crates/foundry-mod-surface",
+    "crates/foundry-mod-api-gen/dispatch-tests",
+    "crates/foundry-mod-wasm/wire-loopback",
+    "crates/cargo-foundry-mod",
+    "crates/foundry-port-pack",
+    "crates/foundry-port-pack-cli",
+    "crates/foundry-shaders",
+    "crates/foundry-optifine",
+    "crates/foundry-polytone",
+    "crates/foundry-shader-api",
+    "crates/foundry-release-sign",
+    "crates/foundry-mod-deps",
     "xtask",
 ]
 resolver = "2"
@@ -101,7 +101,7 @@ large_enum_variant = "allow"
 # And gfx-rs/wgpu#10714: on Windows, Vulkan waits for the acquire fence only in
 # FIFO (VSync), where it was meant to pace frames; with VSync off it made every
 # frame wait for the GPU to finish the one before (#4604).
-# Horizon's own change: on NVIDIA with a Wayland surface it waits for swapchain
+# Foundry Client's own change: on NVIDIA with a Wayland surface it waits for swapchain
 # images on the CPU (swapchain/native.rs, `acquire_on_cpu`): a frame that waited for
 # one on the GPU while the compositor held it (screen capture running, KDE Wayland)
 # hung the GPU until the kernel's Xid 109 timeout lost the device.
@@ -134,13 +134,13 @@ opt-level = 3
 opt-level = 3
 
 # Packaging validates each real module repeatedly. Optimize the validator, not
-# the fixture or guest code (which use their separate horizon-wasm profile).
-[profile.dev.package.horizon-mod-package]
+# the fixture or guest code (which use their separate foundry-wasm profile).
+[profile.dev.package.foundry-mod-package]
 opt-level = 3
 [profile.dev.package.wasmparser]
 opt-level = 3
 
-[profile.dev.package.horizon-mod-api-gen]
+[profile.dev.package.foundry-mod-api-gen]
 opt-level = 3
 [profile.dev.package.syn]
 opt-level = 3
@@ -149,7 +149,7 @@ opt-level = 3
 opt-level = 3
 [profile.dev.package.proc-macro2]
 opt-level = 3
-[profile.release.package.horizon-mod-api-gen]
+[profile.release.package.foundry-mod-api-gen]
 opt-level = 3
 [profile.release.package.syn]
 opt-level = 3

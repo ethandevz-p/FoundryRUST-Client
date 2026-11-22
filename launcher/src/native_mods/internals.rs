@@ -1,7 +1,7 @@
 //! Declared internals, shared by both native build routes.
 use super::api;
 use crate::i18n::trf;
-use horizon_platform::mod_package::internals::{self, ListedInternal};
+use foundry_platform::mod_package::internals::{self, ListedInternal};
 use std::{
     collections::{BTreeMap, BTreeSet},
     fs,
@@ -50,11 +50,11 @@ impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let message = match self {
             Self::Missing { mod_id, path } => trf(
-                "E_INTERNAL_MISSING: {mod} uses {path}, which this game doesn't have; run cargo horizon-mod internals sync to discover this pin's used internals.",
+                "E_INTERNAL_MISSING: {mod} uses {path}, which this game doesn't have; run cargo foundry-mod internals sync to discover this pin's used internals.",
                 &[("mod", mod_id), ("path", path)],
             ),
             Self::Changed { mod_id, path, signature } => trf(
-                "E_INTERNAL_CHANGED: {mod} uses {path}, whose signature is now {signature}; run cargo horizon-mod update to see what changed.",
+                "E_INTERNAL_CHANGED: {mod} uses {path}, whose signature is now {signature}; run cargo foundry-mod update to see what changed.",
                 &[("mod", mod_id), ("path", path), ("signature", signature)],
             ),
             Self::Gated { mod_id, path } => trf(
@@ -104,7 +104,7 @@ impl From<internals::Error> for Error {
 
 impl Catalog {
     /// `manifest` with each absent `hash` taken from this catalog, the pinned game's as the build
-    /// checks it (`[native] horizon` fixes it exactly). The build records this form in
+    /// checks it (`[native] foundry` fixes it exactly). The build records this form in
     /// `native-mods.json`; a declaration that doesn't resolve keeps no hash and is refused by
     /// [`Self::check`].
     pub(super) fn read(dir: &Path) -> Result<Self, String> {
@@ -116,13 +116,13 @@ impl Catalog {
     }
 
     /// `manifest` with each absent `hash` taken from this catalog, the pinned game's as the build
-    /// checks it (`[native] horizon` fixes it exactly). The build records this form in
+    /// checks it (`[native] foundry` fixes it exactly). The build records this form in
     /// `native-mods.json`; a declaration that doesn't resolve keeps no hash and is refused by
     /// [`Self::check`].
     pub(super) fn pinned(
         &self,
-        manifest: &horizon_platform::mod_package::Manifest,
-    ) -> horizon_platform::mod_package::Manifest {
+        manifest: &foundry_platform::mod_package::Manifest,
+    ) -> foundry_platform::mod_package::Manifest {
         let mut pinned = manifest.clone();
         for declared in pinned
             .internals
@@ -143,7 +143,7 @@ impl Catalog {
 
     pub(super) fn check(
         &self,
-        manifest: &horizon_platform::mod_package::Manifest,
+        manifest: &foundry_platform::mod_package::Manifest,
     ) -> Result<(), Error> {
         for declared in &manifest.internals {
             internals::check(&self.internals, &manifest.id, declared)?;
@@ -153,7 +153,7 @@ impl Catalog {
 
     pub(super) fn prepare<'a>(
         &self,
-        manifests: impl IntoIterator<Item = &'a horizon_platform::mod_package::Manifest>,
+        manifests: impl IntoIterator<Item = &'a foundry_platform::mod_package::Manifest>,
     ) -> Result<BTreeMap<&'a str, Facade>, Error> {
         manifests
             .into_iter()
@@ -170,7 +170,7 @@ impl Catalog {
 
     pub(super) fn log_mixins(
         &self,
-        manifest: &horizon_platform::mod_package::Manifest,
+        manifest: &foundry_platform::mod_package::Manifest,
     ) -> Result<(), String> {
         if manifest
             .native
@@ -188,7 +188,7 @@ impl Catalog {
     /// Discovery opens the staged view, not the production declaration boundary.
     fn discovery_facade(
         &self,
-        manifest: &horizon_platform::mod_package::Manifest,
+        manifest: &foundry_platform::mod_package::Manifest,
     ) -> Result<Facade, Error> {
         let mut manifest = manifest.clone();
         manifest.internals.clear();
@@ -212,11 +212,11 @@ impl Catalog {
     /// Re-exports are the compiler's boundary: no module wildcard can widen the declaration.
     pub(super) fn facade(
         &self,
-        manifest: &horizon_platform::mod_package::Manifest,
+        manifest: &foundry_platform::mod_package::Manifest,
     ) -> Result<Facade, Error> {
         self.check(manifest)?;
         let mut tree = Module::default();
-        let mut crates = BTreeSet::from(["horizon_client".into()]);
+        let mut crates = BTreeSet::from(["foundry_client".into()]);
         if manifest.native.is_some() {
             for declared in &manifest.internals {
                 let entry = internals::resolve(
@@ -316,7 +316,7 @@ impl Module {
         let parts: Vec<_> = path.split("::").collect();
         crates.insert(parts[0].to_owned());
         // The game is the facade's root; lower crates retain their own namespace.
-        let parts = if parts[0] == "horizon_client" {
+        let parts = if parts[0] == "foundry_client" {
             &parts[1..]
         } else {
             &parts[..]
@@ -341,12 +341,12 @@ impl Module {
     }
 }
 
-pub(super) fn needed(manifest: &horizon_platform::mod_package::Manifest) -> bool {
+pub(super) fn needed(manifest: &foundry_platform::mod_package::Manifest) -> bool {
     !manifest.internals.is_empty()
 }
 
 pub(super) fn package(id: &str) -> String {
-    format!("horizon-internals-{id}")
+    format!("foundry-internals-{id}")
 }
 pub(super) fn relative(id: &str) -> String {
     format!("native-internals/{id}")
@@ -360,9 +360,9 @@ pub(super) fn stage(
     let manifest = &project.bundle.manifest;
     let dest = stage.join(relative(&manifest.id));
     fs::create_dir_all(dest.join("src")).map_err(|e| e.to_string())?;
-    let mut cargo = format!("[package]\nname = {:?}\nversion = \"0.1.0\"\nedition = \"2024\"\n[lib]\nname = \"internals\"\n[dependencies]\nhorizon-client = {{ path = \"../../crates/horizon-client\", default-features = false }}\n", package(&manifest.id));
+    let mut cargo = format!("[package]\nname = {:?}\nversion = \"0.1.0\"\nedition = \"2024\"\n[lib]\nname = \"internals\"\n[dependencies]\nfoundry-client = {{ path = \"../../crates/foundry-client\", default-features = false }}\n", package(&manifest.id));
     for krate in &facade.crates {
-        if krate != "horizon_client" {
+        if krate != "foundry_client" {
             let package = krate.replace('_', "-");
             cargo.push_str(&format!(
                 "{krate} = {{ package = {package:?}, path = \"../../crates/{package}\" }}\n"
@@ -379,18 +379,18 @@ mod tests {
     fn fixture(name: &str) -> (std::path::PathBuf, super::super::Bundle, Catalog) {
         let dir = super::super::tests::dir(&format!("internals-{name}"));
         super::super::tests::write_bundle(&dir, "example", "");
-        fs::write(dir.join("Cargo.toml"), "[package]\nname='example'\nversion='1.0.0'\nedition='2024'\n[dependencies]\nhorizon-mod-api={path='.horizon/sdk/api/crates/horizon-mod-api'}\n").unwrap();
-        let path = dir.join(horizon_platform::mod_package::manifest::MANIFEST);
-        let text = fs::read_to_string(&path).unwrap().replace("[native]", "internals = [{ path = 'horizon_client::game::Game', hash = '1234' }, { path = 'horizon_client::game::maps::dimension_id', hash = '5678' }]\n[native]\n");
+        fs::write(dir.join("Cargo.toml"), "[package]\nname='example'\nversion='1.0.0'\nedition='2024'\n[dependencies]\nfoundry-mod-api={path='.foundry/sdk/api/crates/foundry-mod-api'}\n").unwrap();
+        let path = dir.join(foundry_platform::mod_package::manifest::MANIFEST);
+        let text = fs::read_to_string(&path).unwrap().replace("[native]", "internals = [{ path = 'foundry_client::game::Game', hash = '1234' }, { path = 'foundry_client::game::maps::dimension_id', hash = '5678' }]\n[native]\n");
         fs::write(path, text).unwrap();
         let bundle = super::super::bundle_in(&dir).unwrap().unwrap();
         let catalog = Catalog {
             discovery: false,
             internals: serde_json::from_value(serde_json::json!([
-                { "path": "horizon_client::game::Game", "kind": "struct", "signature": "struct Game<'a> { world: World }", "hash": "1234" },
-                { "path": "horizon_client::game::maps::dimension_id", "kind": "fn", "signature": "fn dimension_id() -> u8", "hash": "5678" },
-                { "path": "horizon_client::game::maps::Game<'_>::dimension_id", "kind": "method", "signature": "impl Game<'_> { fn dimension_id(&self) -> u8 }", "hash": "abcd" },
-                { "path": "horizon_client::game::Game<'_>::tick", "kind": "method", "signature": "fn tick(&mut self)", "hash": "tick-hash" }
+                { "path": "foundry_client::game::Game", "kind": "struct", "signature": "struct Game<'a> { world: World }", "hash": "1234" },
+                { "path": "foundry_client::game::maps::dimension_id", "kind": "fn", "signature": "fn dimension_id() -> u8", "hash": "5678" },
+                { "path": "foundry_client::game::maps::Game<'_>::dimension_id", "kind": "method", "signature": "impl Game<'_> { fn dimension_id(&self) -> u8 }", "hash": "abcd" },
+                { "path": "foundry_client::game::Game<'_>::tick", "kind": "method", "signature": "fn tick(&mut self)", "hash": "tick-hash" }
             ])).unwrap(),
         };
         (dir, bundle, catalog)
@@ -417,8 +417,8 @@ mod tests {
         valid.internals[1].hash = Some("5678".into());
         read.check(&valid).unwrap();
         let source = read.facade(&valid).unwrap().source;
-        assert!(source.contains("pub use horizon_client::game::Game;"));
-        assert!(source.contains("pub use horizon_client::game::maps::dimension_id;"));
+        assert!(source.contains("pub use foundry_client::game::Game;"));
+        assert!(source.contains("pub use foundry_client::game::maps::dimension_id;"));
         fs::remove_dir_all(dir).unwrap();
     }
 
@@ -468,7 +468,7 @@ mod tests {
         field.hash = "field".into();
         field.signature = "u8".into();
         catalog.internals.insert(2, field);
-        bundle.manifest.internals[1] = horizon_platform::mod_package::manifest::Internal {
+        bundle.manifest.internals[1] = foundry_platform::mod_package::manifest::Internal {
             path: method.path.clone(),
             kind: Some("method".into()),
             hash: Some(method.hash),
@@ -476,7 +476,7 @@ mod tests {
         let facade = catalog.facade(&bundle.manifest).unwrap();
         assert!(facade
             .source
-            .contains("pub use horizon_client::game::Game;"));
+            .contains("pub use foundry_client::game::Game;"));
         bundle.manifest.internals[1].hash = Some("field".into());
         assert!(
             matches!(catalog.check(&bundle.manifest), Err(Error::Changed { signature, .. }) if signature == method.signature)
@@ -503,7 +503,7 @@ mod tests {
             "target.'cfg(unix)'.dependencies",
             "target.'cfg(unix)'.build-dependencies",
         ] {
-            let extra = "game = { package = 'horizon-client', version = '0.1' }\n";
+            let extra = "game = { package = 'foundry-client', version = '0.1' }\n";
             let text = if table == "dependencies" {
                 format!("{original}{extra}")
             } else {

@@ -181,7 +181,7 @@ class PortLedgerStaleScanTests(unittest.TestCase):
                     mock.patch.object(port_ledger, "rust_files", return_value=["crates/example/src/lib.rs"]):
                 result = port_ledger.build([str(sources)], [], 1)
                 stale = {g["cite"] for g in result["gaps"] if g["kind"] == "stale"}
-                # Math (JDK) and Ranges (Horizon) are not vanilla classes, and every inherited method
+                # Math (JDK) and Ranges (Foundry Client) are not vanilla classes, and every inherited method
                 # is found through its supertypes; only the rename and the nested-class miss are stale.
                 self.assertEqual(stale, {"SimplexNoise.getValue", "VibrationSystem.Listener.isOccluded"})
 

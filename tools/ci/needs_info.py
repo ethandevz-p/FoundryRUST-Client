@@ -95,6 +95,6 @@ if __name__ == "__main__":
     rest = sys.argv[1:]
     if rest not in ([], ["--apply"]):
         sys.exit(__doc__)
-    for line in run(Api(os.environ.get("REPO", "horizon-rust/horizon")), rest == ["--apply"],
+    for line in run(Api(os.environ.get("REPO", "foundry-rust/foundry")), rest == ["--apply"],
                     datetime.now(timezone.utc)):
         print(line)

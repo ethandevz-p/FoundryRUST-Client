@@ -1,4 +1,4 @@
-// Generates and dumps the tables behind crates/horizon-core/src/java_character.rs from the public
+// Generates and dumps the tables behind crates/foundry-core/src/java_character.rs from the public
 // java.lang.Character API (isLetterOrDigit(char), digit(char, int)); no JDK implementation source is read.
 //
 //   java tools/JavaCharacterTables.java tables   prints LETTER_OR_DIGIT and DIGITS as Rust source

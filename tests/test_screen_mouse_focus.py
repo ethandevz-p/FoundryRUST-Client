@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class ScreenMouseFocusTests(unittest.TestCase):
     def test_cancel_precedes_widget_focus(self):
-        game = (ROOT / "crates/horizon-client/src/game.rs").read_text()
+        game = (ROOT / "crates/foundry-client/src/game.rs").read_text()
         pre = game.index("// ScreenEvent.MouseButtonPressed.Pre")
         focus = game.index("self.key_focus_mouse_press(&event)")
         self.assertLess(game.index("self.key_focus_mouse(event_loop, &event)"), pre)
@@ -22,7 +22,7 @@ class ScreenMouseFocusTests(unittest.TestCase):
 
     @unittest.skipUnless(shutil.which("rustc"), "requires Rust")
     def test_accepted_press_focus(self):
-        source = (next(ROOT.glob('crates/horizon-client/src/game/*/pad_menu/keys.rs'))).read_text()
+        source = (next(ROOT.glob('crates/foundry-client/src/game/*/pad_menu/keys.rs'))).read_text()
         source = source.replace("pub(in crate::game) fn", "fn")
         fixture = r"""
 #[derive(Clone, Copy, PartialEq)]

@@ -27,8 +27,8 @@ def main():
     fixture = lab.ROOT / 'tests/fixtures/level_environment_reads.jsonl'
     golden = fixture.with_name('level_environment_reads_expected.jsonl')
     source_paths = [Path(__file__), fixture, golden,
-        lab.ROOT / 'mods/horizon/src/test/java/dev/horizonlab/parity/VanillaLevelEnvironmentReadsOracle.java',
-        lab.ROOT / 'mods/horizon/src/test/java/dev/horizonlab/parity/ParityData.java',
+        lab.ROOT / 'mods/foundry/src/test/java/dev/foundrylab/parity/VanillaLevelEnvironmentReadsOracle.java',
+        lab.ROOT / 'mods/foundry/src/test/java/dev/foundrylab/parity/ParityData.java',
         lab.ROOT / 'Cargo.toml', lab.ROOT / 'Cargo.lock',
         lab.ROOT / 'tools/oracle_harness.py', lab.ROOT / 'tools/test_rust_parity.py',
         lab.ROOT / 'tools/lab.py', lab.ROOT / 'tools/integration_env.py']
@@ -55,27 +55,27 @@ def main():
             assert values == expected, 'Vanilla client/server outcomes differ'
         expected = values
     # Parse Cargo's artifact stream instead of guessing its target directory or binary hash.
-    harness.run_logged(['cargo', 'test', '--locked', '-p', 'horizon-client',
+    harness.run_logged(['cargo', 'test', '--locked', '-p', 'foundry-client',
         '--no-default-features', '--lib', '--no-run', '--message-format=json'],
         build, 'compile-rust', timeout=3600)
     artifacts = [json.loads(line) for line in (build / 'compile-rust.log').read_text().splitlines()
                  if line.startswith('{')]
     executables = {record['executable'] for record in artifacts
         if record.get('reason') == 'compiler-artifact' and record.get('executable')
-        and record.get('profile', {}).get('test') and record['target']['name'] == 'horizon_client'
+        and record.get('profile', {}).get('test') and record['target']['name'] == 'foundry_client'
         and 'lib' in record['target']['kind']}
     assert len(executables) == 1, executables
     executable = executables.pop()
-    with tempfile.TemporaryDirectory(prefix='horizon-level-reads-') as scratch:
+    with tempfile.TemporaryDirectory(prefix='foundry-level-reads-') as scratch:
         env = integration_env.game_environment(os.environ, scratch)
-        for key in ('XDG_CACHE_HOME', 'HORIZON_LAUNCHER_TRASH', 'HORIZON_LAUNCHER_CLIPBOARD',
-                    'HORIZON_LAUNCHER_DESKTOP', 'TMPDIR'):
+        for key in ('XDG_CACHE_HOME', 'FOUNDRY_LAUNCHER_TRASH', 'FOUNDRY_LAUNCHER_CLIPBOARD',
+                    'FOUNDRY_LAUNCHER_DESKTOP', 'TMPDIR'):
             directory = Path(scratch) / key
             directory.mkdir()
             env[key] = str(directory)
-        env.update(HORIZON_TEST_RESOURCES=str(lab.RESOURCES),
-                   HORIZON_LEVEL_READ_CASES=str(inputs),
-                   HORIZON_LEVEL_READ_EXPECTED=str(build / 'server-expected.jsonl'))
+        env.update(FOUNDRY_TEST_RESOURCES=str(lab.RESOURCES),
+                   FOUNDRY_LEVEL_READ_CASES=str(inputs),
+                   FOUNDRY_LEVEL_READ_EXPECTED=str(build / 'server-expected.jsonl'))
         with (build / 'rust.log').open('w') as output:
             subprocess.run([executable, 'environment_read_tests',
                             '--ignored', '--test-threads=1', '--nocapture'],

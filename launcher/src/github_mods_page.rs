@@ -1,10 +1,10 @@
 //! "Add from GitHub" on the Mods page: a link to a repository, release, tag, branch or commit,
-//! resolved to an exact release file or commit (`horizon_launcher::github_mods`), shown with the
+//! resolved to an exact release file or commit (`foundry_launcher::github_mods`), shown with the
 //! plain warning and a link to the exact source, and installed only after the player says they
 //! trust it. Mods installed that way list where they came from, with "Check for updates".
 use super::line_edit::{self, Key, LineEdit};
 use super::*;
-use horizon_launcher::github_mods::{self, Origin, Packed, Resolved};
+use foundry_launcher::github_mods::{self, Origin, Packed, Resolved};
 use std::path::{Path, PathBuf};
 
 enum Event {
@@ -318,7 +318,7 @@ impl Launcher {
             .p(px(16.))
             .text_size(px(theme::UI.px))
             .text_color(t.ink)
-            .child(caps(tr("Not reviewed by the Horizon registry")).text_color(t.danger))
+            .child(caps(tr("Not reviewed by the Foundry Client registry")).text_color(t.danger))
             .child(what)
             .child(
                 tr("Native mods run with full access to this computer. Read the source before you install it."),
@@ -464,13 +464,13 @@ impl Launcher {
             |origin| self.github_actions(origin, busy, cx),
         );
         let home = self.mods.home();
-        let on = horizon_launcher::browser::java::is_enabled(&home, &row.id);
+        let on = foundry_launcher::browser::java::is_enabled(&home, &row.id);
         let id = row.id.clone();
         // A mod the stop names is decided on the panel: turning it off here would skip the
         // backup that keeps its worlds' content.
         let named = self.stop_names(&id);
         let reason = tr("Choose what to do about your worlds first");
-        // A wasm or content `.hmod` copied into `horizon-mods/` by hand needs no native consent.
+        // A wasm or content `.hmod` copied into `foundry-mods/` by hand needs no native consent.
         let native = row.native();
         let flip = switch(format!("native-switch-{id}"), on, &t);
         // A retired file can't load: Remove is all its row offers. It can't be read, so it has
@@ -487,14 +487,14 @@ impl Launcher {
                     }
                     let home = this.mods.home();
                     // An update holds the folder: the window doesn't wait for it.
-                    let Some(_lock) = horizon_launcher::browser::try_lock_home(&home) else {
+                    let Some(_lock) = foundry_launcher::browser::try_lock_home(&home) else {
                         this.mods.message =
                             Some(Err(tr("Wait for the current operation to finish.").into()));
                         cx.notify();
                         return;
                     };
                     this.mods.message =
-                        horizon_launcher::browser::java::set_enabled(&home, &id, !on)
+                        foundry_launcher::browser::java::set_enabled(&home, &id, !on)
                             .err()
                             .map(Err);
                     this.instance_mods_changed();
@@ -546,7 +546,7 @@ impl Launcher {
             remove.on_click(cx.listener(move |this, _: &ClickEvent, _, cx| {
                 if this.github.confirm_remove.as_deref() == Some(&row.file) {
                     let home = this.mods.home();
-                    let Some(_lock) = horizon_launcher::browser::try_lock_home(&home) else {
+                    let Some(_lock) = foundry_launcher::browser::try_lock_home(&home) else {
                         this.mods.message =
                             Some(Err(tr("Wait for the current operation to finish.").into()));
                         cx.notify();

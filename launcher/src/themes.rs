@@ -2,15 +2,15 @@
 //! Home.
 //!
 //! An accent is a hue, and the player may pick any of them; seven hues have names, as shortcuts.
-//! Horizon's violet is the default. Another hue turns the violet tokens (`horizon_theme::Blocks`'
+//! Foundry Client's violet is the default. Another hue turns the violet tokens (`foundry_theme::Blocks`'
 //! accent and the main action's face, bevel and lip) to it, keeping their saturation and
 //! lightness, then darkens or lightens each just enough to read as well as the violet does: white
 //! on the face at 4.5:1, the accent at 3:1 on every background.
-use horizon_theme::night::{Land, Mood, Night, SkyArt};
-use horizon_theme::{contrast, Blocks};
+use foundry_theme::night::{Land, Mood, Night, SkyArt};
+use foundry_theme::{contrast, Blocks};
 use std::path::{Path, PathBuf};
 
-/// An accent: a hue in degrees, or none for Horizon's violet, whose tokens are the palette's own
+/// An accent: a hue in degrees, or none for Foundry Client's violet, whose tokens are the palette's own
 /// and stay untouched; and for a colour typed as hex, that colour (the glass look wears it as
 /// is, the light look takes its hue).
 #[derive(Clone, Copy, Debug, Default, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -40,13 +40,13 @@ impl ThemeAccent {
 /// How a theme with its own palette draws the launcher.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Look {
-    /// The same glass pages as Horizon's own, over the pixel sunset in the accent's hue.
+    /// The same glass pages as Foundry Client's own, over the pixel sunset in the accent's hue.
     Glass,
     /// The glass pages with a thin edge over the theme's own dark sky (true black for OLED
     /// screens) instead of the sunset, its plates frosting it.
     Oled,
     /// The glass pages over the theme's own painted sky (`sky.rs`, with its drifting
-    /// [`Mood`](horizon_theme::night::Mood)) instead of the sunset, its plates frosting it.
+    /// [`Mood`](foundry_theme::night::Mood)) instead of the sunset, its plates frosting it.
     Painted,
     /// The square, solid Blocks look (Nord, kept as it was).
     Solid,
@@ -110,7 +110,7 @@ pub const NORD_DARK: Night = Night {
 /// Old School's sky: the night tokens under the sky just before sunrise.
 pub const OLD_SCHOOL_NIGHT: Night = Night {
     sky: [0x0b1030, 0x18225a, 0x232c66, 0x6f6ab4, 0xe2a0b0, 0xffd6a0],
-    ..horizon_theme::night::NIGHT
+    ..foundry_theme::night::NIGHT
 };
 
 /// Old School (once First Light, the launcher's first theme; its id is kept for saved settings):
@@ -171,7 +171,7 @@ pub const SUNRISE_DARK: Night = Night {
     },
 };
 
-/// Hypr Neon's night: true black over a magenta horizon, a cyan accent and magenta edges, neon
+/// Hypr Neon's night: true black over a magenta foundry, a cyan accent and magenta edges, neon
 /// lines along the skylines and a grid floor (after the player's Hypr OLED NEON Discord theme;
 /// its colours only, nothing of its CSS).
 pub const HYPR_DARK: Night = Night {
@@ -208,7 +208,7 @@ pub const HYPR_DARK: Night = Night {
     },
 };
 
-/// Sunrise: the Sunrise website's warm dawn, on Horizon's glass pages.
+/// Sunrise: the Sunrise website's warm dawn, on Foundry Client's glass pages.
 pub const SUNRISE: Theme = Theme {
     id: "sunrise",
     name: "Sunrise",
@@ -219,7 +219,7 @@ pub const SUNRISE: Theme = Theme {
     look: Look::Glass,
 };
 
-/// Hypr Neon: OLED black with neon cyan and magenta, on Horizon's pages with solid plates.
+/// Hypr Neon: OLED black with neon cyan and magenta, on Foundry Client's pages with solid plates.
 pub const HYPR_NEON: Theme = Theme {
     id: "hypr_neon",
     name: "Hypr Neon",
@@ -265,7 +265,7 @@ pub const OCEAN_DARK: Night = Night {
     },
 };
 
-/// Deep Ocean: teal water, light shafts and bubbles, on Horizon's glass pages.
+/// Deep Ocean: teal water, light shafts and bubbles, on Foundry Client's glass pages.
 pub const DEEP_OCEAN: Theme = Theme {
     id: "deep_ocean",
     name: "Deep Ocean",
@@ -311,7 +311,7 @@ pub const AUTUMN_DARK: Night = Night {
     },
 };
 
-/// Autumn Forest: amber and rust under falling leaves, on Horizon's glass pages.
+/// Autumn Forest: amber and rust under falling leaves, on Foundry Client's glass pages.
 pub const AUTUMN_FOREST: Theme = Theme {
     id: "autumn_forest",
     name: "Autumn Forest",
@@ -357,7 +357,7 @@ pub const CHERRY_DARK: Night = Night {
     },
 };
 
-/// Cherry Blossom: a pink twilight with drifting petals, on Horizon's glass pages.
+/// Cherry Blossom: a pink twilight with drifting petals, on Foundry Client's glass pages.
 pub const CHERRY_BLOSSOM: Theme = Theme {
     id: "cherry_blossom",
     name: "Cherry Blossom",
@@ -403,7 +403,7 @@ pub const AURORA_DARK: Night = Night {
     },
 };
 
-/// Midnight Aurora: green and violet curtains over a deep blue night, on Horizon's glass pages.
+/// Midnight Aurora: green and violet curtains over a deep blue night, on Foundry Client's glass pages.
 pub const MIDNIGHT_AURORA: Theme = Theme {
     id: "midnight_aurora",
     name: "Midnight Aurora",
@@ -512,10 +512,10 @@ pub const TAIGA: Theme = Theme {
     look: Look::Painted,
 };
 
-/// Horizon's own theme's line in Settings.
-pub const HORIZON_DESCRIPTION: &str = "The pixel sunset";
+/// Foundry Client's own theme's line in Settings.
+pub const FOUNDRY_DESCRIPTION: &str = "The pixel sunset";
 
-/// The launcher themes past Horizon's own sky: the featured families first, then the older ones.
+/// The launcher themes past Foundry Client's own sky: the featured families first, then the older ones.
 pub const THEMES: [Theme; 10] = [
     SUNRISE,
     HYPR_NEON,
@@ -529,16 +529,16 @@ pub const THEMES: [Theme; 10] = [
     NORD,
 ];
 
-/// Horizon's own theme's key in `Settings::theme_accents`.
-pub const HORIZON: &str = "horizon";
+/// Foundry Client's own theme's key in `Settings::theme_accents`.
+pub const FOUNDRY: &str = "foundry";
 
-/// A theme's key in `Settings::theme_accents`: its id, or [`HORIZON`].
+/// A theme's key in `Settings::theme_accents`: its id, or [`FOUNDRY`].
 pub fn accent_key(id: Option<&str>) -> &str {
-    theme(id).map_or(HORIZON, |t| t.id)
+    theme(id).map_or(FOUNDRY, |t| t.id)
 }
 
 /// The accent a theme starts with: the one last picked under it, else its own (violet for
-/// Horizon's).
+/// Foundry Client's).
 pub fn starting_accent(
     id: Option<&str>,
     kept: &std::collections::BTreeMap<String, Accent>,
@@ -548,7 +548,7 @@ pub fn starting_accent(
         .unwrap_or_else(|| theme(id).map_or(Accent::VIOLET, |t| t.accent.accent()))
 }
 
-/// The theme named `id` (`Settings::theme`); None for Horizon's own sky or a name this launcher
+/// The theme named `id` (`Settings::theme`); None for Foundry Client's own sky or a name this launcher
 /// doesn't know.
 pub fn theme(id: Option<&str>) -> Option<&'static Theme> {
     THEMES.iter().find(|t| Some(t.id) == id)

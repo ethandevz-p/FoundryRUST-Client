@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""One-shot arismoko/horizon#1456 move; --check BASE proves the scoped statements and residual sources."""
+"""One-shot arismoko/foundry#1456 move; --check BASE proves the scoped statements and residual sources."""
 import argparse
 from collections import defaultdict
 from pathlib import Path
@@ -7,7 +7,7 @@ import re
 import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
-SRC = Path("crates/horizon-mod-vocab/src")
+SRC = Path("crates/foundry-mod-vocab/src")
 INCLUDE = 'include!(concat!(env!("OUT_DIR"), "/mod_api_exports_{}.rs"));\n'
 
 

@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""SpawnEggItem.use on source fluids, through real vanilla and Horizon servers.
+"""SpawnEggItem.use on source fluids, through real vanilla and Foundry Client servers.
 
 Fluid cases send UseItem into a deep pool; a UseItemOn control has a mob
 under the last look direction. Compare spawn, egg count and used stat. Covers
 lava/water sources, flowing lava, a solid obstruction, waterlogged blocks,
 creative, adventure (with/without can_place_on) and peaceful monster eggs, and the
-Ender Dragon's egg on a block (Horizon simulates the dragon apart from other mobs).
+Ender Dragon's egg on a block (Foundry Client simulates the dragon apart from other mobs).
 """
 import json
 try:

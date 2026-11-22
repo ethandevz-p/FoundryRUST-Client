@@ -8,7 +8,7 @@
 # name any key, so what is made from the vanilla data goes into a cache only as this archive:
 # - a POSIX tar (nanosecond modification times: tools/parity_shim.py replays an oracle run only while its outputs
 #   keep theirs), zstd, then the dataset's own encryption (openssl enc -aes-256-cbc -pbkdf2 -iter 600000 -md sha256,
-#   the passphrase of horizon-rust/vanilla-data);
+#   the passphrase of foundry-rust/vanilla-data);
 # - ARCHIVE.mac: the entry's cache KEY, then HMAC-SHA256 over a version, LABEL, KEY and the whole ciphertext, keyed by
 #   PBKDF2 of the same passphrase with a salt of its own, so the two keys are independent. openssl enc has no
 #   authenticated mode, and age reads a passphrase only from a terminal.
@@ -78,8 +78,8 @@ if mode == "unseal":
         sys.exit(3)
     key = stored
 with open(passphrase, "rb") as file:
-    secret = hashlib.pbkdf2_hmac("sha256", file.read(), b"horizon-rust/horizon sealed-cache MAC key v1", 600000)
-mac = hmac.new(secret, b"horizon sealed-cache v2\0" + label.encode() + b"\0" + key.encode() + b"\0", "sha256")
+    secret = hashlib.pbkdf2_hmac("sha256", file.read(), b"foundry-rust/foundry sealed-cache MAC key v1", 600000)
+mac = hmac.new(secret, b"foundry sealed-cache v2\0" + label.encode() + b"\0" + key.encode() + b"\0", "sha256")
 with open(path, "rb") as file:
     for block in iter(lambda: file.read(1 << 20), b""):
         mac.update(block)

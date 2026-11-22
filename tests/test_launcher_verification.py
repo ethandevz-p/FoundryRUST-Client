@@ -31,7 +31,7 @@ class LauncherVerification(unittest.TestCase):
             cargo.chmod(0o755)
             (root / "dist").mkdir()
             (root / "dist/ephemeral.pub").write_text("dry-run-public-key\n")
-            for repository in ("horizon-rust/horizon", "another/fork"):
+            for repository in ("foundry-rust/foundry", "another/fork"):
                 for ephemeral in ("", "yes"):
                     with self.subTest(repository=repository, ephemeral=ephemeral):
                         result = subprocess.run(
@@ -41,7 +41,7 @@ class LauncherVerification(unittest.TestCase):
                                  "EPHEMERAL": ephemeral},
                             capture_output=True, text=True, check=True,
                         )
-                        expected = ["run", "--locked", "--quiet", "-p", "horizon-release-sign",
+                        expected = ["run", "--locked", "--quiet", "-p", "foundry-release-sign",
                                     "--", "verify", "--repository", repository,
                                     "--tag", "launcher@0.2.7", "--publishing"]
                         if ephemeral:

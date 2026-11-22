@@ -1,16 +1,16 @@
 //! Debug-build previews of the native mod states a real failure or a real build makes, so each
-//! can be screenshotted in the glass look: `HORIZON_LAUNCHER_PAGE=mod-…` (see [`NAMES`]). Every
+//! can be screenshotted in the glass look: `FOUNDRY_LAUNCHER_PAGE=mod-…` (see [`NAMES`]). Every
 //! text comes from the code that says it in a real build (`native_mods`), never from a copy.
 //! Nothing here runs in a release build, and nothing is written to the player's data.
 use super::*;
 use build_mode::ModKind;
-use horizon_launcher::native_mods::{
+use foundry_launcher::native_mods::{
     self as nm,
     fit::{self, Verdict},
     sdk_cache::Refusal as Sdk,
     Route, Step,
 };
-use horizon_platform::mod_package::mod_surface::uses::{Change, Misfit};
+use foundry_platform::mod_package::mod_surface::uses::{Change, Misfit};
 use instance_mods::ModRow;
 
 /// What a preview puts in place of what the launcher reads from disk.
@@ -32,7 +32,7 @@ const MADE_FOR: &str = "the Nov 10 update";
 
 /// The compiler's download, as the build card and the trust question say it.
 fn compiler_bytes() -> u64 {
-    horizon_launcher::rust_toolchain::host().map_or(0, |host| host.download_bytes())
+    foundry_launcher::rust_toolchain::host().map_or(0, |host| host.download_bytes())
 }
 
 fn misfits(count: usize) -> Vec<Misfit> {
@@ -103,7 +103,7 @@ fn error(key: &str) -> Option<String> {
     let build = BUILD.to_owned();
     let sdk = |refusal: Sdk| refusal.to_string();
     Some(match key {
-        "no-horizon" => tr("Install Horizon first.").to_string(),
+        "no-foundry" => tr("Install Foundry Client first.").to_string(),
         "no-sdk" => sdk(Sdk::NoSdk { build }),
         "offline-size" => sdk(Sdk::Offline {
             build,
@@ -213,12 +213,12 @@ fn left_out() -> Vec<nm::LeftOut> {
 }
 
 impl Launcher {
-    /// Applies the preview `HORIZON_LAUNCHER_PAGE` names, in debug builds only.
+    /// Applies the preview `FOUNDRY_LAUNCHER_PAGE` names, in debug builds only.
     pub(super) fn mod_preview_from_env(&mut self) {
         if !cfg!(debug_assertions) {
             return;
         }
-        let Ok(page) = std::env::var("HORIZON_LAUNCHER_PAGE") else {
+        let Ok(page) = std::env::var("FOUNDRY_LAUNCHER_PAGE") else {
             return;
         };
         let Some(name) = page.strip_prefix("mod-") else {

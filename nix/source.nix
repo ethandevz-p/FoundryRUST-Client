@@ -17,7 +17,7 @@ let
   ];
 in
 lib.cleanSourceWith {
-  name = "horizon-source";
+  name = "foundry-source";
   src = lib.cleanSource root;
   filter =
     path: _type:

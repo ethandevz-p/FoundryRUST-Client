@@ -125,7 +125,7 @@ fn hard_linked_outputs_across_entries_count_once() {
 
 #[test]
 fn referenced_jar_and_uninstrumented_unused_jar_are_kept() {
-    use horizon_platform::mod_package::{manifest::JarRef, Package};
+    use foundry_platform::mod_package::{manifest::JarRef, Package};
     use sha2::{Digest, Sha512};
     use std::io::Write;
     let home = Home::new();
@@ -147,7 +147,7 @@ fn referenced_jar_and_uninstrumented_unused_jar_are_kept() {
     .unwrap();
     let referenced = jar.cache_path(&home.0.join("jars"));
     fs::write(&referenced, bytes).unwrap();
-    let manifest = home.seed("horizon-mods/example/horizon-mod.toml");
+    let manifest = home.seed("foundry-mods/example/foundry-mod.toml");
     fs::write(&manifest, format!("id='example'\nname='Example'\nversion='1.0.0'\napi='0.2'\ncapabilities=['registries']\n[[jar]]\nid='original'\nversion='1.0.0'\nsha512='{}'\n", jar.sha512())).unwrap();
     Package::read(manifest.parent().unwrap()).unwrap();
     let unused = home.seed("jars/unused.jar");
@@ -179,24 +179,24 @@ fn capable_units_delete_only_after_the_last_game_lease_and_mixed_builds_stay_res
         std::os::unix::fs::symlink(&real, &alias).unwrap();
         let mut actor = Command::new(std::env::current_exe().unwrap());
         actor.args(["--exact", "storage::inventory::regressions::capable_units_delete_only_after_the_last_game_lease_and_mixed_builds_stay_residual"])
-            .env("CLASSIFICATION_ROOT", &alias).env("HORIZON_LAUNCHER_HOME", alias.join("data"))
-            .env("HORIZON_HOME", alias.join("data/cache"))
+            .env("CLASSIFICATION_ROOT", &alias).env("FOUNDRY_LAUNCHER_HOME", alias.join("data"))
+            .env("FOUNDRY_HOME", alias.join("data/cache"))
             .env("XDG_DATA_HOME", alias.join("xdg-data")).env("XDG_CONFIG_HOME", alias.join("xdg-config"))
-            .env("HORIZON_LAUNCHER_TRASH", alias.join("trash")).env("HORIZON_LAUNCHER_CLIPBOARD", alias.join("clipboard"))
-            .env("HORIZON_LAUNCHER_DESKTOP", alias.join("desktop"))
-            .env("HORIZON_LAUNCHER_NO_SELF_UPDATE", "1").env("HORIZON_NO_AUDIO", "1");
+            .env("FOUNDRY_LAUNCHER_TRASH", alias.join("trash")).env("FOUNDRY_LAUNCHER_CLIPBOARD", alias.join("clipboard"))
+            .env("FOUNDRY_LAUNCHER_DESKTOP", alias.join("desktop"))
+            .env("FOUNDRY_LAUNCHER_NO_SELF_UPDATE", "1").env("FOUNDRY_NO_AUDIO", "1");
         assert!(actor.status().unwrap().success());
         return;
     };
     let root = PathBuf::from(root);
     if std::env::var_os("CLASSIFICATION_GAME").is_some() {
-        horizon_platform::mod_package::holder::enter();
+        foundry_platform::mod_package::holder::enter();
         let mut command = Command::new(std::env::current_exe().unwrap());
         command.args(std::env::args_os().skip(1));
         let selection =
-            horizon_platform::mod_package::selection::LaunchArguments::for_command(&command)
+            foundry_platform::mod_package::selection::LaunchArguments::for_command(&command)
                 .unwrap();
-        let _capture = horizon_platform::mod_package::holder::acquire(&selection);
+        let _capture = foundry_platform::mod_package::holder::acquire(&selection);
         fs::write(root.join("ready"), b"").unwrap();
         let end = std::time::Instant::now() + std::time::Duration::from_secs(15);
         while !root.join("stop").exists() {

@@ -1,10 +1,10 @@
-//! Servers hosted from the launcher. Every server is a `horizon-server` folder and the launcher drives
-//! `horizon-server` (docs/server.md in the repository) rather than its own copy of the logic: `init`,
+//! Servers hosted from the launcher. Every server is a `foundry-server` folder and the launcher drives
+//! `foundry-server` (docs/server.md in the repository) rather than its own copy of the logic: `init`,
 //! `start`, `stop`, `config set`, `backup`, `restore`, `update`, `service`, and the control API the running
 //! supervisor serves on 127.0.0.1 for the live status, the log and console commands.
 //!
-//! The programs come from an installed Horizon version, laid out as `install.sh` lays them out
-//! (`server-runtime/releases/<tag>`, `current`, `game-files/`), so `horizon-server update` and its
+//! The programs come from an installed Foundry Client version, laid out as `install.sh` lays them out
+//! (`server-runtime/releases/<tag>`, `current`, `game-files/`), so `foundry-server update` and its
 //! rollback work on them unchanged. The game files are the player's own, copied from the version the
 //! launcher prepared: nothing of Mojang's is downloaded or shipped.
 
@@ -18,9 +18,9 @@ use std::process::{Command, Stdio};
 use std::time::Duration;
 
 const PROGRAM: &str = if cfg!(windows) {
-    "horizon-server.exe"
+    "foundry-server.exe"
 } else {
-    "horizon-server"
+    "foundry-server"
 };
 
 /// The Minecraft EULA a server owner agrees to.
@@ -40,7 +40,7 @@ pub struct Entry {
 }
 
 impl Entry {
-    /// `horizon-server --dir <dir> <args>`, here or over SSH on the entry's computer.
+    /// `foundry-server --dir <dir> <args>`, here or over SSH on the entry's computer.
     pub fn command(&self, args: &[&str]) -> Result<Command, String> {
         match &self.host {
             Some(host) => remote::command(host, &self.dir.to_string_lossy(), args),
@@ -53,7 +53,7 @@ impl Entry {
 pub mod remote;
 
 /// The game mode a server's `server.toml` sets (`[world] game_mode`), read from the file
-/// without asking `horizon-server`: the Servers page's list says it for each stopped server.
+/// without asking `foundry-server`: the Servers page's list says it for each stopped server.
 pub fn game_mode(dir: &Path) -> Option<String> {
     let text = fs::read_to_string(dir.join("server.toml")).ok()?;
     let config: toml::Value = toml::from_str(&text).ok()?;
@@ -145,7 +145,7 @@ fn trash_stopped_server(
     {
         return Err("This is not a server folder.".into());
     }
-    let state = dir.join(".horizon");
+    let state = dir.join(".foundry");
     fs::create_dir_all(&state).map_err(|e| e.to_string())?;
     // The supervisor holds this same lock throughout starting, running and stopping.
     // Hold it through the move so a stale UI/API status cannot delete a live server.
@@ -196,7 +196,7 @@ pub fn new_folder(name: &str) -> PathBuf {
     dir
 }
 
-// ----- The programs: an installed Horizon version, laid out as install.sh does ---------------------
+// ----- The programs: an installed Foundry Client version, laid out as install.sh does ---------------------
 
 pub fn runtime_root() -> PathBuf {
     backend::data_dir().join(RUNTIME)
@@ -205,19 +205,19 @@ pub fn runtime_root() -> PathBuf {
 /// The servers' programs in the launcher's data.
 const RUNTIME: &str = "server-runtime";
 
-/// The names horizon-server gives its background services: `name` and `launchd_label` in
-/// crates/horizon-server/src/service.rs, which the launcher doesn't depend on.
+/// The names foundry-server gives its background services: `name` and `launchd_label` in
+/// crates/foundry-server/src/service.rs, which the launcher doesn't depend on.
 #[cfg_attr(target_os = "macos", allow(dead_code))]
-const SERVICE_PREFIX: &str = "horizon-server-";
+const SERVICE_PREFIX: &str = "foundry-server-";
 #[cfg(target_os = "macos")]
-const LAUNCHD_PREFIX: &str = "dev.horizon.server.";
+const LAUNCHD_PREFIX: &str = "dev.foundry.server.";
 
-/// Horizon server services registered on this computer, for any server and in any scope, read
+/// Foundry Client server services registered on this computer, for any server and in any scope, read
 /// from the system's own registrations (no server program is run). An unreadable one is an error.
 pub(crate) fn registered_services() -> Result<Vec<String>, String> {
     #[cfg(windows)]
     {
-        scheduled_tasks().map(horizon_tasks)
+        scheduled_tasks().map(foundry_tasks)
     }
     #[cfg(not(windows))]
     {
@@ -262,16 +262,16 @@ pub(crate) fn registered_services() -> Result<Vec<String>, String> {
     }
 }
 
-/// The names among `tasks` that horizon-server registered.
+/// The names among `tasks` that foundry-server registered.
 #[cfg(any(windows, test))]
-fn horizon_tasks(tasks: Vec<String>) -> Vec<String> {
+fn foundry_tasks(tasks: Vec<String>) -> Vec<String> {
     tasks
         .into_iter()
         .filter(|name| name.starts_with(SERVICE_PREFIX))
         .collect()
 }
 
-/// The tasks in Task Scheduler's root folder, where horizon-server registers its own, hidden ones
+/// The tasks in Task Scheduler's root folder, where foundry-server registers its own, hidden ones
 /// too, read through the scheduler's own interface.
 #[cfg(windows)]
 fn scheduled_tasks() -> Result<Vec<String>, String> {
@@ -326,7 +326,7 @@ fn scheduled_tasks() -> Result<Vec<String>, String> {
 
 /// The server runtime's links in the launcher's data, which a move leaves out and makes again
 /// in the new folder: `current` to the release it selects, and each release's
-/// `.local/horizon-client` to the servers' game files. Found without following any link.
+/// `.local/foundry-client` to the servers' game files. Found without following any link.
 #[derive(Debug, Default)]
 pub(crate) struct RuntimeLinks {
     release: Option<std::ffi::OsString>,
@@ -350,7 +350,7 @@ impl RuntimeLinks {
         let mut links = Self::default();
         let refused = |link: &Path| {
             format!(
-                "{} is a link Horizon did not make; remove it, or set the servers up again, before moving data",
+                "{} is a link Foundry Client did not make; remove it, or set the servers up again, before moving data",
                 link.display()
             )
         };
@@ -393,14 +393,14 @@ impl RuntimeLinks {
         for entry in fs::read_dir(&releases).map_err(|e| format!("{}: {e}", releases.display()))? {
             let entry = entry.map_err(|e| format!("{}: {e}", releases.display()))?;
             let local = entry.path().join(".local");
-            let link = local.join("horizon-client");
+            let link = local.join("foundry-client");
             if !plain_dir(&entry.path()) || !plain_dir(&local) || !is_link(&link) {
                 continue;
             }
             let text = fs::read_link(&link).map_err(|_| refused(&link))?;
-            if !(ours(&text, Path::new("game-files/horizon-client"))
+            if !(ours(&text, Path::new("game-files/foundry-client"))
                 && plain_dir(&root.join("game-files"))
-                && plain_dir(&root.join("game-files/horizon-client")))
+                && plain_dir(&root.join("game-files/foundry-client")))
             {
                 return Err(refused(&link));
             }
@@ -415,7 +415,7 @@ impl RuntimeLinks {
         let local = |tag: &std::ffi::OsString| {
             root.join("releases")
                 .join(tag)
-                .join(".local/horizon-client")
+                .join(".local/foundry-client")
         };
         let current = self.release.as_ref().map(|_| root.join("current"));
         self.game_files.iter().map(local).chain(current).collect()
@@ -425,13 +425,13 @@ impl RuntimeLinks {
     /// names, and checks them before the move is committed.
     pub(crate) fn make(&self, launcher: &Path) -> Result<(), String> {
         let root = launcher.join(RUNTIME);
-        let files = root.join("game-files/horizon-client");
+        let files = root.join("game-files/foundry-client");
         let mut made = Vec::new();
         for tag in &self.game_files {
             made.push((
                 root.join("releases")
                     .join(tag)
-                    .join(".local/horizon-client"),
+                    .join(".local/foundry-client"),
                 files.clone(),
             ));
         }
@@ -505,7 +505,7 @@ fn dir_link(target: &Path, link: &Path) -> std::io::Result<()> {
     }
 }
 
-/// `horizon-server` of the release in use, once one is set up.
+/// `foundry-server` of the release in use, once one is set up.
 pub fn program() -> Option<PathBuf> {
     Some(runtime_root().join("current").join(PROGRAM)).filter(|p| p.is_file())
 }
@@ -516,28 +516,28 @@ pub fn runtime_release() -> Option<String> {
     Some(target.file_name()?.to_string_lossy().into_owned())
 }
 
-/// Where `horizon-server` finds the game files: the folder install.sh keeps across updates.
+/// Where `foundry-server` finds the game files: the folder install.sh keeps across updates.
 pub fn game_files(root: &Path, game_version: &str) -> PathBuf {
-    root.join("game-files/horizon-client").join(game_version)
+    root.join("game-files/foundry-client").join(game_version)
 }
 
 /// Whether the servers' game files are there.
 pub fn game_files_ready() -> bool {
     game_files(&runtime_root(), "26.3")
-        .join("horizon-resources.json")
+        .join("foundry-resources.json")
         .is_file()
 }
 
-/// Whether an installed version can host: it ships `horizon-server` and is prepared.
+/// Whether an installed version can host: it ships `foundry-server` and is prepared.
 pub fn can_host(tag: &str) -> Result<(), String> {
     if !backend::version_dir(tag).join(PROGRAM).is_file() {
         return Err(format!(
-            "Horizon {tag} has no server program. Install a newer version on the Versions page."
+            "Foundry Client {tag} has no server program. Install a newer version on the Versions page."
         ));
     }
     if !backend::check_prepared(tag) {
         return Err(format!(
-            "Horizon {tag} isn't prepared yet: press Prepare on the Play page (it uses your own Minecraft {})",
+            "Foundry Client {tag} isn't prepared yet: press Prepare on the Play page (it uses your own Minecraft {})",
             backend::game_version(tag)
         ));
     }
@@ -573,11 +573,11 @@ pub fn set_up_in(root: &Path, version: &Path, tag: &str, game_version: &str) -> 
         }
         let local = release.join(".local");
         fs::create_dir_all(&local).map_err(|e| e.to_string())?;
-        let link = local.join("horizon-client");
+        let link = local.join("foundry-client");
         if link.symlink_metadata().is_err() {
-            fs::create_dir_all(root.join("game-files/horizon-client"))
+            fs::create_dir_all(root.join("game-files/foundry-client"))
                 .map_err(|e| e.to_string())?;
-            point(&link, &root.join("game-files/horizon-client")).map_err(|e| e.to_string())?;
+            point(&link, &root.join("game-files/foundry-client")).map_err(|e| e.to_string())?;
         }
         point(&root.join("current"), &release).map_err(|e| e.to_string())?;
     }
@@ -586,7 +586,7 @@ pub fn set_up_in(root: &Path, version: &Path, tag: &str, game_version: &str) -> 
     let running = fs::canonicalize(root.join("current")).unwrap_or(release);
     complete(&running)?;
     // The game files: a copy (preparing again rewrites files in place), swapped in whole.
-    let from = version.join(".local/horizon-client").join(game_version);
+    let from = version.join(".local/foundry-client").join(game_version);
     let to = game_files(root, game_version);
     let fresh = to.with_extension("copying");
     let _ = fs::remove_dir_all(&fresh);
@@ -605,7 +605,7 @@ pub fn set_up_in(root: &Path, version: &Path, tag: &str, game_version: &str) -> 
 /// launcher's installs have. The copy of a release is an installation, as install.sh lays one out,
 /// and without the marker the engine exits before loading a world.
 fn complete(release: &Path) -> Result<(), String> {
-    horizon_platform::mod_package::runtime_leases::write_completion(release)
+    foundry_platform::mod_package::runtime_leases::write_completion(release)
         .map_err(|e| format!("{}: {e}", release.join(backend::COMPLETE).display()))
 }
 
@@ -616,7 +616,7 @@ fn copy_release(from: &Path, to: &Path) -> std::io::Result<()> {
     for entry in fs::read_dir(from)? {
         let entry = entry?;
         let name = entry.file_name();
-        if name == ".local" || name == ".installed" || name == "Horizon.app" {
+        if name == ".local" || name == ".installed" || name == "Foundry Client.app" {
             continue;
         }
         let target = to.join(&name);
@@ -661,9 +661,9 @@ fn point(link: &Path, target: &Path) -> std::io::Result<()> {
     }
 }
 
-// ----- Running horizon-server -------------------------------------------------------------------
+// ----- Running foundry-server -------------------------------------------------------------------
 
-/// `horizon-server --dir <dir> <args>`.
+/// `foundry-server --dir <dir> <args>`.
 pub fn command(dir: &Path, args: &[&str]) -> Result<Command, String> {
     let program = program().ok_or(
         "The server programs aren't set up yet: create a server, or press Prepare on its page.",
@@ -681,14 +681,14 @@ fn log_length(dir: &Path) -> u64 {
     fs::metadata(supervisor_log(dir)).map_or(0, |m| m.len())
 }
 
-/// Runs one `horizon-server` command to its end: what it printed, or the problem in plain words.
+/// Runs one `foundry-server` command to its end: what it printed, or the problem in plain words.
 pub fn run(dir: &Path, args: &[&str]) -> Result<String, Problem> {
     let since = log_length(dir);
     let output = command(dir, args)
         .map_err(Problem::plain)?
         .stdin(Stdio::null())
         .output()
-        .map_err(|e| Problem::plain(format!("Couldn't run horizon-server: {e}")))?;
+        .map_err(|e| Problem::plain(format!("Couldn't run foundry-server: {e}")))?;
     let out = String::from_utf8_lossy(&output.stdout).into_owned();
     if output.status.success() {
         Ok(out)
@@ -698,7 +698,7 @@ pub fn run(dir: &Path, args: &[&str]) -> Result<String, Problem> {
     }
 }
 
-/// Runs a long `horizon-server` command, passing each line it prints to `line`.
+/// Runs a long `foundry-server` command, passing each line it prints to `line`.
 pub fn run_streamed(dir: &Path, args: &[&str], line: &dyn Fn(String)) -> Result<(), Problem> {
     stream(dir, command(dir, args).map_err(Problem::plain)?, line)
 }
@@ -713,12 +713,12 @@ pub fn run_managed(
 ) -> Result<(), Problem> {
     let supervisor = command(dir, args).map_err(Problem::plain)?;
     let mut engine =
-        horizon_server_launch::engine_command(Path::new(supervisor.get_program()), dir).map_err(
+        foundry_server_launch::engine_command(Path::new(supervisor.get_program()), dir).map_err(
             |error| {
                 let mut problem = Problem::plain(error.to_string());
                 if matches!(
                     error,
-                    horizon_server_launch::EngineCommandError::Resources(_)
+                    foundry_server_launch::EngineCommandError::Resources(_)
                 ) {
                     problem.fix = Some(Fix::Prepare);
                 }
@@ -763,7 +763,7 @@ fn stream(dir: &Path, mut command: Command, line: &dyn Fn(String)) -> Result<(),
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
-        .map_err(|e| Problem::plain(format!("Couldn't run horizon-server: {e}")))?;
+        .map_err(|e| Problem::plain(format!("Couldn't run foundry-server: {e}")))?;
     let (tx_err, rx_err) = std::sync::mpsc::channel();
     let mut err = child.stderr.take();
     std::thread::spawn(move || {
@@ -854,7 +854,7 @@ impl Problem {
         }
     }
 
-    /// Reads what `horizon-server` (and the game log it points at) said.
+    /// Reads what `foundry-server` (and the game log it points at) said.
     /// `since` is the background server's log length before the command: only what it logged after counts.
     pub fn explain(output: &str, dir: &Path, since: u64) -> Self {
         let log = fs::read(supervisor_log(dir)).unwrap_or_default();
@@ -907,7 +907,7 @@ impl Problem {
         let said = both
             .lines()
             .rev()
-            .find_map(|l| l.strip_prefix("horizon-server: "))
+            .find_map(|l| l.strip_prefix("foundry-server: "))
             .map(str::to_string)
             .or_else(|| {
                 output
@@ -916,7 +916,7 @@ impl Problem {
                     .find(|l| !l.trim().is_empty())
                     .map(str::to_string)
             })
-            .unwrap_or_else(|| "horizon-server failed without saying why".into());
+            .unwrap_or_else(|| "foundry-server failed without saying why".into());
         Self::plain(capitalised(&said))
     }
 }
@@ -979,7 +979,7 @@ impl Default for NewServer {
 
 /// A port nobody listens on, from `from` up, and not one of `taken`.
 pub fn free_port(from: u16, taken: &[u16]) -> u16 {
-    let bind = if cfg!(test) || std::env::var_os("HORIZON_TEST_LOOPBACK").is_some_and(|v| v == "1")
+    let bind = if cfg!(test) || std::env::var_os("FOUNDRY_TEST_LOOPBACK").is_some_and(|v| v == "1")
     {
         "127.0.0.1"
     } else {
@@ -1029,7 +1029,7 @@ pub fn player_worlds() -> Vec<(String, PathBuf)> {
     worlds.into_iter().map(|(_, n, p)| (n, p)).collect()
 }
 
-/// The `horizon-server init` arguments for a new server.
+/// The `foundry-server init` arguments for a new server.
 pub fn init_args(spec: &NewServer, world: &str, port: u16) -> Vec<String> {
     let mut args: Vec<String> = vec!["init".into(), "--yes".into()];
     if spec.eula {
@@ -1059,7 +1059,7 @@ pub fn init_args(spec: &NewServer, world: &str, port: u16) -> Vec<String> {
     args
 }
 
-/// The `horizon-server config set` arguments that finish a new server.
+/// The `foundry-server config set` arguments that finish a new server.
 pub fn settings_args(spec: &NewServer, panel_port: u16) -> Vec<String> {
     vec![
         "config".into(),
@@ -1083,9 +1083,9 @@ pub fn create(spec: &NewServer, tag: Option<&str>, log: &dyn Fn(String)) -> Resu
     }
     if program().is_none() || !game_files_ready() {
         let tag = tag.ok_or_else(|| {
-            Problem::plain("Install a Horizon version first (Versions page), then prepare it.")
+            Problem::plain("Install a Foundry Client version first (Versions page), then prepare it.")
         })?;
-        log(format!("Setting up the server programs from Horizon {tag}"));
+        log(format!("Setting up the server programs from Foundry Client {tag}"));
         set_up(tag).map_err(|e| {
             if e.contains("prepared") {
                 Problem {
@@ -1165,8 +1165,8 @@ fn copy_world(from: &Path, to: &Path) -> std::io::Result<()> {
 
 // ----- A server's files --------------------------------------------------------------------------
 
-/// The settings, as `horizon-server config --json` prints them (`None` before `init`, or from a
-/// `horizon-server` older than the command).
+/// The settings, as `foundry-server config --json` prints them (`None` before `init`, or from a
+/// `foundry-server` older than the command).
 pub fn config(dir: &Path) -> Option<Value> {
     if !dir.join("server.toml").is_file() {
         return None;
@@ -1186,7 +1186,7 @@ pub struct Applied {
     pub running: bool,
 }
 
-/// Changes settings through `horizon-server config set` (checked there; nothing is written if one is
+/// Changes settings through `foundry-server config set` (checked there; nothing is written if one is
 /// wrong).
 pub fn set_config(dir: &Path, changes: &[(&str, String)]) -> Result<Applied, Problem> {
     let pairs: Vec<String> = changes.iter().map(|(k, v)| format!("{k}={v}")).collect();
@@ -1222,7 +1222,7 @@ pub fn entries(dir: &Path, file: &str) -> Vec<(String, String)> {
         .collect()
 }
 
-/// A backup, as `horizon-server backups --json` lists it.
+/// A backup, as `foundry-server backups --json` lists it.
 #[derive(Clone, Debug, PartialEq, Deserialize)]
 pub struct Backup {
     pub name: String,
@@ -1245,10 +1245,10 @@ pub fn lan_address() -> Option<std::net::IpAddr> {
     (!ip.is_unspecified() && !ip.is_loopback()).then_some(ip)
 }
 
-/// Whether the server starts at login: the service definition `horizon-server service print` names exists.
+/// Whether the server starts at login: the service definition `foundry-server service print` names exists.
 pub fn service_installed(dir: &Path) -> bool {
     if cfg!(windows) {
-        let name = format!("horizon-server-{}", service_suffix(dir));
+        let name = format!("foundry-server-{}", service_suffix(dir));
         return crate::process::command("schtasks")
             .args(["/Query", "/TN", &name])
             .stdout(Stdio::null())
@@ -1267,7 +1267,7 @@ pub fn service_installed(dir: &Path) -> bool {
         .is_some_and(|p| p.is_file())
 }
 
-/// horizon-server's service name for a folder, after `horizon-server-`.
+/// foundry-server's service name for a folder, after `foundry-server-`.
 fn service_suffix(dir: &Path) -> String {
     let folder = dir
         .file_name()
@@ -1293,7 +1293,7 @@ fn service_suffix(dir: &Path) -> String {
 
 // ----- The running server: its control API -------------------------------------------------------
 
-/// The running supervisor's control API (`.horizon/api.json`: its address and token).
+/// The running supervisor's control API (`.foundry/api.json`: its address and token).
 #[derive(Clone, Debug)]
 pub struct Api {
     address: String,
@@ -1303,7 +1303,7 @@ pub struct Api {
 impl Api {
     /// The API of the server running in `dir`, if one runs.
     pub fn open(dir: &Path) -> Option<Self> {
-        let text = fs::read_to_string(dir.join(".horizon/api.json")).ok()?;
+        let text = fs::read_to_string(dir.join(".foundry/api.json")).ok()?;
         let v: Value = serde_json::from_str(&text).ok()?;
         Some(Self {
             address: v["address"].as_str()?.to_string(),

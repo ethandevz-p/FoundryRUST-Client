@@ -1,10 +1,10 @@
 # Publishing your mod
 
-Horizon's registry lists mods, modpacks, resource packs and shader packs made for Horizon. Players find them at
-[playhorizon.dev/mods](https://playhorizon.dev/mods) and in the launcher. Each file is checked before installation.
+Foundry Client's registry lists mods, modpacks, resource packs and shader packs made for Foundry Client. Players find them at
+[playfoundry.dev/mods](https://playfoundry.dev/mods) and in the launcher. Each file is checked before installation.
 
-1. Run `cargo horizon-mod check target/horizon-mod/<id>.hmod` on your package and put its source in a public repository under a suitable licence.
-2. Attach the file to a GitHub release of that repository and open a pull request on [horizon-rust/horizon-mods](https://github.com/horizon-rust/horizon-mods) that adds your page and version record, as its README's [Publishing without the form](https://github.com/horizon-rust/horizon-mods#publishing-without-the-form) describes. A maintainer reviews it and stages the file. The form at [playhorizon.dev/mods/submit](https://playhorizon.dev/mods/submit) can't take `.hmod` files made with this SDK yet.
+1. Run `cargo foundry-mod check target/foundry-mod/<id>.hmod` on your package and put its source in a public repository under a suitable licence.
+2. Attach the file to a GitHub release of that repository and open a pull request on [foundry-rust/foundry-mods](https://github.com/foundry-rust/foundry-mods) that adds your page and version record, as its README's [Publishing without the form](https://github.com/foundry-rust/foundry-mods#publishing-without-the-form) describes. A maintainer reviews it and stages the file. The form at [playfoundry.dev/mods/submit](https://playfoundry.dev/mods/submit) can't take `.hmod` files made with this SDK yet.
 3. Publish each new version the same way, with a new `[[versions]]` record. Published versions are pinned and never replaced: submit a new version instead.
 
 Submit explicit version files; the registry refuses entries that follow repositories. The full rules are in [the registry index](../reference/registry-index.md).

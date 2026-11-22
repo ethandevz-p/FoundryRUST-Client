@@ -1,14 +1,14 @@
 # Design: snapshot participants
 
-Provisional proposal for [arismoko/horizon#999](https://github.com/arismoko/horizon/issues/999), not an implemented guarantee. Named question: **what native-and-wasm participant contract can preserve synchronous rollback given reentry?**
+Provisional proposal for [arismoko/foundry#999](https://github.com/arismoko/foundry/issues/999), not an implemented guarantee. Named question: **what native-and-wasm participant contract can preserve synchronous rollback given reentry?**
 
 Recommend runtime-owned transactional participant values, with generated typed access, and callback-free rollback. Arbitrary mutable guest fields with snapshot/restore callbacks remain unsupported until the runtime can prove equivalent guarantees on both targets. An exported participant resource alone does not solve reentry. This recommendation narrows the requested arbitrary-state contract and requires maintainer approval before implementation.
 
 ## Evidence and counterpart limits
 
-The issue body and all three comments were read, including Ari's release explanation and our claim. The original same-group reentry diagnosis is historical: `crates/horizon-mod-wasm/src/runtime.rs:536` now admits resumed synchronous calls at :557, but :547 refuses guest execution during native panic. Normal reentry is therefore insufficient evidence for unwind restoration. The component-model boundary discussed historically in [arismoko/horizon#1903](https://github.com/arismoko/horizon/issues/1903) is already gone; generated shared-memory Wire is the current boundary. Nothing here requires WIT, lifting/lowering, a particular store API, guest pointers, or a particular memory layout.
+The issue body and all three comments were read, including Ari's release explanation and our claim. The original same-group reentry diagnosis is historical: `crates/foundry-mod-wasm/src/runtime.rs:536` now admits resumed synchronous calls at :557, but :547 refuses guest execution during native panic. Normal reentry is therefore insufficient evidence for unwind restoration. The component-model boundary discussed historically in [arismoko/foundry#1903](https://github.com/arismoko/foundry/issues/1903) is already gone; generated shared-memory Wire is the current boundary. Nothing here requires WIT, lifting/lowering, a particular store API, guest pointers, or a particular memory layout.
 
-Vanilla has no Horizon participant interface. The pinned 26.3 `ItemStack.copy` bytecode was requested with `python3 tools/rea_vanilla.py method net.minecraft.world.item.ItemStack copy`; it returns EMPTY for empty stacks, otherwise copies count and components and preserves pop time. Stack copying cannot establish mod participant callback ordering.
+Vanilla has no Foundry Client participant interface. The pinned 26.3 `ItemStack.copy` bytecode was requested with `python3 tools/rea_vanilla.py method net.minecraft.world.item.ItemStack copy`; it returns EMPTY for empty stacks, otherwise copies count and components and preserves pop time. Stack copying cannot establish mod participant callback ordering.
 
 The public [26.3 SnapshotJournal Javadoc](https://aldak.netlify.app/javadoc/26.3.x/net/neoforged/neoforge/transfer/transaction/SnapshotJournal.html) and [transaction documentation URL](https://docs.neoforged.net/docs/resources/server/transactions/) were inaccessible. NeoForge 26.3 snapshot release, child merge, close callback and root notification ordering are **unverified**. The issue requests first-write snapshots per depth, abort including unwind, child merge, and NeoForge release/root notification ordering; these are requirements, not independently verified counterpart facts. Retrieve public SnapshotJournal and TransactionContext documentation before adopting an exact callback contract. No NeoForge source or patches were consulted.
 
@@ -18,13 +18,13 @@ References are repository-relative at this worktree's HEAD. They identify curren
 
 | Route | Verified owner | Proposed treatment |
 | --- | --- | --- |
-| Native closure transaction, nested success/error and unwind | `crates/horizon-mod-vocab/src/item/transaction.rs:44` and :72; Drop at :82 | Preserve synchronous closure semantics and the guard; rollback must finish before a catcher observes state. |
-| Game-owned open/close and nested merge | `crates/horizon-client/src/game/runtime/transactions.rs:174`, :179, :192 | Extend this coordinator's Level (:34), never add a mod journal coordinator. |
-| Emergency abort | `crates/horizon-client/src/game/runtime/transactions.rs:239` | Restore participant values through the same rollback path. |
-| Root effects and rollback | `crates/horizon-client/src/game/runtime/transactions.rs:462`, :513 | Integrate participant lifetime and notification work here; no guest dispatch from rollback. |
-| First-write storage examples | `crates/horizon-client/src/game/runtime/transactions.rs:246`, :257, :290, :303, :325, :338, :357, :388 | Existing block entities, attachments, player/menu/entity inventories, equipment, item entities and blocks retain their existing snapshots. Participant limits must not constrain these vanilla stores. |
-| Native/wasm handler dispatch while transaction remains active | `crates/horizon-mod-wasm/src/runtime.rs:536`, :547, :557 | Validate the same participant operations on both targets; never infer unwind support from ordinary resumed dispatch. |
-| Existing holder identity | `crates/horizon-mod-runtime/src/attachments.rs:66`; block-entity incarnation capture at `crates/horizon-client/src/game/runtime/transactions.rs:66` | Bind holder-backed participants to existing lifecycle identity; no second generation counter. |
+| Native closure transaction, nested success/error and unwind | `crates/foundry-mod-vocab/src/item/transaction.rs:44` and :72; Drop at :82 | Preserve synchronous closure semantics and the guard; rollback must finish before a catcher observes state. |
+| Game-owned open/close and nested merge | `crates/foundry-client/src/game/runtime/transactions.rs:174`, :179, :192 | Extend this coordinator's Level (:34), never add a mod journal coordinator. |
+| Emergency abort | `crates/foundry-client/src/game/runtime/transactions.rs:239` | Restore participant values through the same rollback path. |
+| Root effects and rollback | `crates/foundry-client/src/game/runtime/transactions.rs:462`, :513 | Integrate participant lifetime and notification work here; no guest dispatch from rollback. |
+| First-write storage examples | `crates/foundry-client/src/game/runtime/transactions.rs:246`, :257, :290, :303, :325, :338, :357, :388 | Existing block entities, attachments, player/menu/entity inventories, equipment, item entities and blocks retain their existing snapshots. Participant limits must not constrain these vanilla stores. |
+| Native/wasm handler dispatch while transaction remains active | `crates/foundry-mod-wasm/src/runtime.rs:536`, :547, :557 | Validate the same participant operations on both targets; never infer unwind support from ordinary resumed dispatch. |
+| Existing holder identity | `crates/foundry-mod-runtime/src/attachments.rs:66`; block-entity incarnation capture at `crates/foundry-client/src/game/runtime/transactions.rs:66` | Bind holder-backed participants to existing lifecycle identity; no second generation counter. |
 
 These routes cover transaction closure entry/exit, nested merge, emergency abort and deferred effects. Individual transfer callers continue using those shared routes. A code stage must audit generated imports and all unwind/trap containment callers against the then-current runtime before claiming complete native/wasm coverage.
 
@@ -67,10 +67,10 @@ Proposed future tests, on both native and wasm; these are not runtime tests run 
 
 ## Proposed stages
 
-Filed stages: **none**. First verify public 26.3 ordering and approve the narrowed state ownership contract and limits. Then implement one runtime/coordinator slice proving callback-free unwind/trap rollback on both targets. Finally expose generated typed declarations/access, update the coordinator's no-mod-state header and arismoko/horizon#41 restriction, catalog, docs and sample together, and run the matrix. No stage may export native-only participants or depend on the current wasm transport implementation.
+Filed stages: **none**. First verify public 26.3 ordering and approve the narrowed state ownership contract and limits. Then implement one runtime/coordinator slice proving callback-free unwind/trap rollback on both targets. Finally expose generated typed declarations/access, update the coordinator's no-mod-state header and arismoko/foundry#41 restriction, catalog, docs and sample together, and run the matrix. No stage may export native-only participants or depend on the current wasm transport implementation.
 
 ## Open questions
 
-- **Can a converted mod's providers use runtime-owned values?** Recommend this as the first contract; arbitrary guest state remains refused. Require a representative translated provider before claiming the arbitrary-state request fulfilled. If translation requires live fields, commission the runtime design before claiming arismoko/horizon#999 implemented.
+- **Can a converted mod's providers use runtime-owned values?** Recommend this as the first contract; arbitrary guest state remains refused. Require a representative translated provider before claiming the arbitrary-state request fulfilled. If translation requires live fields, commission the runtime design before claiming arismoko/foundry#999 implemented.
 - **What exact ordering does NeoForge 26.3 promise?** Recommend obtaining public SnapshotJournal/TransactionContext documentation and encoding its release/root-notice trace as independent fixtures before code. Current proposed ordering is not certified equivalent.
 - **Which budgets are acceptable?** Recommend the mod-only limits above with explicit registration/runtime errors and no reduction of vanilla capacity; approve using real translated provider sizes.

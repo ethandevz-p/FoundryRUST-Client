@@ -27,16 +27,16 @@ function Find-TestOpenSsl {
 $Ssl = Find-TestOpenSsl
 if (-not $Ssl) { Write-Output "skip: OpenSSL 3 needed"; exit 77 }
 
-$W = Join-Path ([IO.Path]::GetTempPath()) ("horizon-ps1-test-" + [Guid]::NewGuid())
+$W = Join-Path ([IO.Path]::GetTempPath()) ("foundry-ps1-test-" + [Guid]::NewGuid())
 New-Item -ItemType Directory -Path $W | Out-Null
 # The installer always picks the x64 archive, the one these releases hold, whatever this machine is.
 $env:PROCESSOR_ARCHITECTURE = "AMD64"
 $env:PROCESSOR_ARCHITEW6432 = $null
 $SavedPath = $env:PATH
-$Asset = "horizon-windows-x64.zip"
+$Asset = "foundry-windows-x64.zip"
 $RealKey = "MU4oiIQcCxkZvbwSjjXs7SySCuM6ywRQ3nGaJYZG0gw="
 $script:Fails = 0
-$global:HorizonTestRel = $null
+$global:FoundryTestRel = $null
 
 # The user's PATH stays as it is: the copies of install.ps1 write through this class instead of [Environment].
 Add-Type -TypeDefinition @"
@@ -47,10 +47,10 @@ public static class FakeEnvironment {
 "@
 
 # The fakes: the API answers with the case's release, any download with the case's file of that name.
-function Invoke-RestMethod { param($Uri, $Headers) $global:HorizonTestRel.Release }
+function Invoke-RestMethod { param($Uri, $Headers) $global:FoundryTestRel.Release }
 function Invoke-WebRequest {
     param($Uri, $OutFile, [switch]$UseBasicParsing)
-    $Source = Join-Path $global:HorizonTestRel.Files ($Uri -split "/")[-1]
+    $Source = Join-Path $global:FoundryTestRel.Files ($Uri -split "/")[-1]
     if (-not (Test-Path -LiteralPath $Source)) { throw "404 $Uri" }
     Copy-Item -LiteralPath $Source -Destination $OutFile
 }
@@ -61,21 +61,21 @@ function Get-Title([string]$Tag, [string]$Also) {
     if ($Also) { "Nightly $($Also.Substring(8, 10)) $([char]0xB7) $($Also.Substring(19))" } else { $Tag }
 }
 
-# One base64 signature line over "horizon release <tag>\n" + SHA256SUMS, as tools/ci/sign_release.sh writes it.
+# One base64 signature line over "foundry release <tag>\n" + SHA256SUMS, as tools/ci/sign_release.sh writes it.
 function New-SignatureLine([string]$Dir, [string]$Tag) {
     $Message = Join-Path $Dir "message"
-    [IO.File]::WriteAllBytes($Message, [byte[]]([Text.Encoding]::ASCII.GetBytes("horizon release $Tag`n") + [IO.File]::ReadAllBytes((Join-Path $Dir "files\SHA256SUMS"))))
+    [IO.File]::WriteAllBytes($Message, [byte[]]([Text.Encoding]::ASCII.GetBytes("foundry release $Tag`n") + [IO.File]::ReadAllBytes((Join-Path $Dir "files\SHA256SUMS"))))
     & $Ssl pkeyutl -sign -rawin -inkey (Join-Path $Dir "key") -keyform DER -in $Message -out (Join-Path $Dir "sig.bin")
     [Convert]::ToBase64String([IO.File]::ReadAllBytes((Join-Path $Dir "sig.bin"))) + "`n"
 }
 
-# A fake release: a zip holding horizon-server.exe, signed for Tag with a throwaway key. A Nightly (Tag nightly) is
+# A fake release: a zip holding foundry-server.exe, signed for Tag with a throwaway key. A Nightly (Tag nightly) is
 # also signed for its own version Also (nightly-<date>-<commit>) in SHA256SUMS.v2.sig, titled as nightly-build.yml
 # titles it.
 function New-Release([string]$Dir, [string]$Tag, [string]$Also = "") {
-    New-Item -ItemType Directory -Force -Path (Join-Path $Dir "src\horizon-server-x"), (Join-Path $Dir "files") | Out-Null
-    Write-Ascii (Join-Path $Dir "src\horizon-server-x\horizon-server.exe") "fake"
-    Compress-Archive -Path (Join-Path $Dir "src\horizon-server-x") -DestinationPath (Join-Path $Dir "files\$Asset")
+    New-Item -ItemType Directory -Force -Path (Join-Path $Dir "src\foundry-server-x"), (Join-Path $Dir "files") | Out-Null
+    Write-Ascii (Join-Path $Dir "src\foundry-server-x\foundry-server.exe") "fake"
+    Compress-Archive -Path (Join-Path $Dir "src\foundry-server-x") -DestinationPath (Join-Path $Dir "files\$Asset")
     Write-Ascii (Join-Path $Dir "files\SHA256SUMS") "$(Get-Sha (Join-Path $Dir "files\$Asset"))  $Asset`n"
     & $Ssl genpkey -algorithm ed25519 -outform DER -out (Join-Path $Dir "key")
     & $Ssl pkey -inform DER -in (Join-Path $Dir "key") -pubout -outform DER -out (Join-Path $Dir "pub.der")
@@ -114,7 +114,7 @@ function Set-Installer([string]$Dir, [string]$Key) {
 
 # Runs the case's install.ps1 with PATH set to Path; returns @{ Ok; Out }.
 function Invoke-Case([string]$Dir, [string]$Path, [string[]]$Arguments = @()) {
-    $global:HorizonTestRel = [pscustomobject]@{ Release = $script:Releases[$Dir]; Files = Join-Path $Dir "files" }
+    $global:FoundryTestRel = [pscustomobject]@{ Release = $script:Releases[$Dir]; Files = Join-Path $Dir "files" }
     $env:PATH = $Path
     $Ok = $true
     $Out = try {
@@ -146,8 +146,8 @@ try {
     # 1. Good signature, a Nightly: SHA256SUMS.v2.sig signed for the version its title names.
     $d = Join-Path $W "good"; New-Release $d "nightly" $Nightly
     $r = Invoke-Case $d $P; Test-Case "good signature installs (Nightly, signed for its own version)" $true "Release signature OK" $r
-    Test-That "nothing installed" (Test-Path (Join-Path $d "inst\current\horizon-server.exe"))
-    Test-That "not installed as $Nightly" ($r.Out.Contains("Downloading Horizon $Nightly "))
+    Test-That "nothing installed" (Test-Path (Join-Path $d "inst\current\foundry-server.exe"))
+    Test-That "not installed as $Nightly" ($r.Out.Contains("Downloading Foundry Client $Nightly "))
 
     # 1b. A Nightly with only the channel's signature (published before v2): refused, never the channel's signature.
     $d = Join-Path $W "channel"; New-Release $d "nightly"; Set-Release $d "nightly" $true (Get-Title "nightly" $Nightly)

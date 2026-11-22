@@ -133,16 +133,16 @@ pub(super) fn spawn(
             .iter()
             .map(|(k, v)| (k.as_os_str(), v.as_os_str()))
             .filter(|(key, _)| {
-                !["HORIZON_RUNTIME_LEASE_HANDLES", "HORIZON_RUNTIME_DATA_ROOT"]
+                !["FOUNDRY_RUNTIME_LEASE_HANDLES", "FOUNDRY_RUNTIME_DATA_ROOT"]
                     .iter()
                     .any(|k| key.to_string_lossy().eq_ignore_ascii_case(k))
             })
             .chain([
                 (
-                    OsStr::new("HORIZON_RUNTIME_LEASE_HANDLES"),
+                    OsStr::new("FOUNDRY_RUNTIME_LEASE_HANDLES"),
                     OsStr::new(&numbers),
                 ),
-                (OsStr::new("HORIZON_RUNTIME_DATA_ROOT"), data.as_os_str()),
+                (OsStr::new("FOUNDRY_RUNTIME_DATA_ROOT"), data.as_os_str()),
             ])
         {
             let mut entry = wide(key)?;

@@ -3,8 +3,8 @@
 //! the file and attaches it to the issue by hand (docs/telemetry.md).
 use crate::account::Accounts;
 use crate::backend;
-use horizon_platform::system::Machine;
-use horizon_telemetry::scrub::Scrubber;
+use foundry_platform::system::Machine;
+use foundry_telemetry::scrub::Scrubber;
 use std::path::PathBuf;
 
 /// The newest log lines kept in a report.

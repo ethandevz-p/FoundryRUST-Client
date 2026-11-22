@@ -11,7 +11,7 @@ call's log, the Rust side's files and the report stay outside it. A replay write
 between runs; but a call that runs Java must never read a file an earlier, different call left there (an output it
 does not write again, an input no longer given). So the folder is named after a digest of what defines the call: the
 inputs' names and contents, the oracle's compiled classes, its other arguments, the JVM options the environment can
-add (which can change what the oracle writes: VanillaCollisionOracle's horizon.prepare.reuse) and the Java runtime.
+add (which can change what the oracle writes: VanillaCollisionOracle's foundry.prepare.reuse) and the Java runtime.
 The same call finds the same folder, under the same path on every machine; any other call starts in an empty one. The
 call's folders under other digests are removed.
 """

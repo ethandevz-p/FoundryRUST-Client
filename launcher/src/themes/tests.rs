@@ -1,5 +1,5 @@
 use super::*;
-use horizon_theme::night::{DAWN, NIGHT};
+use foundry_theme::night::{DAWN, NIGHT};
 
 fn blend(top: u32, under: u32, alpha: f32) -> u32 {
     let channel = |shift: u32| {
@@ -68,7 +68,7 @@ fn colours_go_to_hsl_and_back() {
 
 #[test]
 fn every_theme_palette_reads_over_its_sky() {
-    use horizon_theme::night::{over, UNCARDED_STOPS};
+    use foundry_theme::night::{over, UNCARDED_STOPS};
 
     let palettes = THEMES.iter().filter_map(|t| t.palette.map(|p| (t.id, *p)));
     for (id, p) in palettes {
@@ -116,7 +116,7 @@ fn every_theme_palette_reads_over_its_sky() {
 
 #[test]
 fn a_background_is_a_picture_kept_once() {
-    let root = std::env::temp_dir().join(format!("horizon-background-{}", std::process::id()));
+    let root = std::env::temp_dir().join(format!("foundry-background-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&root);
     std::fs::create_dir_all(&root).unwrap();
     let picture = |name: &str, w: u32, h: u32| {
@@ -205,11 +205,11 @@ fn each_theme_brings_back_its_own_accent() {
     assert_eq!(starting_accent(None, &kept), Accent::VIOLET);
     assert_eq!(starting_accent(Some("sunrise"), &kept).rgb(), 0xc2366f);
     kept.insert("sunrise".to_string(), Accent::TEAL);
-    kept.insert(HORIZON.to_string(), Accent::PINK);
+    kept.insert(FOUNDRY.to_string(), Accent::PINK);
     assert_eq!(starting_accent(Some("sunrise"), &kept), Accent::TEAL);
     assert_eq!(starting_accent(None, &kept), Accent::PINK);
-    // A theme this launcher doesn't know is Horizon's own.
-    assert_eq!(accent_key(Some("from_the_future")), HORIZON);
+    // A theme this launcher doesn't know is Foundry Client's own.
+    assert_eq!(accent_key(Some("from_the_future")), FOUNDRY);
     assert_eq!(
         starting_accent(Some("from_the_future"), &kept),
         Accent::PINK

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """What runs in the rings of chunks around a portal ticket that no player is near.
 
-Real dedicated servers, vanilla and Horizon, on the same scene: an item goes through a Nether portal in a
+Real dedicated servers, vanilla and Foundry Client, on the same scene: an item goes through a Nether portal in a
 forceloaded Nether chunk and arrives in a flat Overworld nobody is in. The exit portal's chunk gets a `PORTAL`
 ticket of radius 3 (`Entity.placePortalTicket`, level 30), so its rings 0 and 1 are entity ticking, ring 2 block
 ticking (level 32) and ring 3 only `FULL` (33): loaded, with nothing running.
@@ -14,7 +14,7 @@ repeater is powered (scheduled block tick: `ServerLevel.isPositionTickingWithEnt
 extended (block event: `ServerLevel.runBlockEvents`, `shouldTickBlocksAt`) and the water flowed (scheduled
 fluid tick).
 
-  test_portal_ticket_ticking_parity.py [--binary HORIZON] [--out DIR]
+  test_portal_ticket_ticking_parity.py [--binary FOUNDRY] [--out DIR]
 """
 import argparse
 import json
@@ -169,33 +169,33 @@ def expected(results):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('--binary', type=Path, help='prebuilt Horizon server (otherwise build fast)')
+    parser.add_argument('--binary', type=Path, help='prebuilt Foundry Client server (otherwise build fast)')
     parser.add_argument('--out', type=Path, default=lab.LOCAL / 'portal-ticket-ticking-parity')
     args = parser.parse_args()
     lock, jars, libraries = base.verify_artifacts()
     if args.binary:
         binary = args.binary.resolve(strict=True)
     else:
-        subprocess.run(fast_bins.command('horizon-client'), cwd=lab.ROOT, check=True)
+        subprocess.run(fast_bins.command('foundry-client'), cwd=lab.ROOT, check=True)
         metadata = json.loads(subprocess.check_output(
             ['cargo', 'metadata', '--no-deps', '--format-version', '1'], cwd=lab.ROOT, text=True))
         binary = Path(metadata['target_directory']) / 'fast' / (
-            'horizon-client.exe' if os.name == 'nt' else 'horizon-client')
+            'foundry-client.exe' if os.name == 'nt' else 'foundry-client')
     out = args.out.resolve()
     out.mkdir(parents=True, exist_ok=True)
     cp = os.pathsep.join(map(str, [jars['server'], *libraries]))
     commands = {'vanilla': ['java', '-Xmx2g', '-cp', cp, 'net.minecraft.server.Main', 'nogui'],
-                'horizon': [binary, '--resources', lab.RESOURCES.resolve(), '--dedicated', '--nogui']}
+                'foundry': [binary, '--resources', lab.RESOURCES.resolve(), '--dedicated', '--nogui']}
     results = {label: run(command, out, label) for label, command in commands.items()}
     lab.write_json(out / 'records.json', results)
     expected(results['vanilla'])
-    failures = [{'ring': ring, 'what': key, 'vanilla': value, 'horizon': results['horizon'][ring][key]}
+    failures = [{'ring': ring, 'what': key, 'vanilla': value, 'foundry': results['foundry'][ring][key]}
                 for ring, seen in results['vanilla'].items() for key, value in seen.items()
-                if results['horizon'][ring][key] != value]
+                if results['foundry'][ring][key] != value]
     lab.write_json(out / 'report.json', {'schema': 1, 'minecraft': lock['minecraft']['version'],
                                          'results': results, 'failures': failures})
-    for ring, seen in results['horizon'].items():
-        print(f'{ring}: horizon {seen}', flush=True)
+    for ring, seen in results['foundry'].items():
+        print(f'{ring}: foundry {seen}', flush=True)
     for failure in failures:
         print(json.dumps(failure), flush=True)
     assert not failures, f'{len(failures)} observations differ; see {out}'

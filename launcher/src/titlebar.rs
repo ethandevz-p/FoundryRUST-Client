@@ -2,7 +2,7 @@
 //! server-side decorations use the platform's native chrome.
 use crate::theme::Theme;
 use gpui::{Div, TitlebarOptions, Window};
-use horizon_launcher::backend::Appearance;
+use foundry_launcher::backend::Appearance;
 
 /// Whether the launcher draws its own title bar and needs the native chrome to be transparent.
 #[cfg(not(target_os = "linux"))]
@@ -23,7 +23,7 @@ pub fn draws_brand(window: &Window) -> bool {
 
 pub fn options() -> TitlebarOptions {
     TitlebarOptions {
-        title: Some("Horizon Launcher".into()),
+        title: Some("Foundry Client Launcher".into()),
         // macOS and Windows place the GPUI content under the native title bar. Linux uses
         // client-side decorations below, so its title bar is transparent by construction.
         appears_transparent: cfg!(any(target_os = "macos", target_os = "windows")),
@@ -85,7 +85,7 @@ pub fn render(theme: &Theme, window: &Window) -> Option<Div> {
         .child(mark(16., theme))
         .child(
             blocks::pixel(13., FontWeight::MEDIUM)
-                .child(horizon_launcher::i18n::tr("Horizon Launcher")),
+                .child(foundry_launcher::i18n::tr("Foundry Client Launcher")),
         );
 
     let mut bar = div()
@@ -464,7 +464,7 @@ mod windows {
             .child(mark(16., theme))
             .child(
                 blocks::pixel(13., FontWeight::MEDIUM)
-                    .child(horizon_launcher::i18n::tr("Horizon Launcher")),
+                    .child(foundry_launcher::i18n::tr("Foundry Client Launcher")),
             );
         Some(
             div()

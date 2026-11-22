@@ -18,7 +18,7 @@ ROOT = Path(__file__).resolve().parents[1]
 @unittest.skipUnless(shutil.which("rustc"), "requires Rust")
 class RemoteMiningTests(unittest.TestCase):
     def test_break_timing_and_packets(self):
-        source = (next(ROOT.glob('crates/horizon-client/src/game/*/remote/mining.rs'))).read_text()
+        source = (next(ROOT.glob('crates/foundry-client/src/game/*/remote/mining.rs'))).read_text()
         start = source.index("    pub(super) fn stop_remote_mining_body(")
         end = source.index("    pub(super) fn veto_mining_prediction_body(", start)
         fixture = r'''

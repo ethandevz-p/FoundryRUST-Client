@@ -457,7 +457,7 @@ impl super::Instance {
             unsafe { w_loader.create_wayland_surface(&info, None) }.expect("WaylandSurface failed")
         };
 
-        // Horizon: a Wayland surface is marked, for its acquire fence on NVIDIA
+        // Foundry Client: a Wayland surface is marked, for its acquire fence on NVIDIA
         // (swapchain/native.rs, `acquire_on_cpu`).
         let native_surface =
             crate::vulkan::swapchain::NativeSurface::from_vk_surface_khr(self, surface, None)

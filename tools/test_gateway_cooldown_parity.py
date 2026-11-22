@@ -31,7 +31,7 @@ def main():
     lock, jars, libraries = base.verify_artifacts()
     classes = build / 'classes'
     classes.mkdir(exist_ok=True)
-    source = lab.ROOT / 'mods/horizon/src/test/java/dev/horizonlab/parity/VanillaGatewayCooldownOracle.java'
+    source = lab.ROOT / 'mods/foundry/src/test/java/dev/foundrylab/parity/VanillaGatewayCooldownOracle.java'
     reference = build / 'reference.json'
     dependency_path = os.pathsep.join(map(str, [jars['server'], *libraries]))
     def run(command, name, env=None):
@@ -41,7 +41,7 @@ def main():
     run(['javac', '--release', lock['minecraft']['java_major'], '-proc:none',
          '-cp', dependency_path, '-d', classes, source], 'compile-java')
     run(['java', '-Xmx512M', '-cp', str(classes) + os.pathsep + dependency_path,
-         'dev.horizonlab.parity.VanillaGatewayCooldownOracle', reference], 'java')
+         'dev.foundrylab.parity.VanillaGatewayCooldownOracle', reference], 'java')
     observed = json.loads(reference.read_text())
     if len(observed['contact']) != 5 or any(len(row) != 4 for row in observed['contact']):
         raise SystemExit('actual vanilla reference shape failed')
@@ -49,12 +49,12 @@ def main():
     if args.reference_only:
         return
     inherited = dict(os.environ)
-    for key in ('HORIZON_HOME', 'HORIZON_LAUNCHER_HOME', 'XDG_DATA_HOME', 'XDG_CONFIG_HOME'):
+    for key in ('FOUNDRY_HOME', 'FOUNDRY_LAUNCHER_HOME', 'XDG_DATA_HOME', 'XDG_CONFIG_HOME'):
         inherited.pop(key, None)
-    env = lab.game_env(inherited, HORIZON_TELEMETRY_URL="off", HORIZON_PORTAL_REFERENCE=reference.resolve(),
-                       HORIZON_PORTAL_REPORT=(build / 'native.json').resolve(),
-                       HORIZON_TEST_RESOURCES=args.resources.resolve(strict=True))
-    run(['cargo', 'test', '-p', 'horizon-client', '--lib', '--no-run',
+    env = lab.game_env(inherited, FOUNDRY_TELEMETRY_URL="off", FOUNDRY_PORTAL_REFERENCE=reference.resolve(),
+                       FOUNDRY_PORTAL_REPORT=(build / 'native.json').resolve(),
+                       FOUNDRY_TEST_RESOURCES=args.resources.resolve(strict=True))
+    run(['cargo', 'test', '-p', 'foundry-client', '--lib', '--no-run',
          '--message-format=json'], 'build-native', env)
     records = (json.loads(line) for line in (build / 'build-native.log').read_text(encoding='utf-8').splitlines()
                if line.startswith('{'))
@@ -62,7 +62,7 @@ def main():
                    and row.get('executable') and row.get('profile', {}).get('test')]
     if len(executables) != 1:
         raise SystemExit(f'expected one production test binary, got {executables}')
-    with tempfile.TemporaryDirectory(prefix='horizon-portal-cooldown-') as scratch:
+    with tempfile.TemporaryDirectory(prefix='foundry-portal-cooldown-') as scratch:
         with (build / 'native.log').open('w', encoding='utf-8') as log:
             subprocess.run([executables[0], TEST, '--ignored', '--exact', '--nocapture'],
                            cwd=scratch, env=env, stdout=log, stderr=subprocess.STDOUT, check=True)

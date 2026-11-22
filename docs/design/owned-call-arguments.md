@@ -1,6 +1,6 @@
 # Owned arguments at native source call sites
 
-Design proposal for arismoko/horizon#2871, port mixin row 2; no implementation is authorized by this note.
+Design proposal for arismoko/foundry#2871, port mixin row 2; no implementation is authorized by this note.
 The confirmed source call is `Game::dispense_item(pos: Pos, facing: Direction,
 stack: ItemStack) -> Result<Option<ItemStack>>`, inside `Game::dispense_from`.
 The SDK refuses it with `argument record requires a borrowing or non-Copy field`.
@@ -52,7 +52,7 @@ available only where every argument supports the existing repeatable contract.
 ## Borrowed fields and refusals
 
 Use **one record containing both borrowed and owned fields**. The lifetime-bearing record
-from [the borrowing-record work](https://github.com/arismoko/horizon/pull/2872) can move
+from [the borrowing-record work](https://github.com/arismoko/foundry/pull/2872) can move
 while its shared references remain call-scoped. Moving the record into original consumes
 its owned fields and copies its shared-reference fields; cancellation drops owned fields,
 not referents. Engine-type lifetimes remain separate from the record borrow lifetime.

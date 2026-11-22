@@ -6,8 +6,8 @@ use gpui::{
     canvas, div, prelude::*, px, rgb, rgba, svg, AnimationExt, AnyElement, App, ClickEvent, Div,
     ElementId, FontWeight, Hsla, Pixels, SharedString, Stateful, Svg, TextRun, Window,
 };
-use horizon_launcher::effects::Effects;
-use horizon_theme::glass::{fill, ink, radius, Glass};
+use foundry_launcher::effects::Effects;
+use foundry_theme::glass::{fill, ink, radius, Glass};
 use std::cell::Cell;
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -33,7 +33,7 @@ thread_local! {
 
 /// The light appearance's ink: the mockup's text on white (`#100a1f`), at the opacities the dark
 /// look gives white.
-const INK: u32 = horizon_theme::glass::ON_LIGHT;
+const INK: u32 = foundry_theme::glass::ON_LIGHT;
 
 /// Set as each frame's pages start being built: whether the appearance is light.
 pub fn set_light(light: bool) {
@@ -68,7 +68,7 @@ pub fn live() -> Hsla {
     color(if light() {
         0x15803d
     } else {
-        horizon_theme::glass::LIVE
+        foundry_theme::glass::LIVE
     })
 }
 
@@ -77,7 +77,7 @@ pub fn warn() -> Hsla {
     color(if light() {
         0xb45309
     } else {
-        horizon_theme::glass::WARN
+        foundry_theme::glass::WARN
     })
 }
 
@@ -86,7 +86,7 @@ pub fn danger() -> Hsla {
     color(if light() {
         0xdc2626
     } else {
-        horizon_theme::glass::DANGER
+        foundry_theme::glass::DANGER
     })
 }
 
@@ -196,7 +196,7 @@ pub fn wide_field(field: Stateful<Div>, focused: bool) -> Stateful<Div> {
         .border_0()
         .rounded(px(radius::ROW))
         .bg(white(if focused { 0.11 } else { 0.07 }))
-        .font_family(horizon_theme::glass::FONT)
+        .font_family(foundry_theme::glass::FONT)
         .text_size(px(14.))
         .relative()
         .when(focused, |d| d.child(focus_ring(radius::ROW)))
@@ -287,7 +287,7 @@ pub fn color(c: u32) -> Hsla {
 /// Text at `size` px in Geist, white at `a`, at `weight`.
 pub fn text(size: f32, weight: FontWeight, a: f32) -> Div {
     div()
-        .font_family(horizon_theme::glass::FONT)
+        .font_family(foundry_theme::glass::FONT)
         .text_size(px(size))
         .line_height(px((size * 1.4).round()))
         .font_weight(weight)
@@ -404,7 +404,7 @@ fn hover_back(inset: f32, r: f32, paint: impl Fn(Div, f32) -> Div + 'static) -> 
     // pointer moves over it; give the callers ids if that shows.
     let id = SharedString::from(format!("hover-back-{n}"));
     let state = BACK_HOVER.with_borrow(|all| all.get(&id).copied());
-    let shown = back_phase(state, horizon_theme::QUICK.duration()).map(|(on, at)| {
+    let shown = back_phase(state, foundry_theme::QUICK.duration()).map(|(on, at)| {
         static START: std::sync::OnceLock<std::time::Instant> = std::sync::OnceLock::new();
         let start = *START.get_or_init(std::time::Instant::now);
         let key = ElementId::named_usize(
@@ -420,7 +420,7 @@ fn hover_back(inset: f32, r: f32, paint: impl Fn(Div, f32) -> Div + 'static) -> 
             .rounded(px(r))
             .with_animation(
                 key,
-                crate::motion::eased(horizon_theme::QUICK),
+                crate::motion::eased(foundry_theme::QUICK),
                 move |d, t| paint(d, if on { t } else { 1. - t }),
             )
     });
@@ -488,7 +488,7 @@ fn lift_glow(t: f32) -> Vec<gpui::BoxShadow> {
 
 /// The accent's lighter end, for the primary button's gradient (the mockup's `--accent2`).
 pub fn accent2() -> u32 {
-    horizon_theme::glass::mix_oklab(look().accent, 0xffffff, 0.25)
+    foundry_theme::glass::mix_oklab(look().accent, 0xffffff, 0.25)
 }
 
 /// `d`, a card built by [`card`] with its children in, wrapped to rise [`crate::motion::LIFT`] px
@@ -563,7 +563,7 @@ pub fn sheen(id: &SharedString) -> AnyElement {
     let key =
         gpui::ElementId::named_usize(format!("{id}-sheen"), (at - start).as_micros() as usize);
     // One slow pass of light, as the site plays it (750 ms on a long ease-in-out).
-    const SHEEN: horizon_theme::Motion = horizon_theme::Motion {
+    const SHEEN: foundry_theme::Motion = foundry_theme::Motion {
         name: "sheen",
         ms: 750,
         curve: [0.3, 0.7, 0.2, 1.],
@@ -791,7 +791,7 @@ pub fn nav_tab(
                 .px(px(13.))
                 .rounded(px(radius::CONTROL))
                 .cursor_pointer()
-                .font_family(horizon_theme::glass::FONT)
+                .font_family(foundry_theme::glass::FONT)
                 .text_size(px(14.5))
                 .line_height(px(20.))
                 .font_weight(FontWeight::MEDIUM)
@@ -815,7 +815,7 @@ const POPOVER_PADDING: f32 = 6.;
 
 /// Width needed to fit the longest translated row, including the icon and both paddings.
 pub fn menu_content_width(window: &Window, labels: &[&str]) -> f32 {
-    let font = gpui::font(horizon_theme::glass::FONT);
+    let font = gpui::font(foundry_theme::glass::FONT);
     let widest = labels
         .iter()
         .map(|&label| {
@@ -856,7 +856,7 @@ pub fn menu_row(
         (white(ink::FULL), white(ink::NOTE))
     };
     let hover_color = if danger {
-        rgba(horizon_theme::glass::DANGER_HOVER << 8 | 0x1f).into()
+        rgba(foundry_theme::glass::DANGER_HOVER << 8 | 0x1f).into()
     } else {
         white(0.07)
     };
@@ -908,7 +908,7 @@ pub fn scrim_backdrop() -> impl IntoElement {
 /// The scrim over [`scrim_backdrop`]: 50 % in the dark look, 20 % in light, so the dimmed
 /// launcher stays day-lit.
 pub fn scrim() -> Hsla {
-    color(horizon_theme::glass::SCRIM).opacity(if light() { 0.2 } else { 0.5 })
+    color(foundry_theme::glass::SCRIM).opacity(if light() { 0.2 } else { 0.5 })
 }
 
 /// A dialog's plate, round at `radius` (`hzl-glass` over the scrim): its piece of the scene
@@ -926,9 +926,9 @@ pub fn dialog_plate(radius: f32) -> Div {
     crate::glass::plate(radius)
         // Light plates are already day-lit: no dimming under them.
         .child(layer(
-            color(horizon_theme::glass::SCRIM).opacity(if light() { 0. } else { 0.5 }),
+            color(foundry_theme::glass::SCRIM).opacity(if light() { 0. } else { 0.5 }),
         ))
-        .child(layer(white(horizon_theme::glass::TINT)))
+        .child(layer(white(foundry_theme::glass::TINT)))
 }
 
 /// Text on a white button (`SOLID`): `#100a1f`, medium.
@@ -969,7 +969,7 @@ pub fn solid(
                 }])
             })
             .active(|s| s.opacity(0.85))
-            .font_family(horizon_theme::glass::FONT)
+            .font_family(foundry_theme::glass::FONT)
             .text_size(px(size))
             .font_weight(FontWeight::MEDIUM)
             .text_color(on_paper())
@@ -1127,7 +1127,7 @@ pub fn quiet_icon(
         .border_color(white(edge::REST))
         .active(|s| s.bg(white(0.18)))
         .cursor_pointer()
-        .font_family(horizon_theme::glass::FONT)
+        .font_family(foundry_theme::glass::FONT)
         .text_size(px(14.))
         .font_weight(FontWeight::MEDIUM)
         .text_color(white(ink::FULL))
@@ -1239,7 +1239,7 @@ pub fn link(id: impl Into<SharedString>, label: impl Into<SharedString>) -> Stat
 /// 12 % while what it holds is refused.
 pub fn field(focused: bool, invalid: bool) -> Div {
     let bg: Hsla = if invalid {
-        rgba(horizon_theme::glass::DANGER_HOVER << 8 | 0x1f).into()
+        rgba(foundry_theme::glass::DANGER_HOVER << 8 | 0x1f).into()
     } else {
         white(if focused {
             fill::FIELD_FOCUS
@@ -1258,14 +1258,14 @@ pub fn field(focused: bool, invalid: bool) -> Div {
         .bg(bg)
         .border_1()
         .border_color(if invalid {
-            color(horizon_theme::glass::DANGER_HOVER).opacity(0.6)
+            color(foundry_theme::glass::DANGER_HOVER).opacity(0.6)
         } else if focused {
             color(look().accent_soft).opacity(0.7)
         } else {
             white(edge::REST)
         })
         .child(back_edge(radius::ROW, 0., true))
-        .font_family(horizon_theme::glass::FONT)
+        .font_family(foundry_theme::glass::FONT)
         .text_size(px(14.))
 }
 
@@ -1322,7 +1322,7 @@ pub fn button(id: SharedString, label: SharedString, kind: Kind, t: &Theme) -> S
         .px(px(14.))
         .rounded(px(radius::CONTROL))
         .cursor_pointer()
-        .font_family(horizon_theme::glass::FONT)
+        .font_family(foundry_theme::glass::FONT)
         .text_size(px(14.))
         .line_height(px(20.))
         .font_weight(FontWeight::MEDIUM);
@@ -1410,7 +1410,7 @@ thread_local! {
 
 /// The pill's slide between a segmented control's options (the site's, a hair short of the
 /// card spring).
-const SEG_SLIDE: horizon_theme::Motion = horizon_theme::Motion {
+const SEG_SLIDE: foundry_theme::Motion = foundry_theme::Motion {
     name: "seg-slide",
     ms: 280,
     curve: [0.22, 0.9, 0.3, 1.12],
@@ -1519,7 +1519,7 @@ pub fn pill_tab(id: impl Into<SharedString>, on: bool, h: f32, t: &Theme) -> Sta
                 .px(px(12.))
                 .rounded(px(radius::CONTROL))
                 .cursor_pointer()
-                .font_family(horizon_theme::glass::FONT)
+                .font_family(foundry_theme::glass::FONT)
                 .font_weight(FontWeight::MEDIUM)
                 .text_color(white(if on { ink::FULL } else { ink::BODY }))
                 .when(!on, |d| {
@@ -1619,7 +1619,7 @@ pub fn segments<T: Copy + PartialEq + 'static>(
             .px(px(12.))
             .rounded(px(radius::CONTROL - 1.))
             .cursor_pointer()
-            .font_family(horizon_theme::glass::FONT)
+            .font_family(foundry_theme::glass::FONT)
             .text_size(px(13.5))
             .line_height(px(20.))
             .font_weight(FontWeight::MEDIUM)
@@ -1667,7 +1667,7 @@ pub fn page_head(title: impl Into<SharedString>, note: impl Into<SharedString>) 
         .child(
             // A compact title: the page's content, not its name, gets the height.
             div()
-                .font_family(horizon_theme::glass::DISPLAY_FONT)
+                .font_family(foundry_theme::glass::DISPLAY_FONT)
                 .font_weight(FontWeight::SEMIBOLD)
                 .text_size(px(32.))
                 .line_height(px(36.))
@@ -1712,7 +1712,7 @@ impl Render for Tip {
             .bg(rgb(look().base))
             .border_1()
             .border_color(white(0.12))
-            .font_family(horizon_theme::glass::FONT)
+            .font_family(foundry_theme::glass::FONT)
             .text_size(px(13.))
             .text_color(white(ink::FULL))
             .child(self.0.clone())

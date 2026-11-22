@@ -55,12 +55,12 @@ def main():
         "Includes passing entity interactions over solid blocks: only the held "
         "item may be tried afterward. "
         "Game-mode side effects and world simulation are controlled fixtures.",
-        sources=[lab.ROOT / "crates/horizon-client-input/src/interaction_input.rs",
-                 lab.ROOT / "crates/horizon-client/src/game/network/remote/mod.rs",
-                 lab.ROOT / "crates/horizon-client/src/game/network/remote/input.rs",
-                 lab.ROOT / "crates/horizon-client/src/game/network/remote/use_prediction.rs",
-                 lab.ROOT / "crates/horizon-client/src/game/items/hand.rs",
-                 lab.ROOT / "mods/horizon/src/test/java/dev/horizonlab/parity/ParityData.java"])
+        sources=[lab.ROOT / "crates/foundry-client-input/src/interaction_input.rs",
+                 lab.ROOT / "crates/foundry-client/src/game/network/remote/mod.rs",
+                 lab.ROOT / "crates/foundry-client/src/game/network/remote/input.rs",
+                 lab.ROOT / "crates/foundry-client/src/game/network/remote/use_prediction.rs",
+                 lab.ROOT / "crates/foundry-client/src/game/items/hand.rs",
+                 lab.ROOT / "mods/foundry/src/test/java/dev/foundrylab/parity/ParityData.java"])
 
 
 if __name__ == "__main__":

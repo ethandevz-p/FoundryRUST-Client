@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""The prebuilt game (arismoko/horizon#589): horizon-client as a Rust dylib plus every crate's metadata, so the launcher builds
+"""The prebuilt game (arismoko/foundry#589): foundry-client as a Rust dylib plus every crate's metadata, so the launcher builds
 native trait mods against it with rustc alone, in seconds, without the game's source or a game build.
 
-    python3 tools/prebuilt_game.py build OUT [--server]   # build and collect the folder, write horizon-prebuilt.json
+    python3 tools/prebuilt_game.py build OUT [--server]   # build and collect the folder, write foundry-prebuilt.json
     python3 tools/prebuilt_game.py smoke OUT              # build the starter mod and the game executable against OUT only
     python3 tools/prebuilt_game.py start OUT              # start smoke's executable, as installed, as far as no game data allows
     python3 tools/prebuilt_game.py exports OUT            # each DLL's exported names, toward Windows' limit
@@ -38,28 +38,28 @@ ROOT = Path(__file__).resolve().parent.parent
 PROFILE = "release"
 # What rustc writes for a dylib or proc macro on each OS, plus metadata and the MinGW import libraries.
 SUFFIXES = (".rmeta", ".so", ".dll", ".dll.a", ".dylib")
-IDENTITY = "horizon-prebuilt.json"
+IDENTITY = "foundry-prebuilt.json"
 # The crate the game's library is built from; its build resolves what mods compile against.
-GAME = "horizon-mod-host"
-# Horizon's official parts (docs/layers.md, "What players get"): a client's executable registers them, built with
+GAME = "foundry-mod-host"
+# Foundry Client's official parts (docs/layers.md, "What players get"): a client's executable registers them, built with
 # the game's library but linked into the executable only.
-OFFICIAL = "horizon-official"
+OFFICIAL = "foundry-official"
 # Crates the parts and the game's library must share, never compile twice: the hooks' registries, the facade the
 # parts reach them through, and the two crates both the game and a part use (Play with Friends, telemetry).
-SHARED_ONCE = ("horizon_hooks", "horizon_platform", "horizon_friends", "horizon_telemetry")
+SHARED_ONCE = ("foundry_hooks", "foundry_platform", "foundry_friends", "foundry_telemetry")
 # What a start without prepared files prints only when the official parts registered with the game's hooks:
-# horizon-official-servers' `get_the_game` (loading_screen.rs `missing_resources`).
-OFFICIAL_PARTS = "Horizon is started from its launcher"
+# foundry-official-servers' `get_the_game` (loading_screen.rs `missing_resources`).
+OFFICIAL_PARTS = "Foundry Client is started from its launcher"
 LOCK = "Cargo.lock"
 # Where `smoke` installs the executable it builds, as the launcher does, for `start`: beside OUT, never inside it,
 # since the archive is OUT alone.
 SMOKE = "prebuilt-smoke"
 # Where `smoke` installs the same executable without selected mods, for `start`.
 SMOKE_API = "prebuilt-smoke-api"
-EXECUTABLE = "horizon-client.exe" if sys.platform == "win32" else "horizon-client"
+EXECUTABLE = "foundry-client.exe" if sys.platform == "win32" else "foundry-client"
 # The furthest a game started without its prepared files gets (game.rs `missing_resources`): past loading the
-# game's libraries and the mods' runtime environment (`entry::main_with`), where a split allocator aborts (arismoko/horizon#3877).
-NO_RESOURCES = "Horizon's prepared game files are missing"
+# game's libraries and the mods' runtime environment (`entry::main_with`), where a split allocator aborts (arismoko/foundry#3877).
+NO_RESOURCES = "Foundry Client's prepared game files are missing"
 # The MinGW runtime the game's GNU DLLs import on Windows, installed beside the executable.
 MINGW_RUNTIME = ("libgcc_s_seh-1.dll", "libwinpthread-1.dll")
 # Windows' STATUS_DLL_NOT_FOUND, the exit status of a process whose imports could not all be loaded.
@@ -67,21 +67,21 @@ DLL_NOT_FOUND = 0xC0000135
 # The launcher's generated `main.rs` comes from the game it links against.
 TEMPLATE = "native_main.rs.template"
 NATIVE_MODS_TEMPLATE = "native_mod_entry.rs.template"
-API_MAIN = ROOT / "crates/horizon-client/src/native_main.rs.template"
+API_MAIN = ROOT / "crates/foundry-client/src/native_main.rs.template"
 # The fixed executable folder in the runtime slice.
 RUNTIME = "bin"
-# The required inputs (`horizon_mod_package::sdk::Inputs`): `members` lists what each slice must hold.
-INPUTS = ROOT / "crates/horizon-mod-package/src/sdk/inputs.json"
-# The crates an API-only mod may name; their closure is the `api` archive. `horizon-mod-points` is empty since the
+# The required inputs (`foundry_mod_package::sdk::Inputs`): `members` lists what each slice must hold.
+INPUTS = ROOT / "crates/foundry-mod-package/src/sdk/inputs.json"
+# The crates an API-only mod may name; their closure is the `api` archive. `foundry-mod-points` is empty since the
 # injection points were removed (#19576); it stays while launchers released before then link it into every native mod.
-API_ROOTS = ("horizon-mod-api", "horizon-mod-points")
+API_ROOTS = ("foundry-mod-api", "foundry-mod-points")
 # The game libraries outside the API closure, in the runtime archive.
-GAME_LIBRARIES = ("horizon_mod_host", "horizon_mod_wasm")
+GAME_LIBRARIES = ("foundry_mod_host", "foundry_mod_wasm")
 # Source files the folder carries besides compiler outputs.
-CARRIED = {"Cargo.toml": None, IDENTITY: None, LOCK: ROOT / LOCK, TEMPLATE: ROOT / "crates/horizon-client/src" / TEMPLATE,
-           NATIVE_MODS_TEMPLATE: ROOT / "crates/horizon-client/src" / NATIVE_MODS_TEMPLATE}
-# What the game's build script asks the `horizon-client` executable's link for (Windows' 8 MB main stack).
-LINK_ARG = "cargo:horizon-executable-link-arg="
+CARRIED = {"Cargo.toml": None, IDENTITY: None, LOCK: ROOT / LOCK, TEMPLATE: ROOT / "crates/foundry-client/src" / TEMPLATE,
+           NATIVE_MODS_TEMPLATE: ROOT / "crates/foundry-client/src" / NATIVE_MODS_TEMPLATE}
+# What the game's build script asks the `foundry-client` executable's link for (Windows' 8 MB main stack).
+LINK_ARG = "cargo:foundry-executable-link-arg="
 # Native libraries the build scripts point the final link at (the `windows` crates' MinGW import libraries):
 # cargo passes their folders to rustc, a plain rustc gets them from here (`-L native=OUT/native`).
 NATIVE = "native"
@@ -90,7 +90,7 @@ NATIVE_SUFFIXES = (".a", ".lib")
 POINTS = "points.json"
 # The staged internals signatures, checked against a mod's declared access list.
 INTERNALS = "internals.json"
-# The published loops (`#[horizon_loop]`), which a mod's `[[native.loop]]` rows name.
+# The published loops (`#[foundry_loop]`), which a mod's `[[native.loop]]` rows name.
 LOOPS = "loops.json"
 # The function index: where each function a mixin may target is, and whether it takes a replacement; the
 # launcher's patch step reads it instead of walking the game's source. Only the engine route patches functions, so it
@@ -102,7 +102,7 @@ BUILD_DATA = (FUNCTIONS, INTERNALS, LOOPS, POINTS)
 API_BUILD_DATA = (INTERNALS, LOOPS, POINTS)
 BUILD_DATA_SCHEMA = 1
 BUILD_DATA_ARCHIVE = "build-data.tar.xz"
-# The surface export (`horizon-stage surface`), an SDK asset of its own.
+# The surface export (`foundry-stage surface`), an SDK asset of its own.
 SURFACE = "surface.json"
 # xz's default preset: the dictionary covers the large metadata files; the publish legs' time is measured by PR 5.
 XZ_PRESET = 6
@@ -128,7 +128,7 @@ def rustc_host() -> str:
 
 def package_format(root: Path) -> int:
     """The package layout's one number, from its one place (`sdk::PACKAGE_FORMAT` includes the same file)."""
-    text = (root / "crates/horizon-mod-package/src/sdk/package-format").read_text().rstrip()
+    text = (root / "crates/foundry-mod-package/src/sdk/package-format").read_text().rstrip()
     if not re.fullmatch(r"[0-9]+", text):
         raise ValueError(f"sdk/package-format must hold one number, not {text!r}")
     return int(text)
@@ -161,17 +161,17 @@ def prebuilt_target() -> Path:
     return Path(os.environ.get("CARGO_TARGET_DIR", ROOT / "target")).resolve() / "prebuilt"
 
 
-# `horizon-stage`, built and run by cargo in the prebuilt target's `tools` folder.
-STAGE_TOOL = ["cargo", "run", "--locked", "--release", "-q", "-p", "horizon-mod-api-gen", "--bin", "horizon-stage", "--"]
+# `foundry-stage`, built and run by cargo in the prebuilt target's `tools` folder.
+STAGE_TOOL = ["cargo", "run", "--locked", "--release", "-q", "-p", "foundry-mod-api-gen", "--bin", "foundry-stage", "--"]
 
 
 def staged_tool() -> Path:
-    """The `horizon-stage` that staging built ([`STAGE_TOOL`] in `prebuilt_target() / "tools"`)."""
-    return prebuilt_target() / "tools" / "release" / ("horizon-stage.exe" if sys.platform == "win32" else "horizon-stage")
+    """The `foundry-stage` that staging built ([`STAGE_TOOL`] in `prebuilt_target() / "tools"`)."""
+    return prebuilt_target() / "tools" / "release" / ("foundry-stage.exe" if sys.platform == "win32" else "foundry-stage")
 
 
 def surface_tool() -> tuple[list[str], dict | None]:
-    """How `pack` runs horizon-stage, and with which environment (None: this one).
+    """How `pack` runs foundry-stage, and with which environment (None: this one).
 
     The binary staging built, as it is: Cargo from the checkout would build a second copy (up to 2.6 min per SDK leg),
     since the staged copy's own .cargo/config.toml adds its rustflags to the checkout's. Without one, Cargo builds it
@@ -181,17 +181,17 @@ def surface_tool() -> tuple[list[str], dict | None]:
     if tool.is_file():
         print(f"Surface export with the staged tool {tool}", flush=True)
         return [str(tool.resolve())], None
-    print("No staged tool: Cargo builds horizon-stage for the surface export", flush=True)
+    print("No staged tool: Cargo builds foundry-stage for the surface export", flush=True)
     return STAGE_TOOL, {**os.environ, "CARGO_TARGET_DIR": str(prebuilt_target() / "tools")}
 
 
 # Set (to anything) for `cargo rustc --timings` on the SDK build: dry runs only (prebuilt-game-build.yml). Cargo fails
 # the build when it can't write the report, so a release build never asks for one.
-TIMINGS = "HORIZON_SDK_TIMINGS"
+TIMINGS = "FOUNDRY_SDK_TIMINGS"
 
 
 def stage(target_dir: Path, stage_tool: Path | None = None, prepare=None) -> Path:
-    """A copy of HEAD's tracked source with the staging pass run over it (arismoko/horizon#589): every point method gets its
+    """A copy of HEAD's tracked source with the staging pass run over it (arismoko/foundry#589): every point method gets its
     `#[point]`, internals become public, and the build data is written with HEAD's commit in its header.
     The copy is the commit's own bytes ([`tracked_blobs`]), never the working tree's, which is never rewritten.
 
@@ -272,7 +272,7 @@ def cargo_features(server: bool, platform: str) -> list[str]:
     """The game crate's features for this archive. The archive's std is a shared library with its own
     default-allocator `__rust_alloc`, and the wasm runtime's library, below the game, binds to it. Only ELF's
     dynamic linker (Linux) resolves every library's `__rust_alloc` to the first definition, the game's mimalloc.
-    Windows (arismoko/horizon#2394) and macOS (arismoko/horizon#3877) bind each import to the library it was linked against, so a game allocator
+    Windows (arismoko/foundry#2394) and macOS (arismoko/foundry#3877) bind each import to the library it was linked against, so a game allocator
     there leaves the wasm runtime, the mods' executable and std's own code on std's heap beside it, and a block
     freed on the other heap aborts. So everywhere but Linux the game keeps no allocator of its own and every
     library shares std's (the system heap)."""
@@ -357,7 +357,7 @@ def slices(metadata: dict, copied: dict[str, list[str]], api_route: list[str]) -
 
 def api_route(out: Path, link_args: list[str], official: Path | None = None) -> list[str]:
     """Build the fixed executable shared by both native routes, once for this SDK. Given `official` (the client's
-    [`official_link`] folder), it registers Horizon's official parts, as the release's executable does."""
+    [`official_link`] folder), it registers Foundry Client's official parts, as the release's executable does."""
     deps = out / "deps"
     folder = out / RUNTIME
     folder.mkdir()
@@ -368,11 +368,11 @@ def api_route(out: Path, link_args: list[str], official: Path | None = None) -> 
     if official is not None:
         rlibs = list(official.glob("libhorizon_official-*.rlib"))
         if len(rlibs) != 1:
-            sys.exit(f"expected exactly one horizon-official rlib in {official}: {rlibs}")
-        parts = ["--cfg", "horizon_official", "-L", f"dependency={official}", "--extern", f"horizon_official={rlibs[0]}"]
-    run(["rustc", *common, "--crate-type", "bin", "--crate-name", "horizon_native_game",
+            sys.exit(f"expected exactly one foundry-official rlib in {official}: {rlibs}")
+        parts = ["--cfg", "foundry_official", "-L", f"dependency={official}", "--extern", f"foundry_official={rlibs[0]}"]
+    run(["rustc", *common, "--crate-type", "bin", "--crate-name", "foundry_native_game",
          *(flag for arg in origin + link_args for flag in ("-C", f"link-arg={arg}")),
-         *extern_args(deps, "horizon_client"), *extern_args(deps, "mod_api"), *extern_args(deps, "horizon_mod_package"),
+         *extern_args(deps, "foundry_client"), *extern_args(deps, "mod_api"), *extern_args(deps, "foundry_mod_package"),
          "--extern", f"{GAME_LIBRARIES[0]}={dylib(deps, GAME_LIBRARIES[0])}", *parts,
  "-o", str(folder / EXECUTABLE), str(API_MAIN)])
     built = sorted(path.relative_to(out).as_posix() for path in folder.iterdir())
@@ -389,7 +389,7 @@ def api_route_files() -> set[str]:
 def holder_mark() -> bytes:
     """The bytes the launcher looks for in an executable before it runs it under the holder (`holder::capable`),
     read from their one definition, `holder.rs`'s `CAPABILITY`."""
-    source = ROOT / "crates/horizon-mod-package/src/holder.rs"
+    source = ROOT / "crates/foundry-mod-package/src/holder.rs"
     found = re.search(rb'CAPABILITY: \[u8; \d+\] = \*b"([^"]+)"', source.read_bytes())
     if not found:
         sys.exit(f"{source.relative_to(ROOT)} no longer defines CAPABILITY as `[u8; N] = *b\"...\"`: "
@@ -465,7 +465,7 @@ def facade_crates(deps: Path, runtime: set[str]) -> list[str]:
 
 def assert_externs(out: Path, eligible: list[str]) -> None:
     """Runs in the SDK build on every OS, including macOS, before publication."""
-    for crate in set(eligible) | {"mod_api", "horizon_mod_package"}:
+    for crate in set(eligible) | {"mod_api", "foundry_mod_package"}:
         extern_args(out / "deps", crate)
 
 
@@ -476,7 +476,7 @@ def dylib_crate_types(staged: Path) -> None:
     metadata = json.loads(run(["cargo", "metadata", "--format-version", "1"], cwd=staged))
     closure = api_closure(metadata)
     for package in metadata["packages"]:
-        if package["id"] not in closure and package["name"] not in ("horizon-mod-wasm", GAME):
+        if package["id"] not in closure and package["name"] not in ("foundry-mod-wasm", GAME):
             continue
         if not any(target["kind"] == ["lib"] for target in package["targets"]):
             continue
@@ -549,12 +549,12 @@ def build(out: Path, server: bool) -> None:
     common = [*(["--timings"] if os.environ.get(TIMINGS) else []), "--target", host, "--profile", PROFILE,
               "--message-format", "json-render-diagnostics"]
     if server:
-        # The dedicated server's game is horizon-client's, with no Horizon part (docs/layers.md, "What players get").
+        # The dedicated server's game is foundry-client's, with no Foundry Client part (docs/layers.md, "What players get").
         command = ["cargo", "rustc", "--locked", "-p", GAME, "--lib", "--crate-type", "dylib", *common, *features,
                    *(["--", *rpath] if rpath else [])]
         flags = rustflags
     else:
-        # The client's executable registers Horizon's official parts, as the release's does. They build in the game
+        # The client's executable registers Foundry Client's official parts, as the release's does. They build in the game
         # library's own build, so features resolve once and every crate they share with it compiles once.
         # `cargo build` passes no flags to one crate: on Linux every library of the build gets the rpath.
         command = ["cargo", "build", "--locked", "-p", GAME, "-p", OFFICIAL, "--lib", *common,
@@ -562,13 +562,13 @@ def build(out: Path, server: bool) -> None:
                      for previous, flag in zip([None, *features], features))]
         flags = " ".join([rustflags, *rpath])
         # The release profile's thin LTO never reaches the dylib build: a dylib root builds every crate as plain
-        # objects. horizon-official, an rlib root, would make the crates only it uses bitcode only, which rustc
+        # objects. foundry-official, an rlib root, would make the crates only it uses bitcode only, which rustc
         # refuses with prefer-dynamic on Windows and the executable's plain link can't use anywhere.
         environment["CARGO_PROFILE_RELEASE_LTO"] = "false"
     messages = run(
         command,
         cwd=staged,
-        env={**environment, "HORIZON_GAME_BUILD_ID": head(), "RUSTFLAGS": flags + " -D warnings", "CARGO_TARGET_DIR": str(target_dir)},
+        env={**environment, "FOUNDRY_GAME_BUILD_ID": head(), "RUSTFLAGS": flags + " -D warnings", "CARGO_TARGET_DIR": str(target_dir)},
     )
     artifacts = list(map(json.loads, messages.splitlines()))
     compiled_once(artifacts, target_dir / host)
@@ -614,7 +614,7 @@ def build(out: Path, server: bool) -> None:
     for name, path in carried.items():
         (out / name).write_bytes(blobs[path])
     patches = carry_patches(staged, out)
-    game = next(script for script in scripts if script["package_id"].split("#")[0].endswith("/horizon-client"))
+    game = next(script for script in scripts if script["package_id"].split("#")[0].endswith("/foundry-client"))
     for manifest in BUILD_DATA:
         shutil.copy2(staged / manifest, out / manifest)
     output = Path(game["out_dir"]).parent / "output"
@@ -637,7 +637,7 @@ def build(out: Path, server: bool) -> None:
         "game_features": sorted(next(
             message["features"] for message in artifacts
             if message["reason"] == "compiler-artifact"
-            and message["package_id"].split("#")[0].endswith("/horizon-client")
+            and message["package_id"].split("#")[0].endswith("/foundry-client")
             and "lib" in message["target"]["kind"]
         )),
         "registry_patches": patches,
@@ -723,7 +723,7 @@ def check(out: Path) -> None:
     ]
     if stray:
         sys.exit(f"prebuilt folder holds files that aren't compiler outputs: {stray}")
-    for crate in ("horizon_mod_wasm", "horizon_mod_host"):
+    for crate in ("foundry_mod_wasm", "foundry_mod_host"):
         if dylib(out / "deps", crate) is None:
             sys.exit(f"prebuilt folder has no {crate.replace('_', '-')} dylib")
 
@@ -768,7 +768,7 @@ def smoke(out: Path) -> None:
     origin = {"linux": ["-Wl,-rpath,$ORIGIN"], "darwin": ["-Wl,-rpath,@executable_path"]}.get(sys.platform, [])
     identity = json.loads((out / IDENTITY).read_text())
     release = next(line.removeprefix("release: ") for line in identity["rustc"].splitlines() if line.startswith("release: "))
-    starter = (ROOT / "crates/cargo-horizon-mod/template/native/lib.rs").read_text()
+    starter = (ROOT / "crates/cargo-foundry-mod/template/native/lib.rs").read_text()
     template = (out / NATIVE_MODS_TEMPLATE).read_text()
     smoke_library = installed / f"{dylib_prefix()}smoke{dylib_suffix()}"
     # `smoke_user` calls `smoke` through its library, as a mod calls a declared dependency: rustc links it against
@@ -793,12 +793,12 @@ def smoke(out: Path) -> None:
             (scratch / f"{mod}.rs").write_text(source + f'\n#[path = "{mod}_entry.rs"] mod entry;\n')
             library = installed / f"{dylib_prefix()}{mod}{dylib_suffix()}"
             run(["rustc", *common, "-L", f"dependency={installed}", "--crate-type", "dylib", "--crate-name", mod,
-                 *extern("mod_api"), "--extern", f"horizon_mod_host={dylib(deps, 'horizon_mod_host')}", *externs,
+                 *extern("mod_api"), "--extern", f"foundry_mod_host={dylib(deps, 'foundry_mod_host')}", *externs,
                  *(flag for arg in origin for flag in ("-C", f"link-arg={arg}")),
                  "-o", str(library), str(scratch / f"{mod}.rs")])
             records.append({"file": library.name, "sha256": sha256(library), "kind": "mod", "mod": mod,
                             "identity": build})
-            install_package(installed / "horizon-native-mods" / mod, mod, source, dependencies)
+            install_package(installed / "foundry-native-mods" / mod, mod, source, dependencies)
     shutil.copy2(out / RUNTIME / EXECUTABLE, installed / EXECUTABLE)
     (installed / "native-mods.json").write_text(json.dumps({"libraries": records}))
     if holder_mark() not in (installed / EXECUTABLE).read_bytes():
@@ -834,18 +834,18 @@ pub fn greeting_length() -> usize {
 
 def install_package(folder: Path, mod: str, source: str, dependencies: str) -> None:
     """Mod MOD's package as the launcher leaves it beside the executable, which reads it back at start
-    (horizon-mod-package `runtime::Runtime::load`): the starter manifest with its DEPENDENCIES table and its
+    (foundry-mod-package `runtime::Runtime::load`): the starter manifest with its DEPENDENCIES table and its
     [native] pins, and its source."""
-    manifest = (ROOT / "crates/cargo-horizon-mod/template/native/horizon-mod.toml").read_text()
+    manifest = (ROOT / "crates/cargo-foundry-mod/template/native/foundry-mod.toml").read_text()
     manifest = manifest.replace("{id}", mod).replace("{name}", mod) + dependencies
     mixins = re.search(r'pub const REV: &str = "([0-9a-f]{40})";',
-                       (ROOT / "crates/horizon-mod-package/src/mixins_tool.rs").read_text())[1]
+                       (ROOT / "crates/foundry-mod-package/src/mixins_tool.rs").read_text())[1]
     game = re.search(r'pub const VERSION_ID: &str = "([^"]+)";',
-                     (ROOT / "crates/horizon-core/src/version.rs").read_text())[1]
-    horizon = run(["git", "rev-parse", "HEAD"], cwd=ROOT).strip()
-    manifest += f'\n[native]\ngame = "{game}"\nhorizon = "{horizon}"\nmixins = "{mixins}"\n'
+                     (ROOT / "crates/foundry-core/src/version.rs").read_text())[1]
+    foundry = run(["git", "rev-parse", "HEAD"], cwd=ROOT).strip()
+    manifest += f'\n[native]\ngame = "{game}"\nfoundry = "{foundry}"\nmixins = "{mixins}"\n'
     (folder / "src").mkdir(parents=True)
-    (folder / "horizon-mod.toml").write_text(manifest)
+    (folder / "foundry-mod.toml").write_text(manifest)
     (folder / "Cargo.toml").write_text(f'[package]\nname = "{mod}"\nversion = "0.1.0"\nedition = "2024"\n')
     (folder / "src/lib.rs").write_text(source)
 
@@ -872,8 +872,8 @@ def start(out: Path) -> None:
     """Start two installations of the fixed executable (with smoke's two libraries and without mods),
     each as a dedicated server with no game data: it loads the game's libraries
     and sets up the mods' runtime, then stops at the missing prepared files. Fails on a crash, a hang or any other
-    stop, so an archive whose libraries disagree (two allocators, arismoko/horizon#3877) cannot ship. On Windows it runs without
-    MinGW on PATH, as on a player's computer, so a runtime DLL the launcher would not install fails here (arismoko/horizon#3521).
+    stop, so an archive whose libraries disagree (two allocators, arismoko/foundry#3877) cannot ship. On Windows it runs without
+    MinGW on PATH, as on a player's computer, so a runtime DLL the launcher would not install fails here (arismoko/foundry#3521).
     A client's error must point to the launcher, which only the official parts' hooks do ([`OFFICIAL_PARTS`]), and a
     server's must not."""
     # Run as a script, so lab sits on the path beside it; tests import this module without running `start`.
@@ -885,7 +885,7 @@ def start(out: Path) -> None:
             scratch = Path(scratch)
             # Never a real player's folders, even ones this process inherited: every home is a folder of the scratch.
             homes = {key: scratch / key.lower() for key in
-                     ("HORIZON_HOME", "HORIZON_LAUNCHER_HOME", "XDG_DATA_HOME", "XDG_CONFIG_HOME")}
+                     ("FOUNDRY_HOME", "FOUNDRY_LAUNCHER_HOME", "XDG_DATA_HOME", "XDG_CONFIG_HOME")}
             for home in homes.values():
                 home.mkdir()
             environment = lab.game_env(RUST_BACKTRACE="1")
@@ -913,7 +913,7 @@ def start(out: Path) -> None:
                 bundle_tool = scratch / "bundle"
                 run(["rustc", "--edition=2021", str(bundle_source), "-o", str(bundle_tool)])
                 run([str(bundle_tool), str(installed)])
-                bundled = installed / "Horizon.app/Contents/MacOS/horizon-client"
+                bundled = installed / "Foundry Client.app/Contents/MacOS/foundry-client"
                 executable = bundled
                 probe = subprocess.run([str(bundled), "--launch-api"], cwd=game, env=environment,
                                        capture_output=True, text=True, timeout=60)
@@ -932,11 +932,11 @@ def start(out: Path) -> None:
         # The prepared-files check exits with status 1; any other status is a different stop.
         if result.returncode != 1 or NO_RESOURCES not in result.stdout or "panicked" in result.stdout:
             sys.exit(f"start: {installed.name} stopped before the prepared-files check (exit {result.returncode})")
-        # A client's executable is the official game, a server's never has a Horizon part (docs/layers.md).
+        # A client's executable is the official game, a server's never has a Foundry Client part (docs/layers.md).
         if (OFFICIAL_PARTS in result.stdout) != (side == "client"):
             sys.exit(f"start: the {side} executable in {installed.name} "
                      + ("registered no official parts: Play with Friends, the heartbeat and the official server are "
-                        "missing (#19384)" if side == "client" else "registered Horizon's official parts"))
+                        "missing (#19384)" if side == "client" else "registered Foundry Client's official parts"))
         print(f"start: {installed.name} loaded the game's libraries and the mods' runtime and stopped at: "
               f"{NO_RESOURCES}")
 
@@ -1051,8 +1051,8 @@ def gather(legs: Path, dist: Path) -> None:
 
 
 def index(dist: Path, nightly: str | None, previous: tuple[str, Path] | None = None) -> None:
-    """DIST/sdk.json over every asset in DIST, written and checked by the one implementation (`horizon_mod_package::sdk`).
-    `previous` is the SDK published before this one and the `horizon-stage surface-diff --json` of its surface
+    """DIST/sdk.json over every asset in DIST, written and checked by the one implementation (`foundry_mod_package::sdk`).
+    `previous` is the SDK published before this one and the `foundry-stage surface-diff --json` of its surface
     against DIST's, which fill the index's surface comparison."""
     commit = head()
     date = run(["git", "log", "-1", "--format=%cd", "--date=format-local:%Y-%m-%d"], cwd=ROOT,
@@ -1186,7 +1186,7 @@ def export_count(library: Path) -> int:
 
 
 def exports(out: Path) -> None:
-    """Report every DLL's Windows export count (arismoko/horizon#589), the separate wasm runtime included; warn on one past 80% of
+    """Report every DLL's Windows export count (arismoko/foundry#589), the separate wasm runtime included; warn on one past 80% of
     the limit and fail, after reporting them all, on any past 90%."""
     over = []
     for library in sorted((out / "deps").glob("*.dll")):

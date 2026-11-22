@@ -12,7 +12,7 @@ the flag; without consent they refuse to proceed. The window shows a red warning
 build, including the mod IDs and versions.
 
 The Mods page identifies each mod's author and marks third-party mods as not made or endorsed
-by the Horizon project.
+by the Foundry Client project.
 
 ## Package checks
 
@@ -22,7 +22,7 @@ validation checks; it does not sandbox the code you run.
 
 - A `.hmod` contains a flat Rust project and can include `assets/`, `data/` and `icon.png`.
 - The launcher validates the bundle without running its code, then builds it on your computer.
-- Registry downloads are pinned by SHA-256. `horizon-mod.toml` supplies the mod identity and exact
+- Registry downloads are pinned by SHA-256. `foundry-mod.toml` supplies the mod identity and exact
   game build pins. Revocation entries in `revoked.toml` prevent installing revoked releases.
 - A registry project's kind cannot change.
 
@@ -32,5 +32,5 @@ The launcher loads native mods for the instance where you install them, using th
 worlds, options and logs. Other instances select their own versions. This separation is not a
 security boundary: native code can access files outside its instance.
 
-The checks in `horizon-mixins` catch mistakes, not malicious code. See its
-[security notes](https://github.com/horizon-rust/horizon-mixins/blob/main/docs/security.md).
+The checks in `foundry-mixins` catch mistakes, not malicious code. See its
+[security notes](https://github.com/foundry-rust/foundry-mixins/blob/main/docs/security.md).

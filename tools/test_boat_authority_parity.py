@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
-"""Compare actual vanilla and Horizon client boat ticks across ownership changes.
+"""Compare actual vanilla and Foundry Client client boat ticks across ownership changes.
 
 An empty stand-in vanilla client level isolates cached motion from block effects
-and displacement, while AbstractBoat.tick and floatBoat remain real. Horizon
+and displacement, while AbstractBoat.tick and floatBoat remain real. Foundry Client
 loads its resources headlessly and runs tick_boat plus the actual remote boat
 ticker. Both report velocity and angular-velocity bits after each tick, including
 controlled ticks and dismount/reboard transitions. Real ice/control/network
 behavior is covered separately by lan_e2e --check boat_ice_reboard.
 
 Paddle cases additionally exercise actual AbstractBoat.tick/getRowingTime against
-Horizon's controlled ticker and remote-copy ticker. Synced flag values and the
+Foundry Client's controlled ticker and remote-copy ticker. Synced flag values and the
 first passenger are controlled inputs, including stale true flags after a
 player leaves and a non-player first passenger. These checks compare animation
 phase and interpolation, not rendered screenshots or network packet delivery.
 
-Bare-hand and enchanted-stick attacks additionally run Horizon's real boat strike and vanilla's
+Bare-hand and enchanted-stick attacks additionally run Foundry Client's real boat strike and vanilla's
 Player.attack for bare-hand hits and Player.causeExtraKnockback for the
 enchanted/creative controls, checking retained boat motion, upward impulse, the
 attacker's slowdown and sprint cancellation. The enchanted/creative Java
@@ -84,7 +84,7 @@ def cases():
                         dict(occupied=False, flags=[True, True]),
                     ])))
     # Player.causeExtraKnockback's nonliving branch, through the actual boat
-    # attack in Horizon: uncharged/non-sprinting controls, axis and oblique yaw,
+    # attack in Foundry Client: uncharged/non-sprinting controls, axis and oblique yaw,
     # retained target motion and the attacker's slowdown/sprint cancellation.
     for yaw in (0.0, 90.0, 180.0, -90.0, 37.0):
         for sprint in (False, True):
@@ -108,11 +108,11 @@ def main():
     args = parser.parse_args()
     lock, jars, _ = base.verify_artifacts()
     source_paths = [lab.ROOT / path for path in (
-        'crates/horizon-client/src/game/entities/boats/mod.rs',
-        'crates/horizon-client/src/game/network/remote_vehicles.rs',
-        'crates/horizon-client/src/game/network/lan_vehicles.rs',
-        'crates/horizon-client/src/game/entities/boat_authority_fixture.rs',
-        'mods/horizon/src/test/java/dev/horizonlab/parity/VanillaBoatAuthorityOracle.java',
+        'crates/foundry-client/src/game/entities/boats/mod.rs',
+        'crates/foundry-client/src/game/network/remote_vehicles.rs',
+        'crates/foundry-client/src/game/network/lan_vehicles.rs',
+        'crates/foundry-client/src/game/entities/boat_authority_fixture.rs',
+        'mods/foundry/src/test/java/dev/foundrylab/parity/VanillaBoatAuthorityOracle.java',
         'tools/test_boat_authority_parity.py')]
     source_hashes = base.source_hashes(source_paths)
     work = lab.LOCAL / 'boat-authority-parity'
@@ -122,8 +122,8 @@ def main():
     lab.write_json(work / 'inputs.json', inputs)
     classes = work / 'classes'
     classes.mkdir(exist_ok=True)
-    sources = lab.ROOT / 'mods/horizon/src/test/java'
-    package = sources / 'dev/horizonlab/parity'
+    sources = lab.ROOT / 'mods/foundry/src/test/java'
+    package = sources / 'dev/foundrylab/parity'
     dependencies = os.pathsep.join(map(str, [jars['client'], *baking.client_libraries()]))
 
     def run(command, name):
@@ -136,13 +136,13 @@ def main():
          '-sourcepath', sources, '-cp', dependencies, '-d', classes,
          *(package / f'{name}.java' for name in ('ParityData', 'VanillaVehicleContainerOracle', 'VanillaRemoteAttackOracle', 'VanillaBoatAuthorityOracle'))],
         'compile-java')
-    run(['java', '-cp', str(classes) + os.pathsep + dependencies, 'dev.horizonlab.parity.VanillaBoatAuthorityOracle',
+    run(['java', '-cp', str(classes) + os.pathsep + dependencies, 'dev.foundrylab.parity.VanillaBoatAuthorityOracle',
          work / 'inputs.json', work / 'vanilla.json'], 'vanilla')
-    run(fast_bins.command('horizon-client'), 'compile-rust')
-    binary = lab.cargo_target() / 'fast' / ('horizon-client.exe' if os.name == 'nt' else 'horizon-client')
+    run(fast_bins.command('foundry-client'), 'compile-rust')
+    binary = lab.cargo_target() / 'fast' / ('foundry-client.exe' if os.name == 'nt' else 'foundry-client')
     with (work / 'rust.log').open('w') as log, tempfile.TemporaryDirectory(prefix='boat-authority-') as game_dir:
         run_game([str(binary), '--headless', '--resources', str(args.resources.resolve()), '--game-dir', game_dir], cwd=game_dir,
-                 env=lab.game_env(HORIZON_BOAT_AUTHORITY_FIXTURE=work), stdout=log,
+                 env=lab.game_env(FOUNDRY_BOAT_AUTHORITY_FIXTURE=work), stdout=log,
                  stderr=subprocess.STDOUT, check=True, timeout=180)
     native = json.loads((work / 'vanilla.json').read_text())
     rust = json.loads((work / 'rust.json').read_text())

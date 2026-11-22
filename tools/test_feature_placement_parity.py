@@ -66,7 +66,7 @@ def corpus():
                 for index,modifiers in enumerate(definitions()):
                     layer=any(v.get('type')=='count_on_every_layer' for v in modifiers)
                     if layer and context[0]!=-64:continue
-                    # nextInt(1) still consumes a draw; the following modifier and feature draws pin it (arismoko/horizon#815).
+                    # nextInt(1) still consumes a draw; the following modifier and feature draws pin it (arismoko/foundry#815).
                     for fail,draw,result,bound in [(-1,False,0,0),(-1,True,1,0),(-1,True,2,0),(0,False,1,0),(2,True,2,0),(5,True,1,0),(-1,True,1,1),(-1,True,2,16)]:
                         yield {'layer_world':layer,'modifiers':modifiers,'context':context,'legacy':legacy,'seed':seed,'positions':positions,'fail':fail,'draw':draw,'draw_bound':bound,'result':result,'height_mode':index%2,'query_fail':1 if index%3==0 and fail==2 else -1,'world_min':max(-2**31,min(2**31-1,context[0]+[-8,0,8][index%3]))}
 
@@ -77,10 +77,10 @@ def main():
     report_path=build/"report.json";report_path.unlink(missing_ok=True)
     if args.prepare:lab.prepare()
     lock,jars,libraries=base.verify_artifacts()
-    oracle=lab.ROOT/"mods/horizon/src/test/java/dev/horizonlab/parity/VanillaFeaturePlacementOracle.java"
+    oracle=lab.ROOT/"mods/foundry/src/test/java/dev/foundrylab/parity/VanillaFeaturePlacementOracle.java"
     helper=oracle.with_name("VanillaPlacementOracle.java")
-    sources=[oracle,helper,Path(__file__),lab.ROOT/"tools/test_worldgen_parity.py",lab.ROOT/"tools/test_rust_parity.py",lab.ROOT/"tools/lab.py",lab.ROOT/"Cargo.toml",lab.ROOT/"Cargo.lock",lab.ROOT/"crates/horizon-core/Cargo.toml",lab.ROOT/"crates/horizon-world/Cargo.toml",
-             *sorted((lab.ROOT/"crates/horizon-core/src").rglob("*.rs")),*sorted((lab.ROOT/"crates/horizon-world/src").rglob("*.rs")),lab.ROOT/"crates/horizon-world/examples/probe/feature_placement_fixture.rs",lab.ROOT/"crates/horizon-world/examples/probe/support/placement_queries.rs"]
+    sources=[oracle,helper,Path(__file__),lab.ROOT/"tools/test_worldgen_parity.py",lab.ROOT/"tools/test_rust_parity.py",lab.ROOT/"tools/lab.py",lab.ROOT/"Cargo.toml",lab.ROOT/"Cargo.lock",lab.ROOT/"crates/foundry-core/Cargo.toml",lab.ROOT/"crates/foundry-world/Cargo.toml",
+             *sorted((lab.ROOT/"crates/foundry-core/src").rglob("*.rs")),*sorted((lab.ROOT/"crates/foundry-world/src").rglob("*.rs")),lab.ROOT/"crates/foundry-world/examples/probe/feature_placement_fixture.rs",lab.ROOT/"crates/foundry-world/examples/probe/support/placement_queries.rs"]
     tested_sources=base.source_hashes(sources)
     fixtures=list(corpus());inputs=build/"inputs.txt";inputs.write_text("".join(json.dumps(f,separators=(",",":"))+"\n" for f in fixtures),encoding="utf-8")
     fixture_paths=[inputs];tested_fixtures=base.source_hashes(fixture_paths);classes=build/"classes";classes.mkdir(exist_ok=True)
@@ -88,14 +88,14 @@ def main():
         with (build/(name+".log")).open("w",encoding="utf-8") as log:base.run(list(map(str,command)),stdout=log,stderr=subprocess.STDOUT)
     dependency_path=os.pathsep.join(map(str,libraries))
     run(["javac","--release",lock["minecraft"]["java_major"],"-proc:none","-cp",str(jars["server"])+os.pathsep+dependency_path,"-d",classes,oracle,helper],"compile-java")
-    run(["cargo","build","--profile","fast","-p","horizon-world","--example","world_probe"],"compile-rust")
+    run(["cargo","build","--profile","fast","-p","foundry-world","--example","world_probe"],"compile-rust")
     metadata=json.loads(subprocess.check_output(["cargo","metadata","--no-deps","--format-version","1"],cwd=lab.ROOT,text=True))
     binary=Path(metadata["target_directory"])/"fast/examples"/("world_probe.exe" if os.name=="nt" else "world_probe")
     run([binary,"feature_placement_fixture",build],"rust")
     references=[]
     for side,jar in jars.items():
         reference=build/f"{side}.txt"
-        run(["java","-Xmx512M","-cp",os.pathsep.join([str(classes),str(jar),dependency_path]),"dev.horizonlab.parity.VanillaFeaturePlacementOracle",side,build],side)
+        run(["java","-Xmx512M","-cp",os.pathsep.join([str(classes),str(jar),dependency_path]),"dev.foundrylab.parity.VanillaFeaturePlacementOracle",side,build],side)
         matched=base.compare(reference,build/"rust.txt")
         references.append({"side":side,"jar_sha256":lab.digest(jar,"sha256"),"output_sha256":lab.digest(reference,"sha256"),"matched_output_lines":matched})
         print(f"{side}: {matched:,} placement output lines match Rust",flush=True)

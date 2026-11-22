@@ -5,10 +5,10 @@ use std::path::Path;
 use std::process::Command;
 
 /// The game's exit code when it can't mark its folders as in use (`holder::acquire` in
-/// horizon-mod-package).
+/// foundry-mod-package).
 const LEASES_REFUSED: i32 = 78;
 
-/// Whether `command` runs Horizon's own game with nothing in front of it. Only then is its exit
+/// Whether `command` runs Foundry Client's own game with nothing in front of it. Only then is its exit
 /// code the game's: a Java instance, a wrapper or a Unix pre-launch script can end with 78 too.
 /// The launch plan's record of the game's command before wrappers (`run_leases::snapshot`)
 /// decides, not the program's name: a wrapper may be called like the client.
@@ -62,7 +62,7 @@ pub fn exit_error(direct: bool, status: std::process::ExitStatus) -> ExitError {
 fn exit_text(direct: bool, code: Option<i32>, status: &str) -> ExitError {
     let leases_refused = direct && code == Some(LEASES_REFUSED);
     let text = match leases_refused {
-        true => tr("Horizon stopped before starting because its folders weren't marked as in use. Press Play again.").into(),
+        true => tr("Foundry Client stopped before starting because its folders weren't marked as in use. Press Play again.").into(),
         false => format!("Exited with {status}"),
     };
     ExitError {
@@ -106,7 +106,7 @@ fn shown(path: &Path) -> String {
 /// Whether the data folder comes from the environment: Settings can't move it then
 /// (`location_page::environment_blocked`).
 fn data_from_environment() -> bool {
-    ["HORIZON_LAUNCHER_HOME", "HORIZON_HOME"]
+    ["FOUNDRY_LAUNCHER_HOME", "FOUNDRY_HOME"]
         .iter()
         .any(|key| std::env::var_os(key).is_some_and(|value| !value.is_empty()))
 }
@@ -119,18 +119,18 @@ pub(crate) fn unsupported_filesystem(folder: Option<&Path>, data: &Path) -> Stri
 fn unsupported_text(folder: Option<&Path>, data: &Path, environment: bool) -> String {
     match folder {
         Some(folder) if folder == data && environment => trf(
-            "Horizon can't use {folder}: its file system isn't supported. Set HORIZON_LAUNCHER_HOME to a folder on a local drive.",
+            "Foundry Client can't use {folder}: its file system isn't supported. Set FOUNDRY_LAUNCHER_HOME to a folder on a local drive.",
             &[("folder", &shown(folder))],
         ),
         Some(folder) if folder == data => trf(
-            "Horizon can't use {folder}: its file system isn't supported. Move the launcher's data to a local drive in Settings > About > Data folder.",
+            "Foundry Client can't use {folder}: its file system isn't supported. Move the launcher's data to a local drive in Settings > About > Data folder.",
             &[("folder", &shown(folder))],
         ),
         Some(folder) => trf(
-            "Horizon can't use {folder}: its file system isn't supported. It must be on a local drive.",
+            "Foundry Client can't use {folder}: its file system isn't supported. It must be on a local drive.",
             &[("folder", &shown(folder))],
         ),
-        None => tr("A folder Horizon uses is on a file system it doesn't support. Keep the launcher's data and game folders on a local drive.").into(),
+        None => tr("A folder Foundry Client uses is on a file system it doesn't support. Keep the launcher's data and game folders on a local drive.").into(),
     }
 }
 
@@ -146,7 +146,7 @@ fn unexpected_text(path: &Path, data: &Path, link: bool) -> String {
         // (`validate_roots` in `data_location::migrate_locked`), so only the environment can
         // point past it.
         true => trf(
-            "{folder} is a link. Set HORIZON_LAUNCHER_HOME to the real folder.",
+            "{folder} is a link. Set FOUNDRY_LAUNCHER_HOME to the real folder.",
             &[("folder", &shown(path))],
         ),
         false => trf(
@@ -338,7 +338,7 @@ mod tests {
         assert_eq!(
             exit_text(true, Some(78), "exit code: 78"),
             ExitError {
-                text: "Horizon stopped before starting because its folders weren't marked as in use. Press Play again.".into(),
+                text: "Foundry Client stopped before starting because its folders weren't marked as in use. Press Play again.".into(),
                 leases_refused: true,
             }
         );
@@ -370,32 +370,32 @@ mod tests {
 
     #[test]
     fn storage_refusals_name_the_folder() {
-        let data = Path::new("/home/player/.local/share/horizon-launcher");
+        let data = Path::new("/home/player/.local/share/foundry-launcher");
         let game = Path::new("/mnt/nfs/survival");
         assert_eq!(
             unsupported_text(Some(data), data, false),
-            "Horizon can't use /home/player/.local/share/horizon-launcher: its file system isn't supported. Move the launcher's data to a local drive in Settings > About > Data folder."
+            "Foundry Client can't use /home/player/.local/share/foundry-launcher: its file system isn't supported. Move the launcher's data to a local drive in Settings > About > Data folder."
         );
         assert_eq!(
             unsupported_text(Some(data), data, true),
-            "Horizon can't use /home/player/.local/share/horizon-launcher: its file system isn't supported. Set HORIZON_LAUNCHER_HOME to a folder on a local drive."
+            "Foundry Client can't use /home/player/.local/share/foundry-launcher: its file system isn't supported. Set FOUNDRY_LAUNCHER_HOME to a folder on a local drive."
         );
         // An instance on NFS, with the data folder local: the instance is named, not the data.
         assert_eq!(
             unsupported_text(Some(game), data, false),
-            "Horizon can't use /mnt/nfs/survival: its file system isn't supported. It must be on a local drive."
+            "Foundry Client can't use /mnt/nfs/survival: its file system isn't supported. It must be on a local drive."
         );
         assert_eq!(
             unsupported_text(None, data, false),
-            "A folder Horizon uses is on a file system it doesn't support. Keep the launcher's data and game folders on a local drive."
+            "A folder Foundry Client uses is on a file system it doesn't support. Keep the launcher's data and game folders on a local drive."
         );
 
         // Settings can't move a linked data folder, with or without the override.
         assert_eq!(
             unexpected_text(data, data, true),
-            "/home/player/.local/share/horizon-launcher is a link. Set HORIZON_LAUNCHER_HOME to the real folder."
+            "/home/player/.local/share/foundry-launcher is a link. Set FOUNDRY_LAUNCHER_HOME to the real folder."
         );
-        let generic = "Refusing native cache cleanup at an unexpected file or link: /home/player/.local/share/horizon-launcher";
+        let generic = "Refusing native cache cleanup at an unexpected file or link: /home/player/.local/share/foundry-launcher";
         assert_eq!(unexpected_text(data, data, false), generic);
         let inner = data.join("native");
         assert!(unexpected_text(&inner, data, true).starts_with("Refusing native cache"));
@@ -403,18 +403,18 @@ mod tests {
         let game = Path::new("/home/player/games/survival");
         assert_eq!(
             unwritable("Permission denied", Some(game), data),
-            "Permission denied. Make sure your account can write to /home/player/games/survival and /home/player/.local/share/horizon-launcher, then try again."
+            "Permission denied. Make sure your account can write to /home/player/games/survival and /home/player/.local/share/foundry-launcher, then try again."
         );
         assert_eq!(
             unwritable("Permission denied", None, data),
-            "Permission denied. Make sure your account can write to /home/player/.local/share/horizon-launcher, then try again."
+            "Permission denied. Make sure your account can write to /home/player/.local/share/foundry-launcher, then try again."
         );
     }
 
     #[test]
     fn a_file_at_the_data_path_is_not_called_a_link() {
         let root = tempfile::tempdir().unwrap();
-        let data = root.path().join("horizon-launcher");
+        let data = root.path().join("foundry-launcher");
         std::fs::write(&data, b"").unwrap();
         assert!(
             unexpected_entry(&data, &data).starts_with("Refusing native cache cleanup"),
@@ -443,7 +443,7 @@ mod tests {
         // The flag only exists for macOS processes.
         assert_eq!(host_for("windows", "x86_64", true), Host::Other);
 
-        let url = "https://playhorizon.dev/docs/install";
+        let url = "https://playfoundry.dev/docs/install";
         assert_eq!(
             no_build_for(Host::Other, Some("nightly-2026-11-20"), url),
             "nightly-2026-11-20 has no build for this platform."
@@ -461,7 +461,7 @@ mod tests {
         assert_eq!(no_build_for(Host::IntelMac, None, url), intel);
         assert_eq!(
             no_build_for(Host::TranslatedMac, None, url),
-            "You're running the Intel launcher on an Apple Silicon Mac. Download the Apple Silicon launcher: https://playhorizon.dev/docs/install"
+            "You're running the Intel launcher on an Apple Silicon Mac. Download the Apple Silicon launcher: https://playfoundry.dev/docs/install"
         );
 
         assert_eq!(

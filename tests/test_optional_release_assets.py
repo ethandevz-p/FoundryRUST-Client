@@ -12,10 +12,10 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 REQUIRED = {
-    "horizon-linux-x86_64.tar.gz", "horizon-windows-x64.zip", "horizon-macos-arm64.zip",
-    "horizon-server-linux-x86_64.tar.gz", "horizon-source.tar.gz", "sdk.json",
+    "foundry-linux-x86_64.tar.gz", "foundry-windows-x64.zip", "foundry-macos-arm64.zip",
+    "foundry-server-linux-x86_64.tar.gz", "foundry-source.tar.gz", "sdk.json",
 }
-OPTIONAL = ("horizon-windows-arm64.zip", "horizon-linux-musl-x86_64.tar.gz", "horizon-macos-x64.zip")
+OPTIONAL = ("foundry-windows-arm64.zip", "foundry-linux-musl-x86_64.tar.gz", "foundry-macos-x64.zip")
 # The bash on PATH, as in test_pr_ready: Windows' CreateProcess looks in System32 before PATH, so a bare "bash"
 # there is WSL's, which gets none of the steps' env and none of the host's paths. WSL from the Microsoft Store puts
 # its bash on PATH as an app alias in WindowsApps instead (#16860).
@@ -123,7 +123,7 @@ gh() {
                     signatures.append((also_for, "SHA256SUMS.v2.sig"))
                 for signed_tag, filename in signatures:
                     message, signature = root / "message", root / "signature"
-                    message.write_bytes(f"horizon release {signed_tag}\n".encode() + sums)
+                    message.write_bytes(f"foundry release {signed_tag}\n".encode() + sums)
                     signature.write_bytes(base64.b64decode((root / filename).read_bytes()))
                     verified = subprocess.run(
                         ["openssl", "pkeyutl", "-verify", "-rawin", "-pubin", "-keyform", "DER",

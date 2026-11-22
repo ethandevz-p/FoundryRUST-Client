@@ -216,15 +216,15 @@ class ResolutionTest(unittest.TestCase):
         root = Path(cls.tmp.name).resolve()
         (root / "game.rs").write_text("struct Game { mobs: u32 }\nimpl Game { fn a(&self) {} }\n")
         (root / "scope.rs").write_text(
-            "use horizon_core::geometry::Vec3;\n"
+            "use foundry_core::geometry::Vec3;\n"
             "impl Game {\n"
             "    fn early(&self) { Vec3::new(); }\n"
-            "    fn later(&self) { use horizon_world::Vec3; Vec3::new(); }\n"
+            "    fn later(&self) { use foundry_world::Vec3; Vec3::new(); }\n"
             "}\n")
         (root / "other.rs").write_text(
-            "use horizon_items::Vec3;\nimpl Game { fn third(&self) { Vec3::new(); } }\n")
+            "use foundry_items::Vec3;\nimpl Game { fn third(&self) { Vec3::new(); } }\n")
         (root / "glob.rs").write_text(
-            "use horizon_core::geometry::*;\nimpl Game { fn globbed(&self) { Vec3::new(); } }\n")
+            "use foundry_core::geometry::*;\nimpl Game { fn globbed(&self) { Vec3::new(); } }\n")
         cls.index = game_uses.Index(root, root)
         cls.resolver = game_uses.Resolver(cls.index)
         cls.root = root
@@ -240,11 +240,11 @@ class ResolutionTest(unittest.TestCase):
         return {origin: [r["path"] for r in rows] for origin, rows in entry["names"].items()}
 
     def test_an_import_in_one_function_does_not_leak_into_another(self):
-        self.assertEqual(self.origin("scope.rs", "early"), {"horizon-core": ["Vec3"]})
-        self.assertEqual(self.origin("scope.rs", "later"), {"horizon-world": ["Vec3"]})
+        self.assertEqual(self.origin("scope.rs", "early"), {"foundry-core": ["Vec3"]})
+        self.assertEqual(self.origin("scope.rs", "later"), {"foundry-world": ["Vec3"]})
 
     def test_workspace_glob_import_resolves_through_the_item_index(self):
-        self.assertEqual(self.origin("glob.rs", "globbed"), {"horizon-core": ["Vec3"]})
+        self.assertEqual(self.origin("glob.rs", "globbed"), {"foundry-core": ["Vec3"]})
 
     def test_combined_report_keeps_each_targets_crate(self):
         combined = game_uses.Uses()
@@ -253,10 +253,10 @@ class ResolutionTest(unittest.TestCase):
             game_uses.merge(combined, game_uses.analyse(self.index, src, start, end, fn))
         entry = game_uses.target_report(self.index, self.resolver, "combined", None, None, combined)
         self.assertEqual({o: [r["count"] for r in rows] for o, rows in entry["names"].items()},
-                         {"horizon-core": [1], "horizon-items": [1]})
+                         {"foundry-core": [1], "foundry-items": [1]})
 
     def test_use_aliases_survive_whitespace_removal(self):
-        self.assertEqual(game_uses.expand_use("horizon_command as command"), [("horizon_command", "command")])
+        self.assertEqual(game_uses.expand_use("foundry_command as command"), [("foundry_command", "command")])
         self.assertEqual(sorted(game_uses.expand_use("a::{b as c,\n  d, e::f as g}")),
                          [("a::b", "c"), ("a::d", None), ("a::e::f", "g")])
 

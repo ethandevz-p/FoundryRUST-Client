@@ -239,7 +239,7 @@ pub(super) fn compile(
                 .crates
                 .iter()
                 .map(String::as_str)
-                .chain(["horizon_client"])
+                .chain(["foundry_client"])
             {
                 let path = prebuilt::facade_library(&deps, name, &sdk)?;
                 prebuilt::refuse_closure_rlib(id, name, &path)?;
@@ -320,7 +320,7 @@ pub(super) fn compile(
             let externs: BTreeMap<_, _> =
                 super::patch::sdk_externs(game, &sdk)?.into_iter().collect();
             for (krate, path) in &externs {
-                prebuilt::refuse_closure_rlib("horizon_patch", krate, path)?;
+                prebuilt::refuse_closure_rlib("foundry_patch", krate, path)?;
             }
             bindings.insert(
                 dir,
@@ -354,10 +354,10 @@ pub(super) fn compile(
         .map(|patch| patch.installs.as_slice())
         .unwrap_or(&[]);
     let mut entry =
-        prebuilt::library_entry(&template, &[], sdk.commit(), "horizon_patch", "0", installs);
+        prebuilt::library_entry(&template, &[], sdk.commit(), "foundry_patch", "0", installs);
     entry.push_str(prebuilt::PATCH_HOST_LINK);
     fs::write(out.join("src/lib.rs"), entry).map_err(|e| e.to_string())?;
-    let mut manifest = toml::toml! { [package] name = "horizon_patch" version = "0.0.0" edition = "2024" [lib] crate-type = ["dylib"] [workspace] resolver = "2" };
+    let mut manifest = toml::toml! { [package] name = "foundry_patch" version = "0.0.0" edition = "2024" [lib] crate-type = ["dylib"] [workspace] resolver = "2" };
     manifest
         .get_mut("workspace")
         .and_then(toml::Value::as_table_mut)
@@ -416,7 +416,7 @@ pub(super) fn compile(
     let mut externs = prebuilt::wrapper_externs(&deps)?;
     externs.insert("mod_vocab".into(), prebuilt::library(&deps, "mod_vocab")?);
     for (name, path) in &externs {
-        prebuilt::refuse_closure_rlib("horizon_patch", name, path)?;
+        prebuilt::refuse_closure_rlib("foundry_patch", name, path)?;
     }
     let mut link_args = Vec::new();
     if cfg!(target_os = "linux") {
@@ -450,7 +450,7 @@ pub(super) fn compile(
         .arg("--message-format=json-render-diagnostics");
     // Cargo's per-crate timings (`target/cargo-timings/`), for the check that measures where a
     // registry build's time goes; a player's kept build folder doesn't collect them.
-    if std::env::var_os("HORIZON_NATIVE_CARGO_TIMINGS").is_some() {
+    if std::env::var_os("FOUNDRY_NATIVE_CARGO_TIMINGS").is_some() {
         command.arg("--timings");
     }
     let wrapper = compiler_plan(rust, game, bindings);
@@ -475,9 +475,9 @@ pub(super) fn compile(
         return Err(error);
     }
     let binary = game.join("bin").join(if cfg!(windows) {
-        "horizon-client.exe"
+        "foundry-client.exe"
     } else {
-        "horizon-client"
+        "foundry-client"
     });
     let release = target_dir.join(rust.host.target).join("release");
     let mut runtime = prebuilt::runtime_libraries(rust, &sdk, game)?;
@@ -494,9 +494,9 @@ pub(super) fn compile(
         )?;
         runtime.push(library);
     }
-    let library = release.join(prebuilt::dylib_name("horizon_patch"));
-    super::library_record::validate_exports(&library, "horizon_patch")?;
-    super::library_record::stamp(&library, sdk.commit(), "horizon_patch", "0", true)?;
+    let library = release.join(prebuilt::dylib_name("foundry_patch"));
+    super::library_record::validate_exports(&library, "foundry_patch")?;
+    super::library_record::stamp(&library, sdk.commit(), "foundry_patch", "0", true)?;
     runtime.push(library);
     for library in outputs.runtime(&metadata.runtime_packages()?, target_dir)? {
         if let Some(existing) = runtime
@@ -628,7 +628,7 @@ mod tests {
             "{}",
             String::from_utf8_lossy(&built.stderr)
         );
-        let engine = game.join("deps/libhorizon_client-fixture.rmeta");
+        let engine = game.join("deps/libfoundry_client-fixture.rmeta");
         let engine_source = scratch.path().join("engine.rs");
         fs::write(
             &engine_source,
@@ -638,7 +638,7 @@ mod tests {
         let built = Command::new(rust.rustc())
             .args([
                 "--crate-name",
-                "horizon_client",
+                "foundry_client",
                 "--crate-type",
                 "rlib",
                 "--edition",
@@ -665,14 +665,14 @@ mod tests {
         let facade = scratch.path().join("facade");
         fs::create_dir_all(&facade).unwrap();
         let source = facade.join("lib.rs");
-        fs::write(&source, "pub use horizon_client::Game;").unwrap();
+        fs::write(&source, "pub use foundry_client::Game;").unwrap();
         let mut plan = compiler_plan(
             &rust,
             &game,
             BTreeMap::from([(
                 facade.clone(),
                 registry_rustc::Bindings {
-                    externs: BTreeMap::from([("horizon_client".into(), engine)]),
+                    externs: BTreeMap::from([("foundry_client".into(), engine)]),
                     link_args: vec![],
                 },
             )]),
@@ -710,13 +710,13 @@ mod tests {
         for name in [
             "mod_api",
             "mod_vocab",
-            "horizon_mod_package",
-            "horizon_mod_host",
+            "foundry_mod_package",
+            "foundry_mod_host",
         ] {
             let source = scratch.path().join(format!("{name}.rs"));
             fs::write(
                 &source,
-                if name == "horizon_mod_host" {
+                if name == "foundry_mod_host" {
                     "pub fn main_with() {}"
                 } else {
                     ""
@@ -747,7 +747,7 @@ mod tests {
                 String::from_utf8_lossy(&result.stderr)
             );
         }
-        fs::write(game.join(prebuilt::TEMPLATE), "fn main() { horizon_mod_host::main_with(); }\n/* MOD_ENTRIES */\n/* MOD_SLOTS */\n/* BUILT_MODS */\n").unwrap();
+        fs::write(game.join(prebuilt::TEMPLATE), "fn main() { foundry_mod_host::main_with(); }\n/* MOD_ENTRIES */\n/* MOD_SLOTS */\n/* BUILT_MODS */\n").unwrap();
         let template = api::template(&game.join(prebuilt::TEMPLATE)).unwrap();
         let wrapper = scratch.path().join("wrapper");
         fs::create_dir_all(wrapper.join("src")).unwrap();
@@ -790,7 +790,7 @@ mod tests {
             .get_mut(&wrapper)
             .unwrap()
             .externs
-            .remove("horizon_mod_host");
+            .remove("foundry_mod_host");
         let (program, arguments) = wrapper_plan
             .arguments(wrapper_args, Some(wrapper), scratch.path())
             .unwrap();
@@ -810,10 +810,10 @@ mod tests {
     fn real_sdk_registry_compile() {
         let required =
             |name| PathBuf::from(std::env::var_os(name).expect("explicit fixture path required"));
-        let game = required("HORIZON_TEST_REGISTRY_SDK");
-        let folder = required("HORIZON_TEST_REGISTRY_MOD");
-        let out = required("HORIZON_TEST_REGISTRY_OUT");
-        let adapter = required("HORIZON_TEST_REGISTRY_ADAPTER");
+        let game = required("FOUNDRY_TEST_REGISTRY_SDK");
+        let folder = required("FOUNDRY_TEST_REGISTRY_MOD");
+        let out = required("FOUNDRY_TEST_REGISTRY_OUT");
+        let adapter = required("FOUNDRY_TEST_REGISTRY_ADAPTER");
         let bundle = super::super::bundle_in(&folder).unwrap().unwrap();
         let projects = [api::Project::read(&bundle).unwrap()];
         let declared = [Vec::new()];
@@ -826,7 +826,7 @@ mod tests {
         }];
         let resolution = dependencies::resolve(&inputs).unwrap();
         let rust = crate::rust_toolchain::install(|_| {}).unwrap();
-        let approve = std::env::var_os("HORIZON_TEST_REGISTRY_DECLINE").is_none();
+        let approve = std::env::var_os("FOUNDRY_TEST_REGISTRY_DECLINE").is_none();
         let result = compile(
             &rust,
             &game,

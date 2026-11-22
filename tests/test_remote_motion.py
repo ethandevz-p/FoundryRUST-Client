@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 @unittest.skipUnless(shutil.which("rustc"), "requires Rust")
 class RemoteMotionTests(unittest.TestCase):
     def test_mob_velocity_reaches_squid_animation(self):
-        source = (next(ROOT.glob('crates/horizon-client/src/game/*/remote/entity_updates.rs'))).read_text()
+        source = (next(ROOT.glob('crates/foundry-client/src/game/*/remote/entity_updates.rs'))).read_text()
         start = source.index("    pub(super) fn remote_motion_body(")
         end = source.index("    pub(super) fn apply_remote_health_body(", start)
         fixture = r'''

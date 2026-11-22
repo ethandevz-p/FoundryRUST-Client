@@ -38,15 +38,15 @@ impl Launcher {
                     self.client_error = Some(e);
                 }
             } else {
-                if let Err(error) = horizon_launcher::developer_offline::require_capability(&tag) {
+                if let Err(error) = foundry_launcher::developer_offline::require_capability(&tag) {
                     self.client_error = Some(error);
                     self.starting_pack = None;
                     self.joining = None;
                     self.quick_play = None;
                     return;
                 }
-                horizon_launcher::developer_offline::mark(&mut cmd);
-                self.client_error = Some(tr(horizon_launcher::developer_offline::NOTICE).into());
+                foundry_launcher::developer_offline::mark(&mut cmd);
+                self.client_error = Some(tr(foundry_launcher::developer_offline::NOTICE).into());
             }
             self.accounts = Accounts::load();
             // A pack's Play button plays that pack; Play plays the selected instance.
@@ -98,7 +98,7 @@ impl Launcher {
             // The profile on the launch's thread: a pack's carried mods are read whole for it.
             let profile = move |cmd: &mut std::process::Command| {
                 match (&pack, &instance) {
-                    (Some(work), _) => horizon_launcher::modpacks::apply_profile(cmd, work)?,
+                    (Some(work), _) => foundry_launcher::modpacks::apply_profile(cmd, work)?,
                     (None, Some(instance)) => instances::apply(cmd, instance)?,
                     (None, None) => {}
                 }

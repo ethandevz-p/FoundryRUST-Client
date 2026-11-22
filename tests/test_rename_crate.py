@@ -16,60 +16,60 @@ spec.loader.exec_module(rename)
 class RenameCrateTests(unittest.TestCase):
     def test_manifest_and_crate_paths_change_without_touching_player_paths(self):
         source = '''[package]
-name = "horizon-mods"
+name = "foundry-mods"
 [dependencies]
-horizon-mods = { path = "../horizon-mods" }
-[dev-dependencies.horizon-mods]
-path = "../crates/horizon-mods"
-# Put files in horizon-mods/ and enable them in horizon-mods.txt.
+foundry-mods = { path = "../foundry-mods" }
+[dev-dependencies.foundry-mods]
+path = "../crates/foundry-mods"
+# Put files in foundry-mods/ and enable them in foundry-mods.txt.
 '''
         expected = '''[package]
-name = "horizon-mod-package"
+name = "foundry-mod-package"
 [dependencies]
-horizon-mod-package = { path = "../horizon-mod-package" }
-[dev-dependencies.horizon-mod-package]
-path = "../crates/horizon-mod-package"
-# Put files in horizon-mods/ and enable them in horizon-mods.txt.
+foundry-mod-package = { path = "../foundry-mod-package" }
+[dev-dependencies.foundry-mod-package]
+path = "../crates/foundry-mod-package"
+# Put files in foundry-mods/ and enable them in foundry-mods.txt.
 '''
-        self.assertEqual(rename.rewrite("crates/horizon-mods/Cargo.toml", source), expected)
-        self.assertEqual(rename.destination("crates/horizon-mods/tests/file.hmod"),
-                         "crates/horizon-mod-package/tests/file.hmod")
-        self.assertEqual(rename.destination("crates/horizon-mods-other/src/lib.rs"),
-                         "crates/horizon-mods-other/src/lib.rs")
-        self.assertEqual(rename.rewrite("crates/horizon-mod-registry/tests/submit.rs", '../horizon-mods/tests/index'),
-                         '../horizon-mod-package/tests/index')
+        self.assertEqual(rename.rewrite("crates/foundry-mods/Cargo.toml", source), expected)
+        self.assertEqual(rename.destination("crates/foundry-mods/tests/file.hmod"),
+                         "crates/foundry-mod-package/tests/file.hmod")
+        self.assertEqual(rename.destination("crates/foundry-mods-other/src/lib.rs"),
+                         "crates/foundry-mods-other/src/lib.rs")
+        self.assertEqual(rename.rewrite("crates/foundry-mod-registry/tests/submit.rs", '../foundry-mods/tests/index'),
+                         '../foundry-mod-package/tests/index')
 
     def test_rust_library_identifiers_and_link_arguments_change(self):
-        source = '''use horizon_mods::{Content, Side};
-mod horizon_mods { fn fixture() {} }
-let link = "horizon_mods={}";
-let module = horizon_mods::Package;
-fn horizon_mods_test_name() {}
-let folder = "horizon-mods";
-let registry = "https://github.com/horizon-rust/horizon-mods";
+        source = '''use foundry_mods::{Content, Side};
+mod foundry_mods { fn fixture() {} }
+let link = "foundry_mods={}";
+let module = foundry_mods::Package;
+fn foundry_mods_test_name() {}
+let folder = "foundry-mods";
+let registry = "https://github.com/foundry-rust/foundry-mods";
 '''
-        expected = '''use horizon_mod_package::{Content, Side};
-mod horizon_mod_package { fn fixture() {} }
-let link = "horizon_mod_package={}";
-let module = horizon_mod_package::Package;
-fn horizon_mods_test_name() {}
-let folder = "horizon-mods";
-let registry = "https://github.com/horizon-rust/horizon-mods";
+        expected = '''use foundry_mod_package::{Content, Side};
+mod foundry_mod_package { fn fixture() {} }
+let link = "foundry_mod_package={}";
+let module = foundry_mod_package::Package;
+fn foundry_mods_test_name() {}
+let folder = "foundry-mods";
+let registry = "https://github.com/foundry-rust/foundry-mods";
 '''
         self.assertEqual(rename.rewrite("launcher/src/native_mods/prebuilt.rs", source), expected)
 
     def test_generated_manifest_packages_do_not_rename_player_or_negative_strings(self):
         source = '''for name in [
-    "horizon-mods",
+    "foundry-mods",
 ] { let dependency = path_dep(&format!("../{name}")); }
-let folder = "horizon-mods";
-assert!(!dependencies.contains_key("horizon-mods"));
+let folder = "foundry-mods";
+assert!(!dependencies.contains_key("foundry-mods"));
 '''
         expected = '''for name in [
-    "horizon-mod-package",
+    "foundry-mod-package",
 ] { let dependency = path_dep(&format!("../{name}")); }
-let folder = "horizon-mods";
-assert!(!dependencies.contains_key("horizon-mods"));
+let folder = "foundry-mods";
+assert!(!dependencies.contains_key("foundry-mods"));
 '''
         self.assertEqual(rename.rewrite("launcher/src/native_mods/api.rs", source), expected)
         self.assertEqual(rename.rewrite("launcher/src/export.rs", source), source)
@@ -79,30 +79,30 @@ assert!(!dependencies.contains_key("horizon-mods"));
         with TemporaryDirectory() as directory, patch.object(rename, "ROOT", Path(directory)):
             crate = rename.ROOT / rename.OLD_PATH
             crate.mkdir(parents=True)
-            (crate / "Cargo.toml").write_text('[package]\nname = "horizon-mods"\n')
+            (crate / "Cargo.toml").write_text('[package]\nname = "foundry-mods"\n')
             consumer = rename.ROOT / "consumer.rs"
-            consumer.write_text("use horizon_mods::Manifest;\n")
+            consumer.write_text("use foundry_mods::Manifest;\n")
             rename.run("git", "init", "-q")
             rename.run("git", "add", "--", rename.OLD_PATH, "consumer.rs")
             rename.run("git", "-c", "user.name=Test", "-c", "user.email=test@example.invalid",
                        "commit", "-qm", "Baseline")
             rename.run("git", "mv", rename.OLD_PATH, rename.NEW_PATH)
             (rename.ROOT / rename.NEW_PATH / "Cargo.toml").write_text(
-                '[package]\nname = "horizon-mod-package"\n', newline="\n")
+                '[package]\nname = "foundry-mod-package"\n', newline="\n")
             with self.assertRaisesRegex(AssertionError, "unexpected content change: consumer.rs"):
                 rename.verify("HEAD")
-            consumer.write_text("use horizon_mod_package::Manifest;\n", newline="\n")
+            consumer.write_text("use foundry_mod_package::Manifest;\n", newline="\n")
             with redirect_stdout(io.StringIO()):
                 rename.verify("HEAD")
 
     def test_book_filters_and_translations_obey_the_boundary(self):
-        source = '{{#include ../../crates/horizon-mods/src/lib.rs}}\n(crates/horizon-mods)\ncrates/horizon-mods/**\n'
-        expected = '{{#include ../../crates/horizon-mod-package/src/lib.rs}}\n(crates/horizon-mod-package)\ncrates/horizon-mod-package/**\n'
+        source = '{{#include ../../crates/foundry-mods/src/lib.rs}}\n(crates/foundry-mods)\ncrates/foundry-mods/**\n'
+        expected = '{{#include ../../crates/foundry-mod-package/src/lib.rs}}\n(crates/foundry-mod-package)\ncrates/foundry-mod-package/**\n'
         self.assertEqual(rename.rewrite("docs/modding/src/reference.md", source), expected)
-        translation = '{"native.mods": "In horizon-mods; internal type horizon_mods::Package"}'
-        self.assertEqual(rename.rewrite("crates/horizon-client/assets/horizon/lang/en_us.json", translation), translation)
-        self.assertEqual(rename.rewrite("roadmap/roadmap.toml", 'dev = "horizon-mods/native/"'),
-                         'dev = "horizon-mods/native/"')
+        translation = '{"native.mods": "In foundry-mods; internal type foundry_mods::Package"}'
+        self.assertEqual(rename.rewrite("crates/foundry-client/assets/foundry/lang/en_us.json", translation), translation)
+        self.assertEqual(rename.rewrite("roadmap/roadmap.toml", 'dev = "foundry-mods/native/"'),
+                         'dev = "foundry-mods/native/"')
 
 
 if __name__ == "__main__":

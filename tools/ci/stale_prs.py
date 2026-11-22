@@ -429,7 +429,7 @@ def main(argv: list[str]) -> int:
     if argv[:1] == ["create"]:
         if argv[1:] not in ([], ["--apply"]):
             sys.exit(__doc__)
-        for name in create(Api(os.environ.get("REPO", "horizon-rust/horizon"), argv[1:] == ["--apply"])):
+        for name in create(Api(os.environ.get("REPO", "foundry-rust/foundry"), argv[1:] == ["--apply"])):
             print(name)
         return 0
     p = argparse.ArgumentParser(usage=__doc__)
@@ -444,7 +444,7 @@ def main(argv: list[str]) -> int:
     days = {CONFLICT: a.conflict_days, CHANGES: a.changes_days, "grace": a.grace_days}
     closed: list = []
     try:
-        sweep(Api(os.environ.get("REPO", "horizon-rust/horizon"), a.apply), days, a.max_actions, closed=closed)
+        sweep(Api(os.environ.get("REPO", "foundry-rust/foundry"), a.apply), days, a.max_actions, closed=closed)
     finally:
         # Even after a failed write: the pull requests closed before it still need their runs cancelled.
         if os.environ.get("GITHUB_OUTPUT"):

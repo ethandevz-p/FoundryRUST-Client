@@ -87,10 +87,10 @@ def main():
             shutil.copyfile(reference / name, folder / name)
         scratch = folder / "rust"
         scratch.mkdir()
-        env = runner.lab.game_env(HORIZON_PLAYER_NAME="Player",
-                                 HORIZON_COMMAND_SCRIPT=folder / "script.jsonl",
-                                 HORIZON_COMMAND_OUTPUT=folder / "rust.jsonl",
-                                 HORIZON_API_DISCOVERY="http://127.0.0.1:9/")
+        env = runner.lab.game_env(FOUNDRY_PLAYER_NAME="Player",
+                                 FOUNDRY_COMMAND_SCRIPT=folder / "script.jsonl",
+                                 FOUNDRY_COMMAND_OUTPUT=folder / "rust.jsonl",
+                                 FOUNDRY_API_DISCOVERY="http://127.0.0.1:9/")
         with (folder / "rust.log").open("w") as log:
             result = runner.run_game([str(binary), "--resources", str(runner.lab.RESOURCES),
                                       "--world", "harness", "--seed", str(runner.SEED), "--radius", "4"],

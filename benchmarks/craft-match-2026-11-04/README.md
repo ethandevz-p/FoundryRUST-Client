@@ -3,7 +3,7 @@
 `game::native_recipes::tests::craft_cost`: 10,000 calls of `level.craft` for each grid, release build:
 
 ```sh
-HORIZON_TEST_RESOURCES=.local/horizon-client/26.3 cargo test --release -p horizon-client --lib --bins --tests \
+FOUNDRY_TEST_RESOURCES=.local/foundry-client/26.3 cargo test --release -p foundry-client --lib --bins --tests \
   craft_cost -- --ignored --nocapture
 ```
 

@@ -23,27 +23,27 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[2]
 TITLE = "CI: self-hosted runners are not taking jobs"
-GUIDE = "https://github.com/horizon-rust/horizon/blob/main/docs/operations.md#self-hosted-runners-are-offline"
+GUIDE = "https://github.com/foundry-rust/foundry/blob/main/docs/operations.md#self-hosted-runners-are-offline"
 
 # What stops while no runner with this label takes jobs, and what the Team does meanwhile. A job asks for a set of
 # labels; the first of these it asks for names it.
 EFFECTS = [
-    ("horizon-light", "Small jobs (triage and claim commands, pull request labels, overlap notes, the Mojang "
+    ("foundry-light", "Small jobs (triage and claim commands, pull request labels, overlap notes, the Mojang "
                       "republish check, a pull request's parity scope) wait instead of running.",
      "An organisation owner sets the repository variable `SELF_HOSTED_CI` to `off`: they run on GitHub's runners."),
-    ("horizon-checks", "`verify` and `launcher` of the pull requests whose number ends in 0 wait, so those pull "
+    ("foundry-checks", "`verify` and `launcher` of the pull requests whose number ends in 0 wait, so those pull "
                        "requests can't merge.",
      "An organisation owner sets `SELF_HOSTED_CI` to `off` (or `light`), then the authors push again or a Team "
      "member re-runs the checks. Forks' pull requests see no repository variable: they wait for the runners."),
-    ("horizon-parity-main", "parity-main doesn't run, so no newer commit of main is green for the Nightly: Nightlies "
+    ("foundry-parity-main", "parity-main doesn't run, so no newer commit of main is green for the Nightly: Nightlies "
                             "keep shipping the last green commit or nothing.",
      "Nothing to do on GitHub: the harnesses need the maintainer's Minecraft. Merge on `verify` as usual; label "
      "risky pull requests `needs-proof`."),
-    ("horizon-nightly", "The Nightly's macOS builds wait, so no Nightly is published.",
+    ("foundry-nightly", "The Nightly's macOS builds wait, so no Nightly is published.",
      "Players keep the last Nightly. Nothing to do on GitHub until a Mac runner is back."),
-    ("horizon-release", "The launcher's macOS builds wait, so no launcher release is published.",
+    ("foundry-release", "The launcher's macOS builds wait, so no launcher release is published.",
      "Players keep their launcher. Nothing to do on GitHub until a Mac runner is back."),
-    ("horizon-game", "A pull request's own parity job waits (it isn't required: merging still works).",
+    ("foundry-game", "A pull request's own parity job waits (it isn't required: merging still works).",
      "Merge on `verify` after reading the diff; label pull requests that touch gameplay `needs-proof`."),
 ]
 
@@ -131,7 +131,7 @@ def open_issue(repo):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--repo", default="horizon-rust/horizon")
+    parser.add_argument("--repo", default="foundry-rust/foundry")
     parser.add_argument("--hours", type=float, default=2.0, help="how long a job may wait before it counts")
     parser.add_argument("--dry-run", action="store_true", help="print what it would do, change nothing")
     args = parser.parse_args()

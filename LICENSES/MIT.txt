@@ -1,9 +1,9 @@
-Horizon was released under the MIT licence until it moved to the GNU LGPL (see LICENSE).
+Foundry Client was released under the MIT licence until it moved to the GNU LGPL (see LICENSE).
 Code merged before that change stays available under these terms:
 
 MIT License
 
-Copyright (c) 2026 Ludovic Marie and the Horizon contributors
+Copyright (c) 2026 Ludovic Marie and the Foundry Client contributors
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

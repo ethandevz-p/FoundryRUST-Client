@@ -53,4 +53,4 @@ does not authorize a write or reserve output capacity. A blocked machine resets
 progress according to its existing policy.
 
 An example mod showing the full processing and transfer path lives at
-<https://github.com/arismoko/horizon-machine-sample>.
+<https://github.com/arismoko/foundry-machine-sample>.

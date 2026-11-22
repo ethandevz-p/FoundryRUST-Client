@@ -1,8 +1,8 @@
-# services.horizon-server: a Horizon server on NixOS (docs/nix.md).
+# services.foundry-server: a Foundry Client server on NixOS (docs/nix.md).
 #
-# Horizon ships none of Mojang's files, and neither does this module: the game files come from
-# horizon-prepare run on your own copy of Minecraft 26.3 and the 26.3 server jar you downloaded yourself.
-# Either point `resources` at a folder you prepared elsewhere, or let `prepare` run horizon-prepare here
+# Foundry Client ships none of Mojang's files, and neither does this module: the game files come from
+# foundry-prepare run on your own copy of Minecraft 26.3 and the 26.3 server jar you downloaded yourself.
+# Either point `resources` at a folder you prepared elsewhere, or let `prepare` run foundry-prepare here
 # on files you put on this machine. Nothing here downloads Minecraft; the prepare step even runs without
 # network access.
 { self }:
@@ -13,7 +13,7 @@
   ...
 }:
 let
-  cfg = config.services.horizon-server;
+  cfg = config.services.foundry-server;
   system = pkgs.stdenv.hostPlatform.system;
   inherit (lib)
     mkOption
@@ -27,7 +27,7 @@ let
   # Absolute paths kept as strings: a Nix path would copy the game files into the world-readable store.
   absolute = types.strMatching "/.*";
 
-  defaultDataDir = "/var/lib/horizon-server";
+  defaultDataDir = "/var/lib/foundry-server";
   preparedDir = "${cfg.dataDir}/game-files";
   resources = if cfg.resources != null then cfg.resources else preparedDir;
 
@@ -66,7 +66,7 @@ let
 
   # As the service's user, before every start: the first start writes server.toml (`init`), every start
   # sets what this module manages in it (`config set`: checked first, comments kept).
-  configure = pkgs.writeShellScript "horizon-server-configure" ''
+  configure = pkgs.writeShellScript "foundry-server-configure" ''
     set -eu
     if [ ! -f ${escapeShellArg cfg.dataDir}/server.toml ]; then
       ${server} --dir ${escapeShellArg cfg.dataDir} init ${escapeShellArgs initArgs}
@@ -88,12 +88,12 @@ let
     cfg.prepare.minecraftDir
   ]
   ++ cfg.prepare.extraArgs;
-  prepare = pkgs.writeShellScript "horizon-server-prepare" ''
+  prepare = pkgs.writeShellScript "foundry-server-prepare" ''
     set -eu
     key=${escapeShellArg prepareKey}
-    if [ -f ${escapeShellArg preparedDir}/horizon-resources.json ] \
+    if [ -f ${escapeShellArg preparedDir}/foundry-resources.json ] \
       && [ "$(cat ${escapeShellArg prepareStamp} 2>/dev/null)" = "$key" ]; then
-      echo "Game files already prepared by this horizon-prepare from this jar"
+      echo "Game files already prepared by this foundry-prepare from this jar"
       exit 0
     fi
     rm -f ${escapeShellArg prepareStamp}
@@ -133,14 +133,14 @@ let
   };
 in
 {
-  options.services.horizon-server = {
-    enable = mkEnableOption "a Horizon server (Minecraft: Java Edition 26.3, rewritten in Rust)";
+  options.services.foundry-server = {
+    enable = mkEnableOption "a Foundry Client server (Minecraft: Java Edition 26.3, rewritten in Rust)";
 
     package = mkOption {
       type = types.package;
-      default = self.packages.${system}.horizon-server;
-      defaultText = lib.literalExpression "horizon.packages.\${system}.horizon-server";
-      description = "The horizon-server package; its engine (horizon-engine) sits beside it.";
+      default = self.packages.${system}.foundry-server;
+      defaultText = lib.literalExpression "foundry.packages.\${system}.foundry-server";
+      description = "The foundry-server package; its engine (foundry-engine) sits beside it.";
     };
 
     eula = mkOption {
@@ -160,13 +160,13 @@ in
 
     user = mkOption {
       type = types.str;
-      default = "horizon-server";
+      default = "foundry-server";
       description = "The user the server runs as; created when left at the default.";
     };
 
     group = mkOption {
       type = types.str;
-      default = "horizon-server";
+      default = "foundry-server";
       description = "The group the server runs as; created when left at the default.";
     };
 
@@ -185,9 +185,9 @@ in
     resources = mkOption {
       type = types.nullOr absolute;
       default = null;
-      example = "/srv/horizon/26.3";
+      example = "/srv/foundry/26.3";
       description = ''
-        A folder of game files you prepared yourself (`horizon-prepare --prepare`, or the launcher; the
+        A folder of game files you prepared yourself (`foundry-prepare --prepare`, or the launcher; the
         `26.3` folder it writes). Read only. Null: the files `prepare` writes to `dataDir/game-files`.
         Give it as a string: a Nix path would copy Mojang's files into the world-readable store.
       '';
@@ -195,32 +195,32 @@ in
 
     prepare = {
       enable = mkEnableOption ''
-        running horizon-prepare on this machine, before the server starts, from your own Minecraft 26.3
-        files. It runs once per horizon-prepare package and jar, without network access'';
+        running foundry-prepare on this machine, before the server starts, from your own Minecraft 26.3
+        files. It runs once per foundry-prepare package and jar, without network access'';
 
       package = mkOption {
         type = types.package;
-        default = self.packages.${system}.horizon-prepare;
-        defaultText = lib.literalExpression "horizon.packages.\${system}.horizon-prepare";
-        description = "The horizon-prepare package, with the JDK its exporters compile with.";
+        default = self.packages.${system}.foundry-prepare;
+        defaultText = lib.literalExpression "foundry.packages.\${system}.foundry-prepare";
+        description = "The foundry-prepare package, with the JDK its exporters compile with.";
       };
 
       serverJar = mkOption {
         type = absolute;
-        example = "/srv/horizon/server.jar";
+        example = "/srv/foundry/server.jar";
         description = ''
           The 26.3 `server.jar` you downloaded yourself (`downloads.server.url` in your launcher's
-          `versions/26.3/26.3.json`). Its hash is checked against the one Horizon pins.
+          `versions/26.3/26.3.json`). Its hash is checked against the one Foundry Client pins.
         '';
       };
 
       minecraftDir = mkOption {
         type = types.nullOr absolute;
         default = null;
-        example = "/srv/horizon/minecraft";
+        example = "/srv/foundry/minecraft";
         description = ''
           A copy of the official launcher's game folder with 26.3 played once (`versions/26.3`,
-          `libraries`, `assets`): the client side horizon-prepare also reads. Must be readable by `user`.
+          `libraries`, `assets`): the client side foundry-prepare also reads. Must be readable by `user`.
         '';
       };
 
@@ -229,9 +229,9 @@ in
         default = [ ];
         example = [
           "--client-jar"
-          "/srv/horizon/client.jar"
+          "/srv/foundry/client.jar"
         ];
-        description = "More horizon-prepare arguments (`horizon-prepare --help`).";
+        description = "More foundry-prepare arguments (`foundry-prepare --help`).";
       };
     };
 
@@ -286,7 +286,7 @@ in
         "properties.spawn-protection" = 0;
       };
       description = ''
-        server.toml settings set before every start with `horizon-server config set` (section.key, as in
+        server.toml settings set before every start with `foundry-server config set` (section.key, as in
         docs/hosting.md), which checks them first and keeps the rest of the file, comments included.
         Settings not named here stay yours to edit. `server.port` and `engine.resources` come from
         `port` and `resources`.
@@ -297,7 +297,7 @@ in
       type = types.attrsOf types.str;
       default = { };
       example = {
-        HORIZON_SPIKES = "100";
+        FOUNDRY_SPIKES = "100";
       };
       description = "More environment variables for the server.";
     };
@@ -307,59 +307,59 @@ in
     assertions = [
       {
         assertion = cfg.eula;
-        message = "services.horizon-server.eula: agree to the Minecraft EULA (https://aka.ms/MinecraftEULA) to run a server.";
+        message = "services.foundry-server.eula: agree to the Minecraft EULA (https://aka.ms/MinecraftEULA) to run a server.";
       }
       {
         assertion = cfg.resources != null || cfg.prepare.enable;
-        message = "services.horizon-server: set `resources` to game files you prepared, or enable `prepare`.";
+        message = "services.foundry-server: set `resources` to game files you prepared, or enable `prepare`.";
       }
       {
         assertion = !(cfg.resources != null && cfg.prepare.enable);
-        message = "services.horizon-server: `resources` and `prepare` both give the game files: use one.";
+        message = "services.foundry-server: `resources` and `prepare` both give the game files: use one.";
       }
     ];
 
-    users.users = mkIf (cfg.user == "horizon-server") {
-      horizon-server = {
+    users.users = mkIf (cfg.user == "foundry-server") {
+      foundry-server = {
         isSystemUser = true;
         inherit (cfg) group;
         home = cfg.dataDir;
-        description = "Horizon server";
+        description = "Foundry Client server";
       };
     };
-    users.groups = mkIf (cfg.group == "horizon-server") { horizon-server = { }; };
+    users.groups = mkIf (cfg.group == "foundry-server") { foundry-server = { }; };
 
     networking.firewall.allowedTCPPorts = mkIf cfg.openFirewall [ cfg.port ];
 
-    # `horizon-server --dir DIR status|cmd|logs|backup ...` for the administrator (as `user`).
+    # `foundry-server --dir DIR status|cmd|logs|backup ...` for the administrator (as `user`).
     environment.systemPackages = [ cfg.package ];
 
     systemd = {
-      tmpfiles.settings.horizon-server = mkIf (cfg.dataDir != defaultDataDir) {
+      tmpfiles.settings.foundry-server = mkIf (cfg.dataDir != defaultDataDir) {
         ${cfg.dataDir}.d = {
           inherit (cfg) user group;
           mode = "0700";
         };
       };
 
-      services.horizon-server-prepare = mkIf cfg.prepare.enable {
-        description = "Prepare Horizon's game files from your own Minecraft 26.3";
-        before = [ "horizon-server.service" ];
-        requiredBy = [ "horizon-server.service" ];
+      services.foundry-server-prepare = mkIf cfg.prepare.enable {
+        description = "Prepare Foundry Client's game files from your own Minecraft 26.3";
+        before = [ "foundry-server.service" ];
+        requiredBy = [ "foundry-server.service" ];
         unitConfig.RequiresMountsFor = [
           cfg.dataDir
         ]
         ++ lib.optional (cfg.prepare.minecraftDir != null) cfg.prepare.minecraftDir;
         environment = {
           HOME = cfg.dataDir;
-          HORIZON_PREPARE_ROOT = "${cfg.dataDir}/.prepare";
+          FOUNDRY_PREPARE_ROOT = "${cfg.dataDir}/.prepare";
         };
         serviceConfig = hardening // {
           Type = "oneshot";
           RemainAfterExit = true;
           User = cfg.user;
           Group = cfg.group;
-          StateDirectory = mkIf (cfg.dataDir == defaultDataDir) "horizon-server";
+          StateDirectory = mkIf (cfg.dataDir == defaultDataDir) "foundry-server";
           StateDirectoryMode = "0700";
           WorkingDirectory = cfg.dataDir;
           ExecStart = prepare;
@@ -373,8 +373,8 @@ in
         };
       };
 
-      services.horizon-server = {
-        description = "Horizon server (Minecraft: Java Edition 26.3)";
+      services.foundry-server = {
+        description = "Foundry Client server (Minecraft: Java Edition 26.3)";
         wantedBy = [ "multi-user.target" ];
         after = [ "network-online.target" ];
         wants = [ "network-online.target" ];
@@ -385,20 +385,20 @@ in
         environment = {
           HOME = cfg.dataDir;
           # Nix decides the release: no "a newer release is out" in the log, and no audio device.
-          HORIZON_NO_UPDATE_CHECK = "1";
-          HORIZON_NO_AUDIO = "1";
+          FOUNDRY_NO_UPDATE_CHECK = "1";
+          FOUNDRY_NO_AUDIO = "1";
         }
         // cfg.environment;
         serviceConfig = hardening // {
           Type = "simple";
           User = cfg.user;
           Group = cfg.group;
-          StateDirectory = mkIf (cfg.dataDir == defaultDataDir) "horizon-server";
+          StateDirectory = mkIf (cfg.dataDir == defaultDataDir) "foundry-server";
           StateDirectoryMode = "0700";
           WorkingDirectory = cfg.dataDir;
           ExecStartPre = configure;
           ExecStart = "${server} --dir ${escapeShellArg cfg.dataDir} run";
-          # SIGTERM makes horizon-server save the world and stop the game; give it the time.
+          # SIGTERM makes foundry-server save the world and stop the game; give it the time.
           KillSignal = "SIGTERM";
           KillMode = "mixed";
           TimeoutStopSec = "180s";

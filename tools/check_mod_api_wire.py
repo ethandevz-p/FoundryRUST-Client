@@ -2,7 +2,7 @@
 
 Generator templates are checked before interpolation, so adding another event or
 provider cannot silently bypass the rule. Keep API_TEMPLATE_FILES aligned with
-horizon-mod-api-gen's API output writers when introducing a new output writer.
+foundry-mod-api-gen's API output writers when introducing a new output writer.
 """
 from pathlib import Path
 import re
@@ -237,7 +237,7 @@ def runtime_reexport_names(source):
                     i += 1  # The exported alias does not rename its definition.
                 elif value != ':':
                     path.append(value)
-            if not grouped and path and path[0] == 'horizon_mod_runtime':
+            if not grouped and path and path[0] == 'foundry_mod_runtime':
                 names.add(path[-1])
             i += 1
 
@@ -252,7 +252,7 @@ def runtime_reexport_names(source):
 
 def repository_violations(root=ROOT):
     sources = {}
-    for crate in ('horizon-mod-api', 'horizon-mod-vocab'):
+    for crate in ('foundry-mod-api', 'foundry-mod-vocab'):
         api = root / 'crates' / crate / 'src'
         for path in sorted(api.rglob('*.rs')):
             if path.name == '__private.rs' or path.name.endswith('_tests.rs'):
@@ -266,11 +266,11 @@ def repository_violations(root=ROOT):
     runtime_names = set().union(*(runtime_reexport_names(s) for s in sources.values()))
     if '*' in runtime_names:
         result.append('runtime re-export: wildcard requires explicit named exports for Wire policy')
-    runtime = root / 'crates/horizon-mod-runtime/src'
+    runtime = root / 'crates/foundry-mod-runtime/src'
     for path in sorted(runtime.rglob('*.rs')):
         result.extend(f'{path.relative_to(root)}:{line}: {name}'
                       for line, name in violations(path.read_text(encoding="utf-8")) if name in runtime_names)
-    gen = root / 'crates/horizon-mod-api-gen/src'
+    gen = root / 'crates/foundry-mod-api-gen/src'
     for relative in API_TEMPLATE_FILES:
         path = gen / relative
         source = path.read_text(encoding="utf-8")

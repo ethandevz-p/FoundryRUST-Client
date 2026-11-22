@@ -13,8 +13,8 @@ use std::process::{Command, Stdio};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
-use horizon_platform::mod_package::dependencies;
-use horizon_platform::mod_package::mod_surface;
+use foundry_platform::mod_package::dependencies;
+use foundry_platform::mod_package::mod_surface;
 
 mod api;
 mod api_route;
@@ -54,11 +54,11 @@ pub(crate) static TEST_STATE: std::sync::Mutex<()> = std::sync::Mutex::new(());
 const PREFIX: &str = "native-";
 // A staging change invalidates both installed builds and patched-source snapshots.
 const STAGING: &str = "area-aware-mixins-input-v1";
-/// horizon-mixins, for bundles that don't name the revision they were tested with.
-const MIXINS_GIT: &str = "https://github.com/horizon-rust/horizon-mixins";
-pub const MIXINS_REV: &str = horizon_platform::mod_package::mixins_tool::REV;
+/// foundry-mixins, for bundles that don't name the revision they were tested with.
+const MIXINS_GIT: &str = "https://github.com/foundry-rust/foundry-mixins";
+pub const MIXINS_REV: &str = foundry_platform::mod_package::mixins_tool::REV;
 
-/// `native-build --mixins-from-source`: this process builds the horizon-mixins tool from its
+/// `native-build --mixins-from-source`: this process builds the foundry-mixins tool from its
 /// pinned source and never looks for the prebuilt one, so CI keeps that path proven.
 pub fn mixins_from_source(on: bool) {
     mixins_patch::FROM_SOURCE.store(on, std::sync::atomic::Ordering::Relaxed);
@@ -91,16 +91,16 @@ impl Profile {
 }
 
 /// What a native build compiles: the game the player plays, or the headless engine a dedicated
-/// server runs (`horizon-engine`, docs/server.md). Both build the same source with the same
+/// server runs (`foundry-engine`, docs/server.md). Both build the same source with the same
 /// mixins. The server uses `--no-default-features` (no audio or controllers), a separate cache,
 /// and a standalone runtime folder outside the managed versions.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum Target {
-    /// The game: `horizon-client` as the release ships it.
+    /// The game: `foundry-client` as the release ships it.
     #[default]
     Client,
     /// The headless engine: the same binary without the default features, installed and
-    /// exported as `horizon-engine`.
+    /// exported as `foundry-engine`.
     Server,
 }
 
@@ -120,11 +120,11 @@ impl Target {
     }
 
     /// The name the built binary is installed under: the game's own, the engine's
-    /// (`horizon-engine`, docs/server.md).
+    /// (`foundry-engine`, docs/server.md).
     fn binary(self) -> String {
         match self {
             Self::Client => backend::CLIENT.into(),
-            Self::Server => format!("horizon-engine{}", std::env::consts::EXE_SUFFIX),
+            Self::Server => format!("foundry-engine{}", std::env::consts::EXE_SUFFIX),
         }
     }
 }
@@ -233,7 +233,7 @@ pub(crate) fn pe_machine(path: &Path) -> Result<u16, String> {
 pub enum Plan {
     /// The build already exists: nothing compiles.
     UpToDate,
-    /// The mods compile against the prebuilt game (arismoko/horizon#589); the game doesn't compile.
+    /// The mods compile against the prebuilt game (arismoko/foundry#589); the game doesn't compile.
     Prebuilt,
 }
 
@@ -471,7 +471,7 @@ pub fn internals_rustc_wrapper() -> Option<i32> {
 
 pub fn sync_internals(
     folder: &Path,
-) -> Result<Vec<horizon_platform::mod_package::internals::ListedInternal>, Failed> {
+) -> Result<Vec<foundry_platform::mod_package::internals::ListedInternal>, Failed> {
     require_consent()?;
     internals_sync::check(folder).map_err(|error| Failed::Other(error.to_string()))
 }
@@ -503,12 +503,12 @@ pub fn cache_error(error: crate::storage::Error) -> String {
     }
 }
 
-const MANIFEST: &str = "horizon-mixin.toml";
-/// A registry download's `horizon-mod.toml` at the `.hmod` package root.
-const NATIVE_MANIFEST: &str = horizon_platform::mod_package::manifest::MANIFEST;
+const MANIFEST: &str = "foundry-mixin.toml";
+/// A registry download's `foundry-mod.toml` at the `.hmod` package root.
+const NATIVE_MANIFEST: &str = foundry_platform::mod_package::manifest::MANIFEST;
 /// Where an instance keeps the native mods installed from the registry, `<id>.hmod`, each on or
-/// off in `horizon-mods.txt` like any mod.
-pub const INSTALLED: &str = horizon_platform::mod_package::mod_list::NATIVE_DIR;
+/// off in `foundry-mods.txt` like any mod.
+pub const INSTALLED: &str = foundry_platform::mod_package::mod_list::NATIVE_DIR;
 
 /// The native mods turned on in the game folder `home`, unpacked into a folder [`build`] takes.
 /// Each flat `.hmod` passes the registry's shared package boundary; no code is run. Each one in
@@ -555,7 +555,7 @@ pub(crate) fn stage_installed(home: &Path, out: PathBuf) -> Result<Option<PathBu
     let _ = fs::remove_dir_all(&out);
     let mut count = 0;
     for path in installed_files(home) {
-        let bundle = match horizon_platform::mod_package::index::native::Bundle::read(&path) {
+        let bundle = match foundry_platform::mod_package::index::native::Bundle::read(&path) {
             Ok(bundle) => bundle,
             Err(_) if crate::native_status::legacy_format(&path) => continue,
             Err(e) => match crate::native_status::retired_inject(&path) {
@@ -593,19 +593,19 @@ pub(crate) fn stage_installed(home: &Path, out: PathBuf) -> Result<Option<PathBu
 /// A validated flat mod project. The package manifest owns identity and build pins.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Bundle {
-    pub manifest: horizon_platform::mod_package::manifest::Manifest,
+    pub manifest: foundry_platform::mod_package::manifest::Manifest,
     pub dir: PathBuf,
 }
 
 impl Bundle {
-    fn native(&self) -> &horizon_platform::mod_package::manifest::Native {
+    fn native(&self) -> &foundry_platform::mod_package::manifest::Native {
         self.manifest
             .native
             .as_ref()
             .expect("validated code package")
     }
 
-    /// Whether horizon-mixins reads source to transform the game.
+    /// Whether foundry-mixins reads source to transform the game.
     fn needs_mixins(&self) -> bool {
         !self.native().mixin.is_empty()
             || !self.native().module.is_empty()
@@ -712,7 +712,7 @@ fn agreed(
 }
 
 /// The revision `bundles` build on for `which` when their pins differ: the newest of the pins and
-/// `also` (the launcher's own horizon-mixins), by its commit's time (`date`), so no mod gets an
+/// `also` (the launcher's own foundry-mixins), by its commit's time (`date`), so no mod gets an
 /// older one than it was made for. With one pin or none, it is [`agreed`]'s.
 fn newest(
     bundles: &[Bundle],
@@ -791,14 +791,14 @@ fn ask_github(repo: &str, revision: &str) -> Result<String, String> {
         .ok_or_else(|| format!("GitHub doesn't know {repo} commit {revision}."))
 }
 
-/// How [`build`] starts its error when mods pin another Horizon revision.
-pub const MISMATCH: &str = "Made for other Horizon versions: ";
+/// How [`build`] starts its error when mods pin another Foundry Client revision.
+pub const MISMATCH: &str = "Made for other Foundry Client versions: ";
 
-/// Each pinned mod whose Horizon revision isn't `revision`, as `id → pin`, and the build's.
+/// Each pinned mod whose Foundry Client revision isn't `revision`, as `id → pin`, and the build's.
 fn mismatch(mods: &[Bundle], revision: &str) -> Option<String> {
     let list: Vec<String> = mods
         .iter()
-        .map(|b| (b, &b.native().horizon))
+        .map(|b| (b, &b.native().foundry))
         .filter(|(_, r)| *r != revision)
         .map(|(b, r)| format!("{} → {}", b.manifest.id, &r[..r.len().min(7)]))
         .collect();
@@ -812,14 +812,14 @@ fn mismatch(mods: &[Bundle], revision: &str) -> Option<String> {
 }
 
 fn build_revision(base: &str, built_on: Option<&About>) -> Result<String, String> {
-    built_on.map_or_else(|| revision_of(base), |about| Ok(about.horizon.clone()))
+    built_on.map_or_else(|| revision_of(base), |about| Ok(about.foundry.clone()))
 }
 
 fn mismatch_error(list: &str) -> String {
     format!("{MISMATCH}{list}; rebuild against this game.")
 }
 
-/// The build id (the Horizon commit) `version` (an installed release or Nightly) was built from:
+/// The build id (the Foundry Client commit) `version` (an installed release or Nightly) was built from:
 /// a developer install's checkout, else what the release's signed copy of its SDK's index names
 /// ([`sdk_cache::build_of`]).
 pub fn revision_of(version: &str) -> Result<String, String> {
@@ -829,7 +829,7 @@ pub fn revision_of(version: &str) -> Result<String, String> {
     sdk_cache::build_of(
         version,
         &sdk_cache::Base::from_env(),
-        &horizon_release_sign::sdk_keys_for(backend::REPO),
+        &foundry_release_sign::sdk_keys_for(backend::REPO),
     )
     .map_err(|refusal| refusal.to_string())
 }
@@ -839,8 +839,8 @@ pub fn revision_of(version: &str) -> Result<String, String> {
 pub struct About {
     /// The release or Nightly it started from.
     pub base: String,
-    /// The Horizon commit it compiled.
-    pub horizon: String,
+    /// The Foundry Client commit it compiled.
+    pub foundry: String,
     /// What it compiles: the game or the headless engine a server runs.
     pub target: Target,
     /// The mods turned on that it was built without, and why.
@@ -857,7 +857,7 @@ fn checked_about(version: &str) -> Result<Option<About>, String> {
         return Ok(None);
     }
     about_in(&backend::version_dir(version)).map(Some).ok_or_else(|| trf(
-        "Native build {version} has a missing or invalid native-mods.json record. Rebuild it from an installed Horizon version.",
+        "Native build {version} has a missing or invalid native-mods.json record. Rebuild it from an installed Foundry Client version.",
         &[("version", version)],
     ))
 }
@@ -869,7 +869,7 @@ fn about_in(dir: &Path) -> Option<About> {
     let field = |name: &str| json[name].as_str().map(str::to_owned);
     Some(About {
         base: field("base")?,
-        horizon: field("horizon").filter(|r| is_revision(r))?,
+        foundry: field("foundry").filter(|r| is_revision(r))?,
         target: match field("target").as_deref() {
             Some("server") => Target::Server,
             Some("client") => Target::Client,
@@ -903,7 +903,7 @@ pub(crate) fn newest_installed(installed: &[String]) -> Option<&String> {
 }
 
 /// The installed version a build for an instance that plays `current` starts from: `current`
-/// itself, so a rebuild stays on the Horizon it plays (a native build's own revision, [`about`]).
+/// itself, so a rebuild stays on the Foundry Client it plays (a native build's own revision, [`about`]).
 /// With `update`, or when it plays nothing installed, the newest installed release or Nightly.
 /// An imported build is no commit to build on: its game files' version is.
 pub fn base_for(current: Option<&str>, installed: &[String], update: bool) -> Option<String> {
@@ -914,7 +914,7 @@ pub fn base_for(current: Option<&str>, installed: &[String], update: bool) -> Op
     }
 }
 
-/// The newer Horizon a build with `update` would move native build `version` to: the newest
+/// The newer Foundry Client a build with `update` would move native build `version` to: the newest
 /// installed release or Nightly, when it is newer than the one the build started from.
 pub fn update_for(version: &str, installed: &[String]) -> Option<String> {
     newer_than(&about(version)?.base, installed)
@@ -927,7 +927,7 @@ pub fn newer_than(base: &str, installed: &[String]) -> Option<String> {
 }
 
 /// Every file under `dir`, by its path relative to `dir` (with `/`), sorted. A symlink is refused:
-/// horizon-mixins refuses them too.
+/// foundry-mixins refuses them too.
 fn files(dir: &Path) -> Result<Vec<(String, PathBuf)>, String> {
     fn walk(root: &Path, dir: &Path, out: &mut Vec<(String, PathBuf)>) -> Result<(), String> {
         for entry in fs::read_dir(dir).map_err(|e| e.to_string())? {
@@ -966,7 +966,7 @@ fn bundle_files(bundle: &Bundle) -> Result<Vec<(String, PathBuf)>, String> {
     package::files(bundle)
 }
 
-/// The installed version `bundles` built on Horizon `revision` with horizon-mixins `mixins`
+/// The installed version `bundles` built on Foundry Client `revision` with foundry-mixins `mixins`
 /// become: `native-<7 digits of the revision>-<12 hex digits>`. The two targets' keys never mix:
 /// a server build salts its hash, so it is another version than the client build of the same
 /// mods.
@@ -1032,7 +1032,7 @@ fn source_digest(bundle: &Bundle) -> Option<String> {
     let read: Vec<_> = paths
         .ok()?
         .into_iter()
-        .filter(|(name, _)| name != horizon_platform::mod_package::mod_surface::uses::USES_FILE)
+        .filter(|(name, _)| name != foundry_platform::mod_package::mod_surface::uses::USES_FILE)
         .map(|(name, path)| Some((name, fs::read(path).ok()?)))
         .collect::<Option<_>>()?;
     Some(digest(read.iter().map(|(n, b)| (n.as_str(), b.as_slice()))))
@@ -1056,7 +1056,7 @@ pub enum Step {
         name: String,
         profile: Profile,
     },
-    /// The mods' own crates checked against Horizon's `Cargo.lock`.
+    /// The mods' own crates checked against Foundry Client's `Cargo.lock`.
     Crates,
     /// The mod tools (the SDK's slices) of a build are fetched: bytes done of the whole.
     Tools {
@@ -1171,9 +1171,9 @@ impl Step {
                     ("done", &format!("{:.0}", done * 100.0)),
                 ],
             ),
-            Self::Tool => tr("Building horizon-mixins (once)").into(),
+            Self::Tool => tr("Building foundry-mixins (once)").into(),
             Self::Source(revision) => trf(
-                "Downloading Horizon's source at {revision}",
+                "Downloading Foundry Client's source at {revision}",
                 &[("revision", &revision[..7])],
             ),
             Self::Mixins => tr("Applying the mixins").into(),
@@ -1502,9 +1502,9 @@ fn mod_id_from_file(file: &str) -> Option<&str> {
     None
 }
 
-/// A horizon-mixins diagnostic (`{"code", "message", "file"}`) in one line, led by the mod it
+/// A foundry-mixins diagnostic (`{"code", "message", "file"}`) in one line, led by the mod it
 /// names (`mod_id`, its `injection_id`, or extracted from its `file` path for `E_MODULE_CONFLICT`),
-/// so a player with several mods sees which one doesn't apply to the build's Horizon: their files'
+/// so a player with several mods sees which one doesn't apply to the build's Foundry Client: their files'
 /// paths are deep in the launcher's folder.
 fn diagnostic(text: &str) -> Option<String> {
     let start = text.find('{')?;
@@ -1528,13 +1528,13 @@ fn diagnostic(text: &str) -> Option<String> {
     Some(line)
 }
 
-/// horizon-mixins at commit `rev`, built once with the launcher's cargo (`cargo install --locked`);
+/// foundry-mixins at commit `rev`, built once with the launcher's cargo (`cargo install --locked`);
 /// `progress` hears [`Step::Tool`] only when it is built.
 fn tool(rust: &Toolchain, rev: &str, progress: &impl Fn(Step)) -> Result<PathBuf, String> {
     let dir = root().join("tools").join(&rev[..12]);
     let bin = dir
         .join("bin")
-        .join(format!("horizon-mixins{}", std::env::consts::EXE_SUFFIX));
+        .join(format!("foundry-mixins{}", std::env::consts::EXE_SUFFIX));
     if !bin.is_file() {
         progress(Step::Tool);
         let mut cmd = rust.command(&rust.cargo());
@@ -1544,8 +1544,8 @@ fn tool(rust: &Toolchain, rev: &str, progress: &impl Fn(Step)) -> Result<PathBuf
             "install", "--locked", "--git", MIXINS_GIT, "--rev", rev, "--root",
         ])
         .arg(&dir)
-        .arg("horizon-mixins-cli");
-        run(cmd, "Building horizon-mixins", |_| {})?;
+        .arg("foundry-mixins-cli");
+        run(cmd, "Building foundry-mixins", |_| {})?;
     }
     crate::storage::mark_used(&dir).map_err(cache_error)?;
     Ok(bin)
@@ -1560,14 +1560,14 @@ fn prepare_mixins_source(source: &Path, prepared: &Path) -> Result<(), String> {
         fs::remove_dir_all(prepared).map_err(|e| format!("{}: {e}", prepared.display()))?;
     }
     let result = sync(source, prepared)
-        .and_then(|()| horizon_platform::mod_build::api_gen::materialize_game_modules(prepared));
+        .and_then(|()| foundry_platform::mod_build::api_gen::materialize_game_modules(prepared));
     if result.is_err() {
         let _ = fs::remove_dir_all(prepared);
     }
     result
 }
 
-/// `horizon-mixins apply`: the mods in `mods` applied to `source`, into `out`. It runs
+/// `foundry-mixins apply`: the mods in `mods` applied to `source`, into `out`. It runs
 /// `cargo metadata`, so it gets the launcher's toolchain like a build does: on a computer with no
 /// Rust of its own, a plain command found no cargo (E_METADATA).
 fn apply(rust: &Toolchain, tool: &Path, source: &Path, mods: &Path, out: &Path) -> Command {
@@ -1605,17 +1605,17 @@ fn source(revision: &str) -> Result<PathBuf, String> {
 /// [`check_cancelled`]; internals sync, outside a build, never stops).
 fn source_until(revision: &str, stop: &dyn Fn() -> Result<(), String>) -> Result<PathBuf, String> {
     let dir = root().join("source").join(revision);
-    if dir.join(".horizon-revision").is_file() {
+    if dir.join(".foundry-revision").is_file() {
         crate::storage::mark_used(&dir).map_err(cache_error)?;
         return Ok(dir);
     }
     let archive = format!(
         "https://codeload.github.com/{}/tar.gz/{revision}",
-        horizon_platform::mod_package::index::native::PREBUILT_REPO
+        foundry_platform::mod_package::index::native::PREBUILT_REPO
     );
     let partial = root().join("source").join(format!(".{revision}.partial"));
     let top = unpack_archive_until(&archive, &partial, u64::MAX, stop)?;
-    fs::write(top.join(".horizon-revision"), revision).map_err(|e| e.to_string())?;
+    fs::write(top.join(".foundry-revision"), revision).map_err(|e| e.to_string())?;
     let _ = fs::remove_dir_all(&dir);
     fs::rename(&top, &dir).map_err(|e| e.to_string())?;
     let _ = fs::remove_dir_all(&partial);
@@ -1638,7 +1638,7 @@ fn unpack_source(
         let mut entry =
             entry.map_err(|e| trf("Source interrupted: {error}", &[("error", &e.to_string())]))?;
         let kind = entry.header().entry_type();
-        // Match downloaded sources: horizon-mixins refuses links, which the build does not need.
+        // Match downloaded sources: foundry-mixins refuses links, which the build does not need.
         if !(kind.is_file() || kind.is_dir()) {
             continue;
         }
@@ -1720,7 +1720,7 @@ fn copy_bundle(bundle: &Bundle, to: &Path) -> Result<(), String> {
     package::copy(bundle, to)
 }
 
-/// Stage supporting modules for horizon-mixins, before applying mixins.
+/// Stage supporting modules for foundry-mixins, before applying mixins.
 fn stage_mixins(mods: &[Bundle], to: &Path) -> Result<Vec<Bundle>, String> {
     if to.exists() {
         fs::remove_dir_all(to).map_err(|e| e.to_string())?;
@@ -1994,13 +1994,13 @@ fn guard_worlds(
 }
 
 /// The pipeline both targets build with ([`build`], [`build_server`]): `folder`'s mods on the
-/// Horizon revision they pin (else `base`'s, the installed version whose game files the build
+/// Foundry Client revision they pin (else `base`'s, the installed version whose game files the build
 /// reuses: a native build's own revision when it is one, [`base_for`]), compiled as `target`
 /// (the game, or the headless engine) and installed as its own version,
 /// `native-<revision>-<key>` (the key hashes the revision, the mods' files, the tool's commit,
 /// the profile and the target). A build already made is used again. A mod pinned to another
-/// Horizon revision is refused: the error starts with [`MISMATCH`] and names the mismatched pins.
-/// Building never changes a mod's Horizon pin to match the installed game. Isolation leaves out
+/// Foundry Client revision is refused: the error starts with [`MISMATCH`] and names the mismatched pins.
+/// Building never changes a mod's Foundry Client pin to match the installed game. Isolation leaves out
 /// only a mod blamed by mixin or compiler diagnostics and its required dependents; servers refuse
 /// failures without leaving anything out.
 /// Nothing of the player's outside the launcher's data is touched: no instance is edited and
@@ -2058,8 +2058,8 @@ fn pipeline(
         .cloned()
         .collect();
     let side = match target {
-        Target::Client => horizon_platform::mod_package::manifest::Side::Client,
-        Target::Server => horizon_platform::mod_package::manifest::Side::Server,
+        Target::Client => foundry_platform::mod_package::manifest::Side::Client,
+        Target::Server => foundry_platform::mod_package::manifest::Side::Server,
     };
     let declared: Vec<Vec<dependencies::Dependency>> = mods
         .iter()
@@ -2090,15 +2090,15 @@ fn pipeline(
             dependencies: deps,
         })
         .collect();
-    // Native sources live beside the instance's horizon-mods directory. Read
+    // Native sources live beside the instance's foundry-mods directory. Read
     // its policy before compiling, but never use dispatch overrides to stage
     // an incomplete or reversed Cargo library graph.
     let instance = folder.parent().unwrap_or_else(|| Path::new("."));
     let overrides = dependencies::Overrides::read(
-        &instance.join(horizon_platform::mod_package::mod_list::DIR),
+        &instance.join(foundry_platform::mod_package::mod_list::DIR),
     )?;
-    let settings = horizon_platform::mod_package::mod_list::ModList::load(instance);
-    let content: Vec<_> = horizon_platform::mod_package::selection::content_packages(
+    let settings = foundry_platform::mod_package::mod_list::ModList::load(instance);
+    let content: Vec<_> = foundry_platform::mod_package::selection::content_packages(
         instance,
         &settings.enabled,
         &[],
@@ -2155,7 +2155,7 @@ fn pipeline(
     let revision = build_revision(base, built_on.as_ref())?;
     let developer = crate::developer_install::is_developer(origin);
     let sdk_base = sdk_cache::Base::from_env();
-    let keys = horizon_release_sign::sdk_keys_for(backend::REPO);
+    let keys = foundry_release_sign::sdk_keys_for(backend::REPO);
     // A developer install's checkout has no published surface to test against: its mods are
     // made for it exactly. Any other build tests each mod made for another build (SDK design §10).
     let sdk = if developer {
@@ -2226,7 +2226,7 @@ fn pipeline(
         }
     }
     if target == Target::Server {
-        let jars = horizon_platform::mod_package::manifest::collect_jar_requirements(
+        let jars = foundry_platform::mod_package::manifest::collect_jar_requirements(
             mods.iter()
                 .map(|bundle| (bundle.manifest.id.as_str(), bundle.manifest.jar.as_slice())),
         )
@@ -2275,11 +2275,11 @@ fn pipeline(
     };
     let mixins = newest(
         &mods,
-        "horizon-mixins",
+        "foundry-mixins",
         |b| Some(&b.native().mixins),
         || Ok(MIXINS_REV.into()),
         Some(MIXINS_REV),
-        |r| committed("horizon-rust/horizon-mixins", r),
+        |r| committed("foundry-rust/foundry-mixins", r),
     )?;
     // Keep developer provenance distinct from a signed base at the same source commit.
     let developer_key = crate::developer_install::is_developer(origin)
@@ -2388,8 +2388,8 @@ fn pipeline(
     let about = |route: &str, catalog: &internals::Catalog| {
         serde_json::json!({
             "base": origin,
-            "horizon": revision,
-            "horizon_mixins": mixins,
+            "foundry": revision,
+            "foundry_mixins": mixins,
             "rust": rust_toolchain::VERSION,
             "profile": profile.name(),
             "route": route,
@@ -2482,7 +2482,7 @@ fn pipeline(
 }
 
 /// How many times a build compiles again without the mods the compiler's errors were traced to:
-/// each costs a compile, where a mod that doesn't apply costs only horizon-mixins' run.
+/// each costs a compile, where a mod that doesn't apply costs only foundry-mixins' run.
 const COMPILE_RETRIES: usize = 3;
 
 /// Runs `pipeline` until it builds, each time without the mods that stopped it before (they
@@ -2560,11 +2560,11 @@ fn select_build_profile(
     }
 }
 
-/// Builds `folder`'s mods on the Horizon revision they pin (else `base`'s, the installed version
+/// Builds `folder`'s mods on the Foundry Client revision they pin (else `base`'s, the installed version
 /// whose game files the build reuses: a native build's own revision when it is one, [`base_for`])
 /// and points `instance` at the build, the default one included. Returns the build's version; a
 /// build already made is used again. Mods pinning different revisions cannot build together:
-/// the error starts with [`MISMATCH`] and names them; `cargo horizon-mod update --horizon
+/// the error starts with [`MISMATCH`] and names them; `cargo foundry-mod update --foundry
 /// <commit>` in each mod's folder pins it to the installed game, then build again.
 /// `profile` is an explicit override; None applies the instance's choice only when needed.
 pub fn build(
@@ -2755,7 +2755,7 @@ fn playing(instance: &Instance) -> String {
     about(&version).map_or(version, |about| about.base)
 }
 
-/// Builds `folder`'s mods as the headless engine a dedicated server runs (`horizon-engine`,
+/// Builds `folder`'s mods as the headless engine a dedicated server runs (`foundry-engine`,
 /// docs/server.md): the same pipeline as [`build`] on the same revision, compiled with
 /// `--no-default-features`, installed as its own version (its key distinct from the game's, so
 /// the two never stand in for each other) and exported into `output` as a standalone runtime
@@ -2891,7 +2891,7 @@ fn copy_runtime(from: &Path, to: &Path) -> std::io::Result<()> {
         if entry.file_type()?.is_dir() {
             copy_runtime(&entry.path(), &destination)?;
         } else {
-            horizon_platform::prepare::clone_or_copy(&entry.path(), &destination)?;
+            foundry_platform::prepare::clone_or_copy(&entry.path(), &destination)?;
             fs::set_permissions(&destination, entry.metadata()?.permissions())?;
         }
     }
@@ -2921,8 +2921,8 @@ pub(crate) fn copy_base(
         let copied = if entry.path().is_dir() {
             backend::copy_dir(&entry.path(), &to)
         } else {
-            // A clone is a new file: horizon-ctl and horizon-server keep their permissions.
-            horizon_platform::prepare::clone_or_copy(&entry.path(), &to)
+            // A clone is a new file: foundry-ctl and foundry-server keep their permissions.
+            foundry_platform::prepare::clone_or_copy(&entry.path(), &to)
                 .and_then(|()| fs::set_permissions(&to, entry.metadata()?.permissions()))
         };
         copied.map_err(|e| format!("Could not copy {}: {e}", entry.path().display()))?;
@@ -2933,13 +2933,13 @@ pub(crate) fn copy_base(
 /// Whether a file of the version a build starts from goes into the new build. The game (the
 /// target's own binary), its record, and unsupported `native-data/` artifacts are not carried
 /// over. A server build is the headless engine: it keeps neither the game's own binary
-/// nor any `horizon-engine` the base shipped, which would run unmodded beside its own.
+/// nor any `foundry-engine` the base shipped, which would run unmodded beside its own.
 fn carried_over(name: &std::ffi::OsStr, target: Target) -> bool {
     let mut own: Vec<String> = [
-        "Horizon.app",
+        "Foundry Client.app",
         "native-mods.json",
         "native-data",
-        horizon_platform::mod_package::mod_list::NATIVE_DIR,
+        foundry_platform::mod_package::mod_list::NATIVE_DIR,
     ]
     .iter()
     .map(|s| s.to_string())
@@ -2947,7 +2947,7 @@ fn carried_over(name: &std::ffi::OsStr, target: Target) -> bool {
     own.push(backend::CLIENT.to_string());
     own.push(".installed".to_string());
     if target == Target::Server {
-        own.push("horizon-engine".to_string());
+        own.push("foundry-engine".to_string());
     }
     let named = |n: &str| name == std::ffi::OsStr::new(n);
     !own.iter()
@@ -3110,19 +3110,19 @@ mod tests {
     fn a_native_build_starts_from_a_release_the_launcher_installed() {
         use std::io::Write;
         use std::net::TcpListener;
-        if std::env::var_os("HORIZON_PLAYER_FLOW_CHILD").is_none() {
+        if std::env::var_os("FOUNDRY_PLAYER_FLOW_CHILD").is_none() {
             let home = tempfile::tempdir().unwrap();
             let status = Command::new(std::env::current_exe().unwrap())
                 .args([
                     "--exact",
                     "native_mods::tests::a_native_build_starts_from_a_release_the_launcher_installed",
                 ])
-                .env("HORIZON_PLAYER_FLOW_CHILD", "1")
-                .env("HORIZON_LAUNCHER_HOME", home.path().join("launcher"))
-                .env("HORIZON_HOME", home.path().join("home"))
+                .env("FOUNDRY_PLAYER_FLOW_CHILD", "1")
+                .env("FOUNDRY_LAUNCHER_HOME", home.path().join("launcher"))
+                .env("FOUNDRY_HOME", home.path().join("home"))
                 .env("XDG_DATA_HOME", home.path().join("data"))
                 .env("XDG_CONFIG_HOME", home.path().join("config"))
-                .env("HORIZON_LAUNCHER_NO_SELF_UPDATE", "1")
+                .env("FOUNDRY_LAUNCHER_NO_SELF_UPDATE", "1")
                 .status()
                 .unwrap();
             assert!(status.success());
@@ -3142,7 +3142,7 @@ mod tests {
             header.set_cksum();
             tar.append_data(
                 &mut header,
-                format!("horizon-linux-x86_64/{}", backend::CLIENT),
+                format!("foundry-linux-x86_64/{}", backend::CLIENT),
                 &game[..],
             )
             .unwrap();
@@ -3156,7 +3156,7 @@ mod tests {
         let install_release = |tag: &str| {
             let listener = TcpListener::bind("127.0.0.1:0").unwrap();
             let url = format!(
-                "http://{}/horizon-linux-x86_64.tar.gz",
+                "http://{}/foundry-linux-x86_64.tar.gz",
                 listener.local_addr().unwrap()
             );
             let body = archive.clone();
@@ -3184,10 +3184,10 @@ mod tests {
             };
             backend::install_as(&release, tag, &sha256, None, |_| {}).unwrap();
             server.join().unwrap();
-            // `horizon-launcher prepare` writes the resources from the player's own Minecraft.
+            // `foundry-launcher prepare` writes the resources from the player's own Minecraft.
             let resources = backend::resources(tag);
             fs::create_dir_all(&resources).unwrap();
-            fs::write(resources.join("horizon-resources.json"), b"{}").unwrap();
+            fs::write(resources.join("foundry-resources.json"), b"{}").unwrap();
         };
         let (old, new) = ("v2026.11.01", "v2026.11.02");
         // (a) A fresh install: the release is the build's base, chosen as the launcher chooses.
@@ -3203,7 +3203,7 @@ mod tests {
             Target::Client,
             &binary,
             &[],
-            &serde_json::json!({"base": base, "horizon": "0".repeat(40), "target": "client"}),
+            &serde_json::json!({"base": base, "foundry": "0".repeat(40), "target": "client"}),
             &[],
         )
         .unwrap();
@@ -3288,7 +3288,7 @@ mod tests {
 
     #[test]
     fn a_mod_saved_into_a_world_is_never_switched_off_without_the_players_choice() {
-        use horizon_platform::world::nbt::{self, Limits, Tag};
+        use foundry_platform::world::nbt::{self, Limits, Tag};
         let _guard = scratch_state();
         let home = dir("guard-worlds");
         let world = home.join("saves").join("Home");
@@ -3474,15 +3474,15 @@ mod tests {
         let source = dir("resource-base");
         let client = dir("resource-client");
         let server = dir("resource-server");
-        fs::create_dir_all(source.join(".local/horizon-client/26.3")).unwrap();
-        fs::write(source.join(".local/horizon-client/26.3/data"), b"prepared").unwrap();
-        fs::write(source.join("horizon-ctl"), b"control").unwrap();
+        fs::create_dir_all(source.join(".local/foundry-client/26.3")).unwrap();
+        fs::write(source.join(".local/foundry-client/26.3/data"), b"prepared").unwrap();
+        fs::write(source.join("foundry-ctl"), b"control").unwrap();
         copy_base(&source, &client, Target::Client, true).unwrap();
         copy_base(&source, &server, Target::Server, false).unwrap();
         assert!(!client.join(".local").exists());
-        assert_eq!(fs::read(client.join("horizon-ctl")).unwrap(), b"control");
+        assert_eq!(fs::read(client.join("foundry-ctl")).unwrap(), b"control");
         assert_eq!(
-            fs::read(server.join(".local/horizon-client/26.3/data")).unwrap(),
+            fs::read(server.join(".local/foundry-client/26.3/data")).unwrap(),
             b"prepared"
         );
         for path in [source, client, server] {
@@ -3501,10 +3501,10 @@ mod tests {
         ] {
             assert!(!carried_over(OsStr::new(own), Target::Client), "{own}");
         }
-        for kept in ["horizon-ctl", "resources", "LICENSE"] {
+        for kept in ["foundry-ctl", "resources", "LICENSE"] {
             assert!(carried_over(OsStr::new(kept), Target::Client), "{kept}");
         }
-        // A server build keeps neither the game's own binary nor a stale `horizon-engine` the
+        // A server build keeps neither the game's own binary nor a stale `foundry-engine` the
         // base shipped, which would run unmodded beside the built one.
         let engine = Target::Server.binary();
         assert!(
@@ -3517,11 +3517,11 @@ mod tests {
 
     /// Takes the shared test lock after checking that settings, build log and builds resolve
     /// under the lib tests' scratch home, never a real install (no env changes: they race). A
-    /// home the developer set with `HORIZON_LAUNCHER_HOME` / `HORIZON_HOME` is theirs to choose.
+    /// home the developer set with `FOUNDRY_LAUNCHER_HOME` / `FOUNDRY_HOME` is theirs to choose.
     pub(super) fn scratch_state() -> std::sync::MutexGuard<'static, ()> {
         let scratch = crate::data_location::test_home();
         let set = |name| std::env::var_os(name).is_some();
-        if !set("HORIZON_LAUNCHER_HOME") {
+        if !set("FOUNDRY_LAUNCHER_HOME") {
             assert!(
                 backend::data_dir().starts_with(&scratch),
                 "settings outside the scratch home"
@@ -3531,7 +3531,7 @@ mod tests {
                 "builds outside the scratch home"
             );
         }
-        if !set("HORIZON_HOME") {
+        if !set("FOUNDRY_HOME") {
             assert!(
                 backend::game_home().starts_with(&scratch),
                 "game outside the scratch home"
@@ -3541,7 +3541,7 @@ mod tests {
     }
 
     pub(super) fn dir(name: &str) -> PathBuf {
-        let d = std::env::temp_dir().join(format!("horizon-native-{name}-{}", std::process::id()));
+        let d = std::env::temp_dir().join(format!("foundry-native-{name}-{}", std::process::id()));
         let _ = fs::remove_dir_all(&d);
         fs::create_dir_all(&d).unwrap();
         d
@@ -3560,9 +3560,9 @@ mod tests {
             .collect()
     }
 
-    fn project_manifest(id: &str, version: &str, horizon: &str, mixins: &str) -> String {
+    fn project_manifest(id: &str, version: &str, foundry: &str, mixins: &str) -> String {
         format!(
-            "id='{id}'\nname='{id}'\nversion='{version}'\napi='0.2'\ncapabilities=['registries']\n[native]\ngame='26.3'\nhorizon='{horizon}'\nmixins='{mixins}'\n"
+            "id='{id}'\nname='{id}'\nversion='{version}'\napi='0.2'\ncapabilities=['registries']\n[native]\ngame='26.3'\nfoundry='{foundry}'\nmixins='{mixins}'\n"
         )
     }
 
@@ -3575,7 +3575,7 @@ mod tests {
         .unwrap();
         fs::write(
             project.join("Cargo.toml"),
-            "[package]\nname='example'\nversion='9.0.0'\n[dependencies]\nhorizon-client='0.1'\n",
+            "[package]\nname='example'\nversion='9.0.0'\n[dependencies]\nfoundry-client='0.1'\n",
         )
         .unwrap();
         fs::write(project.join("src/lib.rs"), helper).unwrap();
@@ -3586,7 +3586,7 @@ mod tests {
         let root = dir("mixins-area-input");
         let source = root.join("download");
         let prepared = root.join("prepared");
-        let src = source.join("crates/horizon-client/src");
+        let src = source.join("crates/foundry-client/src");
         let area = src.join("game/items");
         let hooks = src.join("game/native_hooks");
         fs::create_dir_all(&area).unwrap();
@@ -3616,7 +3616,7 @@ mod tests {
                 })
                 .collect()
         }
-        let output = prepared.join("crates/horizon-client/src");
+        let output = prepared.join("crates/foundry-client/src");
         assert!(modules(&output.join("game.rs")).contains(&"using_item".into()));
         assert_eq!(modules(&output.join("game/native_hooks/mod.rs")), ["base"]);
         assert_eq!(
@@ -3645,16 +3645,16 @@ mod tests {
     }
 
     #[test]
-    fn horizon_mixins_finds_the_launchers_cargo() {
+    fn foundry_mixins_finds_the_launchers_cargo() {
         for rust in toolchains("/rust/1.99.1-x") {
-            horizon_mixins_finds(&rust);
+            foundry_mixins_finds(&rust);
         }
     }
 
-    fn horizon_mixins_finds(rust: &Toolchain) {
+    fn foundry_mixins_finds(rust: &Toolchain) {
         let cmd = apply(
             rust,
-            Path::new("/tools/horizon-mixins"),
+            Path::new("/tools/foundry-mixins"),
             Path::new("/src"),
             Path::new("/mods"),
             Path::new("/out"),
@@ -3727,11 +3727,11 @@ mod tests {
     const A: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
     const B: &str = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
 
-    fn write_native(at: &Path, id: &str, horizon: &str, mixins: &str) {
+    fn write_native(at: &Path, id: &str, foundry: &str, mixins: &str) {
         write_bundle(at, id, "pub fn marker() {}\n");
         fs::write(
             at.join(NATIVE_MANIFEST),
-            project_manifest(id, "0.3.0", horizon, mixins),
+            project_manifest(id, "0.3.0", foundry, mixins),
         )
         .unwrap();
     }
@@ -3759,9 +3759,9 @@ mod tests {
         assert_eq!(found.len(), 2);
         assert_eq!(found[1].manifest.id, "veinminer");
         assert_eq!(found[1].dir, d.join("veinminer"));
-        assert_eq!(found[1].native().horizon, A);
+        assert_eq!(found[1].native().foundry, A);
         assert_eq!(found[1].native().mixins, B);
-        assert_eq!(found[0].native().horizon, A);
+        assert_eq!(found[0].native().foundry, A);
     }
 
     #[test]
@@ -3783,8 +3783,8 @@ mod tests {
         )
         .unwrap();
         for old in [
-            "horizon-native.json",
-            "horizon-mixin.toml",
+            "foundry-native.json",
+            "foundry-mixin.toml",
             "native",
             "rust",
         ] {
@@ -3800,7 +3800,7 @@ mod tests {
         let mut zip = zip::ZipWriter::new(std::io::Cursor::new(Vec::new()));
         let options = zip::write::SimpleFileOptions::default();
         for (name, body) in [
-            ("horizon-native.json", "{\"id\": \"fps_counter\"}"),
+            ("foundry-native.json", "{\"id\": \"fps_counter\"}"),
             (
                 "rust/src/lib.rs",
                 "pub fn hook() {}
@@ -3976,7 +3976,7 @@ mod tests {
         fs::write(
             injected.join(NATIVE_MANIFEST),
             project_manifest("injected", "0.3.0", A, B)
-                + "[[native.module]]\nid='marker'\nfile='crates/horizon-client/src/game.rs'\nname='marker'\nsource='src/lib.rs'\n",
+                + "[[native.module]]\nid='marker'\nfile='crates/foundry-client/src/game.rs'\nname='marker'\nsource='src/lib.rs'\n",
         )
         .unwrap();
         let mut mods = found.clone();
@@ -3986,7 +3986,7 @@ mod tests {
         assert_eq!(tool_mods.len(), 1);
         assert_eq!(tool_mods[0].manifest.id, "injected");
         assert!(!staged.join("veinminer").exists());
-        assert!(staged.join("injected/horizon-mixin.toml").is_file());
+        assert!(staged.join("injected/foundry-mixin.toml").is_file());
         assert_eq!(
             fs::read(staged.join("injected/src/lib.rs")).unwrap(),
             b"pub fn marker() {}\n"
@@ -3995,7 +3995,7 @@ mod tests {
         assert_eq!(
             (
                 found[0].manifest.id.as_str(),
-                found[0].native().horizon.as_str()
+                found[0].native().foundry.as_str()
             ),
             ("veinminer", A)
         );
@@ -4138,7 +4138,7 @@ mod tests {
         let fresh = d.join("fresh");
         let snapshot = d.join("snapshot");
         let stage = d.join("stage");
-        let patched = Path::new("crates/horizon-client/src/game.rs");
+        let patched = Path::new("crates/foundry-client/src/game.rs");
         fs::create_dir_all(fresh.join(patched).parent().unwrap()).unwrap();
         fs::write(fresh.join(patched), "patched by mixins").unwrap();
         sync(&fresh, &snapshot).unwrap();
@@ -4189,9 +4189,9 @@ mod tests {
         let record = |target: Option<&str>| {
             let json = match target {
                 Some(target) => {
-                    format!(r#"{{"base":"v2026.10.13","horizon":"{A}","target":"{target}"}}"#)
+                    format!(r#"{{"base":"v2026.10.13","foundry":"{A}","target":"{target}"}}"#)
                 }
-                None => format!(r#"{{"base":"v2026.10.13","horizon":"{A}"}}"#),
+                None => format!(r#"{{"base":"v2026.10.13","foundry":"{A}"}}"#),
             };
             fs::write(d.join("native-mods.json"), json).unwrap();
             about_in(&d)
@@ -4200,7 +4200,7 @@ mod tests {
         assert_eq!(record(Some("client")).unwrap().target, Target::Client);
         assert_eq!(record(Some("server")).unwrap().target, Target::Server);
         assert_eq!(record(Some("anything-else")), None);
-        assert_eq!(record(Some("client")).unwrap().horizon, A);
+        assert_eq!(record(Some("client")).unwrap().foundry, A);
     }
 
     /// The export ([`build_server`]): a standalone runtime folder with the engine, resources
@@ -4263,7 +4263,7 @@ mod tests {
 
     #[test]
     fn server_install_is_not_playable_and_export_survives_cache_removal() {
-        if std::env::var_os("HORIZON_SERVER_EXPORT_TEST_CHILD").as_deref()
+        if std::env::var_os("FOUNDRY_SERVER_EXPORT_TEST_CHILD").as_deref()
             != Some(std::ffi::OsStr::new("1"))
         {
             // Environment overrides belong to this exact-test process only;
@@ -4278,9 +4278,9 @@ mod tests {
                     "native_mods::tests::server_install_is_not_playable_and_export_survives_cache_removal",
                     "--nocapture",
                 ])
-                .env("HORIZON_SERVER_EXPORT_TEST_CHILD", "1")
-                .env("HORIZON_LAUNCHER_NO_SELF_UPDATE", "1")
-                .env("HORIZON_NO_AUDIO", "1")
+                .env("FOUNDRY_SERVER_EXPORT_TEST_CHILD", "1")
+                .env("FOUNDRY_LAUNCHER_NO_SELF_UPDATE", "1")
+                .env("FOUNDRY_NO_AUDIO", "1")
                 .env("RUST_BACKTRACE", "0")
                 .env("TMPDIR", &temporary)
                 .env("TMP", &temporary)
@@ -4289,14 +4289,14 @@ mod tests {
                 .stdout(Stdio::piped())
                 .stderr(Stdio::piped());
             for (variable, directory) in [
-                ("HORIZON_LAUNCHER_HOME", "launcher"),
-                ("HORIZON_HOME", "home"),
+                ("FOUNDRY_LAUNCHER_HOME", "launcher"),
+                ("FOUNDRY_HOME", "home"),
                 ("XDG_DATA_HOME", "data"),
                 ("XDG_CONFIG_HOME", "config"),
                 ("XDG_CACHE_HOME", "cache"),
-                ("HORIZON_LAUNCHER_TRASH", "trash"),
-                ("HORIZON_LAUNCHER_CLIPBOARD", "clipboard"),
-                ("HORIZON_LAUNCHER_DESKTOP", "desktop"),
+                ("FOUNDRY_LAUNCHER_TRASH", "trash"),
+                ("FOUNDRY_LAUNCHER_CLIPBOARD", "clipboard"),
+                ("FOUNDRY_LAUNCHER_DESKTOP", "desktop"),
             ] {
                 command.env(variable, home.path().join(directory));
             }
@@ -4380,14 +4380,14 @@ mod tests {
         let base = "native-test-server-base";
         let version = "native-test-server-cache";
         let source = backend::version_dir(base);
-        fs::create_dir_all(source.join(".local/horizon-client/26.3")).unwrap();
+        fs::create_dir_all(source.join(".local/foundry-client/26.3")).unwrap();
         fs::write(
-            source.join(".local/horizon-client/26.3/facts.json"),
+            source.join(".local/foundry-client/26.3/facts.json"),
             b"facts",
         )
         .unwrap();
         fs::write(source.join(Target::Server.binary()), b"unmodded").unwrap();
-        let native_dir = horizon_platform::mod_package::mod_list::NATIVE_DIR;
+        let native_dir = foundry_platform::mod_package::mod_list::NATIVE_DIR;
         fs::create_dir_all(source.join(native_dir).join("stale")).unwrap();
         eprintln!("NATIVE_SERVER_EXPORT_STEP=prepare_package");
         let project = dir("server-runtime-project");
@@ -4445,7 +4445,7 @@ mod tests {
             b"modded"
         );
         assert_eq!(
-            fs::read(output.join(".local/horizon-client/26.3/facts.json")).unwrap(),
+            fs::read(output.join(".local/foundry-client/26.3/facts.json")).unwrap(),
             b"facts"
         );
         assert!(output.join("native-mods.json").is_file());
@@ -4469,7 +4469,7 @@ mod tests {
         assert!(!package.join("jars").exists());
         assert!(!output.join(native_dir).join("stale").exists());
         eprintln!("NATIVE_SERVER_EXPORT_STEP=load_runtime");
-        let runtime = horizon_platform::mod_package::runtime::Runtime::load(
+        let runtime = foundry_platform::mod_package::runtime::Runtime::load(
             &output.join(Target::Server.binary()),
             &[mod_vocab::__private::native::BuiltMod {
                 id: "exported",
@@ -4543,9 +4543,9 @@ mod tests {
         backend::Settings::load().allow_native_mods().unwrap();
         let file = backend::data_dir().join("instances.json");
         let previous = fs::read(&file).ok();
-        let stored = br#"{"instances":{"horizon":{"native_profile":"balanced"}}}"#;
+        let stored = br#"{"instances":{"foundry":{"native_profile":"balanced"}}}"#;
         fs::write(&file, stored).unwrap();
-        let instance = instances::find("horizon").unwrap();
+        let instance = instances::find("foundry").unwrap();
         let folder = dir("automatic-profile");
         let error = build(
             "v2099.09.09",
@@ -4580,7 +4580,7 @@ mod tests {
         write_bundle(&folder, "snapshot", "");
         fs::write(
             folder.join("Cargo.toml"),
-            "[package]\nname='snapshot'\nversion='0.1.0'\n[dependencies]\nhorizon-client='0.1'\n",
+            "[package]\nname='snapshot'\nversion='0.1.0'\n[dependencies]\nfoundry-client='0.1'\n",
         )
         .unwrap();
         let preview = root().join(planning::CHECKED);
@@ -4705,7 +4705,7 @@ mod tests {
         let log = fs::read_to_string(log_path()).unwrap();
         assert!(log.contains("is not prepared yet"), "{log}");
         // The command line's log names the command that prepares it (#18659).
-        assert!(log.contains("`horizon-launcher prepare --version"), "{log}");
+        assert!(log.contains("`foundry-launcher prepare --version"), "{log}");
         assert!(!log.contains("Build again"), "{log}");
         assert!(!log.contains("the last build's output"), "{log}");
         // A failure after compiler output keeps those diagnostics and the final reason.
@@ -5414,8 +5414,8 @@ mod tests {
         use std::time::{Duration, SystemTime};
         let (from, to) = (dir("sync-old-from"), dir("sync-old-to"));
         let commit = SystemTime::UNIX_EPOCH + Duration::from_secs(1_000_000_000);
-        fs::create_dir_all(from.join("crates/horizon-core/src")).unwrap();
-        let file = from.join("crates/horizon-core/src/storage.rs");
+        fs::create_dir_all(from.join("crates/foundry-core/src")).unwrap();
+        let file = from.join("crates/foundry-core/src/storage.rs");
         fs::write(&file, "pub fn unpack_into() {}").unwrap();
         fs::File::options()
             .write(true)
@@ -5423,9 +5423,9 @@ mod tests {
             .unwrap()
             .set_modified(commit)
             .unwrap();
-        fs::create_dir_all(to.join("crates/horizon-core/src")).unwrap();
+        fs::create_dir_all(to.join("crates/foundry-core/src")).unwrap();
         fs::write(
-            to.join("crates/horizon-core/src/storage.rs"),
+            to.join("crates/foundry-core/src/storage.rs"),
             "pub fn unpack() {}",
         )
         .unwrap();
@@ -5433,7 +5433,7 @@ mod tests {
         let built = SystemTime::now();
         std::thread::sleep(Duration::from_millis(20));
         sync(&from, &to).unwrap();
-        let staged = to.join("crates/horizon-core/src/storage.rs");
+        let staged = to.join("crates/foundry-core/src/storage.rs");
         assert_eq!(
             fs::read_to_string(&staged).unwrap(),
             "pub fn unpack_into() {}"
@@ -5447,7 +5447,7 @@ mod tests {
         fs::remove_dir_all(to).unwrap();
     }
 
-    /// levzzz5154's decision (2026-10-29): a rebuild stays on the Horizon the instance plays;
+    /// levzzz5154's decision (2026-10-29): a rebuild stays on the Foundry Client the instance plays;
     /// only an update (`--update`, `base_for`'s `update`) moves it to a newer one.
     #[test]
     fn a_rebuild_stays_on_the_instances_horizon_until_an_update() {
@@ -5484,24 +5484,24 @@ mod tests {
 
     #[test]
     fn tool_errors_read_in_one_line() {
-        let err = "{\n  \"code\": \"E_REVISION\",\n  \"message\": \"requires exact Horizon revision a\",\n  \"file\": \"m.toml\"\n}";
+        let err = "{\n  \"code\": \"E_REVISION\",\n  \"message\": \"requires exact Foundry Client revision a\",\n  \"file\": \"m.toml\"\n}";
         assert_eq!(
             diagnostic(err).as_deref(),
-            Some("E_REVISION: requires exact Horizon revision a (m.toml)")
+            Some("E_REVISION: requires exact Foundry Client revision a (m.toml)")
         );
     }
 
     #[test]
     fn a_tool_error_starts_with_the_mod_that_does_not_apply() {
-        // horizon-mixins e8cd0aa on Horizon 998b1d8 with fast_items 0.1.0 and appleskin 1.0.0
+        // foundry-mixins e8cd0aa on Foundry Client 998b1d8 with fast_items 0.1.0 and appleskin 1.0.0
         // (made for ba6344a), as a player's build was on 2026-11-04.
         let err = r#"{
   "code": "E_TARGET_NOT_FOUND",
-  "message": "no source function 'horizon_client::game::titles::Game<'_>::draw_titles'",
-  "file": "/home/p/.local/share/horizon-launcher/native/mixins.incoming/appleskin/horizon-mixin.toml",
+  "message": "no source function 'foundry_client::game::titles::Game<'_>::draw_titles'",
+  "file": "/home/p/.local/share/foundry-launcher/native/mixins.incoming/appleskin/foundry-mixin.toml",
   "mod_id": "appleskin",
   "injection_id": "hud",
-  "target": "horizon_client::game::titles::Game<'_>::draw_titles"
+  "target": "foundry_client::game::titles::Game<'_>::draw_titles"
 }"#;
         let line = diagnostic(err).unwrap();
         assert!(
@@ -5518,16 +5518,16 @@ mod tests {
 
     #[test]
     fn a_tool_error_without_mod_id_extracts_culprit_from_file_path() {
-        // horizon-mixins e8cd0aa emits E_MODULE_CONFLICT without mod_id (issue #9391).
+        // foundry-mixins e8cd0aa emits E_MODULE_CONFLICT without mod_id (issue #9391).
         let err = r#"{
   "code": "E_MODULE_CONFLICT",
-  "message": "conflict in module horizon_physics",
-  "file": "/home/p/.local/share/horizon-launcher/native/mixins.incoming/horizon_physics/horizon-mixin.toml"
+  "message": "conflict in module foundry_physics",
+  "file": "/home/p/.local/share/foundry-launcher/native/mixins.incoming/foundry_physics/foundry-mixin.toml"
 }"#;
         let line = diagnostic(err).unwrap();
         assert!(
             line.starts_with(
-                "horizon_physics: E_MODULE_CONFLICT: conflict in module horizon_physics"
+                "foundry_physics: E_MODULE_CONFLICT: conflict in module foundry_physics"
             ),
             "{line}"
         );
@@ -5536,7 +5536,7 @@ mod tests {
         let err_win = r#"{
   "code": "E_MODULE_CONFLICT",
   "message": "conflict in module biomecompass",
-  "file": "C:\\Users\\p\\AppData\\Local\\horizon-launcher\\native\\mixins.incoming\\biomecompass\\horizon-mixin.toml"
+  "file": "C:\\Users\\p\\AppData\\Local\\foundry-launcher\\native\\mixins.incoming\\biomecompass\\foundry-mixin.toml"
 }"#;
         let line_win = diagnostic(err_win).unwrap();
         assert!(
@@ -5549,7 +5549,7 @@ mod tests {
         let err_mods = r#"{
   "code": "E_MODULE_CONFLICT",
   "message": "conflict in module worldedit",
-  "file": "/home/p/.local/share/horizon-launcher/native/mods.incoming/worldedit/horizon-mod.toml"
+  "file": "/home/p/.local/share/foundry-launcher/native/mods.incoming/worldedit/foundry-mod.toml"
 }"#;
         let line_mods = diagnostic(err_mods).unwrap();
         assert!(
@@ -5591,7 +5591,7 @@ mod tests {
             "{e}"
         );
         // An error still among the last lines isn't said twice.
-        let e = failure("horizon-mixins", "exit status: 1", &errors, &errors);
+        let e = failure("foundry-mixins", "exit status: 1", &errors, &errors);
         assert!(e.contains("The end of its output") && e.matches("alsa-sys").count() == 1);
     }
 
@@ -5613,14 +5613,14 @@ mod tests {
             for i in 1 2 3 4 5 6 7 8 9 10 11 12 13; do echo "warning: build failed, waiting ($i)" >&2; done
             exit 101
         "#]);
-        let e = run(cmd, "Building horizon-mixins", |_| {}).unwrap_err();
+        let e = run(cmd, "Building foundry-mixins", |_| {}).unwrap_err();
         assert!(e.starts_with(&rust_toolchain::smart_app_control()), "{e}");
         assert!(e.contains("quote v1.0.47"), "{e}");
         // Another failure says nothing about it.
         let mut cmd = Command::new("sh");
         cmd.args([
             "-c",
-            "echo 'error: could not compile `horizon-client`' >&2; exit 101",
+            "echo 'error: could not compile `foundry-client`' >&2; exit 101",
         ]);
         let e = run(cmd, "Compiling the game", |_| {}).unwrap_err();
         assert!(!e.contains("Smart App Control"), "{e}");
@@ -5657,12 +5657,12 @@ mod tests {
 mod registry_binary_tests {
     #[test]
     fn source_preparation_lookup_requires_exact_build_and_target() {
-        let index = horizon_platform::mod_package::index::Index::parse(include_str!(
-            "../../crates/horizon-mod-package/tests/index/index-v1.json"
+        let index = foundry_platform::mod_package::index::Index::parse(include_str!(
+            "../../crates/foundry-mod-package/tests/index/index-v1.json"
         ))
         .unwrap();
         let mut version = index.project("coords_hud").unwrap().versions[0].clone();
-        version.native_binaries = vec![horizon_platform::mod_package::index::NativeBinary {
+        version.native_binaries = vec![foundry_platform::mod_package::index::NativeBinary {
             build: "exact-build".into(),
             target: "aarch64-apple-darwin".into(),
             file: version.file.clone(),

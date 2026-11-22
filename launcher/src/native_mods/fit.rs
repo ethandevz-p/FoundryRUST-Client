@@ -1,7 +1,7 @@
 //! Whether a native mod made for one game build fits another (SDK design §10): an API-only mod
 //! (no `[native.*]` table, no internals) is built against any build where every item it uses is
 //! unchanged, and only the built binary is exact to the build. The mod's uses table
-//! ([`uses::USES_FILE`], written by `cargo horizon-mod build`) says what it uses, each item with
+//! ([`uses::USES_FILE`], written by `cargo foundry-mod build`) says what it uses, each item with
 //! its fingerprint at the build it was made for; the build's `surface.json` says what is there
 //! now; `mod_surface::uses::fits` compares the two. The compile against the build stays the final
 //! check, and the loader's build-id check is unchanged.
@@ -10,7 +10,7 @@
 //! what they are ("the hook `player_logged_in`"), never surface ids or hashes.
 use super::{api, prebuilt, sdk_cache};
 use crate::i18n::{tr, trf};
-use horizon_platform::mod_package::mod_surface;
+use foundry_platform::mod_package::mod_surface;
 use mod_surface::uses::{self, Change, Fit, ItemKind, Misfit, UsesTable};
 use std::io::Read;
 use std::path::Path;
@@ -63,7 +63,7 @@ pub(super) fn judge(
     build: &str,
     surface: &mut dyn FnMut() -> Result<std::rc::Rc<mod_surface::Surface>, sdk_cache::Refusal>,
 ) -> Result<Verdict, sdk_cache::Refusal> {
-    let made_for = project.bundle.native().horizon.clone();
+    let made_for = project.bundle.native().foundry.clone();
     if made_for == build {
         return Ok(Verdict::MadeFor);
     }

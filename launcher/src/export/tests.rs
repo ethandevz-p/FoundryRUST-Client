@@ -3,7 +3,7 @@ use std::collections::BTreeMap;
 
 fn scratch(name: &str) -> PathBuf {
     let root = std::env::temp_dir().join(format!(
-        "horizon-launcher-export-{name}-{}",
+        "foundry-launcher-export-{name}-{}",
         std::process::id()
     ));
     let _ = fs::remove_dir_all(&root);
@@ -93,7 +93,7 @@ fn home(name: &str) -> PathBuf {
         // The game also ends a line at a lone CR.
         b"lang:fr_ch\r\nlastServer:play.example.net:25570\r\nfov:0.5\rlastServer:typed.example.net\rgamma:1\n",
     );
-    put(&home.join("horizon-graphics.txt"), b"preset:high\n");
+    put(&home.join("foundry-graphics.txt"), b"preset:high\n");
     put(
         &home.join("servers.dat"),
         &servers_dat(&[shown_server(), joined_server(), joined_double_server()]),
@@ -101,7 +101,7 @@ fn home(name: &str) -> PathBuf {
     put(&home.join("resourcepacks/Glass.zip"), b"glass pack");
     put(&home.join("resourcepacks/Own.zip"), b"own pack");
     put(
-        &home.join("horizon-mods/coords/horizon-mod.toml"),
+        &home.join("foundry-mods/coords/foundry-mod.toml"),
         b"id = \"coords\"\n",
     );
     put(&home.join("saves/Base/level.dat"), &level_dat());
@@ -115,7 +115,7 @@ fn home(name: &str) -> PathBuf {
         "screenshots/a.png",
         "backups/b.zip",
         "mod-browser/checks-1/x/check.json",
-        "horizon-player.txt",
+        "foundry-player.txt",
         "session.json",
         "usercache.json",
         "resourcepacks/.DS_Store",
@@ -176,8 +176,8 @@ fn a_zip_has_the_instance_and_the_picked_world_and_nothing_private() {
     assert_eq!(
         names(&out),
         [
-            "horizon-graphics.txt",
-            "horizon-mods/coords/horizon-mod.toml",
+            "foundry-graphics.txt",
+            "foundry-mods/coords/foundry-mod.toml",
             "options.txt",
             "resourcepacks/Glass.zip",
             "resourcepacks/Own.zip",
@@ -295,8 +295,8 @@ fn an_mrpack_lists_what_modrinth_serves_and_carries_the_rest() {
         names(&out),
         [
             "modrinth.index.json",
-            "overrides/horizon-graphics.txt",
-            "overrides/horizon-mods/coords/horizon-mod.toml",
+            "overrides/foundry-graphics.txt",
+            "overrides/foundry-mods/coords/foundry-mod.toml",
             "overrides/options.txt",
             "overrides/resourcepacks/Own.zip",
             "overrides/servers.dat",

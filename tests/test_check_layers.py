@@ -10,13 +10,13 @@ from unittest import mock
 from tools import check_layers, merge_base
 
 CONFIG = {
-    "may_depend": {"engine": ["engine"], "platform": ["engine", "platform"], "horizon": ["platform", "horizon"]},
+    "may_depend": {"engine": ["engine"], "platform": ["engine", "platform"], "foundry": ["platform", "foundry"]},
     "crates": {
         "core": "engine",
         "game": "engine",
         "mod-api": "platform",
-        "cosmetics": "horizon",
-        "launcher": "horizon",
+        "cosmetics": "foundry",
+        "launcher": "foundry",
         "xtask": "tool",
     },
     "allowed": [],
@@ -53,10 +53,10 @@ class CheckLayersTests(unittest.TestCase):
         self.assertIn("docs/layers.md#platform", problems[0])
 
     def test_horizon_uses_the_platform_not_the_engine(self):
-        # The Horizon layer builds against the platform's public API, so it can live in its own repository.
+        # The Foundry Client layer builds against the platform's public API, so it can live in its own repository.
         problems, _ = run(package("launcher", "game"))
-        self.assertIn("launcher -> game: horizon may not depend on engine", problems[0])
-        self.assertIn("docs/layers.md#horizon", problems[0])
+        self.assertIn("launcher -> game: foundry may not depend on engine", problems[0])
+        self.assertIn("docs/layers.md#foundry", problems[0])
 
     def test_an_allowed_exception_passes(self):
         self.assertEqual(run(package("game", "cosmetics"), allowed=["game -> cosmetics"]), ([], []))
@@ -86,7 +86,7 @@ class CheckLayersTests(unittest.TestCase):
 
     def test_a_new_dependency_target_excuses_nothing(self):
         base = {"crates": CONFIG["crates"], "allowed": []}
-        problems, _ = run(package("game", "shop"), allowed=["game -> shop"], base=base, crates={"shop": "horizon"})
+        problems, _ = run(package("game", "shop"), allowed=["game -> shop"], base=base, crates={"shop": "foundry"})
         self.assertIn("added to 'allowed'", problems[0])
 
     def test_unknown_crate_fails(self):
@@ -247,7 +247,7 @@ class UpstreamLayerRestorationTests(unittest.TestCase):
         self.git("init", "-q", "-b", "main")
         self.git("config", "user.name", "Fixture")
         self.git("config", "user.email", "fixture@example.invalid")
-        self.config = dict(CONFIG, crates=dict(CONFIG["crates"], cosmetic="horizon"))
+        self.config = dict(CONFIG, crates=dict(CONFIG["crates"], cosmetic="foundry"))
         self.base_config = dict(self.config, crates={k: v for k, v in self.config["crates"].items() if k != "cosmetics"})
         (self.root / "tools").mkdir()
         (self.root / "tools/layers.json").write_text(json.dumps(self.base_config))
@@ -267,7 +267,7 @@ class UpstreamLayerRestorationTests(unittest.TestCase):
         self.git("commit", "-q", "-m", "fork")
         self.git("merge", "-q", "--no-edit", "upstream")
         for patch in (mock.patch.object(merge_base, "ROOT", self.root),
-                      mock.patch.dict(os.environ, {"HORIZON_UPSTREAM_URL": str(remote)})):
+                      mock.patch.dict(os.environ, {"FOUNDRY_UPSTREAM_URL": str(remote)})):
             patch.start()
             self.addCleanup(patch.stop)
 
@@ -275,7 +275,7 @@ class UpstreamLayerRestorationTests(unittest.TestCase):
         return subprocess.run(["git", *args], cwd=self.root, check=True,
                               capture_output=True, text=True).stdout
 
-    def problems(self, edge, layer="horizon"):
+    def problems(self, edge, layer="foundry"):
         upstream, errors = merge_base.verified_sync_config(self.base, "tools/layers.json")
         self.assertEqual(errors, [])
         config = dict(self.config, allowed=[edge], crates=dict(self.config["crates"], cosmetics=layer))
@@ -349,14 +349,14 @@ class PullRequestMergeTests(unittest.TestCase):
             (root / "work.txt").write_text("b\n")
             run("commit", "-q", "-am", "unrelated change")
             run("checkout", "-q", "main")
-            (root / "tools/layers.json").write_text(json.dumps({"allowed": ["core -> horizon"]}))
+            (root / "tools/layers.json").write_text(json.dumps({"allowed": ["core -> foundry"]}))
             run("commit", "-q", "-am", "main allows an exception")
             run("checkout", "-q", "--detach", "main")
             run("merge", "-q", "--no-ff", "-m", "merge work", "work")
             with mock.patch.object(check_layers, "ROOT", root), mock.patch.object(merge_base, "ROOT", root):
                 merged, error = merge_base.pull_request_base(base, True)
                 self.assertIsNone(error)
-                self.assertEqual(check_layers.base_config(merged), {"allowed": ["core -> horizon"]})
+                self.assertEqual(check_layers.base_config(merged), {"allowed": ["core -> foundry"]})
                 self.assertEqual(check_layers.base_config(base), {"allowed": []})
                 run("checkout", "-q", "work")
                 self.assertEqual(merge_base.pull_request_base(base, True)[1],

@@ -14,7 +14,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 /// The Rust release native mods build with: the one pin CI builds the game with and wasm mods
-/// build with (`tools/ci/rust-version`; horizon-mixins needs 1.95 or newer). Bumping it also
+/// build with (`tools/ci/rust-version`; foundry-mixins needs 1.95 or newer). Bumping it also
 /// updates [`DIST`] and each platform's component checksums below.
 pub const VERSION: &str = include_str!("../../tools/ci/rust-version").trim_ascii();
 const DIST: &str = "https://static.rust-lang.org/dist/2026-10-15";
@@ -350,7 +350,7 @@ impl Toolchain {
     }
 
     /// [`Toolchain::command`], its downloads going through `proxy`, the launcher's setting: Cargo
-    /// fetches the crates and horizon-mixins itself and doesn't read the launcher's settings, so the
+    /// fetches the crates and foundry-mixins itself and doesn't read the launcher's settings, so the
     /// Settings page's proxy is handed to it (#16718). Without one it reads `HTTPS_PROXY` from the
     /// environment, as the launcher does.
     fn command_through(&self, program: &Path, proxy: Option<String>) -> Command {
@@ -558,7 +558,7 @@ pub fn root() -> PathBuf {
     backend::build_dir().join("rust")
 }
 
-/// The Cargo home of native builds (downloaded crates, horizon-mixins), never the player's own.
+/// The Cargo home of native builds (downloaded crates, foundry-mixins), never the player's own.
 pub fn cargo_home() -> PathBuf {
     backend::build_dir().join("cargo")
 }
@@ -952,7 +952,7 @@ fn link(full: bool) -> Result<(), String> {
 
 /// What to do when Windows' Smart App Control refused one of the build's programs (#5911). It
 /// lets only signed programs or ones Microsoft knows run, and a build runs programs it has just
-/// compiled (every crate's build script, horizon-mixins, the game) and the toolchain's own
+/// compiled (every crate's build script, foundry-mixins, the game) and the toolchain's own
 /// (`dlltool.exe`). Windows refuses them with os error 4551 ("An Application Control policy has
 /// blocked this file"). Nothing is checked before the build: with Smart App Control on, a build
 /// whose programs already ran before it was turned on still succeeds.
@@ -1372,7 +1372,7 @@ mod tests {
 
     #[test]
     fn a_component_archive_unpacks_as_its_installer_would() {
-        let dir = std::env::temp_dir().join(format!("horizon-rust-unpack-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("foundry-rust-unpack-{}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
         fs::create_dir_all(&dir).unwrap();
         let archive = dir.join("cargo.tar.gz");
@@ -1448,7 +1448,7 @@ mod tests {
     }
 
     /// #16718: the Settings page's proxy reaches the build's Cargo, which downloads the crates and
-    /// horizon-mixins itself; without one Cargo is left to the environment's, like the launcher.
+    /// foundry-mixins itself; without one Cargo is left to the environment's, like the launcher.
     #[test]
     fn the_settings_proxy_reaches_cargo() {
         let toolchain = Toolchain {
@@ -1559,7 +1559,7 @@ mod tests {
 
     #[test]
     fn a_mingw_zip_unpacks_its_programs_and_not_its_documentation() {
-        let dir = std::env::temp_dir().join(format!("horizon-mingw-unpack-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("foundry-mingw-unpack-{}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
         fs::create_dir_all(&dir).unwrap();
         let archive = dir.join("mingw.zip");
@@ -1601,7 +1601,7 @@ mod tests {
     #[test]
     fn an_llvm_mingw_zip_unpacks_to_its_managed_folder() {
         let dir =
-            std::env::temp_dir().join(format!("horizon-llvm-mingw-unpack-{}", std::process::id()));
+            std::env::temp_dir().join(format!("foundry-llvm-mingw-unpack-{}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
         fs::create_dir_all(&dir).unwrap();
         let archive = dir.join("llvm-mingw.zip");
@@ -1632,7 +1632,7 @@ mod tests {
 
     #[test]
     fn arm64_toolchain_is_incomplete_without_each_required_c_and_link_tool() {
-        let dir = std::env::temp_dir().join(format!("horizon-arm64-tools-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("foundry-arm64-tools-{}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
         let host = HOSTS
             .iter()
@@ -1662,7 +1662,7 @@ mod tests {
 
     #[test]
     fn the_command_puts_mingw_after_rust_when_the_toolchain_has_it() {
-        let dir = std::env::temp_dir().join(format!("horizon-mingw-path-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("foundry-mingw-path-{}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
         let host = HOSTS
             .iter()
@@ -1695,7 +1695,7 @@ mod tests {
     #[test]
     fn the_arm64_command_selects_managed_llvm_c_and_link_tools() {
         let dir = std::env::temp_dir().join(format!(
-            "horizon-arm64-toolchain-{} with spaces",
+            "foundry-arm64-toolchain-{} with spaces",
             std::process::id()
         ));
         let host = HOSTS
@@ -1840,20 +1840,20 @@ mod tests {
     /// exercises the downloaded host compiler, C dependencies, Windows imports and final linker.
     #[cfg(all(target_os = "windows", target_arch = "aarch64"))]
     #[test]
-    #[ignore = "downloads the managed Windows ARM64 toolchain and builds Horizon"]
+    #[ignore = "downloads the managed Windows ARM64 toolchain and builds Foundry Client"]
     fn managed_arm64_toolchain_builds_the_game() {
-        let home = std::env::var_os("HORIZON_LAUNCHER_HOME").map_or_else(
+        let home = std::env::var_os("FOUNDRY_LAUNCHER_HOME").map_or_else(
             || {
                 std::env::temp_dir().join(format!(
-                    "horizon-managed-native-arm64-{}",
+                    "foundry-managed-native-arm64-{}",
                     std::process::id()
                 ))
             },
             PathBuf::from,
         );
         let _ = fs::create_dir_all(&home);
-        std::env::set_var("HORIZON_LAUNCHER_HOME", &home);
-        let target_dir = std::env::var_os("HORIZON_NATIVE_TARGET_DIR").map_or_else(
+        std::env::set_var("FOUNDRY_LAUNCHER_HOME", &home);
+        let target_dir = std::env::var_os("FOUNDRY_NATIVE_TARGET_DIR").map_or_else(
             || backend::build_dir().join("managed-native-target"),
             PathBuf::from,
         );
@@ -1873,11 +1873,11 @@ mod tests {
                 "--locked",
                 "--profile",
                 "fast",
-                // The game's `horizon-client` bin is in the horizon-game package.
+                // The game's `foundry-client` bin is in the foundry-game package.
                 "-p",
-                "horizon-game",
+                "foundry-game",
                 "--bin",
-                "horizon-client",
+                "foundry-client",
             ])
             .env("CARGO_TARGET_DIR", &target_dir)
             .env(
@@ -1905,7 +1905,7 @@ mod tests {
     #[test]
     fn ensure_tool_links_links_libllvm_for_apple_darwin() {
         let dir =
-            std::env::temp_dir().join(format!("horizon-toolchain-link-{}", std::process::id()));
+            std::env::temp_dir().join(format!("foundry-toolchain-link-{}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
         let host = HOSTS
             .iter()
@@ -1939,7 +1939,7 @@ mod tests {
     #[test]
     fn ensure_tool_links_noop_for_non_darwin() {
         let dir = std::env::temp_dir().join(format!(
-            "horizon-toolchain-non-darwin-{}",
+            "foundry-toolchain-non-darwin-{}",
             std::process::id()
         ));
         let _ = fs::remove_dir_all(&dir);

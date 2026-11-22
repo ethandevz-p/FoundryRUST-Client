@@ -34,16 +34,16 @@ def main():
     report.unlink(missing_ok=True)
     sources = [lab.ROOT / path for path in (
         'tools/test_inline_object_parity.py',
-        'crates/horizon-client-render/src/hud.rs',
-        'crates/horizon-client/examples/probe/inline_object_fixture.rs',
-        'mods/horizon/src/test/java/dev/horizonlab/parity/VanillaInlineObjectOracle.java')]
+        'crates/foundry-client-render/src/hud.rs',
+        'crates/foundry-client/examples/probe/inline_object_fixture.rs',
+        'mods/foundry/src/test/java/dev/foundrylab/parity/VanillaInlineObjectOracle.java')]
     tested = base.source_hashes(sources)
     inputs, count = make_input(build)
     classes, dependencies, _ = harness.compile_oracle(
         build, 'VanillaInlineObjectOracle', jars, baking.client_libraries(), lock['minecraft']['java_major'])
     harness.java_run(build, classes, dependencies, 'VanillaInlineObjectOracle',
                      [inputs, build / 'client.txt'], 'client')
-    harness.run_logged(['cargo', 'build', '--locked', '-p', 'horizon-client-lib', '--example', 'client_probe'],
+    harness.run_logged(['cargo', 'build', '--locked', '-p', 'foundry-client-lib', '--example', 'client_probe'],
                        build, 'compile-rust')
     harness.run_logged([lab.cargo_target() / 'debug/examples/client_probe', 'inline_object_fixture',
                         inputs, build / 'rust.txt'], build, 'rust')

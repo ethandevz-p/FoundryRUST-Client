@@ -178,7 +178,7 @@ def groups():
         target = f'@e[type={kind},limit=1]'
         for saved in ('', ',Fire:100s', ',Fire:0s', ',Fire:-5s', ',Fire:"bad"'):
             # Fangs and eyes of ender keep a non-numeric Fire as written; vanilla reads it as 0.
-            # That is how Horizon stores their loaded tags, not part of this change.
+            # That is how Foundry Client stores their loaded tags, not part of this change.
             if saved.endswith('"bad"') and kind != 'area_effect_cloud':
                 continue
             fire.extend([

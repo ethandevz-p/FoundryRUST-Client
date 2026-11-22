@@ -1,4 +1,4 @@
-//! The Mods page's project page, search filters and project icons (`horizon_launcher::browser`:
+//! The Mods page's project page, search filters and project icons (`foundry_launcher::browser`:
 //! `details` for the data, `images` for the icons and gallery). Drawn only with the launcher's
 //! shared components, so a restyle of those restyles this.
 //!
@@ -12,7 +12,7 @@
 use super::mods_page::{Checking, Event};
 use super::*;
 use gpui::img;
-use horizon_launcher::browser::{
+use foundry_launcher::browser::{
     self,
     details::{self, Details, Environment, Filters, Image, Sort, Tags},
     images, java, Kind as PackKind, Project, SourceId, Support, Version,
@@ -63,7 +63,7 @@ const CATEGORY_NAMES: &[&str] = &[
 ];
 
 /// A category's name in the launcher's language: the tables' translation of its words where they
-/// have one (Modrinth's names), else the name playhorizon.dev gives it.
+/// have one (Modrinth's names), else the name playfoundry.dev gives it.
 fn category_name(slug: &str) -> String {
     if slug
         .strip_suffix("x-")
@@ -111,7 +111,7 @@ pub(super) struct Opened {
     versions: Option<Result<Arc<[ProjectVersion]>, String>>,
     pub(super) pack_review: Option<Result<browser::installed::PackReview, String>>,
     version_list: cull::Cull,
-    checked_versions: HashMap<String, horizon_port_pack::check::Verdict>,
+    checked_versions: HashMap<String, foundry_port_pack::check::Verdict>,
     /// The gallery image shown large.
     shot: usize,
 }
@@ -120,7 +120,7 @@ pub(super) struct Opened {
 #[derive(Clone)]
 pub(super) struct ProjectVersion {
     version: Version,
-    verdict: Option<horizon_port_pack::check::Verdict>,
+    verdict: Option<foundry_port_pack::check::Verdict>,
 }
 
 /// The project page, filters and images' share of the Mods page's state.
@@ -157,7 +157,7 @@ pub(super) enum Loaded {
     Checked(
         (SourceId, String),
         String,
-        horizon_port_pack::check::Verdict,
+        foundry_port_pack::check::Verdict,
     ),
     Image((String, u32), Option<PathBuf>),
     Tags((SourceId, PackKind), Result<Tags, String>),
@@ -340,9 +340,9 @@ impl Launcher {
 
     /// The orders the current source can sort by, "Best match" first.
     pub(super) fn mods_sorts(&self) -> Vec<(Option<Sort>, &'static str)> {
-        let own = self.mods.source() == SourceId::Horizon;
+        let own = self.mods.source() == SourceId::Foundry Client;
         let all: &[Sort] = if own {
-            &browser::horizon::SORTS
+            &browser::foundry::SORTS
         } else {
             &Sort::ALL
         };
@@ -451,7 +451,7 @@ impl Launcher {
         wrap
     }
 
-    /// The filter bar: sort always (Horizon's registry has its own bar); loader, version,
+    /// The filter bar: sort always (Foundry Client's registry has its own bar); loader, version,
     /// environment and categories when shown, only categories and tags for the registry. While
     /// the panel is closed, what is picked stays in view as chips that each remove theirs.
     pub(super) fn mods_filters(&mut self, cx: &mut Context<Self>) -> Div {
@@ -459,7 +459,7 @@ impl Launcher {
         let f = self.mods.browse.filters.clone();
         let sorts = self.mods_sorts();
         let source = self.mods.source();
-        let registry = source == SourceId::Horizon;
+        let registry = source == SourceId::Foundry Client;
         let resource = source == SourceId::Modrinth && self.mods.kind == PackKind::ResourcePack;
         let shader = source == SourceId::Modrinth && self.mods.kind == PackKind::Shader;
         let hide_modded = resource && !self.mods.everything && self.mods.java.is_none();
@@ -768,7 +768,7 @@ impl Launcher {
         if let Some(Ok(d)) = &details {
             // A registry project has no followers: its source repository's stars stand beside its
             // rating instead, as a star and a number (`mods_page::stars`).
-            if p.source != SourceId::Horizon {
+            if p.source != SourceId::Foundry Client {
                 meta.push(trf(
                     "{count} followers",
                     &[("count", &thousands(d.followers))],
@@ -878,8 +878,8 @@ impl Launcher {
             .child(head);
         // Registry projects are rated on the site, signed in with GitHub (one rating per account),
         // and starred on their source repository, which the player does there themselves.
-        if p.source == SourceId::Horizon {
-            let url = browser::horizon::rate_url(&p.id);
+        if p.source == SourceId::Foundry Client {
+            let url = browser::foundry::rate_url(&p.id);
             let repo = match &details {
                 Some(Ok(d)) => d.github.as_ref().map(|g| g.url.clone()),
                 _ => None,

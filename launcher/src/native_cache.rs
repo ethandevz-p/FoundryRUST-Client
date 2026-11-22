@@ -45,15 +45,15 @@ pub(crate) struct Cache {
     _lease: std::sync::Arc<Locked>,
 }
 
-pub(crate) use horizon_platform::mod_package::locks::{LockMode, Locked, Release};
+pub(crate) use foundry_platform::mod_package::locks::{LockMode, Locked, Release};
 
-pub(crate) use horizon_platform::mod_package::runtime_leases::linked;
+pub(crate) use foundry_platform::mod_package::runtime_leases::linked;
 pub(crate) fn checked(path: &Path, directory: bool) -> Result<Option<Metadata>, Error> {
-    horizon_platform::mod_package::runtime_leases::checked(path, directory).map_err(Into::into)
+    foundry_platform::mod_package::runtime_leases::checked(path, directory).map_err(Into::into)
 }
-impl From<horizon_platform::mod_package::runtime_leases::Error> for Error {
-    fn from(error: horizon_platform::mod_package::runtime_leases::Error) -> Self {
-        use horizon_platform::mod_package::runtime_leases::Error as Shared;
+impl From<foundry_platform::mod_package::runtime_leases::Error> for Error {
+    fn from(error: foundry_platform::mod_package::runtime_leases::Error) -> Self {
+        use foundry_platform::mod_package::runtime_leases::Error as Shared;
         match error {
             Shared::Busy => Self::Busy,
             Shared::UnsupportedFilesystem => Self::UnsupportedFilesystem(None),
@@ -140,7 +140,7 @@ fn native_root(build_dir: &Path) -> Result<(PathBuf, Dir), Error> {
 }
 
 pub(crate) fn locked(file: File, mode: LockMode) -> Result<Locked, Error> {
-    horizon_platform::mod_package::locks::locked(file, mode).map_err(|error| match error {
+    foundry_platform::mod_package::locks::locked(file, mode).map_err(|error| match error {
         fs::TryLockError::WouldBlock => Error::Busy,
         fs::TryLockError::Error(error) => Error::Io(error),
     })

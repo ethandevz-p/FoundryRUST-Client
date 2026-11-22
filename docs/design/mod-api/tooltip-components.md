@@ -1,15 +1,15 @@
 # Design: tooltip components in full
 
-Provisional contract for arismoko/horizon#2927. This page proposes an API, not an implemented
-feature. The issue and maintainer's contract supplied in the arismoko/horizon#3129 review govern this
+Provisional contract for arismoko/foundry#2927. This page proposes an API, not an implemented
+feature. The issue and maintainer's contract supplied in the arismoko/foundry#3129 review govern this
 proposal. Public NeoForge evidence is distinguished from that supplied contract;
 no NeoForge implementation source or patches are needed to adopt the contract.
 
 ## Current owners and baseline
 
 Every file:line below was re-verified against fetched fork main `4ee6ab60696fda68c1d99b05ffd972edec0b9a74`.
-`TooltipImageSource` is not on that main. This design depends on PR arismoko/horizon#2974
-landing first; the arismoko/horizon#2927 build must come after it. PR arismoko/horizon#2974
+`TooltipImageSource` is not on that main. This design depends on PR arismoko/foundry#2974
+landing first; the arismoko/foundry#2927 build must come after it. PR arismoko/foundry#2974
 (`fix/bundle-tooltip-element`): `TooltipImage.stack` becomes
 `source: TooltipImageSource { ItemPart(ItemStack), Bundle(ItemStack) }`.
 The bundle enters the same ordered list at `components.isEmpty() ? 0 : 1`;
@@ -18,15 +18,15 @@ type and data, rather than adding another item-dispatched special case.
 
 | Contract | Today's owner | Required change |
 | --- | --- | --- |
-| Item font, then Pre font, controls measurement | `crates/horizon-mod-vocab/src/hooks/render_tooltip_pre.rs:21`; `crates/horizon-client/src/game/blocks/stations/tooltip.rs:48`, `:137`, `:212` | Pre currently has no font field; wrapping and widths use the atlas font. Carry the selected font explicitly. |
-| Exact component-type factory, arbitrary data | `crates/horizon-mod-vocab/src/hooks/tooltip_component.rs:16`, `tooltip_component_draw.rs:18`; `crates/horizon-mod-vocab/src/item/tooltip_element.rs:24` | Replace item-keyed sizing/drawing parts and stack-only data with registration-time typed factories. |
-| Height, width, text drawing and image drawing | `crates/horizon-client/src/game/blocks/stations/tooltip.rs:134`, `:149`, `:244` | The two loops exist, but custom images only receive the image pass. Call both methods on each prepared custom component. |
-| Only text wraps, once | `crates/horizon-client/src/game/blocks/stations/tooltip.rs:183`, `:218`, `:229`; `crates/horizon-client/src/game/blocks/stations.rs:12` | Text currently splits when max_width is nonnegative; invalid image sizes silently disappear. Preserve components, refuse invalid mod output explicitly, and wrap before Pre under the supplied contract. |
-| Whole-tooltip cancellation | `crates/horizon-mod-vocab/src/hooks/render_tooltip_gather_components.rs:21`, `render_tooltip_pre.rs:21`, `render_tooltip_texture.rs:18`; `crates/horizon-client/src/game/blocks/stations/tooltip.rs:57`, `:209` | Gather empties the list; Pre skips the whole tooltip; neither component callback has cancellation. Texture stays noncancellable. |
+| Item font, then Pre font, controls measurement | `crates/foundry-mod-vocab/src/hooks/render_tooltip_pre.rs:21`; `crates/foundry-client/src/game/blocks/stations/tooltip.rs:48`, `:137`, `:212` | Pre currently has no font field; wrapping and widths use the atlas font. Carry the selected font explicitly. |
+| Exact component-type factory, arbitrary data | `crates/foundry-mod-vocab/src/hooks/tooltip_component.rs:16`, `tooltip_component_draw.rs:18`; `crates/foundry-mod-vocab/src/item/tooltip_element.rs:24` | Replace item-keyed sizing/drawing parts and stack-only data with registration-time typed factories. |
+| Height, width, text drawing and image drawing | `crates/foundry-client/src/game/blocks/stations/tooltip.rs:134`, `:149`, `:244` | The two loops exist, but custom images only receive the image pass. Call both methods on each prepared custom component. |
+| Only text wraps, once | `crates/foundry-client/src/game/blocks/stations/tooltip.rs:183`, `:218`, `:229`; `crates/foundry-client/src/game/blocks/stations.rs:12` | Text currently splits when max_width is nonnegative; invalid image sizes silently disappear. Preserve components, refuse invalid mod output explicitly, and wrap before Pre under the supplied contract. |
+| Whole-tooltip cancellation | `crates/foundry-mod-vocab/src/hooks/render_tooltip_gather_components.rs:21`, `render_tooltip_pre.rs:21`, `render_tooltip_texture.rs:18`; `crates/foundry-client/src/game/blocks/stations/tooltip.rs:57`, `:209` | Gather empties the list; Pre skips the whole tooltip; neither component callback has cancellation. Texture stays noncancellable. |
 
-`crates/horizon-mod-vocab/src/hooks/notes.rs:1744–1750` describes the old
+`crates/foundry-mod-vocab/src/hooks/notes.rs:1744–1750` describes the old
 stack-based contract and must change with implementation. The adapters are
-`crates/horizon-client/src/game/native_hooks/base.rs:3377`, `:3387`, and
+`crates/foundry-client/src/game/native_hooks/base.rs:3377`, `:3387`, and
 `native_hooks/render_tooltip_{gather_components,pre,texture}.rs:15`, `:9`, `:9`.
 
 All item routes converge on `draw_stack_tooltip_with` (`tooltip.rs:82`), including
@@ -35,7 +35,7 @@ trades (`game/items/trading.rs:908`), creative (`game/interface/creative_screen.
 chat hover (`game/interface/chat.rs:1805`), statistics
 (`game/interface/stats_screen.rs:670`), native panels
 (`game/modding/native_panel.rs:518`) and dialogs (`game/interface/dialogs.rs:776`).
-Paths in this paragraph are relative to `crates/horizon-client/src/` unless qualified.
+Paths in this paragraph are relative to `crates/foundry-client/src/` unless qualified.
 Text-only tooltips converge on `game/blocks/stations.rs:2867`; creative tab labels
 also have `game/interface/creative_screen.rs:59`. Both must use the selected-font
 Pre/measure/draw path. Recipe-book labels (`game/items/recipe_book.rs:2016`,
@@ -136,7 +136,7 @@ the widest text element (components contribute zero), applies screen fitting,
 then a positive maximum-width cap. The maintainers have supplied the screen-fit
 complete rule below; no screen-fit arithmetic remains open.
 Pre's font controls final measurement and drawing.
-These are accepted contract facts from the arismoko/horizon#3129 review, not a claim to have
+These are accepted contract facts from the arismoko/foundry#3129 review, not a claim to have
 independently verified NeoForge internals. No NeoForge source or patches were
 consulted. The [public GUI tooltip documentation](https://docs.neoforged.net/docs/gui/tooltips/)
 was inaccessible; this does not leave the supplied contract open.
@@ -160,7 +160,7 @@ Gather may insert the same type with different payloads anywhere in the list.
 
 Replace `TooltipImageSource::ItemPart` with a registered component source carrying
 an API-owned type key and opaque Wire-encoded payload. Keep bundle as the built-in
-source from arismoko/horizon#2974 until it can use the same internal dispatch without changing its
+source from arismoko/foundry#2974 until it can use the same internal dispatch without changing its
 vanilla result. A typed registrar hides byte encoding from mod authors; arbitrary
 user data means any supported Wire schema, not native pointers, Java objects or
 unbounded allocation. New keys, payload envelopes, selected-font references,
@@ -200,11 +200,11 @@ inside Pre has its existing semantics, separate from component cancellation.
 
 ## Bounds, failure and unused cost
 
-Use existing codec bounds only: `crates/horizon-mod-vocab/src/wire/mod.rs:4`
+Use existing codec bounds only: `crates/foundry-mod-vocab/src/wire/mod.rs:4`
 specifies u32 collection lengths, checked against available encoded bytes;
 `:92` owns `MAX_DEPTH = 32`; `:477` validates lengths against the remaining input.
 Text conversion separately owns `MAX_TEXT_DEPTH = 512` at
-`crates/horizon-mod-vocab/src/text/mod.rs:476`. Do not turn those into a new tooltip
+`crates/foundry-mod-vocab/src/text/mod.rs:476`. Do not turn those into a new tooltip
 count, pixel, payload-byte or screen-width cap. Payloads retain the owning Wire
 transport's configured budget. Native inputs receive the same structural checks.
 
@@ -347,7 +347,7 @@ there is no pending overflow-boundary row.
 
 ## Stages
 
-1. Land arismoko/horizon#2974 first, then implement arismoko/horizon#2927 on that ordered-source shape using
+1. Land arismoko/foundry#2974 first, then implement arismoko/foundry#2927 on that ordered-source shape using
    the complete supplied screen-fit contract.
 2. Add the once-only client registrar before first resource load, Wire envelope,
    font reference and prepared component interface on native and wasm together.
@@ -359,7 +359,7 @@ there is no pending overflow-boundary row.
 
 ## Build issue
 
-The arismoko/horizon#2927 implementation starts only after arismoko/horizon#2974 lands, and carries stages 2–4
+The arismoko/foundry#2927 implementation starts only after arismoko/foundry#2974 lands, and carries stages 2–4
 as one complete native/wasm contract: registrar, Wire data envelope, font reference,
 prepared component, removal of both old parts with every caller and the catalog,
 shared item/text-only preparation, a no-listener fast path that is vanilla apart from the screen-fit wrap, and a book

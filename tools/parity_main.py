@@ -33,7 +33,7 @@ import sys
 import time
 
 ROOT = Path(__file__).resolve().parents[1]
-REPO = os.environ.get("GITHUB_REPOSITORY", "horizon-rust/horizon")
+REPO = os.environ.get("GITHUB_REPOSITORY", "foundry-rust/foundry")
 LAST_RUN = ROOT / ".local" / "parity-runner" / "last-run.json"
 # {"since": the base, "results": {commit: {harness: it failed there}}, "named": {harness: the merge commented on}}
 BISECT = ROOT / ".local" / "parity-runner" / "bisect.json"

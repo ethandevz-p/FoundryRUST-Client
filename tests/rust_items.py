@@ -1,4 +1,4 @@
-"""Find a Rust function by name, wherever it lives under `crates/` (arismoko/horizon#4026).
+"""Find a Rust function by name, wherever it lives under `crates/` (arismoko/foundry#4026).
 
 Tests that paste a real function into a Rust fixture ask for it by name, not by file path,
 so moving the function to another file breaks no test. These fixtures are a stopgap until
@@ -39,7 +39,7 @@ def _in_impl_of(text, at, owner):
 def rust_fn(name, under="crates", owner=None):
     """The one function `name` defined under `under`, from its `fn` to its closing brace.
 
-    `owner` narrows the search: a crate folder name (`horizon-client`) searches only that
+    `owner` narrows the search: a crate folder name (`foundry-client`) searches only that
     crate, any other name (`Game`) only methods of a top-level `impl` of that type. Only the
     visibility is dropped (`pub(in crate::game) fn x(` comes back as `fn x(`), so a fixture
     can paste it into its own `impl`. Any second definition is refused, as is a missing one.

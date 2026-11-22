@@ -34,17 +34,17 @@ corrected, is a warning: `cx.warn("mymod.warn.no_jei", &["jei"])` inside `Hooks:
 ## Native startup and hook panics
 
 The launcher supplies ordered mod IDs and hook factories to the installed game's
-[native entry template](https://github.com/horizon-rust/horizon/blob/main/crates/horizon-client/src/native_main.rs.template).
+[native entry template](https://github.com/foundry-rust/foundry/blob/main/crates/foundry-client/src/native_main.rs.template).
 The template constructs `ModEntry::new("example", example::hooks())` entries and passes them to
-`horizon_mod_host::main_with`. `Mods` is `Arc<[ModEntry]>`: each entry binds its ID to its hooks.
+`foundry_mod_host::main_with`. `Mods` is `Arc<[ModEntry]>`: each entry binds its ID to its hooks.
 Before installation, `mod_api::mods()` returns an empty list.
 
 Game source without the required template is refused before mod staging with:
-“This game source has no native inventory entry template. Update Horizon and rebuild the mods
+“This game source has no native inventory entry template. Update Foundry Client and rebuild the mods
 against this game.”
 
 A native hook panic stops the game. Its crash report and server-thread log identify
-`in native mod <id>, hook <hook>`, using the `horizon-mod.toml` ID. Parts retain their registering
+`in native mod <id>, hook <hook>`, using the `foundry-mod.toml` ID. Parts retain their registering
 mod's ID for startup errors and hook panics.
 
 ## Crash-report callbacks
@@ -53,7 +53,7 @@ Register callbacks inside `Hooks::register` (the counterpart to NeoForge's `Cras
 
 | Registration | Report output |
 | --- | --- |
-| `r.crash_section("caches", Arc::new(Caches))` | `<mod id>: caches: <value>` after Horizon's system details |
+| `r.crash_section("caches", Arc::new(Caches))` | `<mod id>: caches: <value>` after Foundry Client's system details |
 | `r.crash_header(Arc::new(Banner))` | `<mod id>: <value>` under the report title |
 
 Both callbacks implement `CrashSection`. The report calls `value()` once when it is written,

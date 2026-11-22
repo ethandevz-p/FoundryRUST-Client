@@ -1,6 +1,6 @@
 [book]
-title = "Modding Horizon"
-description = "Guide and reference for making Horizon mods: content, native and WebAssembly"
+title = "Modding Foundry Client"
+description = "Guide and reference for making Foundry Client mods: content, native and WebAssembly"
 language = "en"
 src = "src"
 
@@ -65,9 +65,9 @@ before = ["links"]
 [output.html]
 default-theme = "light"
 preferred-dark-theme = "coal"
-additional-css = ["theme/horizon.css"]
-git-repository-url = "https://github.com/horizon-rust/horizon"
-edit-url-template = "https://github.com/horizon-rust/horizon/edit/main/docs/modding/{path}"
+additional-css = ["theme/foundry.css"]
+git-repository-url = "https://github.com/foundry-rust/foundry"
+edit-url-template = "https://github.com/foundry-rust/foundry/edit/main/docs/modding/{path}"
 
 # The how-to groups are long: show each part's top chapters, open one to see its pages.
 [output.html.fold]

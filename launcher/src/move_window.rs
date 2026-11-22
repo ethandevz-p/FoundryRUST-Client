@@ -12,10 +12,10 @@ use gpui::{
     div, prelude::*, px, size, App, Bounds, Context, QuitMode, Render, Window, WindowBounds,
     WindowHandle, WindowOptions,
 };
-use horizon_launcher::backend::Appearance;
-use horizon_launcher::i18n::{tr, trf};
-use horizon_launcher::relocation::{Progress, Step, Worker};
-use horizon_launcher::themes::Accent;
+use foundry_launcher::backend::Appearance;
+use foundry_launcher::i18n::{tr, trf};
+use foundry_launcher::relocation::{Progress, Step, Worker};
+use foundry_launcher::themes::Accent;
 use std::cell::{Cell, RefCell};
 use std::io::Write;
 use std::path::PathBuf;
@@ -134,7 +134,7 @@ fn open(
         WindowOptions {
             window_bounds: Some(WindowBounds::Windowed(bounds)),
             is_resizable: false,
-            app_id: Some("horizon-launcher".into()),
+            app_id: Some("foundry-launcher".into()),
             ..Default::default()
         },
         |window, cx| {
@@ -169,7 +169,7 @@ impl Render for MoveWindow {
             .flex()
             .flex_col()
             .gap(px(12.))
-            .child(text(night::TITLE, c(n.ink)).child(tr("Moving Horizon's data").to_string()))
+            .child(text(night::TITLE, c(n.ink)).child(tr("Moving Foundry Client's data").to_string()))
             .children(self.target.as_ref().map(|target| {
                 text(theme::MICRO, c(n.muted))
                     .font_family(theme::MONO)

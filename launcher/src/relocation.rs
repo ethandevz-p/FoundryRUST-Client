@@ -100,7 +100,7 @@ fn ensure_idle(source: &Roots) -> Result<(), String> {
         .map_err(|e| format!("Couldn't check for background servers: {e}"))?;
     if !services.is_empty() {
         return Err(format!(
-            "Turn off running in the background on the Servers page, or run `horizon-server --dir <server folder> service uninstall` (add --system for a system service), before moving data: {}",
+            "Turn off running in the background on the Servers page, or run `foundry-server --dir <server folder> service uninstall` (add --system for a system service), before moving data: {}",
             services.join(", ")
         ));
     }
@@ -156,11 +156,11 @@ fn ensure_idle(source: &Roots) -> Result<(), String> {
         let managed = roots.iter().any(|root| command.contains(root));
         if matches!(
             name,
-            "horizon-client" | "horizon-server" | "horizon-prepare"
+            "foundry-client" | "foundry-server" | "foundry-prepare"
         ) || (managed
             && matches!(
                 name,
-                "java" | "javaw" | "cargo" | "rustc" | "horizon-mixins"
+                "java" | "javaw" | "cargo" | "rustc" | "foundry-mixins"
             ))
         {
             return Err(format!(
@@ -243,7 +243,7 @@ fn say(line: impl std::fmt::Display) {
     let _ = writeln!(std::io::stderr(), "{line}");
 }
 
-/// `horizon-launcher --relocate-data <target> [--restart]`, which the launcher's Move runs after
+/// `foundry-launcher --relocate-data <target> [--restart]`, which the launcher's Move runs after
 /// its window has closed.
 pub struct Worker {
     target: Option<PathBuf>,
@@ -351,18 +351,18 @@ impl Worker {
         if self.restart {
             let mut command = process::command(backend::exe_path());
             command
-                .env_remove("HORIZON_RELOCATION_ERROR")
-                .env_remove("HORIZON_RELOCATION_BACKUP")
-                .env_remove("HORIZON_RELOCATION_KEPT");
+                .env_remove("FOUNDRY_RELOCATION_ERROR")
+                .env_remove("FOUNDRY_RELOCATION_BACKUP")
+                .env_remove("FOUNDRY_RELOCATION_KEPT");
             match result {
                 Ok(backup) => {
-                    command.env("HORIZON_RELOCATION_BACKUP", backup);
+                    command.env("FOUNDRY_RELOCATION_BACKUP", backup);
                     if let Some(kept) = &kept {
-                        command.env("HORIZON_RELOCATION_KEPT", kept);
+                        command.env("FOUNDRY_RELOCATION_KEPT", kept);
                     }
                 }
                 Err(error) => {
-                    command.env("HORIZON_RELOCATION_ERROR", error);
+                    command.env("FOUNDRY_RELOCATION_ERROR", error);
                 }
             }
             if let Err(e) = command.spawn() {

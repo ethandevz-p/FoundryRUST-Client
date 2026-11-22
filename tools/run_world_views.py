@@ -18,25 +18,25 @@ def main():
     args = parser.parse_args()
     target = prebuilt_game.ROOT / "target" / "world-views"
     staged = prebuilt_game.stage(target)
-    crate = staged / "crates/horizon-client-render"
+    crate = staged / "crates/foundry-client-render"
     shutil.copy2(crate / "fixtures/world_views.rs",
                  crate / "examples/world_views.rs")
     if args.check_only:
-        subprocess.run(["cargo", "check", "-p", "horizon-client-render", "--example", "world_views"],
+        subprocess.run(["cargo", "check", "-p", "foundry-client-render", "--example", "world_views"],
                        cwd=staged, env=lab.game_env(CARGO_TARGET_DIR=target / "build"), check=True)
         return
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="homes-", dir=target) as home:
         homes = {}
-        for name in ("HORIZON_HOME", "HORIZON_LAUNCHER_HOME", "XDG_DATA_HOME", "XDG_CONFIG_HOME", "XDG_RUNTIME_DIR",
-                     "HORIZON_LAUNCHER_TRASH", "HORIZON_LAUNCHER_CLIPBOARD", "HORIZON_LAUNCHER_DESKTOP"):
+        for name in ("FOUNDRY_HOME", "FOUNDRY_LAUNCHER_HOME", "XDG_DATA_HOME", "XDG_CONFIG_HOME", "XDG_RUNTIME_DIR",
+                     "FOUNDRY_LAUNCHER_TRASH", "FOUNDRY_LAUNCHER_CLIPBOARD", "FOUNDRY_LAUNCHER_DESKTOP"):
             path = Path(home) / name
             path.mkdir(mode=0o700)
             homes[name] = str(path)
         env = lab.game_env(CARGO_TARGET_DIR=target / "build", **homes)
         subprocess.run(["cargo", "run", "--profile", "release" if args.bench else "dev", "-p",
-                        "horizon-client-render", "--example", "world_views", "--", str(output),
+                        "foundry-client-render", "--example", "world_views", "--", str(output),
                         *(["--bench"] if args.bench else [])],
                        cwd=staged, env=env, check=True)
 

@@ -11,7 +11,7 @@ from tools import lab
 from tools.pacing_bench import capture_frames, compare, frame_line, slowest_frames, stats
 
 FIXTURE = lab.ROOT / "tests/fixtures/pacing_slow_frames.hzperf"
-# The five slow frames of the fixture, written by hand in crates/horizon-perf/tests/pacing_fixture.rs.
+# The five slow frames of the fixture, written by hand in crates/foundry-perf/tests/pacing_fixture.rs.
 SLOWEST = [
     "slow frame 130.0 ms, cpu 18.0 ms: submit 110.0/1.0, tick 12.0",
     "slow frame 62.5 ms, cpu 60.0 ms: tick 50.0, update_world 8.0",
@@ -22,25 +22,25 @@ SLOWEST = [
 class MedianTests(unittest.TestCase):
     def test_an_even_number_of_runs_reports_the_median_not_the_upper_middle(self):
         def run(path, p50):
-            path.write_text(json.dumps({"label": "horizon", "distance": 10, "scenarios": {"fly16": {
+            path.write_text(json.dumps({"label": "foundry", "distance": 10, "scenarios": {"fly16": {
                 "p50_ms": p50, "p99_ms": p50, "p999_ms": p50, "max_ms": p50,
                 "low_1pct_fps": p50, "low_01pct_fps": p50, "over_33ms": 0}}}))
         with tempfile.TemporaryDirectory() as folder, mock.patch("tools.pacing_bench.WORK", Path(folder)):
-            run(Path(folder, "horizon-rd10-a.json"), 10.0)
-            run(Path(folder, "horizon-rd10-b.json"), 30.0)
+            run(Path(folder, "foundry-rd10-a.json"), 10.0)
+            run(Path(folder, "foundry-rd10-b.json"), 30.0)
             out = io.StringIO()
             with contextlib.redirect_stdout(out):
-                compare(["horizon"])
-        self.assertIn("| horizon | 2 | 20 |", out.getvalue())
+                compare(["foundry"])
+        self.assertIn("| foundry | 2 | 20 |", out.getvalue())
 
 
 def perf_binary():
-    """horizon-perf as built by `cargo build -p horizon-perf`, or None."""
-    named = os.environ.get("HORIZON_PERF_BIN")
+    """foundry-perf as built by `cargo build -p foundry-perf`, or None."""
+    named = os.environ.get("FOUNDRY_PERF_BIN")
     if named:
         return Path(named)
     for profile in ("fast", "debug", "release"):
-        path = lab.cargo_target() / profile / "horizon-perf"
+        path = lab.cargo_target() / profile / "foundry-perf"
         if path.exists():
             return path
     return None
@@ -87,7 +87,7 @@ class SlowFrameTests(unittest.TestCase):
         self.assertEqual(count, 1)
         self.assertEqual(lines, ["slow frame 40.0 ms, cpu 1.0 ms: load 40.0"])
 
-    @unittest.skipUnless(perf_binary(), "build horizon-perf (cargo build -p horizon-perf) or set HORIZON_PERF_BIN")
+    @unittest.skipUnless(perf_binary(), "build foundry-perf (cargo build -p foundry-perf) or set FOUNDRY_PERF_BIN")
     def test_a_fixture_capture_gives_its_slowest_frames_with_their_spans(self):
         reply = capture_frames(perf_binary(), FIXTURE)
         lines, count = slowest_frames(reply, 3, 20.0)

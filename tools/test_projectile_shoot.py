@@ -39,10 +39,10 @@ def main():
             '{Owner:$owner,Motion:[0.0d,-0.6d,0.0d]' + flag + '}')
         lines += ['at 3 ' + action, 'end']
         scenarios += lines
-    inputs, output = out / 'scenarios.txt', out / 'horizon.txt'
+    inputs, output = out / 'scenarios.txt', out / 'foundry.txt'
     inputs.write_text('\n'.join(scenarios) + '\n')
     with tempfile.TemporaryDirectory(prefix='hz-shoot-home-') as home, (out / 'game.log').open('w') as log:
-        env = dict(os.environ, HOME=home, HORIZON_SCULK_FIXTURE=f'{inputs},{output}')
+        env = dict(os.environ, HOME=home, FOUNDRY_SCULK_FIXTURE=f'{inputs},{output}')
         result = integration_env.run_game([args.bin.resolve(), '--resources', lab.RESOURCES],
                                           env=env, stdout=log, stderr=log, timeout=180)
         if result.returncode:

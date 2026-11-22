@@ -113,7 +113,7 @@ impl Fake {
 }
 
 fn home(name: &str) -> PathBuf {
-    let dir = std::env::temp_dir().join(format!("horizon-installed-{name}-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("foundry-installed-{name}-{}", std::process::id()));
     let _ = fs::remove_dir_all(&dir);
     fs::create_dir_all(&dir).unwrap();
     dir
@@ -443,7 +443,7 @@ fn java_mods_are_ported_turned_on_refused_on_clashes_and_removed() {
     let done = install(&fake, &fake.project("ruby").unwrap(), false, &home, NONE).unwrap();
     assert_eq!(done.len(), 1, "the library isn't installed");
     let entry = &done[0];
-    assert_eq!(entry.file, "horizon-mods/ruby");
+    assert_eq!(entry.file, "foundry-mods/ruby");
     assert_eq!(entry.verdict.as_deref(), Some("Works"));
     assert!(
         entry
@@ -454,9 +454,9 @@ fn java_mods_are_ported_turned_on_refused_on_clashes_and_removed() {
         entry.skipped
     );
     assert!(entry.namespaces.contains(&"ruby".to_owned()));
-    assert!(home.join("horizon-mods/ruby/horizon-mod.toml").is_file());
+    assert!(home.join("foundry-mods/ruby/foundry-mod.toml").is_file());
     assert_eq!(
-        fs::read_to_string(home.join("horizon-mods.txt")).unwrap(),
+        fs::read_to_string(home.join("foundry-mods.txt")).unwrap(),
         "mod.ruby:true\n"
     );
     // The jar isn't kept, its check is.
@@ -466,13 +466,13 @@ fn java_mods_are_ported_turned_on_refused_on_clashes_and_removed() {
 
     let clash = install(&fake, &fake.project("gem").unwrap(), false, &home, NONE).unwrap_err();
     assert!(clash.contains("shares its id or namespace"), "{clash}");
-    assert!(!home.join("horizon-mods/gem").exists());
+    assert!(!home.join("foundry-mods/gem").exists());
 
     let removed = remove(&home, "ruby").unwrap();
     assert_eq!(removed.kind, Kind::Mod);
-    assert!(!home.join("horizon-mods/ruby").exists());
+    assert!(!home.join("foundry-mods/ruby").exists());
     assert_eq!(
-        fs::read_to_string(home.join("horizon-mods.txt")).unwrap(),
+        fs::read_to_string(home.join("foundry-mods.txt")).unwrap(),
         ""
     );
     fs::remove_dir_all(&home).unwrap();
@@ -517,19 +517,19 @@ fn a_cached_refusal_of_a_hyphenated_id_is_checked_again() {
     let dir = home.join("mod-browser/checks-1").join(&sha[..40]);
     let jar_path = home.join("a-b.jar");
     fs::write(&jar_path, &jar).unwrap();
-    let mut old = horizon_port_pack::check::check(&jar_path, &dir).unwrap();
+    let mut old = foundry_port_pack::check::check(&jar_path, &dir).unwrap();
     let _ = fs::remove_dir_all(dir.join("carry"));
-    old.verdict = horizon_port_pack::check::Verdict::No;
+    old.verdict = foundry_port_pack::check::Verdict::No;
     old.summary = "Can't be carried over: mod id \"a-b\" is not [a-z0-9_]{1,64}: rename it before carrying over".into();
     fs::write(dir.join("check.json"), serde_json::to_string(&old).unwrap()).unwrap();
     let file = fake.versions.lock().unwrap()["ab"][0].files[0].clone();
     assert!(super::super::java::cached(&home, &file).is_none());
 
     let done = install(&fake, &fake.project("ab").unwrap(), false, &home, NONE).unwrap();
-    assert_eq!(done[0].file, "horizon-mods/a_b");
+    assert_eq!(done[0].file, "foundry-mods/a_b");
     assert_eq!(done[0].verdict.as_deref(), Some("Works"));
     assert!(home
-        .join("horizon-mods/a_b/assets/a-b/blockstates/chair.json")
+        .join("foundry-mods/a_b/assets/a-b/blockstates/chair.json")
         .is_file());
 
     // Any other cached refusal stands.
@@ -539,14 +539,14 @@ fn a_cached_refusal_of_a_hyphenated_id_is_checked_again() {
     fs::remove_dir_all(&home).unwrap();
 }
 
-/// A valid `.hmod` at `horizon-mods/.backup.hmod` whose manifest says mod id `a_b`: the game
+/// A valid `.hmod` at `foundry-mods/.backup.hmod` whose manifest says mod id `a_b`: the game
 /// finds it by its manifest, not its name.
 fn backup_archive(home: &Path) {
     use std::io::Write;
-    let path = home.join("horizon-mods/.backup.hmod");
+    let path = home.join("foundry-mods/.backup.hmod");
     fs::create_dir_all(path.parent().unwrap()).unwrap();
     let mut zip = zip::ZipWriter::new(fs::File::create(&path).unwrap());
-    zip.start_file("horizon-mod.toml", zip::write::SimpleFileOptions::default())
+    zip.start_file("foundry-mod.toml", zip::write::SimpleFileOptions::default())
         .unwrap();
     zip.write_all(
         b"id = \"a_b\"
@@ -559,12 +559,12 @@ capabilities = [\"registries\"]
     )
     .unwrap();
     zip.finish().unwrap();
-    let found = horizon_platform::mod_package::find(&home.join("horizon-mods"));
+    let found = foundry_platform::mod_package::find(&home.join("foundry-mods"));
     assert_eq!(found, std::slice::from_ref(&path));
-    let package = horizon_platform::mod_package::Package::read(&path).unwrap();
+    let package = foundry_platform::mod_package::Package::read(&path).unwrap();
     assert_eq!(package.manifest.id, "a_b");
     fs::write(
-        home.join("horizon-mods.txt"),
+        home.join("foundry-mods.txt"),
         "mod.a_b:true
 ",
     )
@@ -581,9 +581,9 @@ fn a_hyphenated_id_that_another_installed_mod_has_is_refused() {
         refused.contains("Another mod already uses the id a_b"),
         "{refused}"
     );
-    assert!(!home.join("horizon-mods/a_b").exists());
+    assert!(!home.join("foundry-mods/a_b").exists());
     assert_eq!(
-        fs::read_to_string(home.join("horizon-mods.txt")).unwrap(),
+        fs::read_to_string(home.join("foundry-mods.txt")).unwrap(),
         "mod.a_b:true
 "
     );
@@ -596,10 +596,10 @@ fn an_install_interrupted_before_publishing_can_be_retried() {
     let home = home("hyphen-retry");
     let (fake, _) = hyphenated_mod();
     // What a failed move into place leaves: the staging copy, with its manifest.
-    let part = home.join("horizon-mods/.a_b.part");
+    let part = home.join("foundry-mods/.a_b.part");
     fs::create_dir_all(&part).unwrap();
     fs::write(
-        part.join("horizon-mod.toml"),
+        part.join("foundry-mod.toml"),
         "id = \"a_b\"
 name = \"a-b\"
 version = \"1.0\"
@@ -609,18 +609,18 @@ capabilities = [\"registries\"]
 ",
     )
     .unwrap();
-    let found = horizon_platform::mod_package::find(&home.join("horizon-mods"));
+    let found = foundry_platform::mod_package::find(&home.join("foundry-mods"));
     assert_eq!(found, std::slice::from_ref(&part));
     assert_eq!(
-        horizon_platform::mod_package::Package::read(&part)
+        foundry_platform::mod_package::Package::read(&part)
             .unwrap()
             .manifest
             .id,
         "a_b"
     );
     let done = install(&fake, &fake.project("ab").unwrap(), false, &home, NONE).unwrap();
-    assert_eq!(done[0].file, "horizon-mods/a_b");
-    assert!(home.join("horizon-mods/a_b/horizon-mod.toml").is_file());
+    assert_eq!(done[0].file, "foundry-mods/a_b");
+    assert!(home.join("foundry-mods/a_b/foundry-mod.toml").is_file());
     assert!(!part.exists());
     fs::remove_dir_all(&home).unwrap();
 }
@@ -651,10 +651,10 @@ fn a_refused_install_installs_none_of_its_dependencies() {
         refused.contains("Another mod already uses the id a_b"),
         "{refused}"
     );
-    assert!(!home.join("horizon-mods/ruby").exists());
-    assert!(!home.join("horizon-mods/a_b").exists());
+    assert!(!home.join("foundry-mods/ruby").exists());
+    assert!(!home.join("foundry-mods/a_b").exists());
     assert_eq!(
-        fs::read_to_string(home.join("horizon-mods.txt")).unwrap(),
+        fs::read_to_string(home.join("foundry-mods.txt")).unwrap(),
         "mod.a_b:true
 "
     );
@@ -754,7 +754,7 @@ fn data_packs_go_into_a_world_when_something_in_them_runs() {
         .unwrap();
     assert_eq!(
         refused,
-        "Pack terrain would change nothing in Horizon yet: Horizon doesn't read its 1 worldgen \
+        "Pack terrain would change nothing in Foundry Client yet: Foundry Client doesn't read its 1 worldgen \
          world preset."
     );
     // A pack of only recipes, or only worldgen, now does something.

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Map vanilla classes to the Horizon code that ports them and the harnesses that prove it
+"""Map vanilla classes to the Foundry Client code that ports them and the harnesses that prove it
 (docs/version-ports.md).
 
 Three sources, all in the repository:
@@ -7,7 +7,7 @@ Three sources, all in the repository:
 - Rust comments: a CamelCase name in a `//` comment that is exactly one vanilla class's simple name (or
   `Outer.Inner`), or any class name followed by `.member`, `::member` or `#member`, maps that file (and the
   member, when named) to the class.
-- Java oracles (mods/horizon/src/test/java/dev/horizonlab/parity): the vanilla classes each one imports or
+- Java oracles (mods/foundry/src/test/java/dev/foundrylab/parity): the vanilla classes each one imports or
   names in full; a harness uses the oracles its script names, and those its recorded parity dependencies list.
 - Harness probes: the crate examples and binaries a harness script names, and the modules they `use`; the
   harness proves those files, so it covers the classes they name.
@@ -24,11 +24,11 @@ import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
-ORACLES = "mods/horizon/src/test/java/dev/horizonlab/parity"
+ORACLES = "mods/foundry/src/test/java/dev/foundrylab/parity"
 COMMENT_NAME = re.compile(r"\b([A-Z][A-Za-z0-9]*)(?:(?:\.|::|#)([A-Za-z][A-Za-z0-9]*))?")
 JAVA_IMPORT = re.compile(r"\bimport\s+(static\s+)?((?:net\.minecraft|com\.mojang)\.[\w.]+?)(\.\*)?\s*;")
 JAVA_QUALIFIED = re.compile(r"\b((?:net\.minecraft|com\.mojang)(?:\.[a-z][a-z0-9_]*)+(?:\.[A-Z]\w*)+)")
-RUST_USE = re.compile(r"\b(horizon_[a-z_]+|crate)((?:::[a-z_][a-z0-9_]*)+)")
+RUST_USE = re.compile(r"\b(foundry_[a-z_]+|crate)((?:::[a-z_][a-z0-9_]*)+)")
 # Comment markers and literal openers, in the order a Rust line is scanned. Group 1 is a raw string's `#` run.
 COMMENT_TOKEN = re.compile(r'(?<![\w])[bc]?r(#*)"|//|/\*|"|\'')
 STRING_REST = re.compile(r'(?:[^"\\]|\\.)*"', re.S)

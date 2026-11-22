@@ -41,10 +41,10 @@ class ParityRunnerTests(unittest.TestCase):
 
     def test_artifacts_keep_the_package_and_feature_selection(self):
         self.assertEqual(parity.artifacts_of(["cargo", "build", "--locked", "--profile=fast", "-j", "4", "--package",
-                                              "horizon-client", "--bins", "-F", "x"]),
-                         [["bins", "", "fast", ["-p", "horizon-client", "--features", "x"], False]])
-        self.assertEqual(parity.artifacts_of(["cargo", "build", "--release", "-p", "horizon-world", "--bin=horizon-world"]),
-                         [["bin", "horizon-world", "release", ["-p", "horizon-world"], False]])
+                                              "foundry-client", "--bins", "-F", "x"]),
+                         [["bins", "", "fast", ["-p", "foundry-client", "--features", "x"], False]])
+        self.assertEqual(parity.artifacts_of(["cargo", "build", "--release", "-p", "foundry-world", "--bin=foundry-world"]),
+                         [["bin", "foundry-world", "release", ["-p", "foundry-world"], False]])
 
     def test_artifacts_keep_combined_short_package_and_feature_flags(self):
         combined = parity.artifacts_of(["cargo", "run", "-pfoo", "-Ffeat", "--example", "p"])
@@ -59,172 +59,172 @@ class ParityRunnerTests(unittest.TestCase):
     def test_a_harnesses_cargo_test_is_recorded_with_its_selection_and_target_filters(self):
         commands = [
             # A test name filter before `--`, the test binary's arguments after it.
-            ["cargo", "test", "--locked", "-p", "horizon-client-lib", "--lib", "mobs::poi::vanilla_bed", "--",
+            ["cargo", "test", "--locked", "-p", "foundry-client-lib", "--lib", "mobs::poi::vanilla_bed", "--",
              "--include-ignored", "--nocapture"],
             # Output, job and run flags key no unit: the same selection as a plain run.
-            ["cargo", "test", "--profile", "fast", "-p", "horizon-client", "--lib", "--no-run",
+            ["cargo", "test", "--profile", "fast", "-p", "foundry-client", "--lib", "--no-run",
              "--message-format=json", "-j", "2"],
-            ["cargo", "test", "--profile=fast", "--package=horizon-client", "-j2", "--lib", "other_test"],
-            ["/usr/bin/cargo", "test", "-phorizon-client", "--lib", "--no-default-features", "--test", "wire"],
-            ["cargo", "test", "--manifest-path", str(parity.ROOT / "Cargo.toml"), "-p", "horizon-world", "--release",
+            ["cargo", "test", "--profile=fast", "--package=foundry-client", "-j2", "--lib", "other_test"],
+            ["/usr/bin/cargo", "test", "-pfoundry-client", "--lib", "--no-default-features", "--test", "wire"],
+            ["cargo", "test", "--manifest-path", str(parity.ROOT / "Cargo.toml"), "-p", "foundry-world", "--release",
              "--lib"],
-            ["cargo", "build", "-p", "horizon-client", "--lib"],  # a build is an artifact, not a test
+            ["cargo", "build", "-p", "foundry-client", "--lib"],  # a build is an artifact, not a test
             ["cargo", "test", "--lib", "x"],  # no -p: which package depends on the harness's working folder
             ["cargo", "test", "--manifest-path", "/elsewhere/Cargo.toml", "-p", "probe", "--lib"],
-            ["cargo", "test", "--manifest-path", "Cargo.toml", "-p", "horizon-world", "--lib"],  # relative to which folder?
-            ["cargo", "test", "-p", "horizon-client", "--doc"],  # compiled when run
-            ["cargo", "test", "-p", "horizon-client", "--target-dir", "/t", "--lib"],  # unknown: not repeated
+            ["cargo", "test", "--manifest-path", "Cargo.toml", "-p", "foundry-world", "--lib"],  # relative to which folder?
+            ["cargo", "test", "-p", "foundry-client", "--doc"],  # compiled when run
+            ["cargo", "test", "-p", "foundry-client", "--target-dir", "/t", "--lib"],  # unknown: not repeated
             # A harness that forbids the network keeps that in its prebuild.
-            ["cargo", "test", "--frozen", "-p", "horizon-world", "--lib"],
+            ["cargo", "test", "--frozen", "-p", "foundry-world", "--lib"],
         ]
         self.assertEqual(parity.cargo_tests(commands), [
-            ["-p", "horizon-client-lib", "--lib"],
-            ["--profile", "fast", "-p", "horizon-client", "--lib"],
-            ["-p", "horizon-client", "--no-default-features", "--lib", "--test", "wire"],
-            ["--release", "-p", "horizon-world", "--lib"],
-            ["--offline", "-p", "horizon-world", "--lib"],
+            ["-p", "foundry-client-lib", "--lib"],
+            ["--profile", "fast", "-p", "foundry-client", "--lib"],
+            ["-p", "foundry-client", "--no-default-features", "--lib", "--test", "wire"],
+            ["--release", "-p", "foundry-world", "--lib"],
+            ["--offline", "-p", "foundry-world", "--lib"],
         ])
 
     def test_recorded_cargo_tests_are_prebuilt_with_no_run_before_and_apart_from_the_builds(self):
-        artifacts = [["bin", "horizon-client", "dev", ["-p", "horizon-client"], False]]
-        packages = {("bin", "horizon-client"): "horizon-client"}
-        tests = [["-p", "horizon-client", "--lib"], ["-p", "horizon-client", "--no-default-features", "--lib"],
-                 ["--profile", "fast", "-p", "horizon-client", "--lib"], ["-p", "horizon-client", "--lib"]]
+        artifacts = [["bin", "foundry-client", "dev", ["-p", "foundry-client"], False]]
+        packages = {("bin", "foundry-client"): "foundry-client"}
+        tests = [["-p", "foundry-client", "--lib"], ["-p", "foundry-client", "--no-default-features", "--lib"],
+                 ["--profile", "fast", "-p", "foundry-client", "--lib"], ["-p", "foundry-client", "--lib"]]
         self.assertEqual(parity.prebuild_commands(artifacts, packages, tests), [
-            ["cargo", "test", "--locked", "--no-run", "--profile", "fast", "-p", "horizon-client", "--lib"],
-            ["cargo", "test", "--locked", "--no-run", "-p", "horizon-client", "--lib"],
-            ["cargo", "test", "--locked", "--no-run", "-p", "horizon-client", "--no-default-features", "--lib"],
-            ["cargo", "build", "--locked", "--profile", "dev", "-p", "horizon-client", "--bin", "horizon-client"],
+            ["cargo", "test", "--locked", "--no-run", "--profile", "fast", "-p", "foundry-client", "--lib"],
+            ["cargo", "test", "--locked", "--no-run", "-p", "foundry-client", "--lib"],
+            ["cargo", "test", "--locked", "--no-run", "-p", "foundry-client", "--no-default-features", "--lib"],
+            ["cargo", "build", "--locked", "--profile", "dev", "-p", "foundry-client", "--bin", "foundry-client"],
         ])
         self.assertEqual(parity.prebuild_commands(artifacts, packages), parity.prebuild_commands(artifacts, packages, []))
         self.assertEqual(parity.describe_cargo_build(
-            ["cargo", "test", "--locked", "--no-run", "-p", "horizon-client", "--lib"], [], 0.0, 5.0),
-            "test -p horizon-client --lib: 5s, 0 crates compiled")
+            ["cargo", "test", "--locked", "--no-run", "-p", "foundry-client", "--lib"], [], 0.0, 5.0),
+            "test -p foundry-client --lib: 5s, 0 crates compiled")
         with tempfile.TemporaryDirectory() as temp:
             trace = Path(temp) / "trace.json"
             trace.write_text(json.dumps({"modules": [], "read": [], "commands": [
-                ["cargo", "test", "-p", "horizon-client", "--lib", "x", "--", "--exact"]]}))
+                ["cargo", "test", "-p", "foundry-client", "--lib", "x", "--", "--exact"]]}))
             script = Path(temp) / "test_x_parity.py"
             script.write_text("")
             record = parity.outcome("x", script, False, 1.0, trace)
-        self.assertEqual(record["tests"], [["-p", "horizon-client", "--lib"]])
+        self.assertEqual(record["tests"], [["-p", "foundry-client", "--lib"]])
         self.assertEqual(record["artifacts"], [])
 
     def test_prebuild_follows_a_moved_target_without_losing_features(self):
-        selection = ["-p", "horizon-client", "--no-default-features", "--features", "horizon-client/rng-trace"]
+        selection = ["-p", "foundry-client", "--no-default-features", "--features", "foundry-client/rng-trace"]
         artifacts = [["example", "client_probe", "fast", selection, True],
-                     ["bin", "horizon-ctl", "fast", selection, False]]
-        packages = {("example", "client_probe"): "horizon-client-lib", ("bin", "horizon-ctl"): "horizon-client-lib"}
+                     ["bin", "foundry-ctl", "fast", selection, False]]
+        packages = {("example", "client_probe"): "foundry-client-lib", ("bin", "foundry-ctl"): "foundry-client-lib"}
         commands = parity.prebuild_commands(artifacts, packages)
         self.assertEqual(len(commands), 2)
         for command in commands:
             self.assertEqual(command[:5], ["cargo", "build", "--locked", "--profile", "fast"])
             self.assertEqual(command[5:5 + len(selection)], selection)
-            self.assertEqual(command[5 + len(selection):7 + len(selection)], ["-p", "horizon-client-lib"])
+            self.assertEqual(command[5 + len(selection):7 + len(selection)], ["-p", "foundry-client-lib"])
         self.assertEqual(artifacts[0][3], selection)
 
     def test_old_broad_client_selections_include_the_moved_targets(self):
-        packages = {("bin", "horizon-client"): "horizon-client", ("bin", "horizon-ctl"): "horizon-client-lib",
-                    ("example", "client_probe"): "horizon-client-lib"}
+        packages = {("bin", "foundry-client"): "foundry-client", ("bin", "foundry-ctl"): "foundry-client-lib",
+                    ("example", "client_probe"): "foundry-client-lib"}
         for flag in ["--bins", "--examples"]:
-            command = ["cargo", "build", "-p", "horizon-client", "--no-default-features", flag]
+            command = ["cargo", "build", "-p", "foundry-client", "--no-default-features", flag]
             artifacts = parity.artifacts_of(command)
             before = [list(artifact[3]) for artifact in artifacts]
             self.assertEqual(parity.prebuild_commands(artifacts, packages),
-                             [["cargo", "build", "--locked", "--profile", "dev", "-p", "horizon-client",
-                               "--no-default-features", "-p", "horizon-client-lib", flag]])
+                             [["cargo", "build", "--locked", "--profile", "dev", "-p", "foundry-client",
+                               "--no-default-features", "-p", "foundry-client-lib", flag]])
             self.assertEqual([artifact[3] for artifact in artifacts], before)
 
     def test_prebuild_repeats_each_harness_selection(self):
         artifacts = [
-            *parity.artifacts_of(["cargo", "build", "--profile", "fast", "-p", "horizon-world", "--example", "a"]),
-            *parity.artifacts_of(["cargo", "build", "--profile", "fast", "-p", "horizon-world", "--example", "b"]),
-            *parity.artifacts_of(["cargo", "build", "--profile", "fast", "-p", "horizon-world", "--bin", "horizon-world"]),
-            *parity.artifacts_of(["cargo", "build", "--profile", "fast", "--bin", "horizon-world"]),
-            *parity.artifacts_of(["cargo", "run", "-p", "horizon-client", "--example", "c"]),
-            *parity.artifacts_of(["cargo", "build", "--profile", "fast", "-p", "horizon-world", "--example", "renamed"]),
+            *parity.artifacts_of(["cargo", "build", "--profile", "fast", "-p", "foundry-world", "--example", "a"]),
+            *parity.artifacts_of(["cargo", "build", "--profile", "fast", "-p", "foundry-world", "--example", "b"]),
+            *parity.artifacts_of(["cargo", "build", "--profile", "fast", "-p", "foundry-world", "--bin", "foundry-world"]),
+            *parity.artifacts_of(["cargo", "build", "--profile", "fast", "--bin", "foundry-world"]),
+            *parity.artifacts_of(["cargo", "run", "-p", "foundry-client", "--example", "c"]),
+            *parity.artifacts_of(["cargo", "build", "--profile", "fast", "-p", "foundry-world", "--example", "renamed"]),
             ["example", "old", "fast"],  # recorded before selections were kept: its own crate's -p
             ["example", "unknown", "fast"],  # no longer in the workspace: left to its harness
         ]
-        packages = {("example", "a"): "horizon-world", ("example", "b"): "horizon-world", ("example", "c"): "horizon-client",
-                    ("bin", "horizon-world"): "horizon-world", ("example", "old"): "horizon-world"}
+        packages = {("example", "a"): "foundry-world", ("example", "b"): "foundry-world", ("example", "c"): "foundry-client",
+                    ("bin", "foundry-world"): "foundry-world", ("example", "old"): "foundry-world"}
         self.assertEqual(parity.prebuild_commands(artifacts, packages), [
-            ["cargo", "build", "--locked", "--profile", "dev", "-p", "horizon-client", "--example", "c"],
-            ["cargo", "build", "--locked", "--profile", "fast", "--bin", "horizon-world"],
-            ["cargo", "build", "--locked", "--profile", "fast", "-p", "horizon-world", "--bin", "horizon-world"],
-            ["cargo", "build", "--locked", "--profile", "fast", "-p", "horizon-world", "--example", "a", "--example", "b",
+            ["cargo", "build", "--locked", "--profile", "dev", "-p", "foundry-client", "--example", "c"],
+            ["cargo", "build", "--locked", "--profile", "fast", "--bin", "foundry-world"],
+            ["cargo", "build", "--locked", "--profile", "fast", "-p", "foundry-world", "--bin", "foundry-world"],
+            ["cargo", "build", "--locked", "--profile", "fast", "-p", "foundry-world", "--example", "a", "--example", "b",
              "--example", "old"],
         ])
 
     def test_release_records_are_prebuilt_in_the_fast_profile(self):
         # Records from before the harnesses moved to the fast profile are built as the harnesses build them now.
-        packages = {("example", "world_probe"): "horizon-world", ("bin", "horizon-parity"): "horizon-core",
-                    ("bin", "horizon-client"): "horizon-game"}
-        old = [*parity.artifacts_of(["cargo", "build", "--release", "-p", "horizon-world", "--example", "world_probe"]),
-               *parity.artifacts_of(["cargo", "build", "--profile", "release", "--bin", "horizon-parity"]),
-               ["bin", "horizon-client", "release", ["-p", "horizon-game"], False]]
-        new = [*parity.artifacts_of(["cargo", "build", "--profile", "fast", "-p", "horizon-world", "--example", "world_probe"]),
-               *parity.artifacts_of(["cargo", "build", "--profile", "fast", "--bin", "horizon-parity"]),
-               *parity.artifacts_of(fast_bins.command("horizon-client"))]
+        packages = {("example", "world_probe"): "foundry-world", ("bin", "foundry-parity"): "foundry-core",
+                    ("bin", "foundry-client"): "foundry-game"}
+        old = [*parity.artifacts_of(["cargo", "build", "--release", "-p", "foundry-world", "--example", "world_probe"]),
+               *parity.artifacts_of(["cargo", "build", "--profile", "release", "--bin", "foundry-parity"]),
+               ["bin", "foundry-client", "release", ["-p", "foundry-game"], False]]
+        new = [*parity.artifacts_of(["cargo", "build", "--profile", "fast", "-p", "foundry-world", "--example", "world_probe"]),
+               *parity.artifacts_of(["cargo", "build", "--profile", "fast", "--bin", "foundry-parity"]),
+               *parity.artifacts_of(fast_bins.command("foundry-client"))]
         self.assertEqual(parity.prebuild_commands(old, packages), parity.prebuild_commands(new, packages))
-        tests = [parity.test_selection(["cargo", "test", flag, "-p", "horizon-world", "--lib"])
+        tests = [parity.test_selection(["cargo", "test", flag, "-p", "foundry-world", "--lib"])
                  for flag in ("--release", "-r")]
-        tests.append(["--profile", "release", "-p", "horizon-world", "--lib"])
+        tests.append(["--profile", "release", "-p", "foundry-world", "--lib"])
         self.assertEqual(parity.prebuild_commands([], packages, tests), [
-            ["cargo", "test", "--locked", "--no-run", "--profile", "fast", "-p", "horizon-world", "--lib"]])
+            ["cargo", "test", "--locked", "--no-run", "--profile", "fast", "-p", "foundry-world", "--lib"]])
 
     def test_the_harnesses_fast_programs_share_one_prebuild_run(self):
-        # The game alone (most server harnesses), with horizon-ctl (lan_e2e), with the server (management_protocol)
+        # The game alone (most server harnesses), with foundry-ctl (lan_e2e), with the server (management_protocol)
         # and the official game with the relay (friends_integration).
-        programs = [["horizon-client"], ["horizon-client", "horizon-ctl"], ["horizon-client", "horizon-server"],
-                    ["horizon-official", "horizon-ctl", "horizon-relay"]]
+        programs = [["foundry-client"], ["foundry-client", "foundry-ctl"], ["foundry-client", "foundry-server"],
+                    ["foundry-official", "foundry-ctl", "foundry-relay"]]
         artifacts = [artifact for names in programs for artifact in parity.artifacts_of(fast_bins.command(*names))]
-        packages = {("bin", "horizon-client"): "horizon-game", ("bin", "horizon-ctl"): "horizon-client-lib",
-                    ("bin", "horizon-server"): "horizon-server", ("bin", "horizon-official"): "horizon-official",
-                    ("bin", "horizon-relay"): "horizon-relay"}
+        packages = {("bin", "foundry-client"): "foundry-game", ("bin", "foundry-ctl"): "foundry-client-lib",
+                    ("bin", "foundry-server"): "foundry-server", ("bin", "foundry-official"): "foundry-official",
+                    ("bin", "foundry-relay"): "foundry-relay"}
         self.assertEqual(parity.prebuild_commands(artifacts, packages), [
-            ["cargo", "build", "--locked", "--profile", "fast", "-p", "horizon-game", "-p", "horizon-client-lib",
-             "-p", "horizon-server", "-p", "horizon-official", "-p", "horizon-relay", "--bin", "horizon-client",
-             "--bin", "horizon-ctl", "--bin", "horizon-server", "--bin", "horizon-official", "--bin", "horizon-relay"],
+            ["cargo", "build", "--locked", "--profile", "fast", "-p", "foundry-game", "-p", "foundry-client-lib",
+             "-p", "foundry-server", "-p", "foundry-official", "-p", "foundry-relay", "--bin", "foundry-client",
+             "--bin", "foundry-ctl", "--bin", "foundry-server", "--bin", "foundry-official", "--bin", "foundry-relay"],
         ])
 
     def test_records_of_the_old_fast_selections_are_prebuilt_as_the_shared_one(self):
         # Harness records from before tools/fast_bins.py: calls 12, 13 (as --bins), 14 and 16 of the old prebuild.
-        old = [["bin", "horizon-client", "fast", ["-p", "horizon-game"], False],
-               ["bins", "", "fast", ["-p", "horizon-game", "-p", "horizon-client-lib"], False],
-               ["bin", "horizon-client", "fast", ["-p", "horizon-game", "-p", "horizon-server"], False],
-               ["bin", "horizon-server", "fast", ["-p", "horizon-game", "-p", "horizon-server"], False],
-               *[["bin", name, "fast", ["-p", "horizon-official", "-p", "horizon-client-lib", "-p", "horizon-relay"], False]
-                 for name in ("horizon-official", "horizon-ctl", "horizon-relay")]]
+        old = [["bin", "foundry-client", "fast", ["-p", "foundry-game"], False],
+               ["bins", "", "fast", ["-p", "foundry-game", "-p", "foundry-client-lib"], False],
+               ["bin", "foundry-client", "fast", ["-p", "foundry-game", "-p", "foundry-server"], False],
+               ["bin", "foundry-server", "fast", ["-p", "foundry-game", "-p", "foundry-server"], False],
+               *[["bin", name, "fast", ["-p", "foundry-official", "-p", "foundry-client-lib", "-p", "foundry-relay"], False]
+                 for name in ("foundry-official", "foundry-ctl", "foundry-relay")]]
         untouched = [
-            ["example", "client_probe", "fast", ["-p", "horizon-client-lib"], True],
-            ["bin", "horizon-client", "fast", ["-p", "horizon-game", "--features", "x"], False],
-            ["bin", "horizon-mod-dimension-game", "fast", ["-p", "horizon-game", "-p", "horizon-mod-dimension-game"], False],
+            ["example", "client_probe", "fast", ["-p", "foundry-client-lib"], True],
+            ["bin", "foundry-client", "fast", ["-p", "foundry-game", "--features", "x"], False],
+            ["bin", "foundry-mod-dimension-game", "fast", ["-p", "foundry-game", "-p", "foundry-mod-dimension-game"], False],
         ]
-        packages = {("bin", "horizon-client"): "horizon-game", ("bin", "horizon-ctl"): "horizon-client-lib",
-                    ("bin", "horizon-server"): "horizon-server", ("bin", "horizon-official"): "horizon-official",
-                    ("bin", "horizon-relay"): "horizon-relay", ("example", "client_probe"): "horizon-client-lib",
-                    ("bin", "horizon-mod-dimension-game"): "horizon-mod-dimension-game"}
-        new = parity.artifacts_of(fast_bins.command("horizon-client"))  # a harness's record made since
+        packages = {("bin", "foundry-client"): "foundry-game", ("bin", "foundry-ctl"): "foundry-client-lib",
+                    ("bin", "foundry-server"): "foundry-server", ("bin", "foundry-official"): "foundry-official",
+                    ("bin", "foundry-relay"): "foundry-relay", ("example", "client_probe"): "foundry-client-lib",
+                    ("bin", "foundry-mod-dimension-game"): "foundry-mod-dimension-game"}
+        new = parity.artifacts_of(fast_bins.command("foundry-client"))  # a harness's record made since
         self.assertEqual(parity.prebuild_commands([*old, *untouched, *new], packages), [
-            ["cargo", "build", "--locked", "--profile", "fast", "-p", "horizon-client-lib", "--example", "client_probe"],
-            ["cargo", "build", "--locked", "--profile", "fast", "-p", "horizon-game", "--features", "x",
-             "--bin", "horizon-client"],
-            fast_bins.command("horizon-client", "horizon-ctl", "horizon-server", "horizon-official", "horizon-relay"),
-            ["cargo", "build", "--locked", "--profile", "fast", "-p", "horizon-game", "-p", "horizon-mod-dimension-game",
-             "--bin", "horizon-mod-dimension-game"],
+            ["cargo", "build", "--locked", "--profile", "fast", "-p", "foundry-client-lib", "--example", "client_probe"],
+            ["cargo", "build", "--locked", "--profile", "fast", "-p", "foundry-game", "--features", "x",
+             "--bin", "foundry-client"],
+            fast_bins.command("foundry-client", "foundry-ctl", "foundry-server", "foundry-official", "foundry-relay"),
+            ["cargo", "build", "--locked", "--profile", "fast", "-p", "foundry-game", "-p", "foundry-mod-dimension-game",
+             "--bin", "foundry-mod-dimension-game"],
         ])
 
     def test_a_prebuild_cargo_run_says_where_its_time_went(self):
-        command = ["cargo", "build", "--locked", "--profile", "release", "-p", "horizon-world", "--features", "f",
+        command = ["cargo", "build", "--locked", "--profile", "release", "-p", "foundry-world", "--features", "f",
                    "--example", "a", "--example", "b", "--bins"]
         # As Cargo prints them with CARGO_TERM_COLOR=always: a bold, coloured status word, then a reset.
         lines = [(10.0, "\x1b[1m\x1b[36m    Blocking\x1b[0m waiting for file lock on package cache\n"),
                  (12.0, "\x1b[1m\x1b[36m    Blocking\x1b[0m waiting for file lock on build directory\n"),
                  (700.0, "\x1b[1m\x1b[92m   Compiling\x1b[0m serde v1.0.0\n"),
-                 (900.0, "\x1b[1m\x1b[32m   Compiling\x1b[0m horizon-world v0.1.0 (/w)\n"),
+                 (900.0, "\x1b[1m\x1b[32m   Compiling\x1b[0m foundry-world v0.1.0 (/w)\n"),
                  (1000.0, "\x1b[1m\x1b[92m    Finished\x1b[0m `release` profile [optimized] target(s) in 16m 40s\n")]
-        expected = ("release -p horizon-world --features f --bins 2 targets: 1001s, 2 crates compiled, "
+        expected = ("release -p foundry-world --features f --bins 2 targets: 1001s, 2 crates compiled, "
                     "about 2s waiting for the package cache lock (to cargo's next line), "
                     "about 688s waiting for the build directory lock (to cargo's next line)")
         self.assertEqual(parity.describe_cargo_build(command, lines, 0.0, 1001.0), expected)
@@ -280,7 +280,7 @@ class ParityRunnerTests(unittest.TestCase):
                 mock.patch.object(parity, "sccache_stats", return_value=None), \
                 mock.patch.object(parity, "PREBUILD_LIMIT", {"main": 1}), \
                 mock.patch.object(parity.compile_lock, "active", return_value=False), \
-                mock.patch.dict(os.environ, {"HORIZON_COMPILE_LOCK_ROLE": "main"}), \
+                mock.patch.dict(os.environ, {"FOUNDRY_COMPILE_LOCK_ROLE": "main"}), \
                 mock.patch("builtins.print") as printed:
             started = time.monotonic()
             with self.assertRaises(SystemExit) as stopped:
@@ -310,7 +310,7 @@ class ParityRunnerTests(unittest.TestCase):
                 mock.patch.object(parity, "sccache_stats", return_value=None), \
                 mock.patch.object(parity, "PREBUILD_LIMIT", {"main": 2}), \
                 mock.patch.object(parity.compile_lock, "active", return_value=False), \
-                mock.patch.dict(os.environ, {"HORIZON_COMPILE_LOCK_ROLE": "main"}), \
+                mock.patch.dict(os.environ, {"FOUNDRY_COMPILE_LOCK_ROLE": "main"}), \
                 mock.patch("builtins.print") as printed:
             started = time.monotonic()
             with self.assertRaises(SystemExit):
@@ -344,7 +344,7 @@ class ParityRunnerTests(unittest.TestCase):
                     mock.patch.object(parity.compile_lock, "active", return_value=False):
                 parity.prebuild([], 2)
         """)
-        process = subprocess.Popen([sys.executable, "-c", script], env=dict(os.environ, HORIZON_COMPILE_LOCK_ROLE="main"),
+        process = subprocess.Popen([sys.executable, "-c", script], env=dict(os.environ, FOUNDRY_COMPILE_LOCK_ROLE="main"),
                                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         self.addCleanup(lambda: (process.poll() is None and process.kill(), process.wait()))
         for _ in range(100):
@@ -493,7 +493,7 @@ class ParityRunnerTests(unittest.TestCase):
         if switch:
             environment[parity.PREBUILD_TIMINGS] = "1"
         if role:
-            environment["HORIZON_COMPILE_LOCK_ROLE"] = role
+            environment["FOUNDRY_COMPILE_LOCK_ROLE"] = role
         events = []
 
         class Turn:
@@ -528,7 +528,7 @@ class ParityRunnerTests(unittest.TestCase):
             ]:
                 stack.enter_context(patch)
             if not role:
-                os.environ.pop("HORIZON_COMPILE_LOCK_ROLE", None)
+                os.environ.pop("FOUNDRY_COMPILE_LOCK_ROLE", None)
             if not switch:
                 os.environ.pop(parity.PREBUILD_TIMINGS, None)
             try:
@@ -904,7 +904,7 @@ class ParityRunnerTests(unittest.TestCase):
 
     def test_a_probe_binary_depends_only_on_the_probes_it_ran(self):
         commands = [["/t/release/examples/world_probe", "a_fixture", "/dir"],
-                    ["cargo", "run", "-p", "horizon-client", "--example", "client_probe", "--", "b_fixture"]]
+                    ["cargo", "run", "-p", "foundry-client", "--example", "client_probe", "--", "b_fixture"]]
         self.assertEqual(parity.probes_run(commands), {"a_fixture", "b_fixture"})
         with tempfile.TemporaryDirectory() as temp, mock.patch.object(parity, "ROOT", Path(temp)):
             probe = Path(temp, "crates/w/examples/probe")
@@ -933,24 +933,24 @@ class ParityRunnerTests(unittest.TestCase):
         ]), {"a_fixture", "b_fixture"})
 
     def test_records_of_the_shared_probe_name_build_their_crates_probe(self):
-        record = {"dependencies": ["crates/horizon-world/examples/probe/a_fixture.rs", "crates/horizon-world/src/lib.rs"],
-                  "artifacts": [["example", "probe", "release", ["-p", "horizon-client"], True],
+        record = {"dependencies": ["crates/foundry-world/examples/probe/a_fixture.rs", "crates/foundry-world/src/lib.rs"],
+                  "artifacts": [["example", "probe", "release", ["-p", "foundry-client"], True],
                                 ["example", "probe", "release"],  # no selection: the crate of its probe sources
-                                ["example", "probe", "release", ["-p", "horizon-core", "-p", "horizon-world"], True],
-                                ["bin", "horizon-world", "release", ["-p", "horizon-world"], False]]}
+                                ["example", "probe", "release", ["-p", "foundry-core", "-p", "foundry-world"], True],
+                                ["bin", "foundry-world", "release", ["-p", "foundry-world"], False]]}
         artifacts = parity.recorded_artifacts(record)
-        self.assertEqual(artifacts, [["example", "client_probe", "release", ["-p", "horizon-client"], True],
+        self.assertEqual(artifacts, [["example", "client_probe", "release", ["-p", "foundry-client"], True],
                                      ["example", "world_probe", "release"],
-                                     ["example", "world_probe", "release", ["-p", "horizon-core", "-p", "horizon-world"], True],
-                                     ["bin", "horizon-world", "release", ["-p", "horizon-world"], False]])
-        packages = {("example", "client_probe"): "horizon-client", ("example", "world_probe"): "horizon-world",
-                    ("bin", "horizon-world"): "horizon-world"}
+                                     ["example", "world_probe", "release", ["-p", "foundry-core", "-p", "foundry-world"], True],
+                                     ["bin", "foundry-world", "release", ["-p", "foundry-world"], False]])
+        packages = {("example", "client_probe"): "foundry-client", ("example", "world_probe"): "foundry-world",
+                    ("bin", "foundry-world"): "foundry-world"}
         self.assertEqual(parity.prebuild_commands(artifacts, packages), [
-            ["cargo", "build", "--locked", "--profile", "fast", "-p", "horizon-client", "--example", "client_probe"],
-            ["cargo", "build", "--locked", "--profile", "fast", "-p", "horizon-core", "-p", "horizon-world",
+            ["cargo", "build", "--locked", "--profile", "fast", "-p", "foundry-client", "--example", "client_probe"],
+            ["cargo", "build", "--locked", "--profile", "fast", "-p", "foundry-core", "-p", "foundry-world",
              "--example", "world_probe"],
-            ["cargo", "build", "--locked", "--profile", "fast", "-p", "horizon-world", "--bin", "horizon-world"],
-            ["cargo", "build", "--locked", "--profile", "fast", "-p", "horizon-world", "--example", "world_probe"],
+            ["cargo", "build", "--locked", "--profile", "fast", "-p", "foundry-world", "--bin", "foundry-world"],
+            ["cargo", "build", "--locked", "--profile", "fast", "-p", "foundry-world", "--example", "world_probe"],
         ])
         self.assertEqual(parity.recorded_artifacts({"artifacts": [["example", "probe", "release"]]}),
                          [["example", "probe", "release"]])  # no crate to tell: left to its harness
@@ -1053,9 +1053,9 @@ class ParityRunnerTests(unittest.TestCase):
         executor._log.assert_called_once()
 
     def test_a_hosts_excludes_are_skipped_when_it_runs_parity_itself(self):
-        config = {"hosts": {"playhorizon": {"exclude": {"remote_fireworks": "starved"}}, "macmini": {"exclude": {}}}}
+        config = {"hosts": {"playfoundry": {"exclude": {"remote_fireworks": "starved"}}, "macmini": {"exclude": {}}}}
         with mock.patch.object(parity.sys, "platform", "linux"):
-            self.assertEqual(parity.platform_skips(config, "playhorizon"), {"remote_fireworks": "starved"})
+            self.assertEqual(parity.platform_skips(config, "playfoundry"), {"remote_fireworks": "starved"})
             self.assertEqual(parity.platform_skips(config, "macmini"), {})
             self.assertEqual(parity.platform_skips(config, "elsewhere"), {})
 
@@ -1155,7 +1155,7 @@ class DependencyPathTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp, mock.patch.object(parity, "ROOT", Path(temp)):
             found = {"probe": Path(temp, "tools/test_probe_parity.py")}
             for path in ("crates/w/examples/probe.rs", "crates/w/src/bin/probe.rs",
-                         "mods/horizon/src/test/java/Oracle.java"):
+                         "mods/foundry/src/test/java/Oracle.java"):
                 with self.subTest(path=path), mock.patch.object(parity, "changed_files", return_value={path}):
                     records = {"probe": {"dependencies": [path.replace("/", "\\")]}}
                     self.assertEqual(parity.changed_harnesses(found, records, "main"), {"probe"})
@@ -1169,12 +1169,12 @@ class DependencyPathTests(unittest.TestCase):
                 mock.patch.object(parity, "STATE_DIR", Path(temp, "state")):
             root = Path(temp)
             files = {
-                "crates/horizon-world/Cargo.toml": '[package]\nname = "horizon-world"\n'
+                "crates/foundry-world/Cargo.toml": '[package]\nname = "foundry-world"\n'
                                                    '\n[[example]]\nname = "world_probe"\npath = "examples/probe.rs"\n',
-                "crates/horizon-world/src/lib.rs": "pub mod used;\npub mod unused;\n",
-                "crates/horizon-world/src/used.rs": "pub fn f() {}\n",
-                "crates/horizon-world/src/unused.rs": "pub fn f() {}\n",
-                "crates/horizon-world/examples/probe.rs": "fn main() { horizon_world::used::f(); }\n",
+                "crates/foundry-world/src/lib.rs": "pub mod used;\npub mod unused;\n",
+                "crates/foundry-world/src/used.rs": "pub fn f() {}\n",
+                "crates/foundry-world/src/unused.rs": "pub fn f() {}\n",
+                "crates/foundry-world/examples/probe.rs": "fn main() { foundry_world::used::f(); }\n",
             }
             for path, text in files.items():
                 target = root / path
@@ -1184,8 +1184,8 @@ class DependencyPathTests(unittest.TestCase):
             dependencies[1] += "#keep:used"
             record = {"dependencies": dependencies, "artifacts": [["example", "probe", "release"]]}
             found = {"probe": root / "tools/test_probe_parity.py"}
-            for path, expected in (("crates/horizon-world/src/used.rs", {"probe"}),
-                                   ("crates/horizon-world/src/unused.rs", set())):
+            for path, expected in (("crates/foundry-world/src/used.rs", {"probe"}),
+                                   ("crates/foundry-world/src/unused.rs", set())):
                 with self.subTest(path=path):
                     self.assertEqual(parity.affected_harnesses(found, {"probe": record}, {path}), expected)
             self.assertEqual(record["dependencies"], dependencies)
@@ -1301,14 +1301,14 @@ class ShimDecisionSummaryTests(unittest.TestCase):
     def test_the_summary_counts_reasons_and_seconds(self):
         lines = [{"harness": "a", "reason": "hit", "seconds": 30.0, "call": "c1"},
                  {"harness": "a", "reason": "input-set", "seconds": 50.0, "call": "c2"},
-                 {"harness": "b", "reason": "environment", "seconds": 20.0, "variables": ["HORIZON_ORDER"]},
+                 {"harness": "b", "reason": "environment", "seconds": 20.0, "variables": ["FOUNDRY_ORDER"]},
                  {"harness": "b", "reason": "passthrough-pipe", "seconds": None}]
         printed = self.summary("".join(json.dumps(line) + "\n" for line in lines))
         self.assertIn("Java calls: 4 (", printed)
         self.assertIn("Java ran 70 s, replayed 30 s; 1 calls untimed", printed)
         self.assertIn("Most Java seconds not replayed: a 50 s, b 20 s", printed)
         # Nothing from the calls themselves.
-        self.assertNotIn("HORIZON_ORDER", printed)
+        self.assertNotIn("FOUNDRY_ORDER", printed)
         self.assertNotIn("c1", printed)
 
     def test_a_broken_line_is_skipped_and_counted(self):
@@ -1372,7 +1372,7 @@ class OracleReuseTests(unittest.TestCase):
         self.env = dict(os.environ, PATH=f"{self.shim}:{self.bin}:{python}", PARITY_SHIM_REAL_PATH=str(self.bin),
                         PARITY_SHIM_CACHE=str(root / "cache"), PARITY_SHIM_DECISIONS=str(self.decisions),
                         PARITY_SHIM_HARNESS="fake")
-        for name in ("PARITY_JAVA_CACHE", "HORIZON_PHASE", "HORIZON_ORDER", "HORIZON_DATAPACKS", *UNKEYED_VARIABLES):
+        for name in ("PARITY_JAVA_CACHE", "FOUNDRY_PHASE", "FOUNDRY_ORDER", "FOUNDRY_DATAPACKS", *UNKEYED_VARIABLES):
             self.env.pop(name, None)
         self.subprocess = subprocess
 
@@ -1447,19 +1447,19 @@ class OracleReuseTests(unittest.TestCase):
         self.output.write_text("tampered")
         self.oracle(extra)
         self.assertEqual(self.reasons(), ["output-stamp"])
-        self.oracle(extra, HORIZON_PHASE="terrain")
+        self.oracle(extra, FOUNDRY_PHASE="terrain")
         line = self.last()
         self.assertEqual(self.reasons(), ["environment"])
-        self.assertEqual(line["variables"], ["HORIZON_PHASE"])
+        self.assertEqual(line["variables"], ["FOUNDRY_PHASE"])
         self.fake_java("2.0")  # another size, as a JDK update gives
-        self.oracle(extra, HORIZON_PHASE="terrain")
+        self.oracle(extra, FOUNDRY_PHASE="terrain")
         self.assertEqual(self.reasons(), ["java-runtime"])
         self.call("-version")
-        self.call(extra, stdin=self.subprocess.PIPE, HORIZON_PHASE="terrain")
-        self.call(extra, PARITY_JAVA_CACHE="0", HORIZON_PHASE="terrain")
-        self.call(extra, HORIZON_PHASE="terrain", JAVA_TOOL_OPTIONS="-javaagent:/x/agent.jar")
+        self.call(extra, stdin=self.subprocess.PIPE, FOUNDRY_PHASE="terrain")
+        self.call(extra, PARITY_JAVA_CACHE="0", FOUNDRY_PHASE="terrain")
+        self.call(extra, FOUNDRY_PHASE="terrain", JAVA_TOOL_OPTIONS="-javaagent:/x/agent.jar")
         self.input.write_text("fail")
-        self.assertEqual(self.call(extra, check=False, HORIZON_PHASE="terrain").returncode, 2)
+        self.assertEqual(self.call(extra, check=False, FOUNDRY_PHASE="terrain").returncode, 2)
         line = self.last()
         self.assertEqual(self.reasons(), ["passthrough-version", "passthrough-pipe", "passthrough-off",
                                           "passthrough-jvm-options", "passthrough-failed"])
@@ -1543,7 +1543,7 @@ class OracleReuseTests(unittest.TestCase):
         self.assertEqual((second / "server.txt").read_text(), "cases")
 
     def test_jvm_options_from_the_environment_give_another_folder(self):
-        # They can change what an oracle writes (VanillaCollisionOracle's horizon.prepare.reuse), and the shim runs such
+        # They can change what an oracle writes (VanillaCollisionOracle's foundry.prepare.reuse), and the shim runs such
         # a call each time: it must not find the outputs of a call without them.
         from tools import oracle_folders
         self.assertEqual(oracle_folders.UNKEYED, UNKEYED_VARIABLES)
@@ -1770,18 +1770,18 @@ class OracleReuseTests(unittest.TestCase):
     def test_the_key_holds_the_variables_oracles_read_and_what_they_name(self):
         order = self.input.parent.parent / "order.txt"
         order.write_text("0 0\n")
-        self.assertEqual(self.oracle(HORIZON_PHASE="full", HORIZON_ORDER=str(order)), 1)
+        self.assertEqual(self.oracle(FOUNDRY_PHASE="full", FOUNDRY_ORDER=str(order)), 1)
         # Variables that change between runs of the same call stay out of it.
-        self.assertEqual(self.oracle(HORIZON_PHASE="full", HORIZON_ORDER=str(order), TERM="dumb", PARITY_RUN_ID="7",
-                                     GITHUB_RUN_ID="8", HORIZON_HOME="/elsewhere", BASE_SHA="c0ffee", GH_TOKEN="t",
+        self.assertEqual(self.oracle(FOUNDRY_PHASE="full", FOUNDRY_ORDER=str(order), TERM="dumb", PARITY_RUN_ID="7",
+                                     GITHUB_RUN_ID="8", FOUNDRY_HOME="/elsewhere", BASE_SHA="c0ffee", GH_TOKEN="t",
                                      XDG_SESSION_ID="3"), 1)
         self.assertEqual(self.reasons(), ["no-record", "hit"])
-        # The same file name with other content: Horizon writes HORIZON_ORDER's file.
+        # The same file name with other content: Foundry Client writes FOUNDRY_ORDER's file.
         order.write_text("1 1\n")
-        self.assertEqual(self.oracle(HORIZON_PHASE="full", HORIZON_ORDER=str(order)), 2)
-        self.assertEqual(self.oracle(HORIZON_PHASE="terrain", HORIZON_ORDER=str(order)), 3)
-        self.assertEqual(self.oracle(HORIZON_PHASE="terrain", HORIZON_ORDER=str(order), SOMETHING_NEW="1"), 4)
-        self.assertEqual(self.oracle(HORIZON_PHASE="terrain", HORIZON_ORDER=str(order), SOMETHING_NEW="1"), 4)
+        self.assertEqual(self.oracle(FOUNDRY_PHASE="full", FOUNDRY_ORDER=str(order)), 2)
+        self.assertEqual(self.oracle(FOUNDRY_PHASE="terrain", FOUNDRY_ORDER=str(order)), 3)
+        self.assertEqual(self.oracle(FOUNDRY_PHASE="terrain", FOUNDRY_ORDER=str(order), SOMETHING_NEW="1"), 4)
+        self.assertEqual(self.oracle(FOUNDRY_PHASE="terrain", FOUNDRY_ORDER=str(order), SOMETHING_NEW="1"), 4)
         self.assertEqual(self.reasons(), ["environment", "environment", "environment", "hit"])
 
     def test_a_call_on_another_hosted_runner_replays(self):
@@ -2008,11 +2008,11 @@ class OracleReuseTests(unittest.TestCase):
     def test_an_environment_miss_names_every_variable_that_differs(self):
         # Against the last run of the same command line: one changed, one added, one gone, and an ignored one that
         # changed too, which is not named. Names only: no value reaches the line.
-        self.assertEqual(self.oracle(HORIZON_PHASE="full", HORIZON_A="1", HORIZON_GONE="x", VM_ID="vm-1"), 1)
-        self.assertEqual(self.oracle(HORIZON_PHASE="terrain", HORIZON_A="1", HORIZON_NEW="y", VM_ID="vm-2"), 2)
+        self.assertEqual(self.oracle(FOUNDRY_PHASE="full", FOUNDRY_A="1", FOUNDRY_GONE="x", VM_ID="vm-1"), 1)
+        self.assertEqual(self.oracle(FOUNDRY_PHASE="terrain", FOUNDRY_A="1", FOUNDRY_NEW="y", VM_ID="vm-2"), 2)
         line = self.last()
         self.assertEqual(line["reason"], "environment")
-        self.assertEqual(line["variables"], ["HORIZON_GONE", "HORIZON_NEW", "HORIZON_PHASE"])
+        self.assertEqual(line["variables"], ["FOUNDRY_GONE", "FOUNDRY_NEW", "FOUNDRY_PHASE"])
         self.assertNotIn("terrain", json.dumps(line))
 
     def test_a_datapack_folder_is_keyed_through_its_linked_folders(self):
@@ -2023,10 +2023,10 @@ class OracleReuseTests(unittest.TestCase):
         (elsewhere / "pack.mcmeta").write_text("1")
         (packs / "linked").symlink_to(elsewhere, target_is_directory=True)
         (elsewhere / "loop").symlink_to(packs, target_is_directory=True)  # a cycle: named once, not walked forever
-        self.assertEqual(self.oracle(HORIZON_DATAPACKS=str(packs)), 1)
-        self.assertEqual(self.oracle(HORIZON_DATAPACKS=str(packs)), 1)
+        self.assertEqual(self.oracle(FOUNDRY_DATAPACKS=str(packs)), 1)
+        self.assertEqual(self.oracle(FOUNDRY_DATAPACKS=str(packs)), 1)
         (elsewhere / "pack.mcmeta").write_text("2")
-        self.assertEqual(self.oracle(HORIZON_DATAPACKS=str(packs)), 2)
+        self.assertEqual(self.oracle(FOUNDRY_DATAPACKS=str(packs)), 2)
         self.assertEqual(self.reasons(), ["no-record", "hit", "environment"])
 
     def test_a_datapack_link_retargeted_to_an_equal_looking_pack_changes_the_key(self):
@@ -2038,14 +2038,14 @@ class OracleReuseTests(unittest.TestCase):
             os.utime(folder / "pack.mcmeta", ns=(10**18, 10**18))  # the same size and mtime in both
         packs.mkdir()
         (packs / "linked").symlink_to(first, target_is_directory=True)
-        self.assertEqual(self.oracle(HORIZON_DATAPACKS=str(packs)), 1)
+        self.assertEqual(self.oracle(FOUNDRY_DATAPACKS=str(packs)), 1)
         (packs / "linked").unlink()
         (packs / "linked").symlink_to(second, target_is_directory=True)
-        self.assertEqual(self.oracle(HORIZON_DATAPACKS=str(packs)), 2)
+        self.assertEqual(self.oracle(FOUNDRY_DATAPACKS=str(packs)), 2)
         # The same bytes as before, size and mtime kept: hashed again, not taken from a memo.
         (second / "pack.mcmeta").write_text("3")
         os.utime(second / "pack.mcmeta", ns=(10**18, 10**18))
-        self.assertEqual(self.oracle(HORIZON_DATAPACKS=str(packs)), 3)
+        self.assertEqual(self.oracle(FOUNDRY_DATAPACKS=str(packs)), 3)
         self.assertEqual(self.reasons(), ["no-record", "environment", "environment"])
 
     @unittest.skipIf(hasattr(os, "geteuid") and os.geteuid() == 0, "root reads any folder")
@@ -2055,7 +2055,7 @@ class OracleReuseTests(unittest.TestCase):
         (packs / "locked").mkdir(parents=True)
         (packs / "locked").chmod(0)
         try:
-            result = self.call(HORIZON_DATAPACKS=str(packs))
+            result = self.call(FOUNDRY_DATAPACKS=str(packs))
         finally:
             (packs / "locked").chmod(0o755)
         self.assertEqual(result.stdout, "done\n")
@@ -2069,7 +2069,7 @@ class OracleReuseTests(unittest.TestCase):
         (locked / "order.txt").write_text("a\n")
         locked.chmod(0)
         try:
-            result = self.call(HORIZON_ORDER=str(locked / "order.txt"))
+            result = self.call(FOUNDRY_ORDER=str(locked / "order.txt"))
         finally:
             locked.chmod(0o755)
         self.assertEqual(result.stdout, "done\n")
@@ -2476,7 +2476,7 @@ class KnownFlakyTests(unittest.TestCase):
 
 
 class SoloTests(unittest.TestCase):
-    """Harnesses driving game windows run alone on a small machine (playhorizon's 4-CPU runner)."""
+    """Harnesses driving game windows run alone on a small machine (playfoundry's 4-CPU runner)."""
 
     def executor(self, running):
         with tempfile.TemporaryDirectory() as tmp, mock.patch.object(parity, "STATE_DIR", Path(tmp)):
@@ -2508,16 +2508,16 @@ class SoloTests(unittest.TestCase):
 
 class ClashTests(unittest.TestCase):
     """On Windows, harnesses that build one program with different selections don't run at once."""
-    PACKAGES = {("bin", "horizon-client"): "horizon-client", ("bin", "horizon-ctl"): "horizon-client-lib",
-                ("example", "client_probe"): "horizon-client-lib"}
-    SERVER = ["bin", "horizon-client", "fast", ["-p", "horizon-client"], False]
-    BOTH = ["bins", "", "fast", ["-p", "horizon-client", "-p", "horizon-client-lib"], False]
-    PROBE = ["example", "client_probe", "dev", ["-p", "horizon-client-lib"], True]
+    PACKAGES = {("bin", "foundry-client"): "foundry-client", ("bin", "foundry-ctl"): "foundry-client-lib",
+                ("example", "client_probe"): "foundry-client-lib"}
+    SERVER = ["bin", "foundry-client", "fast", ["-p", "foundry-client"], False]
+    BOTH = ["bins", "", "fast", ["-p", "foundry-client", "-p", "foundry-client-lib"], False]
+    PROBE = ["example", "client_probe", "dev", ["-p", "foundry-client-lib"], True]
 
     def test_a_run_naming_every_bin_builds_those_of_its_packages(self):
         self.assertEqual(parity.executables([self.BOTH], self.PACKAGES), {
-            ("bin", "horizon-client", "fast"): (("-p", "horizon-client", "-p", "horizon-client-lib"), False),
-            ("bin", "horizon-ctl", "fast"): (("-p", "horizon-client", "-p", "horizon-client-lib"), False)})
+            ("bin", "foundry-client", "fast"): (("-p", "foundry-client", "-p", "foundry-client-lib"), False),
+            ("bin", "foundry-ctl", "fast"): (("-p", "foundry-client", "-p", "foundry-client-lib"), False)})
 
     def test_another_selection_of_a_running_harness_program_waits(self):
         with tempfile.TemporaryDirectory() as tmp, mock.patch.object(parity, "STATE_DIR", Path(tmp)):
@@ -2526,7 +2526,7 @@ class ClashTests(unittest.TestCase):
             "server": [self.SERVER], "same": [self.SERVER, self.PROBE], "both": [self.BOTH], "probe": [self.PROBE],
             "python_only": []}.items()}
         local.running = {"server": {}}
-        self.assertFalse(local.accepts("both"))  # it would relink horizon-client.exe while "server" runs it
+        self.assertFalse(local.accepts("both"))  # it would relink foundry-client.exe while "server" runs it
         self.assertTrue(local.accepts("same"))  # Cargo finds it fresh
         self.assertTrue(local.accepts("probe"))
         self.assertTrue(local.accepts("python_only"))
@@ -2543,8 +2543,8 @@ if __name__ == "__main__":
 
 class WorkspaceManifestTests(unittest.TestCase):
     """A crate split's Cargo.toml and Cargo.lock changes don't select every harness; a dependency change still does."""
-    CLIENT = '[package]\nname = "horizon-client"\n\n[dependencies]\nserde = "1"\nwgpu = { version = "27", features = ["x"] }\n'
-    LOCK = ('version = 4\n\n[[package]]\nname = "horizon-client"\nversion = "0.1.0"\ndependencies = [\n "serde",\n]\n\n'
+    CLIENT = '[package]\nname = "foundry-client"\n\n[dependencies]\nserde = "1"\nwgpu = { version = "27", features = ["x"] }\n'
+    LOCK = ('version = 4\n\n[[package]]\nname = "foundry-client"\nversion = "0.1.0"\ndependencies = [\n "serde",\n]\n\n'
             '[[package]]\nname = "serde"\nversion = "1.0.1"\nsource = "registry+https://github.com/rust-lang/crates.io-index"\n')
 
     def verdict(self, base, head):
@@ -2559,22 +2559,22 @@ class WorkspaceManifestTests(unittest.TestCase):
             return parity.workspace_only_manifests(set(head) | set(base), "base")
 
     def test_a_crate_split_is_left_out(self):
-        command = '[package]\nname = "horizon-command"\n\n[dependencies]\nserde = "1"\nhorizon-core = { path = "../horizon-core" }\n'
-        client = self.CLIENT + 'horizon-command = { path = "../horizon-command" }\n'
-        lock = self.LOCK.replace('[[package]]\nname = "serde"', '[[package]]\nname = "horizon-command"\nversion = "0.1.0"\n\n'
+        command = '[package]\nname = "foundry-command"\n\n[dependencies]\nserde = "1"\nfoundry-core = { path = "../foundry-core" }\n'
+        client = self.CLIENT + 'foundry-command = { path = "../foundry-command" }\n'
+        lock = self.LOCK.replace('[[package]]\nname = "serde"', '[[package]]\nname = "foundry-command"\nversion = "0.1.0"\n\n'
                                  '[[package]]\nname = "serde"')
-        base = {"Cargo.toml": '[workspace]\nmembers = ["crates/horizon-client"]\nresolver = "2"\n',
-                "crates/horizon-client/Cargo.toml": self.CLIENT, "Cargo.lock": self.LOCK}
-        head = {"Cargo.toml": '[workspace]\nmembers = ["crates/horizon-client", "crates/horizon-command"]\nresolver = "2"\n',
-                "crates/horizon-client/Cargo.toml": client, "crates/horizon-command/Cargo.toml": command, "Cargo.lock": lock}
+        base = {"Cargo.toml": '[workspace]\nmembers = ["crates/foundry-client"]\nresolver = "2"\n',
+                "crates/foundry-client/Cargo.toml": self.CLIENT, "Cargo.lock": self.LOCK}
+        head = {"Cargo.toml": '[workspace]\nmembers = ["crates/foundry-client", "crates/foundry-command"]\nresolver = "2"\n',
+                "crates/foundry-client/Cargo.toml": client, "crates/foundry-command/Cargo.toml": command, "Cargo.lock": lock}
         self.assertEqual(self.verdict(base, head), set(head))
 
     def test_a_dependency_change_still_counts(self):
-        base = {"crates/horizon-client/Cargo.toml": self.CLIENT, "Cargo.lock": self.LOCK}
-        bumped = {"crates/horizon-client/Cargo.toml": self.CLIENT, "Cargo.lock": self.LOCK.replace("1.0.1", "1.0.2")}
+        base = {"crates/foundry-client/Cargo.toml": self.CLIENT, "Cargo.lock": self.LOCK}
+        bumped = {"crates/foundry-client/Cargo.toml": self.CLIENT, "Cargo.lock": self.LOCK.replace("1.0.1", "1.0.2")}
         self.assertEqual(self.verdict(base, bumped), set())
-        feature = {"crates/horizon-client/Cargo.toml": self.CLIENT.replace('["x"]', '["x", "y"]')}
-        self.assertEqual(self.verdict({"crates/horizon-client/Cargo.toml": self.CLIENT}, feature), set())
+        feature = {"crates/foundry-client/Cargo.toml": self.CLIENT.replace('["x"]', '["x", "y"]')}
+        self.assertEqual(self.verdict({"crates/foundry-client/Cargo.toml": self.CLIENT}, feature), set())
         resolver = {"Cargo.toml": '[workspace]\nmembers = ["a"]\nresolver = "3"\n'}
         self.assertEqual(self.verdict({"Cargo.toml": '[workspace]\nmembers = ["a"]\nresolver = "2"\n'}, resolver), set())
 
@@ -2587,25 +2587,25 @@ class WorkspaceManifestTests(unittest.TestCase):
         self.assertEqual(self.verdict({path: git.format("rev1")}, {path: git.format("rev2")}), set())
 
     def test_a_feature_of_a_workspace_crate_counts_through_its_sources(self):
-        items = '[package]\nname = "horizon-items"\n\n[features]\ntest-support = []\n'
-        client = self.CLIENT + '\n[dev-dependencies]\nhorizon-items = { path = "../horizon-items", features = ["test-support"] }\n'
-        head = {"crates/horizon-items/Cargo.toml": items, "crates/horizon-client/Cargo.toml": client,
-                "crates/horizon-items/src/lib.rs": '#[cfg(feature = "test-support")]\npub fn for_tests() {}\n'}
-        base = {"crates/horizon-client/Cargo.toml": self.CLIENT}
+        items = '[package]\nname = "foundry-items"\n\n[features]\ntest-support = []\n'
+        client = self.CLIENT + '\n[dev-dependencies]\nfoundry-items = { path = "../foundry-items", features = ["test-support"] }\n'
+        head = {"crates/foundry-items/Cargo.toml": items, "crates/foundry-client/Cargo.toml": client,
+                "crates/foundry-items/src/lib.rs": '#[cfg(feature = "test-support")]\npub fn for_tests() {}\n'}
+        base = {"crates/foundry-client/Cargo.toml": self.CLIENT}
         # The new crate's files are all changed, the code the feature gates with them.
-        self.assertEqual(self.verdict(base, head), {"crates/horizon-items/Cargo.toml", "crates/horizon-client/Cargo.toml"})
+        self.assertEqual(self.verdict(base, head), {"crates/foundry-items/Cargo.toml", "crates/foundry-client/Cargo.toml"})
         # Turning on a feature of a crate whose gated code didn't change selects as before.
-        world = '[package]\nname = "horizon-world"\n\n[features]\nextra = ["more"]\nmore = []\n'
+        world = '[package]\nname = "foundry-world"\n\n[features]\nextra = ["more"]\nmore = []\n'
         with tempfile.TemporaryDirectory() as temp, mock.patch.object(parity, "ROOT", Path(temp)):
-            Path(temp, "crates/horizon-world/src").mkdir(parents=True)
-            Path(temp, "crates/horizon-world/Cargo.toml").write_text(world)
-            Path(temp, "crates/horizon-world/src/lib.rs").write_text('#[cfg(feature = "more")]\nfn x() {}\n')
-            self.assertFalse(parity.feature_sources_changed("horizon-world", "extra", {"crates/horizon-client/Cargo.toml"}))
-            self.assertTrue(parity.feature_sources_changed("horizon-world", "extra", {"crates/horizon-world/src/lib.rs"}))
-            self.assertFalse(parity.feature_sources_changed("horizon-nothing", "extra", set()))
+            Path(temp, "crates/foundry-world/src").mkdir(parents=True)
+            Path(temp, "crates/foundry-world/Cargo.toml").write_text(world)
+            Path(temp, "crates/foundry-world/src/lib.rs").write_text('#[cfg(feature = "more")]\nfn x() {}\n')
+            self.assertFalse(parity.feature_sources_changed("foundry-world", "extra", {"crates/foundry-client/Cargo.toml"}))
+            self.assertTrue(parity.feature_sources_changed("foundry-world", "extra", {"crates/foundry-world/src/lib.rs"}))
+            self.assertFalse(parity.feature_sources_changed("foundry-nothing", "extra", set()))
         # A feature that reaches an external package counts.
-        optional = {"crates/horizon-client/Cargo.toml": self.CLIENT + '\n[features]\nfast = ["wgpu/x"]\n'}
-        self.assertEqual(self.verdict({"crates/horizon-client/Cargo.toml": self.CLIENT}, optional), set())
+        optional = {"crates/foundry-client/Cargo.toml": self.CLIENT + '\n[features]\nfast = ["wgpu/x"]\n'}
+        self.assertEqual(self.verdict({"crates/foundry-client/Cargo.toml": self.CLIENT}, optional), set())
 
     def test_external_feature_sources_are_not_discarded(self):
         with tempfile.TemporaryDirectory() as temp, mock.patch.object(parity, "ROOT", Path(temp)):

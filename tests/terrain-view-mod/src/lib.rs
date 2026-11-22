@@ -7,7 +7,7 @@ use mod_api::{
 #[derive(Default)]
 struct Fixture;
 
-#[mod_api::horizon_mod]
+#[mod_api::foundry_mod]
 impl Hooks for Fixture {
     fn server_started(&self, host: &mut dyn ServerHost, _: &mut ServerStartedEvent) {
         let chest = host.block_state_id("minecraft:chest").expect("chest state");

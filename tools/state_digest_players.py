@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""State-digest scene with players: BINARY RESOURCES TEMPLATE OUT BOTS [--integrated] [--nether] [--detail] [--ticks N] [--no-digest], or --compare OUT_A OUT_B; template from `state_digest_scene.py --generate`, gate in HORIZON_SCENE_GATE."""
+"""State-digest scene with players: BINARY RESOURCES TEMPLATE OUT BOTS [--integrated] [--nether] [--detail] [--ticks N] [--no-digest], or --compare OUT_A OUT_B; template from `state_digest_scene.py --generate`, gate in FOUNDRY_SCENE_GATE."""
 import json
 import os
 import re
@@ -57,7 +57,7 @@ def player_commands(names, nether):
 
 
 class Bots:
-    """Scripted `horizon-bots` that stand where the server puts them: their per-tick moves repeat one position."""
+    """Scripted `foundry-bots` that stand where the server puts them: their per-tick moves repeat one position."""
 
     def __init__(self, binary, port, directory):
         self.binary, self.port, self.directory = binary, port, directory
@@ -206,7 +206,7 @@ def ctl_run(ctl, socket_path, env, cwd, *words, timeout=600):
 def run_integrated(args, home, out, timings):
     """The host's window runs a server thread, opened to LAN; one bot joins as a guest beside the host's own player."""
     binary, resources, template, _, bots = args[:5]
-    ctl = Path(os.environ.get('HORIZON_SCENE_CTL') or binary.parent / 'horizon-ctl')
+    ctl = Path(os.environ.get('FOUNDRY_SCENE_CTL') or binary.parent / 'foundry-ctl')
     work = out / 'host'
     if work.exists():
         shutil.rmtree(work)
@@ -215,7 +215,7 @@ def run_integrated(args, home, out, timings):
     (work / 'game' / 'saves' / 'T' / 'session.lock').unlink(missing_ok=True)
     digest = None if '--no-digest' in sys.argv else out / 'digest.txt'
     # The server starts frozen (state-digest feature): ticks before the script's freeze would spawn mobs and differ run to run.
-    env = lab.game_env(base.scratch_env(home, digest, '--detail' in sys.argv), HORIZON_HOME=work / 'home', HORIZON_STATE_DIGEST_FREEZE='1')
+    env = lab.game_env(base.scratch_env(home, digest, '--detail' in sys.argv), FOUNDRY_HOME=work / 'home', FOUNDRY_STATE_DIGEST_FREEZE='1')
     sock = work / 'c.sock'
 
     def run(*words, timeout=600):

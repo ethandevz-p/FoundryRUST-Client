@@ -31,7 +31,7 @@ pub(super) enum ModKind {
 }
 
 impl ModKind {
-    pub(super) fn of(manifest: &horizon_platform::mod_package::manifest::Manifest) -> Self {
+    pub(super) fn of(manifest: &foundry_platform::mod_package::manifest::Manifest) -> Self {
         if manifest.native.is_some() {
             Self::Native
         } else if manifest.wasm.is_some() {
@@ -259,9 +259,9 @@ impl Launcher {
         let t = self.theme;
         let current = native_mods::about(plays).map_or_else(|| plays.to_owned(), |a| a.base);
         // Two updates of one day share a name: the button then says it keeps what is played.
-        let same_name = horizon_launcher::nightly::update_name(&current).is_some()
-            && horizon_launcher::nightly::update_name(&current)
-                == horizon_launcher::nightly::update_name(&check.to);
+        let same_name = foundry_launcher::nightly::update_name(&current).is_some()
+            && foundry_launcher::nightly::update_name(&current)
+                == foundry_launcher::nightly::update_name(&check.to);
         let stay = button(
             "native-update-stay",
             match same_name {
@@ -374,7 +374,7 @@ impl Launcher {
             .gap(px(12.))
             .p(px(16.))
             .when(t.glass, |d| {
-                d.rounded(px(horizon_theme::glass::radius::LARGE))
+                d.rounded(px(foundry_theme::glass::radius::LARGE))
                     .bg(ui::white(0.04))
             })
             .when(!t.glass, |d| {
@@ -587,7 +587,7 @@ impl Launcher {
         )
         .on_click(cx.listener(move |this, _: &ClickEvent, _, cx| {
             this.mods.message =
-                horizon_launcher::browser::java::set_enabled(&this.mods.home(), &mod_id, false)
+                foundry_launcher::browser::java::set_enabled(&this.mods.home(), &mod_id, false)
                     .err()
                     .map(Err);
             this.native_error = None;
@@ -676,7 +676,7 @@ impl Launcher {
                     .children(glyph.map(|g| ui::icon(g, 12., color)))
                     .child(text_in(12., color).child(s.label()))
             }));
-        let radius = horizon_theme::glass::radius::CONTROL;
+        let radius = foundry_theme::glass::radius::CONTROL;
         let icons = div()
             .flex()
             .items_center()
@@ -752,7 +752,7 @@ impl Launcher {
             .child(text_in(13., pal.muted).truncate().child(step.to_owned()))
             .children(self.first_build.map(|bytes| {
                 text_in(13., pal.muted).child(trf(
-                    "First time only: Horizon downloads a compiler ({size}) and the mod tools for this game. Later builds take seconds.",
+                    "First time only: Foundry Client downloads a compiler ({size}) and the mod tools for this game. Later builds take seconds.",
                     &[("size", &storage::format_bytes(bytes))],
                 ))
             }))
@@ -864,7 +864,7 @@ impl Launcher {
                     "flash",
                     pal.accent,
                     tr("Needs no build by itself").into(),
-                    tr("This mod uses the game as it ships, so Horizon can start without building when every enabled mod is like this.").to_string(),
+                    tr("This mod uses the game as it ships, so Foundry Client can start without building when every enabled mod is like this.").to_string(),
                 ),
                 // Made for another build: it fits this one, and the build compiles it as usual.
                 Route::Fits { line } => ("tick-02", pal.success, tr("Fits this game").into(), line.clone()),
@@ -979,7 +979,7 @@ impl Launcher {
                 if this.native_step.is_some() || named {
                     return;
                 }
-                this.mods.message = horizon_launcher::browser::java::set_enabled(&home, &id, false)
+                this.mods.message = foundry_launcher::browser::java::set_enabled(&home, &id, false)
                     .err()
                     .map(Err);
                 this.mods.route_open = None;
@@ -1170,7 +1170,7 @@ impl Render for NoteTooltip {
 /// Text at `size` px in `color`, in the look's face.
 fn text_in(size: f32, color: Hsla) -> Div {
     div()
-        .font_family(horizon_theme::glass::FONT)
+        .font_family(foundry_theme::glass::FONT)
         .text_size(px(size))
         .line_height(px((size * 1.4).round()))
         .text_color(color)

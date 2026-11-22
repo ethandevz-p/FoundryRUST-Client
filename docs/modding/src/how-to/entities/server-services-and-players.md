@@ -239,7 +239,7 @@ field that is present and wrong (`color`, `shadow_color`, the format flags,
 `click_event`, `hover_event`, `insertion`, `font`) refuses the whole component.
 A translation's `fallback` and an `nbt` component's `interpret`, `plain` and
 `separator` of the wrong kind are dropped instead. An object whose only content
-key is `index` is refused, as in vanilla; Horizon follows vanilla there. JSON
+key is `index` is refused, as in vanilla; Foundry Client follows vanilla there. JSON
 escapes such as `\u0041` are decoded.
 
 `host.text_from_legacy("§cRed")` reads `§` formatting codes as
@@ -283,7 +283,7 @@ For mods that write blocks by other means (an editor's own section writes, a sch
 | `player.show_block(host, pos, state)` | One block update to that player alone; the world is unchanged and the real block returns when it or its chunk is next sent, so a mod sends it again while it wants it shown. The override is not remembered and does not itself acknowledge or clear pending client predictions. Refuses with `Client`, `Stale`, `NoConnection`, `UnknownState` and `PositionNotSendable { pos }` (y outside -2048..=2047, x or z outside -33554432..33554432: the packet's position wraps there). |
 | `player.place_block(host, level, pos, state, update_neighbour_shapes)` | `level.set_block` with a placement's flags (neighbours told and, unless `update_neighbour_shapes` is false, their shapes updated; the block entity follows that write), then `Block.setPlacedBy` of the block standing there, in the player's turn (a bed gets its head, a door its upper half). It is not vanilla's use-on and not "as player" in the full sense: no survival, obstruction, build-permission or spawn-protection check, no `placed_block` advancement or statistic, no sound, no game event, no item used, and `setPlacedBy` gets no placer. Refuses with `Client`, `Stale`, `Dead`, `StaleLevel`, `OtherLevel` (not the level in place, where the player is), `UnknownState`, `OutOfWorld { pos }`, `NotLoaded { pos }` and `Unchanged` (that state already stands there). |
 
-Where Horizon differs from vanilla: vanilla sends and relights per edit and has no call that lights a set of chunks at once, so `relight_chunks` only queues the work (256 chunks a call, 4096 columns waiting) and never stalls the server thread; `show_block` and `place_block` check the position and the state before anything runs, where vanilla's packet and `setBlock` would wrap or ignore them.
+Where Foundry Client differs from vanilla: vanilla sends and relights per edit and has no call that lights a set of chunks at once, so `relight_chunks` only queues the work (256 chunks a call, 4096 columns waiting) and never stalls the server thread; `show_block` and `place_block` check the position and the state before anything runs, where vanilla's packet and `setBlock` would wrap or ignore them.
 
 A command usage may also name `<pos:vec3>` (`Vec3Argument.vec3()`): the point typed, delivered as `CommandArgumentValue::Vec3([f64; 3])`. A whole x or z is the block's centre (`1` is `1.5`) and y is as typed; relative and local coordinates resolve against the command's source. Fewer than three numbers, or text, is a parse error and the command does not run.
 ## Console and player limit

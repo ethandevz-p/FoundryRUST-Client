@@ -5,7 +5,7 @@ impl Launcher {
     /// Join a friend: a code field and Join, which starts the game straight
     /// into the friend's world (errors show in the game).
     /// Plays the selected instance straight into a world (`--world`) or a server (`--server`):
-    /// flags every Horizon release takes.
+    /// flags every Foundry Client release takes.
     pub(crate) fn quick_play(&mut self, flag: &'static str, value: String) {
         self.quick_play = Some((flag, value));
         self.play();
@@ -15,7 +15,7 @@ impl Launcher {
     }
 
     pub(crate) fn join_friend(&mut self) {
-        if horizon_friends::invite::parse(self.friend_code.text()).is_none() {
+        if foundry_friends::invite::parse(self.friend_code.text()).is_none() {
             return;
         }
         self.joining = Some(self.friend_code.text().to_string());
@@ -87,7 +87,7 @@ impl Launcher {
             meta.push(trf("Built on {base}", &[("base", &about.base)]));
         }
         if let Some(about) = build_import::about(tag) {
-            let base = horizon_launcher::nightly::label(&about.base).unwrap_or(about.base);
+            let base = foundry_launcher::nightly::label(&about.base).unwrap_or(about.base);
             meta.push(trf("Game files from {base}", &[("base", &base)]));
             meta.push(about.file);
         }
@@ -250,7 +250,7 @@ impl Launcher {
                                 .child(tr("Support the work below")),
                         )
                         .child(text(theme::UI).text_color(t.muted).child(tr(
-                            "Horizon is built in the open. Sponsors fund the next release.",
+                            "Foundry Client is built in the open. Sponsors fund the next release.",
                         ))),
                 )
                 .child(
@@ -296,7 +296,7 @@ impl Launcher {
                 "Imported builds",
                 build_import::is_imported,
                 Some(tr(
-                    "Unsigned: you picked these programs yourself, and Horizon can't \
+                    "Unsigned: you picked these programs yourself, and Foundry Client can't \
                     check where they came from. Updates never replace them.",
                 )),
                 &on_disk,
@@ -400,7 +400,7 @@ impl Launcher {
                 } else if installed {
                     self.version_actions(&tag, selected, cx).into_any_element()
                 } else if release.asset.is_none() {
-                    let (line, download) = horizon_launcher::refusals::no_build_card();
+                    let (line, download) = foundry_launcher::refusals::no_build_card();
                     let line = text(theme::CAPTION).text_color(t.muted).child(line);
                     match download {
                         Some(url) => line

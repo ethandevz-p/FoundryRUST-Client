@@ -1,4 +1,4 @@
-//! Settings' accent colour and Home background rows (`horizon_launcher::themes`).
+//! Settings' accent colour and Home background rows (`foundry_launcher::themes`).
 use super::*;
 use crate::glass_ui as ui;
 use crate::servers_page::Field;
@@ -7,7 +7,7 @@ use gpui::{
     canvas, fill, point, size, Bounds, MouseButton, MouseDownEvent, MouseMoveEvent, MouseUpEvent,
     Pixels, Point,
 };
-use horizon_launcher::themes::{self, Accent};
+use foundry_launcher::themes::{self, Accent};
 use std::path::PathBuf;
 
 /// Settings' two sliders of the glass look (the mockup's `Slider`).
@@ -106,8 +106,8 @@ impl Launcher {
         let current = themes::theme(self.settings.theme.as_deref()).map(|th| th.id);
         let mut options: Vec<(Option<&'static str>, &'static str, &'static str, Night)> = vec![(
             None,
-            "Horizon",
-            themes::HORIZON_DESCRIPTION,
+            "Foundry Client",
+            themes::FOUNDRY_DESCRIPTION,
             theme::night::NIGHT,
         )];
         options.extend(themes::THEMES.iter().map(|th| {
@@ -120,7 +120,7 @@ impl Launcher {
         let mut cards = div().flex().flex_wrap().gap(px(10.));
         for (id, name, about, p) in options {
             let accent = themes::starting_accent(id, &self.settings.theme_accents).rgb();
-            let label = horizon_theme::glass::Glass::new(accent, 0., 0.).on_accent;
+            let label = foundry_theme::glass::Glass::new(accent, 0., 0.).on_accent;
             let chosen = current == id;
             let preview = div()
                 .flex()
@@ -164,7 +164,7 @@ impl Launcher {
                 keyboard(
                     div().id(SharedString::from(format!(
                         "theme-{}",
-                        id.unwrap_or(themes::HORIZON)
+                        id.unwrap_or(themes::FOUNDRY)
                     ))),
                     &t,
                 )
@@ -260,7 +260,7 @@ impl Launcher {
     /// off alone. Settings' Appearance and the first-run welcome show them.
     pub(super) fn effects_rows(&mut self, cx: &mut Context<Self>) -> Vec<Div> {
         let t = self.theme;
-        horizon_launcher::effects::Effects::LIST
+        foundry_launcher::effects::Effects::LIST
             .into_iter()
             .map(|(flag, name, what)| {
                 let on = self.settings.effects.get(flag);
@@ -328,7 +328,7 @@ impl Launcher {
             Some(
                 div()
                     .child(tr(
-                        "Horizon's violet by default. Every colour keeps text as easy to read.",
+                        "Foundry Client's violet by default. Every colour keeps text as easy to read.",
                     ))
                     .into_any_element(),
             ),
@@ -670,7 +670,7 @@ impl Launcher {
     }
 
     /// Reset the look: the theme, accent, glass, blur and Home's background go back
-    /// to how Horizon ships. Language, while playing and the opening are not the look and stay.
+    /// to how Foundry Client ships. Language, while playing and the opening are not the look and stay.
     pub(super) fn reset_look_row(&mut self, cx: &mut Context<Self>) -> Div {
         let t = self.theme;
         ui::setting_row(
@@ -678,7 +678,7 @@ impl Launcher {
             Some(
                 div()
                     .child(tr(
-                        "Theme, accent colour, glass, blur and Home's background go back to how Horizon ships.",
+                        "Theme, accent colour, glass, blur and Home's background go back to how Foundry Client ships.",
                     ))
                     .into_any_element(),
             ),
@@ -700,7 +700,7 @@ impl Launcher {
                     // A failed write keeps the save notice and its retry; the toast must not
                     // claim the old look is gone for good.
                     crate::glass_toast::say(if saved {
-                        tr("The launcher's look is back to how Horizon ships")
+                        tr("The launcher's look is back to how Foundry Client ships")
                     } else {
                         tr("The launcher's look is reset for now, but it could not be saved")
                     });
@@ -903,7 +903,7 @@ impl Launcher {
         let said = if custom {
             tr("Your picture, behind Home, cropped to fill it.")
         } else {
-            tr("Horizon's landscape. Pick a PNG, JPEG or WebP picture of your own.")
+            tr("Foundry Client's landscape. Pick a PNG, JPEG or WebP picture of your own.")
         };
         let detail = div().flex().flex_col().child(said.to_string()).children(
             self.background_error

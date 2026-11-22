@@ -4,8 +4,8 @@
 //! GitHub's public API to an exact **release asset** (a `.hmod`, kept by its SHA-256) or an exact
 //! **commit** (the archive of that commit, whose mod folder is packed into a `.hmod`), never to a
 //! branch that moves. The result passes the checks the registry's `.hmod`s pass
-//! (`horizon_platform::mod_package::index::native::Bundle::read`) before anything is installed, and the origin is
-//! kept beside the file (`horizon-native-mods/<id>.origin.json`) for "check for updates".
+//! (`foundry_platform::mod_package::index::native::Bundle::read`) before anything is installed, and the origin is
+//! kept beside the file (`foundry-native-mods/<id>.origin.json`) for "check for updates".
 //!
 //! Nothing here runs the mod's code, and nothing here trusts it: the registry has not reviewed it.
 //! Callers show [`WARNING`] and ask first (`--trust-native-code`).
@@ -19,7 +19,7 @@ use std::io::Read;
 use std::path::{Path, PathBuf};
 
 /// What a player is told before a mod from GitHub is installed.
-pub const WARNING: &str = "Not reviewed by the Horizon registry. Native mods run with full access to this computer. Read the source first.";
+pub const WARNING: &str = "Not reviewed by the Foundry Client registry. Native mods run with full access to this computer. Read the source first.";
 
 /// The most a release asset or a mod's archive may be.
 const MAX_ASSET: u64 = 64 << 20;
@@ -177,7 +177,7 @@ pub fn source_url(owner: &str, repo: &str, commit: &str) -> String {
 /// GitHub's JSON for an API path (`repos/...`); `None` when it answers 404.
 pub type Api<'a> = &'a dyn Fn(&str) -> Result<Option<serde_json::Value>, String>;
 
-/// The real API, unauthenticated (`HORIZON_GITHUB_TOKEN` is used when set, for CI).
+/// The real API, unauthenticated (`FOUNDRY_GITHUB_TOKEN` is used when set, for CI).
 pub fn api(path: &str) -> Result<Option<serde_json::Value>, String> {
     let url = format!("https://api.github.com/{path}");
     match backend::get_unless_missing(&url) {
@@ -218,7 +218,7 @@ fn commit_of(api: Api, link: &Link, reference: &str) -> Result<String, String> {
     })?;
     found["sha"]
         .as_str()
-        .filter(|s| horizon_platform::mod_package::manifest::revision(s))
+        .filter(|s| foundry_platform::mod_package::manifest::revision(s))
         .map(str::to_owned)
         .ok_or_else(|| format!("GitHub did not name the commit of {reference}."))
 }
@@ -384,8 +384,8 @@ fn checked(bytes: &[u8], dir: &Path) -> Result<Packed, String> {
     fs::create_dir_all(dir).map_err(|e| format!("{}: {e}", dir.display()))?;
     let file = dir.join(format!("{}.hmod", &sum[..16]));
     fs::write(&file, bytes).map_err(|e| format!("{}: {e}", file.display()))?;
-    let facts = horizon_platform::mod_package::index::inspect(
-        &horizon_platform::mod_package::index::Kind::NativeMod,
+    let facts = foundry_platform::mod_package::index::inspect(
+        &foundry_platform::mod_package::index::Kind::NativeMod,
         &file,
     )
     .inspect_err(|_| {
@@ -435,7 +435,7 @@ pub fn find_mods(root: &Path) -> Result<Vec<Bundle>, String> {
 
 /// Deterministically package a validated flat mod project.
 pub fn pack(bundle: &Bundle) -> Result<Vec<u8>, String> {
-    horizon_platform::mod_package::Package::pack_directory(&bundle.dir)
+    foundry_platform::mod_package::Package::pack_directory(&bundle.dir)
 }
 
 fn download(url: &str) -> Result<Vec<u8>, String> {
@@ -476,7 +476,7 @@ pub fn fetch(found: &Resolved) -> Result<Vec<Packed>, String> {
     let mods = find_mods(&top)?;
     if mods.is_empty() {
         return Err(format!(
-            "{} holds no native mod (horizon-mod.toml and Cargo.toml).",
+            "{} holds no native mod (foundry-mod.toml and Cargo.toml).",
             found.label()
         ));
     }

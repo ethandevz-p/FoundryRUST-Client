@@ -20,7 +20,7 @@ class NightlyRoutingTests(unittest.TestCase):
             root = Path(folder)
             binary_dir = root / "target tree/release"
             binary_dir.mkdir(parents=True)
-            binary = binary_dir / "horizon-client"
+            binary = binary_dir / "foundry-client"
             binary.write_text("#!/bin/sh\nprintf 'smoke ran'\n")
             binary.chmod(0o755)
             for directory in [str(binary_dir), str(binary_dir.relative_to(root))]:
@@ -33,7 +33,7 @@ class NightlyRoutingTests(unittest.TestCase):
     def test_linux_smoke_gets_a_ready_display(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
-            binary = root / "horizon-client"
+            binary = root / "foundry-client"
             # A controlled game fixture isolates the real smoke orchestration and Xvfb.
             binary.write_text(textwrap.dedent('''\
                 #!/usr/bin/env python3

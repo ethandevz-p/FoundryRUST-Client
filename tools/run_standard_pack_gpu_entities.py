@@ -17,20 +17,20 @@ def main():
     target = prebuilt_game.ROOT / "target" / "standard-pack-gpu-entities"
     target.mkdir(parents=True, exist_ok=True)
     if args.check_only:
-        subprocess.run(["cargo", "check", "-p", "horizon-client-render", "--example", "standard_pack_gpu_entities"],
+        subprocess.run(["cargo", "check", "-p", "foundry-client-render", "--example", "standard_pack_gpu_entities"],
                        cwd=prebuilt_game.ROOT, env=lab.game_env(CARGO_TARGET_DIR=target / "build"), check=True)
         return
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="homes-", dir=target) as home:
         homes = {}
-        for name in ("HORIZON_HOME", "HORIZON_LAUNCHER_HOME", "XDG_DATA_HOME", "XDG_CONFIG_HOME", "XDG_RUNTIME_DIR",
-                     "HORIZON_LAUNCHER_TRASH", "HORIZON_LAUNCHER_CLIPBOARD", "HORIZON_LAUNCHER_DESKTOP"):
+        for name in ("FOUNDRY_HOME", "FOUNDRY_LAUNCHER_HOME", "XDG_DATA_HOME", "XDG_CONFIG_HOME", "XDG_RUNTIME_DIR",
+                     "FOUNDRY_LAUNCHER_TRASH", "FOUNDRY_LAUNCHER_CLIPBOARD", "FOUNDRY_LAUNCHER_DESKTOP"):
             path = Path(home) / name
             path.mkdir(mode=0o700)
             homes[name] = str(path)
         env = lab.game_env(CARGO_TARGET_DIR=target / "build", **homes)
-        subprocess.run(["cargo", "run", "--profile", "dev", "-p", "horizon-client-render",
+        subprocess.run(["cargo", "run", "--profile", "dev", "-p", "foundry-client-render",
                         "--example", "standard_pack_gpu_entities", "--", str(output)],
                        cwd=prebuilt_game.ROOT, env=env, check=True)
 

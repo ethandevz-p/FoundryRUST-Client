@@ -4,7 +4,7 @@
 The Java oracle (VanillaSculkOracle) runs each scenario in a real, headless, flat vanilla server
 level: it builds the blocks, places the player (with a warning level) and entities, and ticks the
 level in ServerLevel.tick's order while scripted game events and block changes happen at given
-ticks. Horizon runs the same scenarios through its game code (`HORIZON_SCULK_FIXTURE`, the
+ticks. Foundry Client runs the same scenarios through its game code (`FOUNDRY_SCULK_FIXTURE`, the
 same server phases, with synthetic player and entity state). Both print, per tick, what changed at the watched blocks (state,
 vibration, selector, last frequency, warning level, charge cursors), sounds, level events, the
 player's warden warning level and darkness, new entities, and the level random. The harness
@@ -316,7 +316,7 @@ def compare(vanilla, rust):
     for name, v in vanilla.items():
         r = rust.get(name)
         if r is None:
-            report.append(f'{name}: missing from Horizon')
+            report.append(f'{name}: missing from Foundry Client')
             continue
         bad = None
         for t in sorted(set(v) | set(r)):
@@ -329,12 +329,12 @@ def compare(vanilla, rust):
                         report.append(f'    vanilla {line}')
                 for line in b:
                     if line not in a:
-                        report.append(f'    horizon {line}')
+                        report.append(f'    foundry {line}')
                 break
         if bad is None:
             clean += 1
             report.append(f'{name}: all {len(v)} ticks match')
-    # The comparison is symmetric: a scenario that only Horizon recorded is a
+    # The comparison is symmetric: a scenario that only Foundry Client recorded is a
     # difference too, not a silently accepted extra that passes as parity.
     for name in sorted(set(rust) - set(vanilla)):
         report.append(f'{name}: missing from vanilla')
@@ -356,27 +356,27 @@ def main():
     inputs = build / 'scenarios.txt'
     write_scenarios(inputs, chosen)
     lock, jars, _ = base.verify_artifacts()
-    resources = lab.LOCAL / 'horizon-client' / lock['minecraft']['version']
+    resources = lab.LOCAL / 'foundry-client' / lock['minecraft']['version']
     if not args.rust_only:
         classes, dependencies, _ = oracle_harness.compile_oracle(build, 'VanillaSculkOracle', jars, baking.client_libraries(),
                                                                 lock['minecraft']['java_major'])
         oracle_harness.run_logged(['java', '-Xmx3g', '-Djava.awt.headless=true', '-cp', str(classes) + os.pathsep + dependencies,
-                                   'dev.horizonlab.parity.VanillaSculkOracle', inputs, build / 'vanilla.txt'],
+                                   'dev.foundrylab.parity.VanillaSculkOracle', inputs, build / 'vanilla.txt'],
                                   build, 'vanilla', timeout=3600)
     if not args.java_only:
-        oracle_harness.run_logged(fast_bins.command('horizon-client'),
+        oracle_harness.run_logged(fast_bins.command('foundry-client'),
                                   build, 'compile-rust')
-        oracle_harness.run_logged([lab.cargo_target() / 'fast/horizon-client', '--resources', resources], build, 'horizon',
-                                  env=lab.game_env(HORIZON_SCULK_FIXTURE=f'{inputs},{build / "horizon.txt"}'))
+        oracle_harness.run_logged([lab.cargo_target() / 'fast/foundry-client', '--resources', resources], build, 'foundry',
+                                  env=lab.game_env(FOUNDRY_SCULK_FIXTURE=f'{inputs},{build / "foundry.txt"}'))
     if args.java_only:
         return
     names = {s[0] for _, s in chosen}
     vanilla = {k: v for k, v in parse(build / 'vanilla.txt').items() if k in names}
-    horizon = parse(build / 'horizon.txt')
-    report, clean = compare(vanilla, horizon)
+    foundry = parse(build / 'foundry.txt')
+    report, clean = compare(vanilla, foundry)
     (build / 'report.txt').write_text('\n'.join(report) + '\n')
     print('\n'.join(line for line in report if not line.endswith('ticks match')))
-    total = len(set(vanilla) | set(horizon))
+    total = len(set(vanilla) | set(foundry))
     print(f'{clean}/{total} scenarios match on every tick')
     if not args.report_only and clean != total:
         raise SystemExit(1)

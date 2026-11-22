@@ -1,33 +1,33 @@
-# Installs horizon-server (docs/server.md) on Windows: the current Horizon Nightly (the only build Horizon ships;
+# Installs foundry-server (docs/server.md) on Windows: the current Foundry Client Nightly (the only build Foundry Client ships;
 # GitHub's latest release while there is none), downloaded from GitHub Releases and checked against the release's
 # signed SHA256SUMS when OpenSSL 3 is found (docs/release-flow.md, "Signed checksums"), else against the SHA-256
 # GitHub publishes for it. OpenSSL is looked for on the PATH and in Git for Windows, which ships it.
 #
-#   irm https://raw.githubusercontent.com/horizon-rust/horizon/main/packaging/server/install.ps1 | iex
-#   & ([scriptblock]::Create((irm .../install.ps1))) -Version v0.5.0 -Dir D:\Horizon
+#   irm https://raw.githubusercontent.com/foundry-rust/foundry/main/packaging/server/install.ps1 | iex
+#   & ([scriptblock]::Create((irm .../install.ps1))) -Version v0.5.0 -Dir D:\Foundry Client
 #
 # Releases go to <Dir>\releases\<version>, <Dir>\current points at the one in use, and <Dir>\bin (added to
-# your PATH) holds horizon-server.cmd and horizon-prepare.cmd. The game files you prepare from your own
+# your PATH) holds foundry-server.cmd and foundry-prepare.cmd. The game files you prepare from your own
 # Minecraft stay in <Dir>\game-files across updates. Nothing of Mojang's is downloaded. No admin rights.
 param(
     [string]$Version = "latest",
-    [string]$Dir = (Join-Path $env:LOCALAPPDATA "Horizon")
+    [string]$Dir = (Join-Path $env:LOCALAPPDATA "Foundry Client")
 )
 $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"
 
-$Repo = "horizon-rust/horizon"
-# Horizon's release public keys, base64: copy of crates/horizon-release-sign/release-keys.txt (rotation adds a key
+$Repo = "foundry-rust/foundry"
+# Foundry Client's release public keys, base64: copy of crates/foundry-release-sign/release-keys.txt (rotation adds a key
 # there first; keep the two in step, and install.sh's RELEASE_KEYS too).
 $ReleaseKeys = @("MU4oiIQcCxkZvbwSjjXs7SySCuM6ywRQ3nGaJYZG0gw=")
 $Fallback = $null
 $Architecture = $env:PROCESSOR_ARCHITEW6432
 if (-not $Architecture) { $Architecture = $env:PROCESSOR_ARCHITECTURE }
 switch ($Architecture) {
-    "AMD64" { $Asset = "horizon-windows-x64.zip" }
+    "AMD64" { $Asset = "foundry-windows-x64.zip" }
     # A release without an ARM64 build installs the x64 one, which Windows runs under emulation.
-    "ARM64" { $Asset = "horizon-windows-arm64.zip"; $Fallback = "horizon-windows-x64.zip" }
-    default { throw "No Horizon release for Windows on $Architecture yet: build it from source (docs/server.md)" }
+    "ARM64" { $Asset = "foundry-windows-arm64.zip"; $Fallback = "foundry-windows-x64.zip" }
+    default { throw "No Foundry Client release for Windows on $Architecture yet: build it from source (docs/server.md)" }
 }
 
 function Get-Release([string]$Path) {
@@ -40,14 +40,14 @@ if ($Version -eq "latest") {
 }
 $Tag = $Release.tag_name
 $RawTag = $Tag
-# A Nightly installs under its date and commit, as `horizon-server update` names it:
+# A Nightly installs under its date and commit, as `foundry-server update` names it:
 # "Nightly 2026-10-28 <middle dot> 0c02067" is nightly-2026-10-28-0c02067 ([char]0xB7: this file stays ASCII).
 # Its signature is checked for exactly that version, so the title must name it (as
-# horizon_release_sign::build_title_version reads it, strictly).
+# foundry_release_sign::build_title_version reads it, strictly).
 $Nightly = $null
 if ($Tag -eq "nightly" -or $Tag.StartsWith("nightly-")) {
     if ($Release.name -cnotmatch "^Nightly (\d{4}-\d{2}-\d{2}) $([char]0xB7) ([0-9a-f]{7,40})$") {
-        throw "This Nightly's title doesn't name its date and commit as Horizon signs them, so it can't be checked: not installed"
+        throw "This Nightly's title doesn't name its date and commit as Foundry Client signs them, so it can't be checked: not installed"
     }
     $Nightly = "nightly-$($Matches[1])-$($Matches[2])"
     $Tag = $Nightly
@@ -90,11 +90,11 @@ function Find-OpenSsl {
     return @{ Path = $null; Other = $Other }
 }
 
-$Tmp = Join-Path ([IO.Path]::GetTempPath()) ("horizon-install-" + [Guid]::NewGuid())
+$Tmp = Join-Path ([IO.Path]::GetTempPath()) ("foundry-install-" + [Guid]::NewGuid())
 New-Item -ItemType Directory -Path $Tmp | Out-Null
 try {
     # The signature (docs/release-flow.md, "Signed checksums"): SHA256SUMS.sig holds one base64 Ed25519 signature
-    # per line over "horizon release <tag>\n" + SHA256SUMS. A Nightly is checked against SHA256SUMS.v2.sig instead,
+    # per line over "foundry release <tag>\n" + SHA256SUMS. A Nightly is checked against SHA256SUMS.v2.sig instead,
     # signed for its own version (nightly-<date>-<commit>, from its title), never the channel's SHA256SUMS.sig: an
     # older Nightly can't be passed off as the current one (docs/security.md, "Nightly signatures"). Windows can't
     # check Ed25519 by itself, so this needs OpenSSL 3; without it the install says so and keeps GitHub's SHA-256.
@@ -118,7 +118,7 @@ try {
             Invoke-WebRequest -UseBasicParsing -Uri $SumsItem.browser_download_url -OutFile $Sums
             Invoke-WebRequest -UseBasicParsing -Uri $SigItem.browser_download_url -OutFile $Sigs
             $Message = Join-Path $Tmp "message"
-            [IO.File]::WriteAllBytes($Message, [byte[]]([Text.Encoding]::ASCII.GetBytes("horizon release $SigTag`n") + [IO.File]::ReadAllBytes($Sums)))
+            [IO.File]::WriteAllBytes($Message, [byte[]]([Text.Encoding]::ASCII.GetBytes("foundry release $SigTag`n") + [IO.File]::ReadAllBytes($Sums)))
             $KeyDer = Join-Path $Tmp "key.der"
             $Signature = Join-Path $Tmp "signature"
             $Signed = $false
@@ -136,19 +136,19 @@ try {
                 }
             }
             if (-not $Signed) {
-                throw "$Tag's SHA256SUMS signature doesn't match Horizon's release key: not installed. The download may have been tampered with; please report it on Discord or GitHub."
+                throw "$Tag's SHA256SUMS signature doesn't match Foundry Client's release key: not installed. The download may have been tampered with; please report it on Discord or GitHub."
             }
             $Expect = $null
             foreach ($Line in [IO.File]::ReadAllLines($Sums)) {
                 if ($Line -match "^([0-9a-fA-F]{64}) [ *](.+)$" -and $Matches[2] -eq $Asset) { $Expect = $Matches[1]; break }
             }
             if (-not $Expect) { throw "The signed SHA256SUMS doesn't list ${Asset}: not installed" }
-            Write-Host "Release signature OK (Horizon release key)."
+            Write-Host "Release signature OK (Foundry Client release key)."
         }
     }
     if (-not $Expect) { throw "Release $Tag publishes no SHA-256 for $Asset" }
 
-    Write-Host "Downloading Horizon $Tag ($Asset)..."
+    Write-Host "Downloading Foundry Client $Tag ($Asset)..."
     $Zip = Join-Path $Tmp $Asset
     Invoke-WebRequest -Uri $Item.browser_download_url -OutFile $Zip
     $Got = (Get-FileHash -Algorithm SHA256 $Zip).Hash.ToLowerInvariant()
@@ -157,11 +157,11 @@ try {
     }
     $Unpacked = Join-Path $Tmp "x"
     Expand-Archive -Path $Zip -DestinationPath $Unpacked
-    $Server = Get-ChildItem -Path $Unpacked -Recurse -Filter "horizon-server.exe" | Select-Object -First 1
-    if (-not $Server) { throw "$Asset holds no horizon-server.exe (a release from before it existed?)" }
+    $Server = Get-ChildItem -Path $Unpacked -Recurse -Filter "foundry-server.exe" | Select-Object -First 1
+    if (-not $Server) { throw "$Asset holds no foundry-server.exe (a release from before it existed?)" }
 
     $Releases = Join-Path $Dir "releases"
-    $GameFiles = Join-Path $Dir "game-files\horizon-client"
+    $GameFiles = Join-Path $Dir "game-files\foundry-client"
     $Bin = Join-Path $Dir "bin"
     New-Item -ItemType Directory -Force -Path $Releases, $GameFiles, $Bin | Out-Null
     $Target = Join-Path $Releases $Tag
@@ -171,11 +171,11 @@ try {
     # admin rights, unlike symbolic links.
     $Local = Join-Path $Target ".local"
     New-Item -ItemType Directory -Force -Path $Local | Out-Null
-    New-Item -ItemType Junction -Path (Join-Path $Local "horizon-client") -Target $GameFiles | Out-Null
+    New-Item -ItemType Junction -Path (Join-Path $Local "foundry-client") -Target $GameFiles | Out-Null
     $Current = Join-Path $Dir "current"
     if (Test-Path $Current) { (Get-Item $Current).Delete() }
     New-Item -ItemType Junction -Path $Current -Target $Target | Out-Null
-    foreach ($Tool in "horizon-server", "horizon-prepare") {
+    foreach ($Tool in "foundry-server", "foundry-prepare") {
         Set-Content -Path (Join-Path $Bin "$Tool.cmd") -Encoding ASCII -Value "@`"$Current\$Tool.exe`" %*"
     }
     $UserPath = [Environment]::GetEnvironmentVariable("Path", "User")
@@ -183,13 +183,13 @@ try {
         [Environment]::SetEnvironmentVariable("Path", ($UserPath.TrimEnd(";") + ";" + $Bin).TrimStart(";"), "User")
         Write-Host "Added $Bin to your PATH: open a new terminal to use it."
     }
-    Write-Host "Installed Horizon $Tag in $Target."
+    Write-Host "Installed Foundry Client $Tag in $Target."
     if (-not (Get-ChildItem -Path $GameFiles -ErrorAction SilentlyContinue)) {
         Write-Host "Next, prepare the game files from your own Minecraft 26.3 (it needs Java 25 and the game installed"
         Write-Host "once by the official launcher; see docs/server.md):"
-        Write-Host "  horizon-prepare --prepare --server-jar C:\path\to\server.jar"
+        Write-Host "  foundry-prepare --prepare --server-jar C:\path\to\server.jar"
     }
-    Write-Host "Then set up a server: mkdir my-server; cd my-server; horizon-server init"
+    Write-Host "Then set up a server: mkdir my-server; cd my-server; foundry-server init"
 } finally {
     Remove-Item -Recurse -Force $Tmp -ErrorAction SilentlyContinue
 }

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""LAN authentication failure: real vanilla login listener versus Horizon's network thread."""
+"""LAN authentication failure: real vanilla login listener versus Foundry Client's network thread."""
 import json
 import re
 from pathlib import Path
@@ -24,7 +24,7 @@ def main():
         build, 'VanillaLanAuthOracle', jars, client_libraries(), lock['minecraft']['java_major'])
     oh.java_run(build, classes, dependencies, 'VanillaLanAuthOracle', [], 'vanilla')
     # The limit covers the build, and other harnesses' builds holding the shared target directory's lock.
-    oh.run_logged(['cargo', 'test', '-p', 'horizon-client-lib', '--lib',
+    oh.run_logged(['cargo', 'test', '-p', 'foundry-client-lib', '--lib',
                    'net::tests::lan_login_continues_after_authentication_failure', '--', '--ignored',
                    '--exact', '--nocapture'],
                   build, 'rust', timeout=3600)
@@ -32,10 +32,10 @@ def main():
     expected = re.findall(pattern, (build / 'vanilla.log').read_text(encoding='utf-8'))
     actual = re.findall(pattern, (build / 'rust.log').read_text(encoding='utf-8'))
     if len(expected) != 2 or actual != expected:
-        raise AssertionError(f'vanilla: {expected!r}; Horizon: {actual!r}')
+        raise AssertionError(f'vanilla: {expected!r}; Foundry Client: {actual!r}')
     report.write_text(json.dumps({'passed': True, 'cases': expected,
         'tested_source_hashes': base.source_hashes([
-            Path(__file__), oracle, lab.ROOT / 'crates/horizon-client/src/net.rs'])}, indent=2) + '\n',
+            Path(__file__), oracle, lab.ROOT / 'crates/foundry-client/src/net.rs'])}, indent=2) + '\n',
         encoding='utf-8')
     print('LAN authentication parity: both server kinds match vanilla')
 

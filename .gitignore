@@ -14,7 +14,7 @@
 /run/
 /logs/
 /dist/
-/mods/horizon/build/
+/mods/foundry/build/
 /saves/
 /backups/
 /tools/logs/
@@ -23,17 +23,17 @@
 /options.txt
 /command_history.txt
 /debug-profile.json
-/horizon.txt
-/horizon-graphics.txt
-/horizon-controller.txt
-/horizon-extras.txt
-/horizon-player.txt
+/foundry.txt
+/foundry-graphics.txt
+/foundry-controller.txt
+/foundry-extras.txt
+/foundry-player.txt
 /servers.dat
 /screenshots/
-/.horizon-cache/
+/.foundry-cache/
 # The same cache real-Game tests write, from the crate's own directory.
-/crates/horizon-client/.horizon-cache/
-/crates/horizon-client/horizon-player.txt
+/crates/foundry-client/.foundry-cache/
+/crates/foundry-client/foundry-player.txt
 /crash-reports/
 /debug/
 

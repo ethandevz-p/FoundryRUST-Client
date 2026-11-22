@@ -1,17 +1,17 @@
 //! Per-user setup on Windows, no administrator needed.
 //!
-//! `horizon-launcher-setup.exe` (the launcher's own binary under another name, made by the
-//! release workflow) copies itself to `%LOCALAPPDATA%\Programs\Horizon Launcher\horizon-launcher.exe`,
+//! `foundry-launcher-setup.exe` (the launcher's own binary under another name, made by the
+//! release workflow) copies itself to `%LOCALAPPDATA%\Programs\Foundry Client Launcher\foundry-launcher.exe`,
 //! makes the Start menu shortcut (and the desktop one if asked) and the Uninstall entry under HKCU,
-//! and starts the installed copy. `horizon-launcher.exe uninstall` takes it all away again: the
+//! and starts the installed copy. `foundry-launcher.exe uninstall` takes it all away again: the
 //! launcher's data folder only when asked, the game's folder never.
 //!
 //! Nothing here deletes a folder it didn't make: the install folder is always called
-//! "Horizon Launcher" ([`folder_for`]) and is removed with `remove_dir`, which only takes an empty one.
+//! "Foundry Client Launcher" ([`folder_for`]) and is removed with `remove_dir`, which only takes an empty one.
 //!
 //! Command lines (handled in `main` before the CLI parser, so MCP never sees them):
-//! `horizon-launcher-setup.exe` (window), `... setup --quiet [--dir <folder>] [--desktop-shortcut]`,
-//! `horizon-launcher.exe uninstall` (window), `... uninstall --quiet [--remove-data]`.
+//! `foundry-launcher-setup.exe` (window), `... setup --quiet [--dir <folder>] [--desktop-shortcut]`,
+//! `foundry-launcher.exe uninstall` (window), `... uninstall --quiet [--remove-data]`.
 use crate::backend;
 use crate::data_location::{self, Roots};
 use crate::shortcut;
@@ -21,13 +21,13 @@ use std::path::{Path, PathBuf};
 use winreg::enums::{HKEY_CURRENT_USER, KEY_READ, KEY_WRITE};
 use winreg::RegKey;
 
-pub const APP_NAME: &str = "Horizon Launcher";
-const BINARY: &str = "horizon-launcher.exe";
-const PUBLISHER: &str = "Horizon";
-const ABOUT_URL: &str = horizon_addresses::LAUNCHER_ABOUT;
-const UNINSTALL_KEY: &str = r"Software\Microsoft\Windows\CurrentVersion\Uninstall\HorizonLauncher";
-const OWN_KEY: &str = r"Software\Horizon\Launcher";
-const ASIDE_PREFIX: &str = "horizon-launcher-uninstall-";
+pub const APP_NAME: &str = "Foundry Client Launcher";
+const BINARY: &str = "foundry-launcher.exe";
+const PUBLISHER: &str = "Foundry Client";
+const ABOUT_URL: &str = foundry_addresses::LAUNCHER_ABOUT;
+const UNINSTALL_KEY: &str = r"Software\Microsoft\Windows\CurrentVersion\Uninstall\FoundryLauncher";
+const OWN_KEY: &str = r"Software\Foundry Client\Launcher";
+const ASIDE_PREFIX: &str = "foundry-launcher-uninstall-";
 
 pub use crate::setup_args::Mode;
 use crate::setup_args::{classify, Invocation};
@@ -46,7 +46,7 @@ pub enum Step {
 
 #[derive(Clone, Debug)]
 pub struct Options {
-    /// Where the launcher goes (always a folder called "Horizon Launcher").
+    /// Where the launcher goes (always a folder called "Foundry Client Launcher").
     pub dir: PathBuf,
     pub desktop: bool,
     /// Uninstall only: also delete the launcher's data folder.
@@ -79,17 +79,17 @@ fn args() -> Vec<String> {
     std::env::args().skip(1).collect()
 }
 
-/// Whether this binary is the setup: its file name starts with `horizon-launcher-setup` (the
-/// release workflow copies the launcher under that name). `HORIZON_LAUNCHER_SETUP=1` forces it,
+/// Whether this binary is the setup: its file name starts with `foundry-launcher-setup` (the
+/// release workflow copies the launcher under that name). `FOUNDRY_LAUNCHER_SETUP=1` forces it,
 /// for screenshots and tests.
 pub fn is_setup_exe() -> bool {
-    if std::env::var_os("HORIZON_LAUNCHER_SETUP").is_some_and(|v| v.to_string_lossy() == "1") {
+    if std::env::var_os("FOUNDRY_LAUNCHER_SETUP").is_some_and(|v| v.to_string_lossy() == "1") {
         return true;
     }
     backend::exe_path()
         .file_stem()
         .and_then(|s| s.to_str())
-        .is_some_and(|s| s.to_ascii_lowercase().starts_with("horizon-launcher-setup"))
+        .is_some_and(|s| s.to_ascii_lowercase().starts_with("foundry-launcher-setup"))
 }
 
 /// The window to open instead of the launcher: the wizard for the setup exe started without
@@ -105,9 +105,9 @@ fn invocation() -> Invocation {
     classify(&args(), is_setup_exe())
 }
 
-/// `%LOCALAPPDATA%\Programs\Horizon Launcher`; `HORIZON_LAUNCHER_SETUP_DIR` replaces it (tests).
+/// `%LOCALAPPDATA%\Programs\Foundry Client Launcher`; `FOUNDRY_LAUNCHER_SETUP_DIR` replaces it (tests).
 pub fn default_dir() -> PathBuf {
-    if let Some(dir) = std::env::var_os("HORIZON_LAUNCHER_SETUP_DIR").filter(|d| !d.is_empty()) {
+    if let Some(dir) = std::env::var_os("FOUNDRY_LAUNCHER_SETUP_DIR").filter(|d| !d.is_empty()) {
         return folder_for(Path::new(&dir));
     }
     dirs::data_local_dir()
@@ -116,7 +116,7 @@ pub fn default_dir() -> PathBuf {
         .join(APP_NAME)
 }
 
-/// The install folder for a folder the player picked: always one called "Horizon Launcher", so
+/// The install folder for a folder the player picked: always one called "Foundry Client Launcher", so
 /// uninstalling never has to guess what is ours.
 pub fn folder_for(chosen: &Path) -> PathBuf {
     if chosen
@@ -332,7 +332,7 @@ pub fn install(options: &Options, progress: impl Fn(Step, f32)) -> Result<PathBu
     let exe = dir.join(BINARY);
     progress(Step::Files, 0.05);
     fs::create_dir_all(&dir).map_err(|e| format!("{}: {e}", dir.display()))?;
-    // Running the installed copy as the setup (`HORIZON_LAUNCHER_SETUP=1`) rewrites the shortcuts
+    // Running the installed copy as the setup (`FOUNDRY_LAUNCHER_SETUP=1`) rewrites the shortcuts
     // and the registry, but does not copy the file onto itself.
     if !same_path(&source, &exe) {
         place(&source, &exe).map_err(|e| format!("{}: {e}", exe.display()))?;
@@ -376,7 +376,7 @@ fn running_launchers() -> Vec<u32> {
             "CSV",
             "/NH",
             "/FI",
-            "IMAGENAME eq horizon-launcher.exe",
+            "IMAGENAME eq foundry-launcher.exe",
         ])
         .output();
     out.map(|o| {
@@ -422,9 +422,9 @@ fn close_running_launchers(progress: &impl Fn(Step, f32)) {
 }
 
 /// The data location the player moved the launcher's data to (Settings > Data folder), when
-/// [`backend::data_dir`] follows it: not under `HORIZON_LAUNCHER_HOME`, which comes first.
+/// [`backend::data_dir`] follows it: not under `FOUNDRY_LAUNCHER_HOME`, which comes first.
 fn moved_location() -> Option<Roots> {
-    if std::env::var_os("HORIZON_LAUNCHER_HOME").is_some_and(|p| !p.is_empty()) {
+    if std::env::var_os("FOUNDRY_LAUNCHER_HOME").is_some_and(|p| !p.is_empty()) {
         return None;
     }
     data_location::configured_roots().ok().flatten()
@@ -438,11 +438,11 @@ fn named(path: &Path, name: &str) -> bool {
 }
 
 /// Whether `data`, the folder [`backend::data_dir`] names, is one the launcher made, so that
-/// `--remove-data` may delete it: the default `horizon-launcher` folder, or the `launcher` folder
+/// `--remove-data` may delete it: the default `foundry-launcher` folder, or the `launcher` folder
 /// of a moved data location, which the move lays out as `<folder>\launcher`, `\game` and `\build`.
 fn made_by_launcher(data: &Path, location: Option<&Roots>) -> bool {
     let laid_out = location.is_some_and(|r| r.launcher == data && named(&r.launcher, "launcher"));
-    named(data, "horizon-launcher") || laid_out
+    named(data, "foundry-launcher") || laid_out
 }
 
 /// Whether `builds`, [`backend::build_dir`], goes with a data folder the launcher made. In a moved
@@ -454,7 +454,7 @@ fn builds_are_launchers(builds: &Path, data: &Path, location: Option<&Roots>) ->
 /// Takes the install away. Returns what could not be removed (a file in use, say).
 pub fn uninstall(remove_data: bool, progress: impl Fn(Step, f32)) -> Result<Vec<String>, String> {
     let dir = registered()
-        .ok_or("Horizon Launcher is not installed for this account.")?
+        .ok_or("Foundry Client Launcher is not installed for this account.")?
         .dir;
     close_running_launchers(&progress);
     clean_aside(&dir);
@@ -489,14 +489,14 @@ pub fn uninstall(remove_data: bool, progress: impl Fn(Step, f32)) -> Result<Vec<
             Err(e) => left.push(format!(r"HKCU\{key}: {e}")),
         }
     }
-    // `Software\Horizon` goes only when nothing else (the game) keeps anything in it.
-    if let Ok(parent) = hkcu.open_subkey_with_flags(r"Software\Horizon", KEY_READ) {
+    // `Software\Foundry Client` goes only when nothing else (the game) keeps anything in it.
+    if let Ok(parent) = hkcu.open_subkey_with_flags(r"Software\Foundry Client", KEY_READ) {
         let empty = parent
             .query_info()
             .is_ok_and(|info| info.sub_keys == 0 && info.values == 0);
         drop(parent);
         if empty {
-            let _ = hkcu.delete_subkey(r"Software\Horizon");
+            let _ = hkcu.delete_subkey(r"Software\Foundry Client");
         }
     }
 
@@ -510,7 +510,7 @@ pub fn uninstall(remove_data: bool, progress: impl Fn(Step, f32)) -> Result<Vec<
     // Only what setup and self-updates put there: the launcher and what they moved aside.
     for entry in fs::read_dir(&dir).into_iter().flatten().flatten() {
         let name = entry.file_name().to_string_lossy().to_lowercase();
-        if name == BINARY || name.starts_with("horizon-launcher.exe.") {
+        if name == BINARY || name.starts_with("foundry-launcher.exe.") {
             remove_file(&entry.path(), &mut left);
         }
     }
@@ -527,7 +527,7 @@ pub fn uninstall(remove_data: bool, progress: impl Fn(Step, f32)) -> Result<Vec<
         progress(Step::Data, 0.8);
         let data = backend::data_dir();
         let location = moved_location();
-        // Only a folder the launcher made: `HORIZON_LAUNCHER_HOME` may point anywhere.
+        // Only a folder the launcher made: `FOUNDRY_LAUNCHER_HOME` may point anywhere.
         if made_by_launcher(&data, location.as_ref()) {
             remove_all(&data, &mut left);
             // A profile whose name isn't ASCII keeps the build folder in %ProgramData%
@@ -626,11 +626,11 @@ mod tests {
     fn the_install_folder_is_always_ours() {
         assert_eq!(
             folder_for(Path::new(r"C:\Games")),
-            PathBuf::from(r"C:\Games\Horizon Launcher")
+            PathBuf::from(r"C:\Games\Foundry Client Launcher")
         );
         assert_eq!(
-            folder_for(Path::new(r"C:\Games\horizon launcher")),
-            PathBuf::from(r"C:\Games\horizon launcher")
+            folder_for(Path::new(r"C:\Games\foundry launcher")),
+            PathBuf::from(r"C:\Games\foundry launcher")
         );
     }
 
@@ -645,16 +645,16 @@ mod tests {
 
     #[test]
     fn uninstall_deletes_only_folders_the_launcher_made() {
-        // The default folder, and one `HORIZON_LAUNCHER_HOME` names the same.
-        let default = Path::new(r"C:\Users\p\AppData\Roaming\horizon-launcher");
+        // The default folder, and one `FOUNDRY_LAUNCHER_HOME` names the same.
+        let default = Path::new(r"C:\Users\p\AppData\Roaming\foundry-launcher");
         assert!(made_by_launcher(default, None));
         assert!(builds_are_launchers(default, default, None));
         assert!(!made_by_launcher(Path::new(r"D:\Documents"), None));
         assert!(!made_by_launcher(Path::new(r"D:\Games\launcher"), None));
 
-        // Data moved to D:\Horizon (`data_location::layout`): its launcher and build folders go,
+        // Data moved to D:\Foundry Client (`data_location::layout`): its launcher and build folders go,
         // the game folder never.
-        let moved = moved_to(r"D:\Horizon");
+        let moved = moved_to(r"D:\Foundry Client");
         assert!(made_by_launcher(&moved.launcher, Some(&moved)));
         assert!(builds_are_launchers(
             &moved.build,
@@ -663,7 +663,7 @@ mod tests {
         ));
         assert!(!made_by_launcher(&moved.game, Some(&moved)));
         // A build folder inside the launcher folder goes with it.
-        let inside = Path::new(r"D:\Horizon\launcher\build");
+        let inside = Path::new(r"D:\Foundry Client\launcher\build");
         assert!(builds_are_launchers(inside, &moved.launcher, Some(&moved)));
 
         // Not what a move lays out (a location file edited by hand): left alone.
@@ -716,12 +716,12 @@ mod tests {
             .to_str()
             .and_then(|t| t.strip_prefix(r"\\?\"))
             .map_or(temp.clone(), PathBuf::from);
-        let dir = temp.join(format!("horizon-link-{}", std::process::id()));
+        let dir = temp.join(format!("foundry-link-{}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
-        let exe = dir.join("Horizon Launcher").join("horizon-launcher.exe");
+        let exe = dir.join("Foundry Client Launcher").join("foundry-launcher.exe");
         fs::create_dir_all(exe.parent().unwrap()).unwrap();
         fs::write(&exe, b"x").unwrap();
-        let link = dir.join("Horizon Launcher.lnk");
+        let link = dir.join("Foundry Client Launcher.lnk");
         write_link(&link, &exe).unwrap();
         // The bug this guards: a link whose target the shell read as empty, so a double click did nothing.
         assert_eq!(
@@ -732,7 +732,7 @@ mod tests {
         assert!(points_to(&link, &exe));
         assert!(!points_to(
             &link,
-            Path::new(r"C:\Other\horizon-launcher.exe")
+            Path::new(r"C:\Other\foundry-launcher.exe")
         ));
         let _ = fs::remove_dir_all(&dir);
     }

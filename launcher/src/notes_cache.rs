@@ -2,7 +2,7 @@
 //! in view (`cull.rs`).
 use crate::cull::Cull;
 use crate::markdown::Notes;
-use horizon_launcher::backend::Release;
+use foundry_launcher::backend::Release;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;

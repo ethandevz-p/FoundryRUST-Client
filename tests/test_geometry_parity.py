@@ -22,7 +22,7 @@ class GeometryRunnerTests(unittest.TestCase):
                 self.assertFalse(report.exists())
 
     def test_collision_counts_reject_missing_partial_and_inconsistent_coverage(self):
-        for output in ["", "HORIZON_COLLISION_RESULT {}", 'HORIZON_COLLISION_RESULT {"registry_states":35723,"cached_states":1,"uncached_states":1,"queries":6,"unique_shapes":1}']:
+        for output in ["", "FOUNDRY_COLLISION_RESULT {}", 'FOUNDRY_COLLISION_RESULT {"registry_states":35723,"cached_states":1,"uncached_states":1,"queries":6,"unique_shapes":1}']:
             with self.subTest(output=output), self.assertRaises((AssertionError, KeyError)):
                 collision.counts(output)
 
@@ -31,7 +31,7 @@ class GeometryRunnerTests(unittest.TestCase):
         # `generate` would exit 0 without inputs.txt and leave the last run's corpus to be compared.
         command = collision.oracle_command("classes", "generate", Path("folder"))
         self.assertIn("-Dhorizon.prepare.reuse=false", command)
-        self.assertLess(command.index("-Dhorizon.prepare.reuse=false"), command.index("dev.horizonlab.parity.VanillaCollisionOracle"))
+        self.assertLess(command.index("-Dhorizon.prepare.reuse=false"), command.index("dev.foundrylab.parity.VanillaCollisionOracle"))
 
     def test_geometry_inputs_are_repeatable_and_include_ieee_boundaries(self):
         commands = list(geometry.corpus())

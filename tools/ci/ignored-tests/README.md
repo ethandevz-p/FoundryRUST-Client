@@ -5,7 +5,7 @@ policy (`parity-harness.txt`, `wasm-fixture.txt`, `gpu.txt`, `flaky.txt`, ...) o
 its issue (`issue-2177.txt`). A lane that adds a known failure writes its own file; fixing it deletes that file.
 A test may be listed in one file only: a second listing fails naming both files.
 
-Horizon keeps its own CI workflows; the fork-only daily, wasm-mods and launcher-windows-check workflows are not
+Foundry Client keeps its own CI workflows; the fork-only daily, wasm-mods and launcher-windows-check workflows are not
 adopted here. This catalogue describes the standalone runners' selections, not automatic CI coverage. Run the
 full matrix explicitly with prepared data where available; `by-hand` rows require an explicit local invocation
 and their stated inputs. A workflow owner is valid only when that workflow exists in `.github/workflows/`.
@@ -22,7 +22,7 @@ harness's own step: its harness runs it with the environment it needs, and the j
 that needs a graphics adapter: it runs, and must pass, only where the runner has a Vulkan driver. `needs` marks a
 test that reads an input only its harness provides: refused by name when the variable is unset, run and required
 to pass when it is set. `ignored_tests.py --needs VARIABLE --one-process-each` runs one variable's tests, each
-alone in its own process; supply the built fixtures and `HORIZON_WASM_STD` explicitly for `HORIZON_WASM_FIXTURE`.
+alone in its own process; supply the built fixtures and `FOUNDRY_WASM_STD` explicitly for `FOUNDRY_WASM_FIXTURE`.
 
 `needs-plain` has the same variable and refusal policy as `needs`, but is not an ignored test or a known
 failure. The one-process runner selects it with `--exact` without `--ignored`; ordinary data shards skip it
@@ -37,13 +37,13 @@ whose test no longer runs fails. Its package's shard runs it when that shard bui
 leg runs every other one; the static guard fails a row no full-matrix leg selects. `python3 tools/ci/move_to_daily.py apply LIST` writes the
 attribute and the row (its docstring has the list format). The attribute is the source's mark and the row is the
 daily run's list of what must run: an attribute without a row in a package no shard covers would run nowhere.
-A launcher test is moved the same way (a new `daily-horizon-launcher-TOPIC.txt`): its own leg, `daily-rows-launcher`,
+A launcher test is moved the same way (a new `daily-foundry-launcher-TOPIC.txt`): its own leg, `daily-rows-launcher`,
 runs it from `launcher/`, its own workspace, against its own lockfile. Windows-only process tests must be invoked
 on Windows; a manual row documents the command when no adopted workflow runs it.
 verify-tree also checks both directions statically: a `#[ignore = "daily"]` function with no row, or a row with no
 such function, fails (`check_ignored_test_rows.py`). Daily selection matches the package, Cargo target and complete
 logical libtest path, including inline modules. Game area folders do not add path segments: the source-only
-`horizon-game-discovery` CLI calls the build script's canonical discovery and traverses Rust modules with `syn`.
+`foundry-game-discovery` CLI calls the build script's canonical discovery and traverses Rust modules with `syn`.
 The guard invokes that small helper once for all targets; it does not build Game, the SDK or prepared resources.
 
 Every descriptive `#[ignore = "..."]` other than `daily` fails unless its exact package, logical test path and
@@ -55,19 +55,19 @@ must not be indiscriminately selected as prepared-resource daily tests. Ordinary
 use `daily` and one `resources` or `child-process` row here.
 
 `python3 tools/ci/ignored_inventory.py` emits the machine-readable inventory with canonical identities and ignore
-reasons. It accepts `HORIZON_GAME_DISCOVERY=/absolute/path/to/horizon-game-discovery` to reuse a built helper;
+reasons. It accepts `FOUNDRY_GAME_DISCOVERY=/absolute/path/to/foundry-game-discovery` to reuse a built helper;
 otherwise it builds/runs only that lightweight package. Comments, examples in strings and unreferenced source
 copies are not treated as runnable tests.
 
-The arismoko/horizon#4451 source inventory found 3,996 actual Rust ignore attributes in 1,139 files, including 3,022 non-daily
+The arismoko/foundry#4451 source inventory found 3,996 actual Rust ignore attributes in 1,139 files, including 3,022 non-daily
 descriptive attributes in 853 files (not string/comment examples). Of those, 3,021 have runnable canonical
 identities: 2,896 become daily rows (2,872 `resources`, 24 `child-process`), and 125 retain exact documented
 exceptions: 77 manual/measurement cases, 22 parity-harness steps, 23 separately supplied inputs, and three
-adapter-gated GPU cases. Ordinary `needs HORIZON_TEST_RESOURCES`/`HORIZON_RESOURCES` rows are migrated, not treated
+adapter-gated GPU cases. Ordinary `needs FOUNDRY_TEST_RESOURCES`/`FOUNDRY_RESOURCES` rows are migrated, not treated
 as external-fixture exceptions. The fishing RNG step specifically needs the independent oracle supplied by
 `tools/test_fishing_rng_parity.py`, not just prepared resources; every parity assertion stays in that harness step.
 
-One preserved source copy, `crates/horizon-client/src/mobs/living_tests.rs`, is not declared or included by any
+One preserved source copy, `crates/foundry-client/src/mobs/living_tests.rs`, is not declared or included by any
 Cargo target. Its `living_jump_power_respects_honey_block_and_jump_boost` attribute retains the exact reason
 `requires prepared vanilla resources; run explicitly with --ignored`. It has no logical libtest identity while
 uncompiled; no prefix exemption is granted. If a target declares it later, its descriptive reason fails the guard
@@ -78,7 +78,7 @@ until it is explicitly scheduled. No tests or assertions are removed from this s
 such as `ci.yml`) and the note says why (a benchmark, a fixture writer, a real GPU, the OS keychain, ...). The shards
 skip it. Do not name an excluded fork workflow as an owner or substitute a workflow that does not run the test.
 
-A rowless `#[ignore]` in a target a package's shard builds (`horizon-client`'s targets, the other shard packages'
+A rowless `#[ignore]` in a target a package's shard builds (`foundry-client`'s targets, the other shard packages'
 libraries) still runs every day with `--include-ignored` and must pass, so it needs no row. Anywhere else it would run
 nowhere, so verify-tree fails it until it has a row: `daily` to run it in the daily run, or `manual` to say who does.
 

@@ -10,8 +10,8 @@ from tools.ci import ignored_shards
 class ShardMatrix(unittest.TestCase):
     def test_a_split_package_becomes_one_entry_per_leg(self):
         self.assertEqual(
-            ignored_shards.expand(["horizon-client", "horizon-world"]),
-            ["horizon-client#1of2", "horizon-client#2of2", "horizon-world"],
+            ignored_shards.expand(["foundry-client", "foundry-world"]),
+            ["foundry-client#1of2", "foundry-client#2of2", "foundry-world"],
         )
 
     def test_every_shard_is_covered_by_the_full_matrix(self):
@@ -22,7 +22,7 @@ class ShardMatrix(unittest.TestCase):
             self.assertEqual(len(owned), legs)
 
     def test_a_package_without_legs_keeps_its_plain_name(self):
-        self.assertEqual(ignored_shards.expand(["horizon-items"]), ["horizon-items"])
+        self.assertEqual(ignored_shards.expand(["foundry-items"]), ["foundry-items"])
 
 
 class BuildDependencySelection(unittest.TestCase):

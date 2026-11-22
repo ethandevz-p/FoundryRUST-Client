@@ -1,6 +1,6 @@
 # Design: inside-block contact shapes
 
-Provisional answer to [arismoko/horizon#1011](https://github.com/arismoko/horizon/issues/1011):
+Provisional answer to [arismoko/foundry#1011](https://github.com/arismoko/foundry/issues/1011):
 share the sweep decision, with an API-owned shape value and a restricted,
 synchronous level/entity view. This is not an implemented API. No Rust changes
 are proposed for immediate landing; agreement and oracle fixtures precede code.
@@ -28,7 +28,7 @@ any such contract. No NeoForge source, patches or other project's source was rea
 ## Current owners and proposed shared boundary
 
 References verified at worktree HEAD `1d1de8d42b`; client paths below are relative
-to `crates/horizon-client/src/`. These are current owners, not existing hook sites.
+to `crates/foundry-client/src/`. These are current owners, not existing hook sites.
 
 | Route | Owner | Required integration |
 | --- | --- | --- |
@@ -38,7 +38,7 @@ to `crates/horizon-client/src/`. These are current owners, not existing hook sit
 | Dropped items | `entities.rs:960`, `ItemEntity::environment_tick` and `ItemEntity::stuck_multiplier` | Replace subscription-only admission and separate block-effect scans with shared geometry |
 | Other projectiles / game entity batches | `game/mobs/creatures/mod.rs:205` | Same sweep adapter, bound to the actual entity |
 | Generic sweep | `block_contact.rs:240`, visitation `block_contact.rs:257` | Shared geometry decision before recording contacts |
-| Existing server callback | `game/native_hooks/entity_inside.rs:8`; catalog `crates/horizon-mod-vocab/src/hooks/entity_inside.rs:3` | The mid-walk notification moment is the one path now; the shape decision extends it, never filters after it |
+| Existing server callback | `game/native_hooks/entity_inside.rs:8`; catalog `crates/foundry-mod-vocab/src/hooks/entity_inside.rs:3` | The mid-walk notification moment is the one path now; the shape decision extends it, never filters after it |
 
 Lower geometry prepares one candidate at a time in existing traversal order.
 The game adapter fires the Part query with typed HostSide, then lower geometry
@@ -57,7 +57,7 @@ all projectile kinds, rather than assume generic coverage from its name.
 ## Proposed Part and shape contract
 
 The three capability choices are provisional decisions recorded in the
-[maintainer decision comment](https://github.com/arismoko/horizon/issues/1011#issuecomment-6733587598).
+[maintainer decision comment](https://github.com/arismoko/foundry/issues/1011#issuecomment-6733587598).
 
 Declare `get_entity_inside_collision_shape` beside `entity_inside`, one Part
 method for this moment. Query synchronously before contact admission, independently
@@ -130,7 +130,7 @@ not reconstructed from a later callback against a changed block.
 
 ## Baseline and acceptance matrix
 
-Issue arismoko/horizon#1011 requires unchanged no-override contacts and ordering. That is the
+Issue arismoko/foundry#1011 requires unchanged no-override contacts and ordering. That is the
 required baseline for this feature. Current player motion explicitly skips tripwire
 and end portals (`motion.rs`, `check_inside_blocks`); vanilla queries their shapes.
 Thus exact vanilla parity cannot simultaneously describe the existing baseline.
@@ -163,7 +163,7 @@ Run each on player, mob, arrow, item and every projectile adapter, native and wa
 | Provider traps after attachment write | attachment unchanged; Default contact; provider disabled |
 | Entity retired or state/revision changes before apply | stale decision refused; zero committed effects |
 | Root abort during lifted pass | no retirement or journal emission; save request refused while savepoint open |
-| Default / no override | unchanged captured Horizon contacts and order on every route; separately record vanilla oracle differences across short/long moves and special blocks |
+| Default / no override | unchanged captured Foundry Client contacts and order on every route; separately record vanilla oracle differences across short/long moves and special blocks |
 | Empty on dropped-item fire/cactus/lava-cauldron/cobweb/powder-snow contact | applicable block damage, ignition and slowing suppressed; independent fluid effects and existing burning timers preserved |
 | Origin block shape x [-1,0], entity wholly in neighboring cell, stationary | origin not queried; no origin block callback or effect |
 | Override with no entity_inside listeners | geometry still controls built-in block effects; fluid unaffected |

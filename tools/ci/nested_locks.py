@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Every nested Cargo workspace still matches its Cargo.lock.
 
-The root workspace's lock is checked by verify's `--locked` builds. A nested workspace (crates/horizon-telemetry-server,
-crates/horizon-mod-registry, the wasm test fixtures, launcher/...) builds only in its own workflow or test, so when a
+The root workspace's lock is checked by verify's `--locked` builds. A nested workspace (crates/foundry-telemetry-server,
+crates/foundry-mod-registry, the wasm test fixtures, launcher/...) builds only in its own workflow or test, so when a
 crate it reaches gains or changes a dependency, its lock goes stale and its `--locked` build fails after the merge.
 `cargo update --workspace --locked`, run inside each workspace, resolves from the registry index alone (it downloads
 and compiles no crate) and fails with cargo's own message when the lock would have to change.
@@ -26,7 +26,7 @@ ROOT = Path(__file__).resolve().parents[2]
 # Locks this job cannot resolve, with the reason. Every other tracked nested Cargo.lock with a Cargo.toml beside it is
 # checked: one that cannot go stale costs about a second.
 EXCLUDED = {
-    # Its horizon-mod-api dependency points into .horizon/sdk/, which tools/ci/fn_replace_check.sh generates first.
+    # Its foundry-mod-api dependency points into .foundry/sdk/, which tools/ci/fn_replace_check.sh generates first.
     "tools/ci/fn-replace-check/registry/Cargo.lock": "needs the SDK fn_replace_check.sh generates",
 }
 

@@ -53,11 +53,11 @@ class RunLoggedTest(unittest.TestCase):
         odd = {'message': 'failed'}  # not cargo's shape: skipped, and never replaces the command's own error
         lines = [json.dumps(warning), json.dumps(artifact), json.dumps(odd), json.dumps(error)]
         script = ("import sys\n" + "".join(f"print({line!r})\n" for line in lines)
-                  + "print('error: could not compile `horizon-client`', file=sys.stderr)\nsys.exit(101)")
+                  + "print('error: could not compile `foundry-client`', file=sys.stderr)\nsys.exit(101)")
         printed, _, _ = self.run_fake(script, ('test', '--no-run', '--message-format=json'),
                                       error=subprocess.CalledProcessError)
         self.assertIn('error[E0425]: cannot find value', printed)
-        self.assertIn('error: could not compile `horizon-client`', printed)
+        self.assertIn('error: could not compile `foundry-client`', printed)
         self.assertNotIn('warning: unused', printed)
         self.assertNotIn('compiler-artifact', printed)
         self.assertNotIn('failed', printed.replace('could not compile', ''))
@@ -88,7 +88,7 @@ class RunLoggedTest(unittest.TestCase):
 
     def test_what_runs_a_program_is_never_printed(self):
         # A test run, an oracle or the game can print vanilla game data: it stays in the runner's log file.
-        for program, arguments in [('cargo', ('test', '-p', 'horizon-client', '--', '--nocapture')),
+        for program, arguments in [('cargo', ('test', '-p', 'foundry-client', '--', '--nocapture')),
                                    ('cargo', ('run', '-p', 'probe')), ('java', ('-cp', 'x', 'Oracle'))]:
             with self.subTest(program=program, arguments=arguments):
                 printed, log, _ = self.run_fake("import sys\nprint('vanilla data')\nsys.exit(1)", arguments, program,

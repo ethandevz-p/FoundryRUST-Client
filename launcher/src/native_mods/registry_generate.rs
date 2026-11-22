@@ -165,7 +165,7 @@ mod tests {
             "registry_fixture",
             "compile_error!(\"must never compile\");",
         );
-        fs::write(root.join("Cargo.toml"), "[package]\nname='fixture'\nversion='0.1.0'\n[dependencies]\nhorizon-mod-api={ path='.horizon/sdk/api/crates/horizon-mod-api' }\nitoa='1'\n").unwrap();
+        fs::write(root.join("Cargo.toml"), "[package]\nname='fixture'\nversion='0.1.0'\n[dependencies]\nfoundry-mod-api={ path='.foundry/sdk/api/crates/foundry-mod-api' }\nitoa='1'\n").unwrap();
         super::super::bundle_in(root).unwrap().unwrap()
     }
     #[test]
@@ -177,7 +177,7 @@ mod tests {
         let before = fs::read(input.path().join("Cargo.toml")).unwrap();
         stage(&bundle, output.path()).unwrap();
         let generated = fs::read_to_string(output.path().join("Cargo.toml")).unwrap();
-        assert!(!generated.contains("horizon-mod-api"));
+        assert!(!generated.contains("foundry-mod-api"));
         assert!(generated.contains("itoa"));
         assert!(!output.path().join("build.rs").exists());
         assert!(!output.path().join("src").exists());
@@ -186,23 +186,23 @@ mod tests {
         for (form, refusal) in [
             (
                 format!(
-                    "{{ git='https://github.com/horizon-rust/horizon', rev='{}' }}",
+                    "{{ git='https://github.com/foundry-rust/foundry', rev='{}' }}",
                     "a".repeat(40)
                 ),
-                "E_SDK_SOURCE: horizon-mod-api: the SDK is no longer named by git",
+                "E_SDK_SOURCE: foundry-mod-api: the SDK is no longer named by git",
             ),
             (
                 "'0.1'".to_owned(),
-                "E_SDK_SOURCE: horizon-mod-api: a version names no source",
+                "E_SDK_SOURCE: foundry-mod-api: a version names no source",
             ),
             (
-                "{ path='../horizon/crates/horizon-mod-api' }".to_owned(),
-                "E_SDK_SOURCE: horizon-mod-api: the path must be \".horizon/sdk/api/crates/horizon-mod-api\"",
+                "{ path='../foundry/crates/foundry-mod-api' }".to_owned(),
+                "E_SDK_SOURCE: foundry-mod-api: the path must be \".foundry/sdk/api/crates/foundry-mod-api\"",
             ),
         ] {
             fs::write(
                 input.path().join("Cargo.toml"),
-                original.replace("{ path='.horizon/sdk/api/crates/horizon-mod-api' }", &form),
+                original.replace("{ path='.foundry/sdk/api/crates/foundry-mod-api' }", &form),
             )
             .unwrap();
             let error = stage(&bundle, output.path()).unwrap_err();

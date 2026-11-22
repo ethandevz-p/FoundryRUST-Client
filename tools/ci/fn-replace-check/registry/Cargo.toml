@@ -5,5 +5,5 @@ edition = "2024"
 publish = false
 
 [dependencies]
-horizon-mod-api = { path = ".horizon/sdk/api/crates/horizon-mod-api" }
+foundry-mod-api = { path = ".foundry/sdk/api/crates/foundry-mod-api" }
 itoa = "1"

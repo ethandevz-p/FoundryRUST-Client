@@ -33,8 +33,8 @@ def changed_pixels(first, second):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--game", type=Path, default=lab.binary(ROOT / "target/fast", "horizon-client"))
-    parser.add_argument("--ctl", type=Path, default=lab.binary(ROOT / "target/fast", "horizon-ctl"))
+    parser.add_argument("--game", type=Path, default=lab.binary(ROOT / "target/fast", "foundry-client"))
+    parser.add_argument("--ctl", type=Path, default=lab.binary(ROOT / "target/fast", "foundry-ctl"))
     parser.add_argument("--resources", type=Path, default=lab.RESOURCES)
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
@@ -42,7 +42,7 @@ def main():
     output.mkdir(parents=True, exist_ok=True)
     work = Path(tempfile.mkdtemp(prefix="game-", dir=output))
     homes = {}
-    for key in ("HORIZON_HOME", "HORIZON_LAUNCHER_HOME", "XDG_DATA_HOME", "XDG_CONFIG_HOME"):
+    for key in ("FOUNDRY_HOME", "FOUNDRY_LAUNCHER_HOME", "XDG_DATA_HOME", "XDG_CONFIG_HOME"):
         homes[key] = work / key
         homes[key].mkdir()
     env = lab.game_env(**homes)

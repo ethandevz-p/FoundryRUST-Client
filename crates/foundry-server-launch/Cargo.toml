@@ -1,0 +1,24 @@
+[package]
+name = "foundry-server-launch"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+rust-version = "1.90"
+description = "Shared server configuration, installation layout and dedicated-engine commands"
+
+[dependencies]
+foundry-platform = { path = "../foundry-platform", features = ["server-files"] }
+foundry-server-files = { path = "../foundry-server-files" }
+foundry-anticheat = { path = "../foundry-anticheat" }
+foundry-chat-filter = { path = "../foundry-chat-filter" }
+foundry-core = { path = "../foundry-core" }
+dunce = "1.0.5"
+serde = { version = "1", features = ["derive"] }
+toml = "1.1"
+toml_edit = "0.25"
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_System_Threading"] }
+
+[lints]
+workspace = true

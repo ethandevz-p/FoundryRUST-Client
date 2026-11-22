@@ -13,22 +13,22 @@ impl Home {
         path
     }
     fn run(&self, args: &[&str]) -> std::process::Output {
-        let mut command = Command::new(env!("CARGO_BIN_EXE_horizon-launcher"));
+        let mut command = Command::new(env!("CARGO_BIN_EXE_foundry-launcher"));
         command.args(args);
         command
             .current_dir(self.0.path())
-            .env("HORIZON_HOME", self.0.path().join("game"))
-            .env("HORIZON_LAUNCHER_HOME", self.0.path().join("launcher"))
+            .env("FOUNDRY_HOME", self.0.path().join("game"))
+            .env("FOUNDRY_LAUNCHER_HOME", self.0.path().join("launcher"))
             .env("XDG_DATA_HOME", self.0.path().join("data"))
             .env("XDG_CONFIG_HOME", self.0.path().join("config"))
-            .env("HORIZON_LAUNCHER_TRASH", self.0.path().join("trash"))
+            .env("FOUNDRY_LAUNCHER_TRASH", self.0.path().join("trash"))
             .env(
-                "HORIZON_LAUNCHER_CLIPBOARD",
+                "FOUNDRY_LAUNCHER_CLIPBOARD",
                 self.0.path().join("clipboard"),
             )
-            .env("HORIZON_LAUNCHER_DESKTOP", self.0.path().join("desktop"))
-            .env("HORIZON_LAUNCHER_NO_SELF_UPDATE", "1")
-            .env("HORIZON_NO_AUDIO", "1");
+            .env("FOUNDRY_LAUNCHER_DESKTOP", self.0.path().join("desktop"))
+            .env("FOUNDRY_LAUNCHER_NO_SELF_UPDATE", "1")
+            .env("FOUNDRY_NO_AUDIO", "1");
         #[cfg(target_os = "linux")]
         unsafe {
             use std::os::unix::process::CommandExt;
@@ -116,7 +116,7 @@ fn running_unplayed_version_is_excluded_even_after_its_process_exits() {
     );
     home.file(
         "launcher/instances.json",
-        br#"{"instances":{"horizon":{"version":"native-played"}}}"#,
+        br#"{"instances":{"foundry":{"version":"native-played"}}}"#,
     );
     home.file("launcher/versions/native-live/.installed", b"");
     let game = home.file("launcher/versions/native-live/game", b"running");
@@ -164,7 +164,7 @@ fn instance_caches_are_preserved_while_running_and_when_idle() {
         br#"{"selected":"v0.0.1-running"}"#,
     );
     let game = home.file("launcher/versions/v0.0.1-running/game", b"running");
-    let cache = home.file("game/.horizon-cache/held-output", b"active instance cache");
+    let cache = home.file("game/.foundry-cache/held-output", b"active instance cache");
     let mut process = Command::new("sh")
         .args(["-c", "read -r ignored", "storage-instance"])
         .arg(game)
@@ -272,9 +272,9 @@ fn report_cleanup_refuses_and_retains_old_recent_and_newest_reports() {
 fn all_refuses_and_retains_caches_worlds_and_mod_packages() {
     let home = Home::new();
     home.installed_version();
-    let cache = home.file("game/.horizon-cache/output", b"cache");
+    let cache = home.file("game/.foundry-cache/output", b"cache");
     let world = home.file("game/worlds/precious/level.dat", b"world");
-    let package = home.file("game/horizon-mods/precious.hmod", b"mod package");
+    let package = home.file("game/foundry-mods/precious.hmod", b"mod package");
     home.refuse("all");
     assert_eq!(fs::read(cache).unwrap(), b"cache");
     assert_eq!(
@@ -295,7 +295,7 @@ fn symlink_named_instance_is_refused_without_touching_its_outside_target() {
     let home = Home::new();
     home.installed_version();
     let outside = Home::new();
-    let precious = outside.file(".horizon-cache/decoy", b"outside cache");
+    let precious = outside.file(".foundry-cache/decoy", b"outside cache");
     fs::create_dir_all(home.0.path().join("game/instances")).unwrap();
     std::os::unix::fs::symlink(
         outside.0.path(),
@@ -427,7 +427,7 @@ fn explicit_version_removal_refuses_before_changing_install_metadata() {
     home.file(
         "launcher/versions/native-dependent/native-mods.json",
         format!(
-            r#"{{"base":"spare","horizon":"{}","target":"client","left_out":[]}}"#,
+            r#"{{"base":"spare","foundry":"{}","target":"client","left_out":[]}}"#,
             "0".repeat(40)
         )
         .as_bytes(),

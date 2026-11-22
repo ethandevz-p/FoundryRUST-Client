@@ -200,19 +200,19 @@ def name_entities(run):
                 fields['entity'] = names.setdefault(entity, f'e{len(names) + 1}')
 
 
-def compare(vanilla, horizon, ticks):
-    """The ticks 0..ticks where the two streams differ: [(tick, vanilla packets, Horizon packets)]. Fields
+def compare(vanilla, foundry, ticks):
+    """The ticks 0..ticks where the two streams differ: [(tick, vanilla packets, Foundry Client packets)]. Fields
     compare exactly, floats included: they are what vanilla's client sends."""
     out = []
     for i in range(ticks + 1):
         v = vanilla[i]['packets'] if i < len(vanilla) else None
-        h = horizon[i]['packets'] if i < len(horizon) else None
+        h = foundry[i]['packets'] if i < len(foundry) else None
         if v != h:
             out.append((i, v, h))
     return out
 
 
-def compare_answered(vanilla, horizon, ticks, av, ah):
+def compare_answered(vanilla, foundry, ticks, av, ah):
     """compare, for a scenario the server answers once (a teleport): the tick each client received the answer
     in (`av`, `ah`) compares with the other client's, every other tick with the same tick, on the script's
     clock. A loaded server answers a few ticks later in one run than in the other, while the script's own
@@ -221,22 +221,22 @@ def compare_answered(vanilla, horizon, ticks, av, ah):
     The moves of the two answer ticks (LocalPlayer.sendPosition, at the end of the player's tick) keep the
     script's clock too: an answer that doesn't move the player (`tp @s ~ ~ ~`) leaves them to the 20-tick
     position reminder, which a later answer can land on in one run and not in the other."""
-    out = [d for d in compare(vanilla, horizon, ticks) if d[0] not in (av, ah)]
+    out = [d for d in compare(vanilla, foundry, ticks) if d[0] not in (av, ah)]
     packets = lambda run, i: run[i]['packets'] if i < len(run) else None  # noqa: E731
-    v, h = packets(vanilla, av), packets(horizon, ah)
+    v, h = packets(vanilla, av), packets(foundry, ah)
     if strip_moves(v) != strip_moves(h):
         out.append((av, v, h))
     for i in sorted({av, ah}):
-        vi, hi = packets(vanilla, i), packets(horizon, i)
+        vi, hi = packets(vanilla, i), packets(foundry, i)
         if moves(vi) != moves(hi) and all(d[0] != i for d in out):
             out.append((i, vi, hi))
     return sorted(out, key=lambda d: d[0])
 
 
-def compare_phased(vanilla, horizon, ticks, av, ah, until):
+def compare_phased(vanilla, foundry, ticks, av, ah, until):
     """compare, for a scenario whose second phase starts when the client has applied the server's answer (a
     teleport to a fixed place, which also zeroes the player's motion): the ticks before the earlier answer
-    compare on the script's clock; from the answers on, vanilla's tick av + k compares with Horizon's ah + k.
+    compare on the script's clock; from the answers on, vanilla's tick av + k compares with Foundry Client's ah + k.
     A step of the script stays on the script's clock, so when the answers came in different ticks the phase
     ends before the script's next step (`until`) or after its last tick, on both clients. The ticks one client
     waited longer for the answer are the server's timing, not compared. Answers in the same tick leave the two
@@ -244,10 +244,10 @@ def compare_phased(vanilla, horizon, ticks, av, ah, until):
     answer ticks both must come before `until`."""
     if av == ah:
         until = ticks + 1
-    out = compare(vanilla, horizon, min(av, ah) - 1)
+    out = compare(vanilla, foundry, min(av, ah) - 1)
     packets = lambda run, i: run[i]['packets'] if i < len(run) else None  # noqa: E731
     for k in range(min(until, ticks + 1) - max(av, ah)):
-        v, h = packets(vanilla, av + k), packets(horizon, ah + k)
+        v, h = packets(vanilla, av + k), packets(foundry, ah + k)
         if v != h:
             out.append((av + k, v, h))
     return out
@@ -291,7 +291,7 @@ def describe(packets):
     return '\n'.join(lines)
 
 
-def field_diff(v, h, names=('vanilla', 'Horizon')):
+def field_diff(v, h, names=('vanilla', 'Foundry Client')):
     """One line per differing field of packets paired by position, with the exact values.
 
     A packet present on only one side is itself a difference (compare() already flagged it), so it is

@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
 # CodeRabbit reviews pull requests and only comments. Its rules are this repository's own docs, which stay the only
-# copy of them. Starting point: pingdotgg/t3code's .coderabbit.config.ts; Horizon's own changes say why.
+# copy of them. Starting point: pingdotgg/t3code's .coderabbit.config.ts; Foundry Client's own changes say why.
 reviews:
   # The pull request body is the author's (it ends with the agent mark); the walkthrough comment is enough.
   high_level_summary: false
@@ -44,16 +44,16 @@ reviews:
         Hold changed code to CONTRIBUTING.md "Vanilla first, then better" (with "When it doesn't have to be 1:1")
         and docs/layers.md. Parity harnesses decide vanilla behaviour: don't state it from memory, and never
         suggest a rewrite that changes a vanilla result.
-    - path: "{crates/horizon-client/**,crates/horizon-client-render/**,launcher/**}"
+    - path: "{crates/foundry-client/**,crates/foundry-client-render/**,launcher/**}"
       instructions: >-
         Hold changed UI to docs/design-system.md and to AGENTS.md's rules on translated strings and controller
         registration.
-    - path: "crates/horizon-client-render/src/{gfx.rs,gfx/**,*.wgsl}"
+    - path: "crates/foundry-client-render/src/{gfx.rs,gfx/**,*.wgsl}"
       instructions: "Hold changed render passes to docs/hdr-passes.md."
     - path: "{**/tests/**,**/*_tests.rs}"
       instructions: >-
         Hold changed tests to AGENTS.md "Write tests with signal". Request tests only as those rules allow.
-    - path: "crates/horizon-shaders/**"
+    - path: "crates/foundry-shaders/**"
       instructions: >-
         Clean-room code: judge it only against docs/cleanroom/shader-packs-spec.md, and never describe or cite
         another shader loader's implementation.
@@ -63,6 +63,6 @@ knowledge_base:
       - files: "CONTRIBUTING.md,docs/layers.md"
         applyTo: "**/*.rs"
       - files: "docs/design-system.md"
-        applyTo: "crates/horizon-client/**,crates/horizon-client-render/**,launcher/**"
+        applyTo: "crates/foundry-client/**,crates/foundry-client-render/**,launcher/**"
       - files: "docs/hdr-passes.md"
-        applyTo: "crates/horizon-client-render/src/gfx.rs,crates/horizon-client-render/src/gfx/**,crates/horizon-client-render/src/*.wgsl"
+        applyTo: "crates/foundry-client-render/src/gfx.rs,crates/foundry-client-render/src/gfx/**,crates/foundry-client-render/src/*.wgsl"

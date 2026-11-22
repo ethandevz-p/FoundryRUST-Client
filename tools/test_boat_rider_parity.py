@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Compare passenger authority through actual vanilla and Horizon client paths.
+"""Compare passenger authority through actual vanilla and Foundry Client client paths.
 
 The Java oracle runs AbstractBoat.tick, LocalPlayer.rideTick and sendChanges with
 real first/second passenger identities. Only empty-world lifecycle, collision
-movement and packet transport are stand-ins. Horizon runs its remote passenger
+movement and packet transport are stand-ins. Foundry Client runs its remote passenger
 handler, object ticker, ride tick, outgoing vehicle packets and item-use gate in
 an isolated headless process with a memory connection. No desktop input is used.
 
@@ -31,15 +31,15 @@ except ImportError:
     from integration_env import run_game
 
 SOURCES = [
-    'crates/horizon-client/src/game.rs',
-    'crates/horizon-client/src/game/entities/boat_rider_fixture.rs',
-    'crates/horizon-client/src/game/network/remote_vehicles.rs',
-    'crates/horizon-client/src/game/entities/boats/mod.rs',
-    'crates/horizon-client/src/game/network/remote_objects.rs',
-    'crates/horizon-client/src/game/items/hand.rs',
-    'mods/horizon/src/test/java/dev/horizonlab/parity/VanillaBoatRiderOracle.java',
-    'mods/horizon/src/test/java/dev/horizonlab/parity/ParityData.java',
-    'mods/horizon/src/test/java/dev/horizonlab/parity/VanillaVehicleContainerOracle.java',
+    'crates/foundry-client/src/game.rs',
+    'crates/foundry-client/src/game/entities/boat_rider_fixture.rs',
+    'crates/foundry-client/src/game/network/remote_vehicles.rs',
+    'crates/foundry-client/src/game/entities/boats/mod.rs',
+    'crates/foundry-client/src/game/network/remote_objects.rs',
+    'crates/foundry-client/src/game/items/hand.rs',
+    'mods/foundry/src/test/java/dev/foundrylab/parity/VanillaBoatRiderOracle.java',
+    'mods/foundry/src/test/java/dev/foundrylab/parity/ParityData.java',
+    'mods/foundry/src/test/java/dev/foundrylab/parity/VanillaVehicleContainerOracle.java',
     'tools/test_boat_rider_parity.py',
 ]
 
@@ -84,8 +84,8 @@ def main():
     lab.write_json(work / 'inputs.json', inputs)
     classes = work / 'classes'
     classes.mkdir(exist_ok=True)
-    sources = lab.ROOT / 'mods/horizon/src/test/java'
-    package = sources / 'dev/horizonlab/parity'
+    sources = lab.ROOT / 'mods/foundry/src/test/java'
+    package = sources / 'dev/foundrylab/parity'
     dependencies = os.pathsep.join(map(str, [jars['client'], *baking.client_libraries()]))
 
     def run(command, name):
@@ -99,20 +99,20 @@ def main():
          *(package / f'{name}.java' for name in
            ('ParityData', 'VanillaVehicleContainerOracle', 'VanillaBoatRiderOracle'))], 'compile-java')
     run(['java', '-cp', str(classes) + os.pathsep + dependencies,
-         'dev.horizonlab.parity.VanillaBoatRiderOracle', work / 'inputs.json', work / 'vanilla.json'], 'vanilla')
+         'dev.foundrylab.parity.VanillaBoatRiderOracle', work / 'inputs.json', work / 'vanilla.json'], 'vanilla')
     if args.java_only:
         print(f'actual Java passenger methods: {len(inputs)} cases')
         return
     binary = args.binary
     if binary is None:
-        run(fast_bins.command('horizon-client'), 'compile-rust')
-        binary = lab.cargo_target() / 'fast' / ('horizon-client.exe' if os.name == 'nt' else 'horizon-client')
+        run(fast_bins.command('foundry-client'), 'compile-rust')
+        binary = lab.cargo_target() / 'fast' / ('foundry-client.exe' if os.name == 'nt' else 'foundry-client')
     with tempfile.TemporaryDirectory(prefix='hz-boat-rider-') as scratch:
         with (work / 'rust.log').open('w', encoding='utf-8') as log:
             run_game([str(binary.resolve()), '--headless', '--resources', str(args.resources.resolve()),
                       '--game-dir', scratch], cwd=scratch,
-                     env=lab.game_env(HORIZON_BOAT_RIDER_FIXTURE=str(work),
-                                      HORIZON_API_DISCOVERY='http://127.0.0.1:9'),
+                     env=lab.game_env(FOUNDRY_BOAT_RIDER_FIXTURE=str(work),
+                                      FOUNDRY_API_DISCOVERY='http://127.0.0.1:9'),
                      stdout=log, stderr=subprocess.STDOUT, check=True, timeout=180)
     native = json.loads((work / 'vanilla.json').read_text(encoding='utf-8'))
     rust = json.loads((work / 'rust.json').read_text(encoding='utf-8'))

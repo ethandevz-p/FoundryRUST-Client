@@ -24,13 +24,13 @@ def main():
     build.mkdir(parents=True, exist_ok=True)
     report = build / 'report.json'
     report.unlink(missing_ok=True)
-    resources = Path(os.environ.get('HORIZON_TEST_RESOURCES',
-        lab.LOCAL / 'horizon-client' / lock['minecraft']['version'])).resolve()
+    resources = Path(os.environ.get('FOUNDRY_TEST_RESOURCES',
+        lab.LOCAL / 'foundry-client' / lock['minecraft']['version'])).resolve()
     if not (resources / 'movement-properties.nbt').is_file():
-        raise RuntimeError('Prepared resources required: set HORIZON_TEST_RESOURCES')
+        raise RuntimeError('Prepared resources required: set FOUNDRY_TEST_RESOURCES')
     sources = [Path(__file__).resolve(),
-        lab.ROOT / 'mods/horizon/src/test/java/dev/horizonlab/parity/VanillaSourceSilenceOracle.java',
-        *[lab.ROOT / 'crates/horizon-client/src' / p for p in (
+        lab.ROOT / 'mods/foundry/src/test/java/dev/foundrylab/parity/VanillaSourceSilenceOracle.java',
+        *[lab.ROOT / 'crates/foundry-client/src' / p for p in (
             'game.rs', 'mobs.rs', 'mobs/hostile.rs', 'mobs/wither.rs', 'mobs/sulfur_cube.rs',
             'game/entities/explosion.rs', 'game/entities/tnt.rs', 'game/items/potions.rs', 'game/world/persist.rs',
             'game/mobs/creatures/mod.rs', 'game/mobs/wither.rs', 'game/mobs/dragon.rs', 'game/entities/minecarts.rs')]]
@@ -39,19 +39,19 @@ def main():
         jars, baking.client_libraries(), lock['minecraft']['java_major'])
     with tempfile.TemporaryDirectory(prefix='source-silence-', dir=build) as scratch:
         env = integration_env.game_environment(os.environ, scratch)
-        env.update(HORIZON_TEST_RESOURCES=str(resources),
-            HORIZON_SOURCE_SILENCE_OUTPUT=scratch,
+        env.update(FOUNDRY_TEST_RESOURCES=str(resources),
+            FOUNDRY_SOURCE_SILENCE_OUTPUT=scratch,
             CARGO_BUILD_JOBS=os.environ.get('CARGO_BUILD_JOBS', '2'),
             RUST_TEST_THREADS='2')
         # The limit covers the build, and other harnesses' builds holding the shared target directory's lock.
-        h.run_logged(['cargo', 'test', '--locked', '-p', 'horizon-client', '--lib',
+        h.run_logged(['cargo', 'test', '--locked', '-p', 'foundry-client', '--lib',
             'game::tnt::tests::silent_', '--', '--ignored', '--nocapture'], build, 'rust',
             timeout=3600, env=env)
         rust = build / 'rust.txt'
         rust.write_text(''.join((Path(scratch) / f'{name}.txt').read_text()
             for name in ('explosion', 'potions', 'bottles')), encoding='utf-8')
         h.run_logged(['java', '-Xmx1G', '-Djava.awt.headless=true', '-cp',
-            str(classes) + os.pathsep + dependencies, 'dev.horizonlab.parity.VanillaSourceSilenceOracle',
+            str(classes) + os.pathsep + dependencies, 'dev.foundrylab.parity.VanillaSourceSilenceOracle',
             build / 'client.txt'], build, 'client', env=env)
     matched = h.compare(build / 'client.txt', rust, 21)
     h.base.ensure_sources_unchanged(sources, hashes)

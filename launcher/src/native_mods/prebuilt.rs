@@ -9,10 +9,10 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-const IDENTITY: &str = "horizon-prebuilt.json";
+const IDENTITY: &str = "foundry-prebuilt.json";
 /// Names the folder of a prebuilt game built from a developer install's checkout
 /// (`tools/prebuilt_game.py build`). Read for developer installs only: their commit has no release.
-pub(super) const DEVELOPER_SDK: &str = "HORIZON_LAUNCHER_DEVELOPER_SDK";
+pub(super) const DEVELOPER_SDK: &str = "FOUNDRY_LAUNCHER_DEVELOPER_SDK";
 #[cfg(test)]
 pub(super) const TEMPLATE: &str = "native_main.rs.template";
 /// The optimization level of the `release` profile the prebuilt game is built with: the mods' code
@@ -53,11 +53,11 @@ impl Refusal {
     pub fn plain(&self) -> String {
         let why = match self {
             Self::BuildScript { mod_id } => trf(
-                "{mod} can't be built here: it brings build steps of its own, which Horizon doesn't run.",
+                "{mod} can't be built here: it brings build steps of its own, which Foundry Client doesn't run.",
                 &[("mod", mod_id)],
             ),
             Self::Features { mod_id } => trf(
-                "{mod} can't be built here: it asks for build options Horizon's game doesn't offer.",
+                "{mod} can't be built here: it asks for build options Foundry Client's game doesn't offer.",
                 &[("mod", mod_id)],
             ),
             Self::Sdk(refusal) => return refusal.to_string(),
@@ -144,10 +144,10 @@ pub(super) fn expected_sum(listing: &str, name: &str) -> Option<String> {
     })
 }
 
-fn side(target: Target) -> horizon_platform::mod_package::sdk::Side {
+fn side(target: Target) -> foundry_platform::mod_package::sdk::Side {
     match target {
-        Target::Client => horizon_platform::mod_package::sdk::Side::Client,
-        Target::Server => horizon_platform::mod_package::sdk::Side::Server,
+        Target::Client => foundry_platform::mod_package::sdk::Side::Client,
+        Target::Server => foundry_platform::mod_package::sdk::Side::Server,
     }
 }
 
@@ -333,7 +333,7 @@ impl Identity {
     /// Which package files the `runtime` and `api` slices hold.
     pub(super) fn slices(&self) -> Result<&Slices, String> {
         self.slices.as_ref().ok_or_else(|| {
-            tr("This prebuilt game has no slices. Update Horizon and rebuild the mods against this game.")
+            tr("This prebuilt game has no slices. Update Foundry Client and rebuild the mods against this game.")
                 .to_string()
         })
     }
@@ -351,7 +351,7 @@ pub(super) fn identity(dir: &Path) -> Result<Identity, String> {
     let format: Format =
         serde_json::from_str(&text).map_err(|e| format!("{}: {e}", path.display()))?;
     let found = format.package_format.or(format.format_version).unwrap_or(0);
-    let supported = horizon_platform::mod_package::sdk::PACKAGE_FORMAT;
+    let supported = foundry_platform::mod_package::sdk::PACKAGE_FORMAT;
     let (version, supported_text) = (found.to_string(), supported.to_string());
     let args = [
         ("version", version.as_str()),
@@ -463,22 +463,22 @@ pub(super) fn library(deps: &Path, krate: &str) -> Result<PathBuf, String> {
     }
 }
 
-/// Both compiler routes link the same SDK-owned executable template, and the patch library, so `horizon_mod_host`
-/// is always an extern: the game crates it carries (`horizon_client` and its closure, metadata only in `deps/`) are
+/// Both compiler routes link the same SDK-owned executable template, and the patch library, so `foundry_mod_host`
+/// is always an extern: the game crates it carries (`foundry_client` and its closure, metadata only in `deps/`) are
 /// code only inside that dylib.
 pub(super) fn wrapper_externs(deps: &Path) -> Result<BTreeMap<String, PathBuf>, String> {
     let mut externs = BTreeMap::new();
     for name in [
-        "horizon_client",
+        "foundry_client",
         "mod_api",
         "mod_vocab",
-        "horizon_mod_package",
+        "foundry_mod_package",
     ] {
         externs.insert(name.to_owned(), library(deps, name)?);
     }
     externs.insert(
-        "horizon_mod_host".into(),
-        library(deps, "horizon_mod_host")?,
+        "foundry_mod_host".into(),
+        library(deps, "foundry_mod_host")?,
     );
     Ok(externs)
 }
@@ -491,8 +491,8 @@ fn facade_refused(krate: &str) -> String {
 }
 
 /// What the patch library's source ends with: edition 2024 loads an `--extern` only when the source names it, and
-/// the dylib links the game's crates only through `horizon_mod_host`.
-pub(super) const PATCH_HOST_LINK: &str = "\nextern crate horizon_mod_host as _;\n";
+/// the dylib links the game's crates only through `foundry_mod_host`.
+pub(super) const PATCH_HOST_LINK: &str = "\nextern crate foundry_mod_host as _;\n";
 
 pub(super) fn facade_library(deps: &Path, krate: &str, sdk: &Identity) -> Result<PathBuf, String> {
     if !sdk.facade_crates.contains(krate) {
@@ -615,9 +615,9 @@ pub(super) fn changes_game(project: &api::Project<'_>) -> Option<&'static str> {
     let manifest = &project.bundle.manifest;
     // Every row kind by name: a new one does not compile until it is routed here.
     if let Some(native) = &manifest.native {
-        let horizon_platform::mod_package::manifest::Native {
+        let foundry_platform::mod_package::manifest::Native {
             game: _,
-            horizon: _,
+            foundry: _,
             mixins: _,
             mixin,
             module,
@@ -683,7 +683,7 @@ pub(super) fn compile(
     on_mod: &dyn Fn(&str, usize, usize),
 ) -> Result<(PathBuf, Vec<PathBuf>), String> {
     let mut names = std::collections::HashSet::new();
-    names.insert(dylib_name("horizon_patch").to_ascii_lowercase());
+    names.insert(dylib_name("foundry_patch").to_ascii_lowercase());
     for item in fs::read_dir(package.runtime.join("deps")).map_err(|e| e.to_string())? {
         names.insert(
             item.map_err(|e| e.to_string())?
@@ -749,7 +749,7 @@ pub(super) fn compile(
     let deps = game.join("deps");
     let sdk = identity(game)?;
     let libraries = sdk_libraries(&deps, projects)?;
-    let game_library = library(&deps, "horizon_client")?;
+    let game_library = library(&deps, "foundry_client")?;
     let mut facades = std::collections::HashMap::new();
     let mut rlibs: std::collections::HashMap<&str, PathBuf> = std::collections::HashMap::new();
     let mut crate_names: std::collections::HashMap<&str, String> = std::collections::HashMap::new();
@@ -772,12 +772,12 @@ pub(super) fn compile(
                 .arg("-C")
                 .arg(format!("metadata={id}"))
                 .arg("--extern")
-                .arg(format!("horizon_client={}", game_library.display()))
+                .arg(format!("foundry_client={}", game_library.display()))
                 .arg("-o")
                 .arg(&rlib)
                 .arg(source);
             for krate in &facade.crates {
-                if krate != "horizon_client" {
+                if krate != "foundry_client" {
                     cmd.arg("--extern").arg(format!(
                         "{krate}={}",
                         facade_library(&deps, krate, &sdk)?.display()
@@ -830,19 +830,19 @@ pub(super) fn compile(
         installed.push(rlibs[projects[index].bundle.manifest.id.as_str()].clone());
     }
     if let Some(patch) = patch {
-        let source = out.join("horizon_patch.rs");
+        let source = out.join("foundry_patch.rs");
         let template = api::template(&game.join(super::api_route::TEMPLATE))?;
         let mut entry = library_entry(
             &template,
             &[],
             sdk.commit(),
-            "horizon_patch",
+            "foundry_patch",
             "0",
             &patch.installs,
         );
         entry.push_str(PATCH_HOST_LINK);
         fs::write(&source, &entry).map_err(|e| e.to_string())?;
-        let library = out.join(dylib_name("horizon_patch"));
+        let library = out.join(dylib_name("foundry_patch"));
         let mut hash = Sha256::new();
         hash.update(&entry);
         for (_, path) in &patch.rlibs {
@@ -853,7 +853,7 @@ pub(super) fn compile(
         let unchanged =
             library.is_file() && fs::read_to_string(&saved).ok().as_deref() == Some(&fingerprint);
         let mut cmd = rustc(rust, game, out, "2024");
-        cmd.args(["--crate-type", "dylib", "--crate-name", "horizon_patch"]);
+        cmd.args(["--crate-type", "dylib", "--crate-name", "foundry_patch"]);
         for (name, path) in wrapper_externs(&deps)? {
             cmd.arg("--extern")
                 .arg(format!("{name}={}", path.display()));
@@ -867,8 +867,8 @@ pub(super) fn compile(
             super::run(cmd, tr("Compiling the patch library"), |_| {})?;
             fs::write(saved, fingerprint).map_err(|e| e.to_string())?;
         }
-        super::library_record::validate_exports(&library, "horizon_patch")?;
-        super::library_record::stamp(&library, sdk.commit(), "horizon_patch", "0", true)?;
+        super::library_record::validate_exports(&library, "foundry_patch")?;
+        super::library_record::stamp(&library, sdk.commit(), "foundry_patch", "0", true)?;
         installed.push(library);
     }
     Ok((
@@ -880,7 +880,7 @@ pub(super) fn compile(
 pub(super) fn refuse_closure_rlib(id: &str, name: &str, path: &Path) -> Result<(), String> {
     if matches!(
         name,
-        "mod_api" | "mod_vocab" | "mod_points" | "horizon_mod_runtime" | "horizon_core"
+        "mod_api" | "mod_vocab" | "mod_points" | "foundry_mod_runtime" | "foundry_core"
     ) && path.extension().is_some_and(|ext| ext == "rlib")
     {
         return Err(trf("Native mod {mod} links API closure crate {crate} as an rlib. Rebuild the SDK with a shared API closure.", &[("mod", id), ("crate", name)]));
@@ -898,7 +898,7 @@ pub(super) fn dylib_name(krate: &str) -> String {
 
 pub(super) fn library_entry(
     template: &str,
-    mods: &[&horizon_platform::mod_package::Manifest],
+    mods: &[&foundry_platform::mod_package::Manifest],
     build: &str,
     id: &str,
     version: &str,
@@ -1312,7 +1312,7 @@ mod tests {
 
     #[test]
     fn the_route_is_chosen_once_from_the_whole_set() {
-        use horizon_platform::mod_package::manifest::{loops, mixin, Internal, Module};
+        use foundry_platform::mod_package::manifest::{loops, mixin, Internal, Module};
         let folder = super::super::tests::dir("prebuilt-route");
         let write = |name: &str, dependencies: &str| {
             let dir = folder.join(name);
@@ -1328,19 +1328,19 @@ mod tests {
         };
         let api_only = write(
             "api_only",
-            "horizon-mod-api={path='.horizon/sdk/api/crates/horizon-mod-api'}\nhorizon-mod-points={path='.horizon/sdk/api/crates/horizon-mod-points'}",
+            "foundry-mod-api={path='.foundry/sdk/api/crates/foundry-mod-api'}\nfoundry-mod-points={path='.foundry/sdk/api/crates/foundry-mod-points'}",
         );
-        let facade = write("facade", "horizon-mod-api={path='.horizon/sdk/api/crates/horizon-mod-api'}\nhorizon-internals={path='.horizon/sdk/api/crates/horizon-internals'}");
+        let facade = write("facade", "foundry-mod-api={path='.foundry/sdk/api/crates/foundry-mod-api'}\nfoundry-internals={path='.foundry/sdk/api/crates/foundry-internals'}");
         let registry = write(
             "registry",
-            "horizon-mod-api={path='.horizon/sdk/api/crates/horizon-mod-api'}\nserde='1'",
+            "foundry-mod-api={path='.foundry/sdk/api/crates/foundry-mod-api'}\nserde='1'",
         );
-        let with = |change: &dyn Fn(&mut horizon_platform::mod_package::manifest::Manifest)| {
+        let with = |change: &dyn Fn(&mut foundry_platform::mod_package::manifest::Manifest)| {
             let mut bundle = api_only.clone();
             change(&mut bundle.manifest);
             bundle
         };
-        let native = |change: &dyn Fn(&mut horizon_platform::mod_package::manifest::Native)| {
+        let native = |change: &dyn Fn(&mut foundry_platform::mod_package::manifest::Native)| {
             with(&|manifest| change(manifest.native.as_mut().unwrap()))
         };
         let forwarded = || mixin::Forwarded {
@@ -1376,7 +1376,7 @@ mod tests {
             }),
             with(&|m| {
                 m.internals.push(Internal {
-                    path: "horizon_client::Game".into(),
+                    path: "foundry_client::Game".into(),
                     kind: None,
                     hash: None,
                 })
@@ -1442,11 +1442,11 @@ mod tests {
         }
         let mut sdk: Identity = serde_json::from_value(serde_json::json!({
             "commit": "test", "rustc": "test", "target": "test", "side": "client",
-            "link_args": [], "facade_crates": ["horizon_core"],
+            "link_args": [], "facade_crates": ["foundry_core"],
         }))
         .unwrap();
         assert_eq!(
-            facade_library(&deps, "horizon_core", &sdk).unwrap(),
+            facade_library(&deps, "foundry_core", &sdk).unwrap(),
             deps.join("libhorizon_core-one.rmeta")
         );
         for krate in ["fixture_meta", "build_tool"] {
@@ -1473,15 +1473,15 @@ mod tests {
         let sdk: Identity = serde_json::from_value(serde_json::json!({
             "commit": "test", "rustc": "test", "target": "test", "side": "client", "link_args": [],
             "slices": {"runtime": [
-                "bin/horizon-client.exe", "deps/horizon_engine_slots.dll", "deps/horizon_mod_host.dll",
+                "bin/foundry-client.exe", "deps/foundry_engine_slots.dll", "deps/foundry_mod_host.dll",
                 "deps/libhorizon_mod_host.dll.a", "deps/libmod_api.so", "deps/mod_points.dylib",
-                "horizon-prebuilt.json",
+                "foundry-prebuilt.json",
             ], "api": []},
         }))
         .unwrap();
         let recorded = [
-            "horizon_engine_slots.dll",
-            "horizon_mod_host.dll",
+            "foundry_engine_slots.dll",
+            "foundry_mod_host.dll",
             "libmod_api.so",
             "mod_points.dylib",
         ]
@@ -1540,7 +1540,7 @@ mod tests {
         let dir = super::super::tests::dir("prebuilt-exact-build");
         let check = |commit: &str, rustc: &str, target: &str, side: &str| {
             let identity = serde_json::json!({
-                "package_format": horizon_platform::mod_package::sdk::PACKAGE_FORMAT,
+                "package_format": foundry_platform::mod_package::sdk::PACKAGE_FORMAT,
                 "commit": commit, "rustc": rustc, "target": target, "side": side, "link_args": [],
             });
             fs::write(dir.join(IDENTITY), identity.to_string()).unwrap();
@@ -1575,42 +1575,42 @@ mod tests {
         let whole = dir.join("whole");
         let write = |slices: serde_json::Value| {
             let identity = serde_json::json!({
-                "package_format": horizon_platform::mod_package::sdk::PACKAGE_FORMAT,
+                "package_format": foundry_platform::mod_package::sdk::PACKAGE_FORMAT,
                 "commit": "abc123", "rustc": "", "target": "", "side": "client", "link_args": [],
                 "slices": slices,
             });
             fs::write(whole.join(IDENTITY), identity.to_string()).unwrap();
         };
         for (name, text) in [
-            ("bin/horizon-client", "exe"),
+            ("bin/foundry-client", "exe"),
             ("deps/libmod_api-1.rmeta", "api"),
-            ("deps/libhorizon_client-1.rlib", "engine"),
+            ("deps/libfoundry_client-1.rlib", "engine"),
             ("points.json", "{}"),
         ] {
             fs::create_dir_all(whole.join(name).parent().unwrap()).unwrap();
             fs::write(whole.join(name), text).unwrap();
         }
-        let runtime = serde_json::json!([IDENTITY, "bin/horizon-client"]);
+        let runtime = serde_json::json!([IDENTITY, "bin/foundry-client"]);
         write(
             serde_json::json!({"runtime": runtime, "api": ["deps/libmod_api-1.rmeta", "points.json"]}),
         );
         let package = lay_out(&whole, &dir.join("linked"), true).unwrap();
         assert_eq!(package, Package::at(&dir.join("linked")));
         let read = |path: PathBuf| fs::read_to_string(path).unwrap();
-        assert_eq!(read(package.runtime.join("bin/horizon-client")), "exe");
+        assert_eq!(read(package.runtime.join("bin/foundry-client")), "exe");
         assert_eq!(read(package.api.join("deps/libmod_api-1.rmeta")), "api");
         assert_eq!(
-            read(package.engine.join("deps/libhorizon_client-1.rlib")),
+            read(package.engine.join("deps/libfoundry_client-1.rlib")),
             "engine"
         );
         assert!(!package.engine.join("points.json").exists());
         // Linking leaves the developer's folder as it was.
-        assert_eq!(read(whole.join("bin/horizon-client")), "exe");
+        assert_eq!(read(whole.join("bin/foundry-client")), "exe");
         let union = package.whole(&dir.join("union")).unwrap();
         for name in [
-            "bin/horizon-client",
+            "bin/foundry-client",
             "deps/libmod_api-1.rmeta",
-            "deps/libhorizon_client-1.rlib",
+            "deps/libfoundry_client-1.rlib",
             IDENTITY,
         ] {
             assert!(union.join(name).is_file(), "{name}");
@@ -1631,7 +1631,7 @@ mod tests {
             serde_json::json!({"runtime": runtime, "api": ["deps/libmod_api-1.rmeta", "points.json"]}),
         );
         lay_out(&whole, &dir.join("moved"), false).unwrap();
-        assert!(!whole.join("bin/horizon-client").exists());
+        assert!(!whole.join("bin/foundry-client").exists());
         fs::remove_dir_all(dir).unwrap();
     }
 
@@ -1639,16 +1639,16 @@ mod tests {
     fn mods_on_the_mod_api_alone_take_the_prebuilt_game() {
         assert_eq!(
             refusal_of(
-                "[dependencies]\nhorizon-mod-api={path='.horizon/sdk/api/crates/horizon-mod-api'}"
+                "[dependencies]\nfoundry-mod-api={path='.foundry/sdk/api/crates/foundry-mod-api'}"
             ),
             None
         );
         assert_eq!(
-            refusal_of("build=false\n[dependencies]\nhorizon-mod-api={path='.horizon/sdk/api/crates/horizon-mod-api'}"),
+            refusal_of("build=false\n[dependencies]\nfoundry-mod-api={path='.foundry/sdk/api/crates/foundry-mod-api'}"),
             None
         );
         assert_eq!(
-            refusal_of("[dependencies.api]\npackage='horizon-mod-api'\npath='.horizon/sdk/api/crates/horizon-mod-api'"),
+            refusal_of("[dependencies.api]\npackage='foundry-mod-api'\npath='.foundry/sdk/api/crates/foundry-mod-api'"),
             None
         );
     }
@@ -1656,8 +1656,8 @@ mod tests {
     #[test]
     fn registry_dependencies_do_not_rebuild_the_game() {
         for cargo in [
-            "[dependencies]\nhorizon-mod-api={path='.horizon/sdk/api/crates/horizon-mod-api'}\nserde='1'",
-            "[dependencies]\nhorizon-mod-api={path='.horizon/sdk/api/crates/horizon-mod-api'}\n[target.'cfg(unix)'.dependencies]\nlibc='0.2'",
+            "[dependencies]\nfoundry-mod-api={path='.foundry/sdk/api/crates/foundry-mod-api'}\nserde='1'",
+            "[dependencies]\nfoundry-mod-api={path='.foundry/sdk/api/crates/foundry-mod-api'}\n[target.'cfg(unix)'.dependencies]\nlibc='0.2'",
         ] {
             assert_eq!(refusal_of(cargo), None);
         }
@@ -1668,15 +1668,15 @@ mod tests {
         let id = || "example".to_owned();
         for (cargo, reason) in [
             (
-                "[dependencies]\nhorizon-mod-api={path='.horizon/sdk/api/crates/horizon-mod-api',features=['testing']}",
+                "[dependencies]\nfoundry-mod-api={path='.foundry/sdk/api/crates/foundry-mod-api',features=['testing']}",
                 Refusal::Features { mod_id: id() },
             ),
             (
-                "[dependencies]\nhorizon-mod-api={path='.horizon/sdk/api/crates/horizon-mod-api'}\n[features]\nextra=[]",
+                "[dependencies]\nfoundry-mod-api={path='.foundry/sdk/api/crates/foundry-mod-api'}\n[features]\nextra=[]",
                 Refusal::Features { mod_id: id() },
             ),
             (
-                "build='make.rs'\n[dependencies]\nhorizon-mod-api={path='.horizon/sdk/api/crates/horizon-mod-api'}",
+                "build='make.rs'\n[dependencies]\nfoundry-mod-api={path='.foundry/sdk/api/crates/foundry-mod-api'}",
                 Refusal::BuildScript { mod_id: id() },
             ),
         ] {
@@ -1686,10 +1686,10 @@ mod tests {
 
     #[test]
     fn a_file_is_found_by_name_in_a_sums_listing() {
-        let name = "horizon-mixins-x86_64-unknown-linux-gnu.tar.gz";
-        let listing = format!("AB12  horizon-mixins-other.tar.gz\ncd34 *{name}\n");
+        let name = "foundry-mixins-x86_64-unknown-linux-gnu.tar.gz";
+        let listing = format!("AB12  foundry-mixins-other.tar.gz\ncd34 *{name}\n");
         assert_eq!(expected_sum(&listing, name).as_deref(), Some("cd34"));
-        assert_eq!(expected_sum(&listing, "horizon-mixins-x.tar.gz"), None);
+        assert_eq!(expected_sum(&listing, "foundry-mixins-x.tar.gz"), None);
     }
 
     #[test]
@@ -1703,7 +1703,7 @@ mod tests {
         assert!(error.contains("SDK format 5 is too old"), "{error}");
         let error = refusal("{}");
         assert!(error.contains("SDK format 0 is too old"), "{error}");
-        let newer = horizon_platform::mod_package::sdk::PACKAGE_FORMAT + 1;
+        let newer = foundry_platform::mod_package::sdk::PACKAGE_FORMAT + 1;
         let error = refusal(&format!(r#"{{"package_format": {newer}}}"#));
         assert!(error.contains("update the launcher"), "{error}");
     }

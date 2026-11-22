@@ -1,20 +1,20 @@
 //! The Mods page: its tabs are the kinds (mods, modpacks, resource packs, shader packs, data
-//! packs). Search Horizon's own registry for what was made for Horizon, or Modrinth for
+//! packs). Search Foundry Client's own registry for what was made for Foundry Client, or Modrinth for
 //! resource packs, shader packs and data packs (a Java instance's supported files
 //! always come from Modrinth, for its version), see where each comes
-//! from and how well it runs (a Java mod's jar is checked first; a Horizon mod says whether it is
-//! signed and what it may do), install it with its checksum checked, turn Horizon mods on and
-//! off, and update or remove what was installed (`horizon_launcher::browser`). Imported modpacks
+//! from and how well it runs (a Java mod's jar is checked first; a Foundry Client mod says whether it is
+//! signed and what it may do), install it with its checksum checked, turn Foundry Client mods on and
+//! off, and update or remove what was installed (`foundry_launcher::browser`). Imported modpacks
 //! are listed on its Modpacks tab.
 use super::line_edit::{self, Key, LineEdit};
 use super::*;
-use horizon_launcher::browser::{
-    self, horizon, installed, java, java_instance, Kind as PackKind, Project, Query, SourceId,
+use foundry_launcher::browser::{
+    self, foundry, installed, java, java_instance, Kind as PackKind, Project, Query, SourceId,
     Support,
 };
-use horizon_launcher::modpacks;
-use horizon_launcher::native_status;
-use horizon_port_pack::check::Check;
+use foundry_launcher::modpacks;
+use foundry_launcher::native_status;
+use foundry_port_pack::check::Check;
 use java_instance::Target;
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -31,7 +31,7 @@ const KINDS: [(PackKind, &str, &str); 5] = [
 const CHECKING: usize = 2;
 const PAGE: usize = 20;
 const SOURCES: [(SourceId, &str); 2] = [
-    (SourceId::Horizon, "Horizon"),
+    (SourceId::Foundry Client, "Foundry Client"),
     (SourceId::Modrinth, "Modrinth"),
 ];
 
@@ -53,11 +53,11 @@ pub(super) enum Event {
     Updates(u64, HashMap<(SourceId, String), UpdateOffer>),
     /// A Java mod's check: its jar read, or why it couldn't be.
     Checked((SourceId, String), Result<Box<Check>, String>),
-    /// What a Horizon registry project says before install: signed or not, what it may do.
+    /// What a Foundry Client registry project says before install: signed or not, what it may do.
     About(HashMap<String, Vec<String>>),
     /// Registry files taken down that the launcher turned off.
     TakenDown(Vec<String>),
-    /// What the automatic updates did (`horizon::auto`).
+    /// What the automatic updates did (`foundry::auto`).
     AutoUpdated(Vec<String>),
     /// A project page's part, an image or a filter's values (`mods_project`).
     Loaded(super::mods_project::Loaded),
@@ -140,9 +140,9 @@ pub(super) struct Mods {
     pub(super) error_details: bool,
     pub(super) installed: Vec<installed::Entry>,
     /// The registry native mods' versions the player picked on their Versions tab, by id
-    /// (`horizon::chosen`), read with `installed`.
+    /// (`foundry::chosen`), read with `installed`.
     pub(super) chosen: std::collections::BTreeMap<String, String>,
-    /// The Horizon the selected instance played when its updates were last looked for.
+    /// The Foundry Client the selected instance played when its updates were last looked for.
     pub(super) checked_for: Option<String>,
     loaded: bool,
     /// Whether the page searched for the instance as it is (its version and loader).
@@ -190,7 +190,7 @@ pub(super) struct Mods {
     tracked_native: std::cell::RefCell<Option<(String, bool)>>,
     /// Java mods' checks, by source and project.
     pub(super) checks: HashMap<(SourceId, String), Checking>,
-    /// Horizon registry projects' trust and capabilities, by id ([`horizon::trust_and_capabilities`]).
+    /// Foundry Client registry projects' trust and capabilities, by id ([`foundry::trust_and_capabilities`]).
     pub(super) about: HashMap<String, Vec<String>>,
     /// The project page, filters and images.
     pub(super) browse: super::mods_project::Browse,
@@ -210,7 +210,7 @@ impl Mods {
     pub(super) fn reload_installed(&mut self) {
         let home = self.home();
         self.installed = installed::Installed::load(&home).entries;
-        self.chosen = horizon::chosen(&home);
+        self.chosen = foundry::chosen(&home);
     }
 
     pub(super) fn home(&self) -> PathBuf {
@@ -220,7 +220,7 @@ impl Mods {
     /// Reads the instance's worlds again; the world picked for data packs stays when it is
     /// still there, else the last played.
     fn read_worlds(&mut self) {
-        self.worlds = horizon_launcher::worlds::list(&self.home())
+        self.worlds = foundry_launcher::worlds::list(&self.home())
             .into_iter()
             .map(|w| (w.path, w.name))
             .collect();
@@ -240,7 +240,7 @@ impl Mods {
 
     pub(super) fn new(cx: &mut App) -> Self {
         let (tx, rx) = channel();
-        let page = std::env::var("HORIZON_LAUNCHER_PAGE");
+        let page = std::env::var("FOUNDRY_LAUNCHER_PAGE");
         let kind = match page.as_deref() {
             Ok("modpacks") => PackKind::Modpack,
             Ok("resourcepacks") => PackKind::ResourcePack,
@@ -323,7 +323,7 @@ impl Mods {
                 Some(p.kind)
             }
             InstallRequest::Palette(p)
-                if p.kind == PackKind::Mod && p.source == SourceId::Horizon =>
+                if p.kind == PackKind::Mod && p.source == SourceId::Foundry Client =>
             {
                 Some(p.kind)
             }
@@ -413,7 +413,7 @@ impl Mods {
     pub(super) fn checking(&self, p: &Project) -> bool {
         self.java_for(p.kind).is_none()
             && p.kind == PackKind::Mod
-            && p.source != SourceId::Horizon
+            && p.source != SourceId::Foundry Client
             && matches!(
                 self.checks.get(&(p.source, p.id.clone())),
                 None | Some(Checking::Running)
@@ -447,7 +447,7 @@ impl Mods {
             return Support::Works;
         }
         let metadata = p.support();
-        if p.kind != PackKind::Mod || p.source == SourceId::Horizon || !metadata.installable() {
+        if p.kind != PackKind::Mod || p.source == SourceId::Foundry Client || !metadata.installable() {
             return metadata;
         }
         match self.checks.get(&(p.source, p.id.clone())) {
@@ -464,7 +464,7 @@ impl Mods {
     }
 }
 
-/// The indices of `results` to list: with Show everything off, what doesn't run in Horizon
+/// The indices of `results` to list: with Show everything off, what doesn't run in Foundry Client
 /// stays out. A Modrinth mod's verdict comes from its jar check after the search, so the search
 /// alone can't leave these out; `results` keeps every row, as paging counts on it.
 fn shown(
@@ -492,7 +492,7 @@ fn count(n: u64) -> String {
 pub(super) fn stars(id: &str, t: &theme::Theme) -> Option<Div> {
     let github = github_stars(id, t);
     let row = div().flex().items_center().gap(px(2.));
-    let row = match horizon::rating(id) {
+    let row = match foundry::rating(id) {
         Some(Some(r)) => {
             let lit = r.average.round() as usize;
             row.children((0..5).map(|i| {
@@ -517,15 +517,15 @@ pub(super) fn stars(id: &str, t: &theme::Theme) -> Option<Div> {
     };
     match github {
         Some(g) => Some(row.gap(px(8.)).child(g)),
-        None if horizon::rating(id).is_some() => Some(row),
+        None if foundry::rating(id).is_some() => Some(row),
         None => None,
     }
 }
 
 /// A registry project's GitHub stars: GitHub's mark, a star and how many, as its repository
-/// shows them; None when it has none (`horizon::github_stars`).
+/// shows them; None when it has none (`foundry::github_stars`).
 pub(super) fn github_stars(id: &str, t: &theme::Theme) -> Option<Div> {
-    let n = horizon::github_stars(id)?;
+    let n = foundry::github_stars(id)?;
     Some(
         div()
             .flex()
@@ -690,7 +690,7 @@ impl Launcher {
                 }
             }
         }
-        // `HORIZON_LAUNCHER_PROJECT=<slug>` (with `HORIZON_LAUNCHER_PAGE=mods`): opens that
+        // `FOUNDRY_LAUNCHER_PROJECT=<slug>` (with `FOUNDRY_LAUNCHER_PAGE=mods`): opens that
         // project's page once a search finds it, for screenshots. Once per run, kept in a flag
         // rather than by removing the variable: `remove_var` races `getenv` on the download, check
         // and keyring threads running by now (unsound, and `unsafe` from edition 2024).
@@ -699,7 +699,7 @@ impl Launcher {
         if self.mods.browse.open.is_none()
             && !PROJECT_OPENED.load(std::sync::atomic::Ordering::Relaxed)
         {
-            if let Ok(want) = std::env::var("HORIZON_LAUNCHER_PROJECT") {
+            if let Ok(want) = std::env::var("FOUNDRY_LAUNCHER_PROJECT") {
                 if let Some(p) = self
                     .mods
                     .results
@@ -732,7 +732,7 @@ impl Launcher {
     pub(super) fn mods_search_keeping(&mut self, offset: usize, keep: bool) {
         let m = &mut self.mods;
         let source = m.source();
-        let everything = m.everything && source != SourceId::Horizon;
+        let everything = m.everything && source != SourceId::Foundry Client;
         m.asked = true;
         m.search += 1;
         m.searching = true;
@@ -764,12 +764,12 @@ impl Launcher {
                 .ok_or_else(|| trf("{source} isn't set up.", &[("source", source.label())]))
                 .and_then(|s| s.search(&query));
             let about: HashMap<String, Vec<String>> = match (&result, source) {
-                (Ok(found), SourceId::Horizon) => {
-                    let instance = horizon_launcher::instances::selected();
+                (Ok(found), SourceId::Foundry Client) => {
+                    let instance = foundry_launcher::instances::selected();
                     found
                         .iter()
                         .map(|p| {
-                            let lines = horizon::trust_and_capabilities(&p.id, Some(&instance));
+                            let lines = foundry::trust_and_capabilities(&p.id, Some(&instance));
                             (p.id.clone(), lines)
                         })
                         .collect()
@@ -784,30 +784,30 @@ impl Launcher {
     }
 
     /// Reads the registry's index again when something installed came from it, and turns off
-    /// what it took down since (`horizon::turn_off_revoked`).
+    /// what it took down since (`foundry::turn_off_revoked`).
     fn mods_taken_down(&mut self) {
         if !self
             .mods
             .installed
             .iter()
-            .any(|e| e.source == SourceId::Horizon)
+            .any(|e| e.source == SourceId::Foundry Client)
         {
             return;
         }
         let tx = self.mods.tx.clone();
         let home = self.mods.home();
         std::thread::spawn(move || {
-            let Ok(index) = horizon::index() else {
+            let Ok(index) = foundry::index() else {
                 return;
             };
-            let lines = horizon::turn_off_revoked(&index, &home);
+            let lines = foundry::turn_off_revoked(&index, &home);
             if !lines.is_empty() {
                 let _ = tx.send(Event::TakenDown(lines));
             }
         });
     }
 
-    /// At start: recover interrupted updates, then update every Horizon instance's registry
+    /// At start: recover interrupted updates, then update every Foundry Client instance's registry
     /// content when enabled ([`auto_update`]), reading the selected instance's list again after.
     pub(super) fn mods_auto_update(&mut self) {
         let enabled = self.settings.auto_updates_mods();
@@ -828,7 +828,7 @@ impl Launcher {
         });
     }
 
-    /// Turns a Horizon mod the browser installed on or off, as the game's Options > Mods does;
+    /// Turns a Foundry Client mod the browser installed on or off, as the game's Options > Mods does;
     /// in a Java instance, renames its file.
     pub(super) fn mods_switch(&mut self, e: &installed::Entry) {
         let home = self.mods.home();
@@ -848,7 +848,7 @@ impl Launcher {
             }));
             return;
         }
-        let Some(id) = horizon::mod_id(e) else {
+        let Some(id) = foundry::mod_id(e) else {
             return;
         };
         let on = !java::is_enabled(&home, id);
@@ -859,7 +859,7 @@ impl Launcher {
             self.pending_consent = Some(PendingConsent::Toggle(e.clone()));
             return;
         }
-        let revoked = horizon::known_index().and_then(|index| {
+        let revoked = foundry::known_index().and_then(|index| {
             let hash = e.checksum.trim_start_matches("SHA-256:");
             index.revoked(&e.project, hash).map(|r| r.reason.clone())
         });
@@ -884,7 +884,7 @@ impl Launcher {
         }
         let todo: Vec<Project> = found
             .into_iter()
-            .filter(|p| p.kind == PackKind::Mod && p.source != SourceId::Horizon)
+            .filter(|p| p.kind == PackKind::Mod && p.source != SourceId::Foundry Client)
             .filter(|p| p.support().installable())
             .filter(|p| !m.checks.contains_key(&(p.source, p.id.clone())))
             .collect();
@@ -945,7 +945,7 @@ impl Launcher {
         std::thread::spawn(move || {
             let mut found = HashMap::new();
             for e in entries {
-                // A Horizon row whose file is missing offers Remove, not an update. (A Java
+                // A Foundry Client row whose file is missing offers Remove, not an update. (A Java
                 // instance's jar turned off is renamed: its recorded file isn't there.)
                 if java.is_none() && installed::file_missing(&home, &e) {
                     continue;
@@ -972,7 +972,7 @@ impl Launcher {
     }
 
     /// What Update all updates and what its button counts: each installed pack a newer version
-    /// was found for, but not a Horizon mod whose file is gone now (its row offers Remove).
+    /// was found for, but not a Foundry Client mod whose file is gone now (its row offers Remove).
     pub(super) fn mods_updatable(&self) -> Vec<&installed::Entry> {
         let home = self.mods.home();
         let mut todo: Vec<_> = self
@@ -1009,7 +1009,7 @@ impl Launcher {
         let java = self.mods.java.clone();
         let instance = self
             .selected_instance()
-            .map_or_else(|| tr("Horizon").to_owned(), |i| i.name.clone());
+            .map_or_else(|| tr("Foundry Client").to_owned(), |i| i.name.clone());
         std::thread::spawn(move || {
             let count = todo.len();
             let (mut done, mut failed) = (Vec::new(), Vec::new());
@@ -1166,9 +1166,9 @@ impl Launcher {
             }
         }
         // The first native mod: the trust notice, before anything is installed.
-        let first_native = source == SourceId::Horizon
+        let first_native = source == SourceId::Foundry Client
             && self.settings.native_mods_allowed_at.is_none()
-            && horizon::is_native_mod(id);
+            && foundry::is_native_mod(id);
         if first_native {
             self.pending_consent = Some(PendingConsent::Install(request));
             self.content_scroll
@@ -1195,7 +1195,7 @@ impl Launcher {
         let java = self.mods.java.clone();
         let instance = self
             .selected_instance()
-            .map_or_else(|| "Horizon".to_string(), |i| i.name.clone());
+            .map_or_else(|| "Foundry Client".to_string(), |i| i.name.clone());
         let world = self.mods.world.clone().and_then(|path| {
             let (_, name) = self.mods.worlds.iter().find(|(p, _)| *p == path)?;
             Some((path, name.clone()))
@@ -1252,11 +1252,11 @@ impl Launcher {
                         ));
                     }
                     modpack = p.kind == PackKind::Modpack;
-                    if modpack && p.source == SourceId::Horizon {
-                        let pack = horizon::pack::install(&p.id, &progress)?;
+                    if modpack && p.source == SourceId::Foundry Client {
+                        let pack = foundry::pack::install(&p.id, &progress)?;
                         if let Some(url) = &p.icon {
-                            horizon_launcher::instances::adopt_icon(
-                                &horizon::pack::home(&pack.work),
+                            foundry_launcher::instances::adopt_icon(
+                                &foundry::pack::home(&pack.work),
                                 url,
                             );
                         }
@@ -1278,7 +1278,7 @@ impl Launcher {
                         let log = |line: String| progress(&line, 1.);
                         let pack = modpacks::import_and_port(&file, resources.as_deref(), &log)?;
                         if let Some(url) = &p.icon {
-                            horizon_launcher::instances::adopt_icon(
+                            foundry_launcher::instances::adopt_icon(
                                 &modpacks::profile_home(&pack.work),
                                 url,
                             );
@@ -1321,9 +1321,9 @@ impl Launcher {
                             &[("mods", &mods), ("instance", &instance)],
                         ));
                     }
-                    if p.source == SourceId::Horizon && p.kind == PackKind::Mod {
+                    if p.source == SourceId::Foundry Client && p.kind == PackKind::Mod {
                         return Ok(trf(
-                            "Installed {mods} into horizon-mods and turned it on, checksum \
+                            "Installed {mods} into foundry-mods and turned it on, checksum \
                              checked (Options > Mods in the game).",
                             &[("mods", &mods)],
                         ));
@@ -1331,7 +1331,7 @@ impl Launcher {
                     if p.kind == PackKind::Mod {
                         let skipped = done.last().map_or(0, |e| e.skipped.len());
                         let ported = trf(
-                            "Ported {mods} into horizon-mods and turned on (Options > Mods in \
+                            "Ported {mods} into foundry-mods and turned on (Options > Mods in \
                              the game).",
                             &[("mods", &mods)],
                         );
@@ -1411,7 +1411,7 @@ impl Launcher {
                 .border_0()
                 .rounded(px(12.))
                 .bg(crate::glass_ui::white(if focused { 0.11 } else { 0.07 }))
-                .font_family(horizon_theme::glass::FONT)
+                .font_family(foundry_theme::glass::FONT)
                 .text_size(px(14.))
         } else {
             field
@@ -1428,7 +1428,7 @@ impl Launcher {
         let home = instance.map(|i| i.home.clone());
         let java = instance.and_then(|i| i.java.as_ref()).map(|j| j.target());
         let target_changed = self.mods.set_target(id, home, java);
-        // The instance moved to another Horizon (picked, or an update it follows): the versions
+        // The instance moved to another Foundry Client (picked, or an update it follows): the versions
         // that fit change, so look for updates again.
         let plays = self
             .selected_instance()
@@ -1520,7 +1520,7 @@ impl Launcher {
         removed
     }
 
-    /// The palette's search (`glass_palette`): up to four of Horizon's registry mods for `text`,
+    /// The palette's search (`glass_palette`): up to four of Foundry Client's registry mods for `text`,
     /// answered as [`Event::Palette`]. None for a Java instance, which takes Modrinth's files.
     pub(super) fn palette_mods(&mut self, text: &str, search: u64) {
         self.mods_load();
@@ -1533,7 +1533,7 @@ impl Launcher {
             ..Query::new(text, PackKind::Mod)
         };
         std::thread::spawn(move || {
-            let found = browser::source(SourceId::Horizon)
+            let found = browser::source(SourceId::Foundry Client)
                 .ok_or_else(|| "not set up".to_string())
                 .and_then(|s| s.search(&query))
                 .unwrap_or_default();
@@ -1557,7 +1557,7 @@ impl Launcher {
         }
         let header = page_header(
             "Mods",
-            tr("Browse the Horizon Registry and find resource, shader and data packs on Modrinth."),
+            tr("Browse the Foundry Client Registry and find resource, shader and data packs on Modrinth."),
             &t,
         );
         let this = cx.entity().downgrade();
@@ -1589,9 +1589,9 @@ impl Launcher {
                 this.mods_search(0);
                 cx.notify();
             }));
-        // The registry lists only what was made for Horizon: no "everything", and of the filters
+        // The registry lists only what was made for Foundry Client: no "everything", and of the filters
         // only its categories.
-        let registry = self.mods.source() == SourceId::Horizon;
+        let registry = self.mods.source() == SourceId::Foundry Client;
         let filters = self.mods_filters(cx);
         // The registry's sort sits below the GitHub row, above the list it orders.
         let registry_sort = registry.then(|| self.mods_sort_bar(cx));
@@ -1635,7 +1635,7 @@ impl Launcher {
                 .child(section_title("Browse modpacks", "search", &t));
         }
         body = body.child(controls);
-        // Native mods from a GitHub link: Horizon instances, on the Mods tab.
+        // Native mods from a GitHub link: Foundry Client instances, on the Mods tab.
         if self.mods.kind == PackKind::Mod && self.mods.java.is_none() {
             body = body.child(self.github_panel(cx));
         }
@@ -1862,7 +1862,7 @@ impl Launcher {
                 .mods
                 .chosen
                 .get(&e.project)
-                .filter(|_| e.source == SourceId::Horizon)
+                .filter(|_| e.source == SourceId::Foundry Client)
             {
                 let mut recommended = button(
                     SharedString::from(format!("mods-recommended-{}", e.project)),
@@ -1877,7 +1877,7 @@ impl Launcher {
                     recommended =
                         recommended.on_click(cx.listener(move |this, _: &ClickEvent, _, cx| {
                             this.mods_install(InstallRequest::Installed(
-                                SourceId::Horizon,
+                                SourceId::Foundry Client,
                                 id.clone(),
                             ));
                             cx.notify();
@@ -1909,8 +1909,8 @@ impl Launcher {
             let on = match &self.mods.java {
                 _ if e.kind != PackKind::Mod => None,
                 Some(_) => Some(java_instance::is_on(&self.mods.home(), e)),
-                None if e.source == SourceId::Horizon => Some(
-                    horizon::mod_id(e).is_some_and(|id| java::is_enabled(&self.mods.home(), id)),
+                None if e.source == SourceId::Foundry Client => Some(
+                    foundry::mod_id(e).is_some_and(|id| java::is_enabled(&self.mods.home(), id)),
                 ),
                 None => None,
             };
@@ -2085,7 +2085,7 @@ impl Launcher {
             let line = if m.kind == PackKind::Shader && m.java.is_some() {
                 tr("Shader packs for Java instances aren't supported yet.")
             } else if !m.results.is_empty() {
-                tr("Nothing found that runs in Horizon. Show everything lists the rest.")
+                tr("Nothing found that runs in Foundry Client. Show everything lists the rest.")
             } else if m.searching || !m.searched {
                 tr("Searching…")
             } else if let Some(target) = m.java_for(m.kind) {
@@ -2096,12 +2096,12 @@ impl Launcher {
                     ),
                     &t,
                 );
-            } else if m.source() == SourceId::Horizon {
-                tr("Nothing in Horizon's registry matches yet.")
+            } else if m.source() == SourceId::Foundry Client {
+                tr("Nothing in Foundry Client's registry matches yet.")
             } else if m.everything || !m.can_show_everything() {
                 tr("Nothing found.")
             } else {
-                tr("Nothing found that runs in Horizon. Show everything lists the rest.")
+                tr("Nothing found that runs in Foundry Client. Show everything lists the rest.")
             };
             let out = div().flex().flex_col().child(centered(line, &t));
             return self.mods_more(out, cx);
@@ -2185,7 +2185,7 @@ impl Launcher {
                 .child(div().truncate().child(p.summary.clone()))
                 .child(by.join(" · "))
                 .children(
-                    (p.source == SourceId::Horizon)
+                    (p.source == SourceId::Foundry Client)
                         .then(|| stars(&p.id, &t))
                         .flatten(),
                 )
@@ -2197,7 +2197,7 @@ impl Launcher {
                 .children(
                     m.about
                         .get(&p.id)
-                        .filter(|_| p.source == SourceId::Horizon)
+                        .filter(|_| p.source == SourceId::Foundry Client)
                         .map(|lines| div().text_color(t.ink_soft).child(lines.join(" · "))),
                 );
             let open = p.clone();
@@ -2265,7 +2265,7 @@ pub(super) struct AutoTarget {
     pub(super) instance: instances::Instance,
 }
 
-/// Updates the registry projects of `targets`: Horizon's own instances only, never a modpack's
+/// Updates the registry projects of `targets`: Foundry Client's own instances only, never a modpack's
 /// profile, whose pack pins its mods. Returns what happened for the page's notice.
 /// `progress` hears the project each update is downloading.
 pub(super) fn auto_update(
@@ -2280,10 +2280,10 @@ pub(super) fn auto_update(
         let (false, None) = (pack, &i.java) else {
             continue;
         };
-        let ctx = horizon::auto::Context {
-            in_pack: horizon::auto::in_pack(&i.home),
+        let ctx = foundry::auto::Context {
+            in_pack: foundry::auto::in_pack(&i.home),
         };
-        if let Some(report) = horizon::auto::run(&i.home, &ctx, enabled, &|line, _| progress(line))
+        if let Some(report) = foundry::auto::run(&i.home, &ctx, enabled, &|line, _| progress(line))
         {
             lines.extend(report.lines());
         }
@@ -2294,7 +2294,7 @@ pub(super) fn auto_update(
 fn source_for(kind: PackKind) -> SourceId {
     match kind {
         PackKind::ResourcePack | PackKind::DataPack => SourceId::Modrinth,
-        PackKind::Mod | PackKind::Modpack | PackKind::Shader => SourceId::Horizon,
+        PackKind::Mod | PackKind::Modpack | PackKind::Shader => SourceId::Foundry Client,
     }
 }
 
@@ -2309,7 +2309,7 @@ fn switches(kind: PackKind, java: bool) -> bool {
 fn browse_source(kind: PackKind, picked: SourceId, java: Option<&Target>) -> SourceId {
     match java {
         Some(target) if target.takes(kind) => SourceId::Modrinth,
-        Some(_) => SourceId::Horizon,
+        Some(_) => SourceId::Foundry Client,
         None if switches(kind, false) => picked,
         None => source_for(kind),
     }
@@ -2318,8 +2318,8 @@ fn browse_source(kind: PackKind, picked: SourceId, java: Option<&Target>) -> Sou
 fn can_install_in(kind: PackKind, source: SourceId, java: Option<&Target>) -> bool {
     match (java, kind) {
         (Some(_), PackKind::Shader) => false,
-        (Some(_), PackKind::Mod | PackKind::ResourcePack) => source != SourceId::Horizon,
-        (Some(_), PackKind::Modpack | PackKind::DataPack) => source == SourceId::Horizon,
+        (Some(_), PackKind::Mod | PackKind::ResourcePack) => source != SourceId::Foundry Client,
+        (Some(_), PackKind::Modpack | PackKind::DataPack) => source == SourceId::Foundry Client,
         (None, _) => true,
     }
 }
@@ -2391,7 +2391,7 @@ mod tests {
         cx.update(|cx| {
             let mut mods = Mods::new(cx);
             mods.set_kind(PackKind::ResourcePack);
-            let registry_mod = Box::new(project(PackKind::Mod, SourceId::Horizon));
+            let registry_mod = Box::new(project(PackKind::Mod, SourceId::Foundry Client));
             let browse = InstallRequest::Browse(registry_mod.clone());
             let palette = InstallRequest::Palette(registry_mod);
             assert_eq!(mods.source(), SourceId::Modrinth);
@@ -2412,7 +2412,7 @@ mod tests {
     fn empty_results_after_switching_instances_drop_the_cached_card(cx: &mut gpui::TestAppContext) {
         cx.update(|cx| {
             let mut mods = Mods::new(cx);
-            mods.set_target(Some("horizon".into()), Some(PathBuf::from("horizon")), None);
+            mods.set_target(Some("foundry".into()), Some(PathBuf::from("foundry")), None);
             mods.set_kind(PackKind::Shader);
             mods.source = SourceId::Modrinth;
             let mut project = project(PackKind::Shader, SourceId::Modrinth);
@@ -2456,12 +2456,12 @@ mod tests {
             loader: Some("fabric".into()),
         };
         for (kind, default, switch, java_source) in [
-            (PackKind::Mod, SourceId::Horizon, false, SourceId::Modrinth),
+            (PackKind::Mod, SourceId::Foundry Client, false, SourceId::Modrinth),
             (
                 PackKind::Modpack,
-                SourceId::Horizon,
+                SourceId::Foundry Client,
                 false,
-                SourceId::Horizon,
+                SourceId::Foundry Client,
             ),
             (
                 PackKind::ResourcePack,
@@ -2469,18 +2469,18 @@ mod tests {
                 true,
                 SourceId::Modrinth,
             ),
-            (PackKind::Shader, SourceId::Horizon, true, SourceId::Horizon),
+            (PackKind::Shader, SourceId::Foundry Client, true, SourceId::Foundry Client),
             (
                 PackKind::DataPack,
                 SourceId::Modrinth,
                 true,
-                SourceId::Horizon,
+                SourceId::Foundry Client,
             ),
         ] {
             assert_eq!(source_for(kind), default);
             assert_eq!(switches(kind, false), switch);
             assert!(!switches(kind, true));
-            for picked in [SourceId::Horizon, SourceId::Modrinth] {
+            for picked in [SourceId::Foundry Client, SourceId::Modrinth] {
                 assert_eq!(
                     browse_source(kind, picked, None),
                     if switch { picked } else { default }

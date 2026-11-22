@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Compare the imported and exported names of two wasm modules.
 
-    python3 tools/ci/wasm_names.py linux/horizon-wasm-std.wasm windows/horizon-wasm-std.wasm
+    python3 tools/ci/wasm_names.py linux/foundry-wasm-std.wasm windows/foundry-wasm-std.wasm
 
 Members of a wasm mod group link by symbol name, so the std member built on any host must name its
 symbols the same (#18261). Prints the names only one of them has and exits 1 when there are any.

@@ -173,9 +173,9 @@ def main():
     if args.compare:
         compare(*args.compare)
         return
-    ctl = lab.binary(Path(args.build).resolve(), "horizon-ctl")
+    ctl = lab.binary(Path(args.build).resolve(), "foundry-ctl")
     if not ctl.exists():
-        sys.exit(f"{ctl} missing: cargo build --release -p horizon-game -p horizon-client-lib --bins")
+        sys.exit(f"{ctl} missing: cargo build --release -p foundry-game -p foundry-client-lib --bins")
     cwd = ROOT / ".local/graphics-bench"
     shutil.rmtree(cwd / "saves" / WORLD, ignore_errors=True)
     cwd.mkdir(parents=True, exist_ok=True)

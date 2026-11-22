@@ -2,7 +2,7 @@
 
 ## cap-std / cap-fs-ext
 
-`horizon-client` directly uses `cap-std` and `cap-fs-ext` 3.4.6 from
+`foundry-client` directly uses `cap-std` and `cap-fs-ext` 3.4.6 from
 [the cap-std project](https://github.com/bytecodealliance/cap-std) for confined mod file access.
 Copyrights are retained by their contributors. Both crates offer Apache-2.0 WITH LLVM-exception,
 Apache-2.0 or MIT; the MIT option is reproduced here:
@@ -31,51 +31,51 @@ OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
 IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 
-## horizon-mixins
+## foundry-mixins
 
-The raw injection schema in `crates/horizon-mod-package/src/manifest.rs` is adapted from
-[horizon-mixins](https://github.com/horizon-rust/horizon-mixins/tree/ddd9700b21997c95d95ac6ee5ecafe3830cf622a),
+The raw injection schema in `crates/foundry-mod-package/src/manifest.rs` is adapted from
+[foundry-mixins](https://github.com/foundry-rust/foundry-mixins/tree/ddd9700b21997c95d95ac6ee5ecafe3830cf622a),
 Copyright (c) 2026 levzzz, under the MIT license
-(`crates/horizon-mod-package/HORIZON_MIXINS_LICENSE`).
+(`crates/foundry-mod-package/FOUNDRY_MIXINS_LICENSE`).
 
 ## Code removed for its license
 
-Horizon once shipped three pieces of code under MIT that came from projects whose licenses don't allow that. All
+Foundry Client once shipped three pieces of code under MIT that came from projects whose licenses don't allow that. All
 three are gone from main. They are listed here for anyone who holds an older commit, tag or release: in those
-versions, that code is not covered by Horizon's MIT license. It stays under its authors' copyright and its original
+versions, that code is not covered by Foundry Client's MIT license. It stays under its authors' copyright and its original
 license.
 
-- **Shader packs written from Iris's source.** `crates/horizon-shaderpack` and the render stages that used it were
+- **Shader packs written from Iris's source.** `crates/foundry-shaderpack` and the render stages that used it were
   written from the source of [Iris](https://github.com/IrisShaders/Iris) (LGPL-3.0, copyright the Iris contributors).
   They were added from 15 October 2026 (`b22583d057`), shipped in the game releases `v2026.10.16.02` to `v0.2.46`,
-  and were removed on 24 October 2026 ([#1561](https://github.com/horizon-rust/horizon/pull/1561)) after a developer
-  of Iris showed us. Shader packs came back in `crates/horizon-shaders`, first written from a description of the
+  and were removed on 24 October 2026 ([#1561](https://github.com/foundry-rust/foundry/pull/1561)) after a developer
+  of Iris showed us. Shader packs came back in `crates/foundry-shaders`, first written from a description of the
   pack format.
-- **Math functions translated from OpenJDK.** In `crates/horizon-core/src/jmath.rs`, `fdlibm::{log, log10, cbrt,
+- **Math functions translated from OpenJDK.** In `crates/foundry-core/src/jmath.rs`, `fdlibm::{log, log10, cbrt,
   hypot}` were translated from OpenJDK's `java/lang/FdLibm.java` and `round_f32` from its `java/lang/Math.java`
   (GPL-2.0 with the Classpath Exception), and `aarch64::{sin, cos}` from HotSpot's `macroAssembler_aarch64_trig.cpp`
   (GPL-2.0); copyright Oracle and/or its affiliates, and Cavium for that file. The `fdlibm` and `aarch64` functions
   were added on 13 October 2026 (`558d140fca`, first released in `v2026.10.13`). `round_f32` was added on 14 October
-  2026 as `java_round` in `crates/horizon-client/src/mipmap.rs` (`95db0fce9d`) and moved into `jmath.rs` on 3
-  November ([#7770](https://github.com/horizon-rust/horizon/pull/7770)). All of them were replaced in
-  [#11944](https://github.com/horizon-rust/horizon/pull/11944) by code written without OpenJDK's sources, from Sun's
+  2026 as `java_round` in `crates/foundry-client/src/mipmap.rs` (`95db0fce9d`) and moved into `jmath.rs` on 3
+  November ([#7770](https://github.com/foundry-rust/foundry/pull/7770)). All of them were replaced in
+  [#11944](https://github.com/foundry-rust/foundry/pull/11944) by code written without OpenJDK's sources, from Sun's
   fdlibm C sources, the Java SE API documentation and a description of the behaviour, and checked against a JVM
-  ([#6741](https://github.com/horizon-rust/horizon/issues/6741)).
-- **Java's `HashMap` translated from OpenJDK.** `crates/horizon-world/src/java_hash_map.rs`, which reproduces the
+  ([#6741](https://github.com/foundry-rust/foundry/issues/6741)).
+- **Java's `HashMap` translated from OpenJDK.** `crates/foundry-world/src/java_hash_map.rs`, which reproduces the
   iteration order of `java.util.HashMap`, was translated from OpenJDK's `java/util/HashMap.java` (GPL-2.0 with the
   Classpath Exception; copyright Oracle and/or its affiliates). It was added on 7 October 2026 (`118e93ea51` and
   `194db0dbb4`, first released in `v2026.10.12`). It was replaced in
-  [#12043](https://github.com/horizon-rust/horizon/pull/12043) by code written without OpenJDK's sources, from a
+  [#12043](https://github.com/foundry-rust/foundry/pull/12043) by code written without OpenJDK's sources, from a
   description of the behaviour, the Java SE API documentation and the textbook red-black tree, and checked against a
-  JVM ([#6741](https://github.com/horizon-rust/horizon/issues/6741)).
+  JVM ([#6741](https://github.com/foundry-rust/foundry/issues/6741)).
 
 ## Catnip / Ponder
 
-`crates/horizon-client-render/src/fluid_render.rs` translates the still-fluid face tiling and
+`crates/foundry-client-render/src/fluid_render.rs` translates the still-fluid face tiling and
 UV rules of Catnip's `FluidRenderHelper` from Ponder 1.0.82 for Minecraft 1.21.1
 (`net.createmod.ponder:ponder-neoforge:1.0.82+mc1.21.1`). Copyright (c) 2022 The Create Team,
 licensed under MIT (`LICENSE_Ponder` in that artifact); the full license heads the Rust file.
-The native renderer uses Horizon's own block-sprite arrays, pose and light packing. The
+The native renderer uses Foundry Client's own block-sprite arrays, pose and light packing. The
 development-only oracle calls the unchanged helper from the player's local artifact. No
 original classes, game shaders, textures or prepared resources are distributed here.
 
@@ -121,10 +121,10 @@ The Windows x64 game folder holds `dxcompiler.dll`, Microsoft's DirectX Shader C
 `ad31b1fc8443175d204f77a611fdb3ef2ec42759bdc2f1167368de24a4a7e7f1`, DLL SHA-256
 `0689e2fee0a1c9df8662a59680469f24e2a3ad7ce6bbbcc9284f7a83172bfc59`, 22,274,872 bytes). The release build downloads
 it and checks both checksums (`tools/ci/fetch_dxc.py`); it is not in this repository. DirectX 12 loads it only on
-integrated GPUs (`crates/horizon-client-render/src/gfx/dx12_compiler.rs`,
-[#8513](https://github.com/horizon-rust/horizon/issues/8513)); every other GPU compiles with FXC, part of Windows.
+integrated GPUs (`crates/foundry-client-render/src/gfx/dx12_compiler.rs`,
+[#8513](https://github.com/foundry-rust/foundry/issues/8513)); every other GPU compiles with FXC, part of Windows.
 
-Copyright (c) Microsoft Corporation. It is not covered by Horizon's MIT license. It is distributed under the
+Copyright (c) Microsoft Corporation. It is not covered by Foundry Client's MIT license. It is distributed under the
 "Microsoft Software License Terms, Microsoft DirectX Shader Compiler" (`LICENSE-MS.txt` of that release). Its
 Distributable Code terms are the Windows SDK's: end users get terms that protect the code and Microsoft at least as
 much, and the distributor indemnifies Microsoft. The project accepted them on 2026-11-08. Its open-source part is also under the University of Illinois/NCSA license (`LICENSE-LLVM.txt`). Both
@@ -133,7 +133,7 @@ files ship beside the DLL as `DXC-LICENSE-MS.txt` and `DXC-LICENSE-LLVM.txt`, wi
 
 - Only x64: the Windows SDK's list of distributable files
   ([REDIST.TXT lists](https://learn.microsoft.com/en-us/legal/windows-sdk/redist), updated 2024-10-21) names
-  `Redist\D3D\x64\dxcompiler.dll` and `dxil.dll` and their x86 copies, for classic Windows applications (Horizon is
+  `Redist\D3D\x64\dxcompiler.dll` and `dxil.dll` and their x86 copies, for classic Windows applications (Foundry Client is
   one), and no ARM64 copy. The release zip's own `LICENSE-MS.txt` refers to a list of distributable files that the zip
   doesn't contain, so the SDK's list is the one followed. The Windows ARM64 build ships no DXC and compiles with FXC.
 - No `dxil.dll`: since DXC 1.8.2505 the compiler signs shaders with its own validator and no longer loads it, and
@@ -150,31 +150,31 @@ x86/x64 instead of the POPCNT instruction, which CPUs before Nehalem lack (#7264
 
 ## Pixelify Sans
 
-`crates/horizon-theme/fonts/PixelifySans-*.ttf` is [Pixelify Sans](https://github.com/eifetx/Pixelify-Sans)
+`crates/foundry-theme/fonts/PixelifySans-*.ttf` is [Pixelify Sans](https://github.com/eifetx/Pixelify-Sans)
 by The Pixelify Sans Project Authors, licensed under the SIL Open Font License 1.1
-(`crates/horizon-theme/fonts/OFL-PixelifySans.txt`).
+(`crates/foundry-theme/fonts/OFL-PixelifySans.txt`).
 
 ## Pixelarticons
 
-`crates/horizon-theme/icons/pixel/*.svg` are icons from
+`crates/foundry-theme/icons/pixel/*.svg` are icons from
 [Pixelarticons](https://github.com/halfmage/pixelarticons) by Gerrit Halfmann, under the MIT
-license (`crates/horizon-theme/icons/pixel/LICENSE-pixelarticons.txt`). `star.svg` is Horizon's own, drawn on
+license (`crates/foundry-theme/icons/pixel/LICENSE-pixelarticons.txt`). `star.svg` is Foundry Client's own, drawn on
 the same grid.
 
 ## Hugeicons
 
-`crates/horizon-theme/icons/glass/*.svg` are icons from the free set of
+`crates/foundry-theme/icons/glass/*.svg` are icons from the free set of
 [Hugeicons](https://github.com/hugeicons/hugeicons) (`@hugeicons/core-free-icons` 4.4.0), under
-the MIT license (`crates/horizon-theme/icons/glass/LICENSE-hugeicons.txt`), exported with a 1.6
+the MIT license (`crates/foundry-theme/icons/glass/LICENSE-hugeicons.txt`), exported with a 1.6
 stroke in `currentColor`.
 
-`crates/horizon-theme/icons/glass/discord.svg` is Discord's logo as drawn by
+`crates/foundry-theme/icons/glass/discord.svg` is Discord's logo as drawn by
 [Simple Icons](https://github.com/simple-icons/simple-icons) 13.21.0 (CC0 1.0). The logo is Discord's
-trademark, used only on the button that opens Horizon's Discord server.
+trademark, used only on the button that opens Foundry Client's Discord server.
 
 ## AMD FidelityFX SDK (FSR 3.1 frame generation)
 
-`crates/horizon-client-render/src/gfx/frame_gen/optical_flow.wgsl` and `interpolation.wgsl` are
+`crates/foundry-client-render/src/gfx/frame_gen/optical_flow.wgsl` and `interpolation.wgsl` are
 ports to WGSL of the optical flow and frame interpolation shaders of the
 [AMD FidelityFX SDK](https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK) 1.1.4
 (`sdk/include/FidelityFX/gpu/{opticalflow,frameinterpolation}`, at commit
@@ -183,7 +183,7 @@ and `optical_flow.rs` and `interpolation.rs` follow the SDK's
 `sdk/src/components/{opticalflow/ffx_opticalflow.cpp,frameinterpolation/ffx_frameinterpolation.cpp}`
 (their passes, their order and their dispatch sizes). Copyright (C) 2024 Advanced Micro Devices,
 Inc., under the MIT license, whose text heads each file. AMD and FidelityFX are AMD's
-trademarks; Horizon is not affiliated with AMD.
+trademarks; Foundry Client is not affiliated with AMD.
 
 ## Mod loader logos
 
@@ -191,7 +191,7 @@ The launcher shows the logo of the mod loader an instance plays with, and offers
 instance icons.
 
 - `launcher/assets/logos/{fabric,quilt,neoforge,forge}.png` are the loaders' logos as the launcher
-  mockup on [playhorizon.dev/launcher](https://playhorizon.dev/launcher) shows them (horizon-site
+  mockup on [playfoundry.dev/launcher](https://playfoundry.dev/launcher) shows them (foundry-site
   `public/media/launcher/*.webp`, converted to PNG), each its project's own mark:
   [Fabric](https://fabricmc.net/), [Quilt](https://quiltmc.org/) (its art is
   [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/)),
@@ -200,7 +200,7 @@ instance icons.
   [Minecraft Forge](https://minecraftforge.net/). They name the loader an instance runs.
 
 Each logo belongs to its project. Showing it says which loader an instance runs; it does not mean
-the project endorses Horizon.
+the project endorses Foundry Client.
 
 ## Sign in with Microsoft
 
@@ -209,11 +209,11 @@ with Microsoft accounts
 ([Sign in with Microsoft branding](https://learn.microsoft.com/en-us/entra/identity-platform/howto-add-branding-in-apps)).
 The four-square Microsoft symbol in `launcher/src/microsoft.rs` reproduces the squares, positions and
 colours of Microsoft's official `ms-symbollockup_mssymbol_19.svg` from that page, unmodified. Microsoft
-and its logo are trademarks of the Microsoft group of companies; Horizon is not endorsed by Microsoft.
+and its logo are trademarks of the Microsoft group of companies; Foundry Client is not endorsed by Microsoft.
 
 ## CIT Resewn
 
-`crates/horizon-optifine/src/cit.rs` and `crates/horizon-client-render/src/cit.rs` follow the
+`crates/foundry-optifine/src/cit.rs` and `crates/foundry-client-render/src/cit.rs` follow the
 condition semantics of [CIT Resewn Continuation](https://github.com/EthanVisagie/CIT-Resewn-Continuation-1.21.11)
 (at `b792f9a`), a continuation of [CIT Resewn](https://github.com/SHsuperCM/CITResewn) by SHsuperCM: the
 1.21 component paths, enchantment levels, percent damage, text matching and rule ordering. It is
@@ -238,7 +238,7 @@ licensed under the MIT license:
 
 ## FusionExamples
 
-The tile tables in `crates/horizon-optifine/src/fusion/layout.rs` were read off the connecting
+The tile tables in `crates/foundry-optifine/src/fusion/layout.rs` were read off the connecting
 texture templates (`templates/template <layout>.png`) of
 [FusionExamples](https://github.com/SuperMartijn642/FusionExamples) (at `8c9c56e`), which is
 licensed under the MIT license:
@@ -262,8 +262,8 @@ licensed under the MIT license:
 
 ## JOML
 
-`crates/horizon-client-render/src/camera.rs` (`joml::Mat4::rotation`, `invert_orthonormal`) and
-`crates/horizon-client-render/src/gfx/pack_uniforms.rs` (`invert_generic`, `invert_affine`, the
+`crates/foundry-client-render/src/camera.rs` (`joml::Mat4::rotation`, `invert_orthonormal`) and
+`crates/foundry-client-render/src/gfx/pack_uniforms.rs` (`invert_generic`, `invert_affine`, the
 formulas of `pack_projection` and `shadow_ortho`) adapt the float arithmetic of
 `Matrix4f.rotation(Quaternionfc)`, `invertOrthonormal`, `invertGenericNonThis`, `invertAffine`,
 `setPerspective` and `setOrtho` from
@@ -304,7 +304,7 @@ THE SOFTWARE.
 
 ## Just Enough Items
 
-The Recipes GUI sprites and settings icon under `crates/horizon-client-render/src/jei_recipes` are from
+The Recipes GUI sprites and settings icon under `crates/foundry-client-render/src/jei_recipes` are from
 [Just Enough Items 31.17.0.108](https://github.com/mezz/JustEnoughItems/tree/0371fa6fafa14635a356019e4604f5580b26a34f)
 by mezz and contributors, under the MIT license in that directory (`LICENSE.txt`).
 
@@ -338,14 +338,14 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ## fdlibm
 
-`crates/horizon-core/src/jmath/fdlibm.rs` and the `fdlibm_asin`, `fdlibm_atan` and
-`fdlibm_atan2` functions in `crates/horizon-core/src/geometry/trig.rs` are Rust ports of
+`crates/foundry-core/src/jmath/fdlibm.rs` and the `fdlibm_asin`, `fdlibm_atan` and
+`fdlibm_atan2` functions in `crates/foundry-core/src/geometry/trig.rs` are Rust ports of
 [fdlibm](https://www.netlib.org/fdlibm/) 5.3, Sun's freely distributable math library, whose
 results the Java SE API specifies for `StrictMath`. `fdlibm.rs` ports `e_log.c`, `e_log10.c`,
 `s_cbrt.c` and `e_hypot.c`, and, with fused multiply-adds, `s_sin.c`, `s_cos.c`, `k_sin.c`,
 `k_cos.c` and `e_rem_pio2.c`; `trig.rs` ports `e_asin.c`, `s_atan.c` and `e_atan2.c`.
 
-The strict additions in `crates/horizon-core/src/jmath/fdlibm/strict_exp_pow.rs`
+The strict additions in `crates/foundry-core/src/jmath/fdlibm/strict_exp_pow.rs`
 adapt netlib's original `e_exp.c` 1.6 (2004-04-22), `e_pow.c` 1.5
 (2004-04-22) and `s_scalbn.c` 1.3 (1995-01-18), preserving their ordered
 double arithmetic and Sun permission notices. Their public-JDK reference
@@ -372,32 +372,32 @@ is preserved.
 
 ## Starling
 
-`crates/horizon-client-render/src/touch/layout.rs` and `crates/horizon-client-render/src/touch/aim.rs`
+`crates/foundry-client-render/src/touch/layout.rs` and `crates/foundry-client-render/src/touch/aim.rs`
 are adapted from the touch layout and touch helpers of
-[Starling](https://github.com/starling-client/starling), an Android port of Horizon, at commit
+[Starling](https://github.com/starling-client/starling), an Android port of Foundry Client, at commit
 [150a414b09a1](https://github.com/starling-client/starling/tree/150a414b09a18c900489d9462a7fc035dae744b7)
 (`android` branch), written mostly by Vasysik. Starling is licensed under the same MIT license as
-Horizon (Copyright (c) 2026 Ludovic Marie and the Horizon contributors).
+Foundry Client (Copyright (c) 2026 Ludovic Marie and the Foundry Client contributors).
 
-`crates/horizon-client-render/src/keypad.rs` is adapted from Starling's keypad profile
-(`crates/horizon-client-render/src/keypad.rs`) at the same commit.
+`crates/foundry-client-render/src/keypad.rs` is adapted from Starling's keypad profile
+(`crates/foundry-client-render/src/keypad.rs`) at the same commit.
 
-`crates/horizon-client-render/src/android_gamepad.rs` is adapted from Starling's controller decoder
-(`crates/horizon-client-render/src/android_gamepad.rs`) and the input-mode part of its
+`crates/foundry-client-render/src/android_gamepad.rs` is adapted from Starling's controller decoder
+(`crates/foundry-client-render/src/android_gamepad.rs`) and the input-mode part of its
 `android_runtime.rs`, at the same commit.
 
-`crates/horizon-client-render/src/touch.rs` and `touch/tests/` are adapted from the touch input
-state of Starling's `crates/horizon-client-render/src/touch.rs` at the same commit.
+`crates/foundry-client-render/src/touch.rs` and `touch/tests/` are adapted from the touch input
+state of Starling's `crates/foundry-client-render/src/touch.rs` at the same commit.
 
-`crates/horizon-client-render/src/touch/draw.rs` is adapted from the touch control drawing in
-Starling's `crates/horizon-client-render/src/touch.rs` at the same commit.
+`crates/foundry-client-render/src/touch/draw.rs` is adapted from the touch control drawing in
+Starling's `crates/foundry-client-render/src/touch.rs` at the same commit.
 
-`crates/horizon-client-render/src/android_runtime.rs` and `android_runtime/tests/` are adapted from the
-input part of Starling's `crates/horizon-client-render/src/android_runtime.rs` at the same commit.
+`crates/foundry-client-render/src/android_runtime.rs` and `android_runtime/tests/` are adapted from the
+input part of Starling's `crates/foundry-client-render/src/android_runtime.rs` at the same commit.
 
 ## PCG3D hash
 
-`hash3` in `crates/horizon-client-render/src/hdr.wgsl`, the noise HDR10 output's dither is made from, is the
+`hash3` in `crates/foundry-client-render/src/hdr.wgsl`, the noise HDR10 output's dither is made from, is the
 `pcg3d` hash of Mark Jarzynski and Marc Olano ("Hash Functions for GPU Rendering", Journal of Computer Graphics
 Techniques 9(3), 2020), from <https://github.com/markjarzynski/PCG3D>. Copyright 2020 Mark Jarzynski & Marc Olano,
 licensed under MIT:

@@ -88,22 +88,22 @@ def build_trench(ctl_path, socket, cwd, env):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--bin-dir', default='target/fast', help='folder with horizon-client and horizon-ctl')
+    parser.add_argument('--bin-dir', default='target/fast', help='folder with foundry-client and foundry-ctl')
     parser.add_argument('--resources', default=str(lab.RESOURCES), help='the prepared resources (default: .local)')
     parser.add_argument('--keep', action='store_true', help='keep the scratch game home')
     args = parser.parse_args()
     bindir = Path(args.bin_dir).resolve()
-    client, ctl_path = lab.binary(bindir, 'horizon-client'), lab.binary(bindir, 'horizon-ctl')
+    client, ctl_path = lab.binary(bindir, 'foundry-client'), lab.binary(bindir, 'foundry-ctl')
     for binary in (client, ctl_path):
         if not binary.exists():
-            raise Failed(f'{binary} is missing; build it (cargo build --profile fast -p horizon-game '
-                         '-p horizon-client-lib --bins) or pass --bin-dir')
+            raise Failed(f'{binary} is missing; build it (cargo build --profile fast -p foundry-game '
+                         '-p foundry-client-lib --bins) or pass --bin-dir')
     resources = Path(args.resources).resolve()
     if not resources.exists():
         raise Failed(f'{resources} is missing; run tools/lab.py prepare')
     work = Path(tempfile.mkdtemp(prefix='hz-boat-current-'))
-    (work / '.local/horizon-client').mkdir(parents=True)
-    lab.link_dir(resources, work / '.local/horizon-client' / lab.VERSION)
+    (work / '.local/foundry-client').mkdir(parents=True)
+    lab.link_dir(resources, work / '.local/foundry-client' / lab.VERSION)
     (work / 'options.txt').write_text('onboardAccessibility:false\n')
     env = lab.game_env(home=work)
     socket = work / 'c.sock'

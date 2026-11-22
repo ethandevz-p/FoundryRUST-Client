@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# The tools the vanilla harnesses need, on a self-hosted runner (label horizon-game): the Mac mini's, whose service
+# The tools the vanilla harnesses need, on a self-hosted runner (label foundry-game): the Mac mini's, whose service
 # starts with a bare PATH, and the Linux ones (tools/ci/linux-runner.sh: NixOS, Ubuntu). Python 3.13 and the JDK pinned by
 # research-lock.json come from the machine, never from a download. Writes them to $GITHUB_PATH and $GITHUB_ENV for
 # the next steps.
 set -euo pipefail
 java_major=$(sed -n 's/.*"java_major": *\([0-9]*\).*/\1/p' research-lock.json | head -1)
-bin="$RUNNER_TEMP/horizon-bin"
+bin="$RUNNER_TEMP/foundry-bin"
 mkdir -p "$bin"
 if [ "$(uname)" = Darwin ]; then
   ln -sfn /opt/homebrew/bin/python3.13 "$bin/python3"
@@ -16,8 +16,8 @@ if [ "$(uname)" = Darwin ]; then
   # Builds go through the machine's sccache (shared with ~/fleet/rbuild), so the build folders runner-gc.sh
   # removes come back from the cache instead of compiling cold. The shared wrapper retries cache
   # outages and then compiles directly; it also routes nested Clippy invocations.
-  # Not for game-build.yml's builds (HORIZON_NO_SCCACHE=1: Nightlies, dry runs and releases).
-  if [ -x /opt/homebrew/bin/sccache ] && [ -z "${HORIZON_NO_SCCACHE:-}" ]; then
+  # Not for game-build.yml's builds (FOUNDRY_NO_SCCACHE=1: Nightlies, dry runs and releases).
+  if [ -x /opt/homebrew/bin/sccache ] && [ -z "${FOUNDRY_NO_SCCACHE:-}" ]; then
     { echo "RUSTC_WRAPPER=$GITHUB_WORKSPACE/tools/ci/compiler-cache.sh"; echo "CARGO_INCREMENTAL=0"; } >> "$GITHUB_ENV"
   fi
 else
@@ -42,8 +42,8 @@ else
   [ -n "$java_home" ] || { echo "::error::no JDK $java_major on this runner"; exit 1; }
   { echo "$bin"; echo "$java_home/bin"; } >> "$GITHUB_PATH"
   echo "JAVA_HOME=$java_home" >> "$GITHUB_ENV"
-  if [ -z "${HORIZON_NO_SCCACHE:-}" ] && command -v sccache > /dev/null; then
+  if [ -z "${FOUNDRY_NO_SCCACHE:-}" ] && command -v sccache > /dev/null; then
     { echo "RUSTC_WRAPPER=$GITHUB_WORKSPACE/tools/ci/compiler-cache.sh"; echo "CARGO_INCREMENTAL=0"; } >> "$GITHUB_ENV"
   fi
 fi
-echo "HORIZON_NO_AUDIO=1" >> "$GITHUB_ENV"
+echo "FOUNDRY_NO_AUDIO=1" >> "$GITHUB_ENV"

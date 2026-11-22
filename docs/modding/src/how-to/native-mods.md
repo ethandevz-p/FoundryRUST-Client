@@ -1,7 +1,7 @@
 # Native mods: building and shipping
 
 A native mod is Rust source in a `.hmod`. The launcher compiles it on the player's machine, with its own pinned Rust
-toolchain, against the prebuilt game of the exact Horizon build the mod pins in `[native]`. The game itself is never
+toolchain, against the prebuilt game of the exact Foundry Client build the mod pins in `[native]`. The game itself is never
 rebuilt for a mod: the mods are compiled and linked against that prebuilt game, and the instance then plays the
 result.
 
@@ -25,7 +25,7 @@ two separate passes over the listener list. Cancellation still leaves motion unc
 
 ## Living death contract version 2
 
-[`living_death` version 2](https://github.com/horizon-rust/horizon/blob/main/docs/native-mods.md#living-death-version-2) supplies
+[`living_death` version 2](https://github.com/foundry-rust/foundry/blob/main/docs/native-mods.md#living-death-version-2) supplies
 the accepted killing source and its captured weapon stack. Cancellation keeps the
 health a listener leaves, suppresses loot, experience and death messages, and does
 not heal the body. An unhealed cancelled body is removed at tick 20 without loot
@@ -51,7 +51,7 @@ its declarations, and the installed inventory freezes before worlds open.
 
 These declarations populate the integrated command/statistic inventory and
 append after vanilla's IDs in LAN and client built-in registry reads, preserving
-vanilla IDs. Servers declaring custom statistics require Horizon clients with
+vanilla IDs. Servers declaring custom statistics require Foundry Client clients with
 the same ordered statistic inventory; configuration rejects mismatches before
 play. Register the target before rewriting an award to it; an arbitrary
 identifier alone does not register a statistic.

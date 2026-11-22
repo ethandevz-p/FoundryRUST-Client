@@ -22,11 +22,11 @@ for arg in "${classify_args[@]}"; do
   previous=$arg
 done
 command=("$@")
-if [ -n "${HORIZON_TEST_RUSTC_WRAPPER:-}" ]; then
-  command=("$HORIZON_TEST_RUSTC_WRAPPER" "$@")
+if [ -n "${FOUNDRY_TEST_RUSTC_WRAPPER:-}" ]; then
+  command=("$FOUNDRY_TEST_RUSTC_WRAPPER" "$@")
 fi
-if $test_unit && { [ "$crate_name" = horizon_client ] || [ "$crate_name" = horizon_client_lib ]; }; then
+if $test_unit && { [ "$crate_name" = foundry_client ] || [ "$crate_name" = foundry_client_lib ]; }; then
   # Keep the lock in flock's parent, not in compiler/cache daemon descendants.
-  exec flock -x -o "${RUNNER_TEMP:?}/horizon-lib-test-compile.lock" "${command[@]}"
+  exec flock -x -o "${RUNNER_TEMP:?}/foundry-lib-test-compile.lock" "${command[@]}"
 fi
 exec "${command[@]}"

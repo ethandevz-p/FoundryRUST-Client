@@ -98,7 +98,7 @@ jobs:
       - name: Build and collect
         env:
           # The `cargo rustc --timings` report on dry runs only: cargo fails a build that can't write it.
-          HORIZON_SDK_TIMINGS: ${{ inputs.dry_run && '1' || '' }}
+          FOUNDRY_SDK_TIMINGS: ${{ inputs.dry_run && '1' || '' }}
         run: python tools/prebuilt_game.py build prebuilt ${{ matrix.server && '--server' || '' }}
       - name: Two native starter mods link against the SDK alone
         run: python tools/prebuilt_game.py smoke prebuilt

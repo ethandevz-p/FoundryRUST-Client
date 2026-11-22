@@ -1,0 +1,28 @@
+[package]
+name = "foundry-client-input"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+description = "The client's input layer: key bindings and their names, mouse, controllers, clipboard and window options"
+
+[dependencies]
+foundry-mod-api-macros = { path = "../foundry-mod-api-macros" }
+foundry-engine-slots = { path = "../foundry-engine-slots" }
+foundry-client-core = { path = "../foundry-client-core" }
+foundry-hooks = { path = "../foundry-hooks" }
+winit = "0.30.13"
+log = "0.4"
+png = "0.18"
+[target.'cfg(not(target_os = "android"))'.dependencies]
+arboard = { version = "3.6.1", default-features = false, features = ["wayland-data-control"] }
+
+[dev-dependencies]
+# The window icon test decodes Foundry Client's icon.
+foundry-theme = { path = "../foundry-theme" }
+
+[features]
+controllers = []
+
+[lints]
+workspace = true

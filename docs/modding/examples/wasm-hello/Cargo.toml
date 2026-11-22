@@ -5,7 +5,7 @@ edition = "2024"
 publish = false
 
 [dependencies]
-horizon-mod-api = { path = "../../../../crates/horizon-mod-api" }
+foundry-mod-api = { path = "../../../../crates/foundry-mod-api" }
 
 # A mod is its own project, not a member of the game's workspace.
 [workspace]

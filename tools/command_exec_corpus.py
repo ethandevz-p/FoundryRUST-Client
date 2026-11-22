@@ -216,9 +216,9 @@ def group_cleanup():
         own = (f'at @s if dimension minecraft:{level} positioned ~-1 {floor} ~-1 '
                'if entity @s[dx=2,dy=4096,dz=2] run')
         # The End's own dragon (EndDragonFight spawns it when the level loads) is no group's but flies above the
-        # floor at times: vanilla killed it there and Horizon, which had none up there, didn't.
+        # floor at times: vanilla killed it there and Foundry Client, which had none up there, didn't.
         kept = 'type=!player,type=!minecraft:ender_dragon' if level == 'the_end' else 'type=!player'
-        # Horizon finds an @s of another level only from that level ('in').
+        # Foundry Client finds an @s of another level only from that level ('in').
         ops += setup(*[f'/execute in minecraft:{level} as @e[type=minecraft:{kind}] {own} '
                        'data merge entity @s {Size:0}' for kind in ('slime', 'magma_cube', 'sulfur_cube')],
                      *[f'/execute in minecraft:{level} as @e[{kept}] {own} kill @s'] * 2)
@@ -1058,7 +1058,7 @@ def vehicle_item_stack_config():
     (applyComponentsFromItemStack), then minecraft:entity_data (updateCustomEntityTag) when its
     id is the vehicle's; command block and spawner minecarts take it from an op player only, never
     from a dispenser. (The op case by a player is left out: this harness's owner is an op in vanilla
-    and not in Horizon.)"""
+    and not in Foundry Client.)"""
     ops = setup('/forceload add 0 0 15 15', '/fill 0 199 0 15 199 15 stone', '/fill 0 200 0 15 203 15 air',
                 '/gamemode creative', '/tp @s 4.5 200 4.5 0 0')
     ops += [{'op': 'settle'}]
@@ -1086,7 +1086,7 @@ def vehicle_item_stack_config():
     ops += setup('/tp @s 8.5 200 3.5 0 45',
                  '/item replace entity @s weapon.mainhand with minecraft:oak_boat[custom_name="Boaty",'
                  'entity_data={id:"minecraft:oak_boat",Tags:["boat_data"],Rotation:[90f,10f]}]')
-    # The packet's rotation, on both sides (the plain use_item op sends 0, 0 to Horizon).
+    # The packet's rotation, on both sides (the plain use_item op sends 0, 0 to Foundry Client).
     ops += [{'op': 'use_item', 'sequence': 1, 'yaw': 0.0, 'pitch': 45.0}]
     boat = '@e[type=minecraft:oak_boat,x=8.5,y=200,z=5,distance=..2,limit=1]'
     # BoatItem.use turns the boat to the player's yaw after the data loads.
@@ -1530,14 +1530,14 @@ def snbt_trailing_commas():
     ops = []
     for value in ('{a:1b,}', '{a:1b,b:"x",}', '[1,2,]', '["a",]', '[{},]', '[I;1,2,]', '[B;1b,]', '[L;1L,]',
                   '{a:[1,],b:{c:2,},}', '{,}', '[,]', '[I;,]', '{a:1b,,}', '[1,,2]', '{a:1b,}x'):
-        ops += [cmd(f'/data modify storage horizon:snbt v set value {value}'),
-                cmd('/data get storage horizon:snbt v')]
+        ops += [cmd(f'/data modify storage foundry:snbt v set value {value}'),
+                cmd('/data get storage foundry:snbt v')]
     # A text component argument reads the same grammar.
     ops += [cmd('/tellraw @s {text:"comma",color:"red",}'), cmd('/tellraw @s ["a",{text:"b",},]')]
     ops += [cmd('/summon minecraft:marker 0 200 0 {Tags:["snbt_comma",],}'),
             cmd('/data get entity @e[type=minecraft:marker,tag=snbt_comma,limit=1] Tags'),
             cmd('/kill @e[type=minecraft:marker,tag=snbt_comma]'),
-            cmd('/data remove storage horizon:snbt v')]
+            cmd('/data remove storage foundry:snbt v')]
     return ops
 
 
@@ -1575,7 +1575,7 @@ def dragon_command_damage():
             ops += [cmd(f'/damage {crystal} {damage}'),
                     cmd(f'/execute {"if" if stays else "unless"} entity {crystal}', expect_result=1)]
     # The dragons are summoned holding their pattern (0): a summoned dragon hovers (10), which
-    # is sitting, and Horizon summons it holding (a separate gap).
+    # is sitting, and Foundry Client summons it holding (a separate gap).
     # One dragon at a time from here. dealDefaultKnockback: fireworks are #is_explosion (the
     # hit counts) and not #no_knockback, so the dragon is pushed away from the `at` position.
     knock = '@e[tag=dmg_knock,limit=1]'
@@ -2329,7 +2329,7 @@ def bird_flap_sensors():
             ops += [cmd('/execute if block 9 200 10 sculk_sensor[sculk_sensor_phase=inactive,power=0]')]
             # A bird's own random decides when it flaps: seed it here, not from the last sync before this group
             # (item honey bounce's), which every group in between can move. Entity ids far above those the
-            # world's loaded entities have: Horizon keeps an entity's UUID and tags by its id.
+            # world's loaded entities have: Foundry Client keeps an entity's UUID and tags by its id.
             case = len([op for op in ops if op['op'] == 'sync_randoms'])
             ops += [{'op': 'sync_randoms', 'uniquifier': 19870 + case, 'entity_id': 1987000 + 1000 * case,
                      'level_seed': 1987}]
@@ -2584,7 +2584,7 @@ def world_misc():
         cmd('/summon minecraft:armor_stand 4.5 210 4.5 {NoGravity:1b,Tags:["w"],CustomName:{text:"Stand",color:"blue"}}'),
         cmd('/swing @e[tag=w]'),
         cmd('/summon minecraft:lightning_bolt 4.5 300 4.5'),
-        # Primed TNT is no command target in Horizon: still "Summoned new
+        # Primed TNT is no command target in Foundry Client: still "Summoned new
         # Primed TNT" (it explodes high in the air, far from the rest).
         cmd('/summon minecraft:tnt 60.5 300 60.5 {fuse:1s}'),
         cmd('/summon minecraft:pig 4.5 210 4.5 {NoAI:1b,Invulnerable:1b,Tags:["w"],Passengers:[{id:"minecraft:chicken",NoAI:1b,Tags:["w"]}]}'),
@@ -4799,7 +4799,7 @@ def mannequin_pose_anchors():
             for x, z in ((32, 0), (48, 0), (32, 16), (48, 16))]
     ops += setup('/tick freeze', '/fill 32 200 0 47 204 15 air')
     # Raw pose getter normalization is separate; this gate pins live anchors.
-    # Java 26.3 scale-1 eye positions, independent of Horizon's pose math.
+    # Java 26.3 scale-1 eye positions, independent of Foundry Client's pose math.
     cases = ((None, '201.62000000476837'), ('standing', '201.62000000476837'),
              ('crouching', '201.2699999809265'), ('swimming', '200.40000000596046'),
              ('fall_flying', '200.40000000596046'), ('sleeping', '200.20000000298023'),
@@ -5653,7 +5653,7 @@ def cube_split():
         flags = 'PersistenceRequired:1b' + ('' if up else ',NoAI:1b')
         ops.append(cmd(f'/summon minecraft:{kind} {x} {y0 + up} {z} {{Size:{tag},{flags}}}', expect_result=1))
     for kind, _, x, z, up in cubes:
-        # A blow, not /kill: a /kill'ed mob starts dying a tick early in Horizon (#15443).
+        # A blow, not /kill: a /kill'ed mob starts dying a tick early in Foundry Client (#15443).
         ops.append(cmd(f'/damage @e[type={kind},x={x},y={y0 + up},z={z},distance=..1,limit=1] 1000 minecraft:generic',
                        expect_result=1))
     # LivingEntity.tickDeath removes the body on the 20th tick after the death, and the split comes with it:
@@ -7502,7 +7502,7 @@ def loaded_dragon_health_above_max():
     chunk = [[x0 >> 4, z0 >> 4]]
     ops = [cmd(f'/forceload add {x0} {z0}', False), {'op': 'wait_chunks', 'chunks': chunk}]
     uuids = []
-    # One dragon: Horizon has a single dragon per level, so it refuses to summon a second.
+    # One dragon: Foundry Client has a single dragon per level, so it refuses to summon a second.
     for n, health in enumerate(('1000.0f',), 1):
         uuids.append(f'00004154-0000-0000-0000-{n:04x}00000001')
         ops.append(cmd(f'/summon ender_dragon {x0 + 8}.5 {y0 + 12 * n} {z0 + 8}.5 '
@@ -8367,14 +8367,14 @@ def text_component_key_order():
         # the mob itself would also compare its styled display name.
         ops.append(cmd(f'/summon pig {x0 + 2 * n}.5 {y0} {z0}.5 {{UUID:[I;16500,0,{n},1],NoAI:1b,NoGravity:1b,'
                        f'CustomName:{name}}}', False))
-        ops.append(cmd(f'/data modify storage horizon:key_order name set from entity '
+        ops.append(cmd(f'/data modify storage foundry:key_order name set from entity '
                        f'00004074-0000-0000-0000-{n:04x}00000001 CustomName'))
-        ops.append(cmd('/data get storage horizon:key_order name'))
+        ops.append(cmd('/data get storage foundry:key_order name'))
         ops.append(cmd(f'/summon item {x0 + 2 * n}.5 {y0} {z0 + 3}.5 {{UUID:[I;16500,1,{n},1],NoGravity:1b,'
                        f'PickupDelay:32767s,Item:{{id:"minecraft:stone",components:{{"minecraft:custom_name":{name}}}}}}}',
                        expect_result=1))
         ops.append(cmd(f'/data get entity 00004074-0000-0001-0000-{n:04x}00000001 Item.components'))
-    return ops + setup('/tick unfreeze', '/data remove storage horizon:key_order name', f'/kill @e[type=!player,x={x0},y={y0 - 8},z={z0},dx=16,dy=24,dz=16]',
+    return ops + setup('/tick unfreeze', '/data remove storage foundry:key_order name', f'/kill @e[type=!player,x={x0},y={y0 - 8},z={z0},dx=16,dy=24,dz=16]',
                        f'/forceload remove {x0} {z0}')
 
 def orb_fall_distance():

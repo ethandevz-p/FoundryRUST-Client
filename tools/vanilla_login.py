@@ -6,7 +6,7 @@ connected for a while (answering keep-alives) and leave.
   vanilla_login.py --uuid NAME      print the offline UUID the server uses
 
 The server loads and saves the player's file (players/data/<uuid>.dat), so
-this checks that player data written by Horizon is accepted by vanilla:
+this checks that player data written by Foundry Client is accepted by vanilla:
 its log reports the position it read, and console commands such as
 `data get entity NAME` can inspect the loaded player meanwhile.
 """
@@ -85,7 +85,7 @@ def join(host, port, name, seconds):
         elif pid == 0:
             raise RuntimeError(f'login refused: {data!r}')
     c.send(3)  # login acknowledged -> configuration
-    # Configuration packet ids below are from crates/horizon-protocol/src/ids.rs.
+    # Configuration packet ids below are from crates/foundry-protocol/src/ids.rs.
     while True:
         pid, data = c.receive()
         if pid == 15:  # select known packs: claim none, receive full registries

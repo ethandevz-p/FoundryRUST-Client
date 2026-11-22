@@ -1,13 +1,13 @@
 //! Instances: separate game folders, each with its own worlds, options and packs.
 //!
 //! Nothing that exists moves. The game's home (`backend::game_home`) stays the default instance,
-//! "Horizon", with its saves and options where they are. Imported modpacks (`ports/<pack>/home/`)
-//! and registry modpacks (`horizon-packs/<id>/home/`) are instances too, played from their own
+//! "Foundry Client", with its saves and options where they are. Imported modpacks (`ports/<pack>/home/`)
+//! and registry modpacks (`foundry-packs/<id>/home/`) are instances too, played from their own
 //! folders as before. New instances get `instances/<slug>/` in the game's home. What the player
 //! chooses about an instance (its name, icon, group) is kept in `instances.json` in the
 //! launcher's data folder, so renaming one never moves a folder.
 use crate::backend;
-use crate::browser::horizon::pack as registry_pack;
+use crate::browser::foundry::pack as registry_pack;
 use crate::launch::Launch;
 use crate::modpacks;
 use serde::{Deserialize, Serialize};
@@ -18,7 +18,7 @@ use std::process::Command;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 /// The default instance's id: the game's home itself.
-pub const DEFAULT: &str = "horizon";
+pub const DEFAULT: &str = "foundry";
 const FILE: &str = "instances.json";
 /// Where new instances live, in the game's home.
 const OWN: &str = "instances";
@@ -31,7 +31,7 @@ pub enum Kind {
     Own,
     /// An imported Java modpack (modpacks.rs).
     Port,
-    /// A modpack from Horizon's registry.
+    /// A modpack from Foundry Client's registry.
     Pack,
 }
 
@@ -163,7 +163,7 @@ pub struct Meta {
     pub icon: Option<Icon>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub group: Option<String>,
-    /// The Horizon version this instance plays, kept when newer ones are installed. None: the
+    /// The Foundry Client version this instance plays, kept when newer ones are installed. None: the
     /// launcher's own version, which follows updates.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
@@ -190,10 +190,10 @@ pub struct Meta {
     /// What runs around the game: a pre-launch command, a wrapper, variables (`launch`).
     #[serde(default, skip_serializing_if = "Launch::is_empty")]
     pub launch: Launch,
-    /// Set for a Minecraft: Java Edition instance: it plays the real game, not Horizon.
+    /// Set for a Minecraft: Java Edition instance: it plays the real game, not Foundry Client.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub java: Option<JavaGame>,
-    /// A Java instance's own settings while it plays Horizon, back when it plays Java again
+    /// A Java instance's own settings while it plays Foundry Client, back when it plays Java again
     /// ([`switch`]).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub java_kept: Option<JavaGame>,
@@ -271,7 +271,7 @@ impl Store {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Instance {
-    /// `horizon`, an own instance's folder name, `port:<pack>` or `pack:<id>`.
+    /// `foundry`, an own instance's folder name, `port:<pack>` or `pack:<id>`.
     pub id: String,
     pub name: String,
     pub kind: Kind,
@@ -281,7 +281,7 @@ pub struct Instance {
     pub home: PathBuf,
     pub icon: Option<Icon>,
     pub group: Option<String>,
-    /// Its pinned Horizon version, if any (`Meta::version`).
+    /// Its pinned Foundry Client version, if any (`Meta::version`).
     pub version: Option<String>,
     /// Which builds it follows when it keeps no version.
     pub channel: Channel,
@@ -296,20 +296,20 @@ pub struct Instance {
 }
 
 impl Instance {
-    /// Ok when it plays Horizon; for a Java instance, which starts its own game
-    /// (`backend::java_game`), that Horizon's options don't apply to it.
-    fn horizon(&self) -> Result<(), String> {
+    /// Ok when it plays Foundry Client; for a Java instance, which starts its own game
+    /// (`backend::java_game`), that Foundry Client's options don't apply to it.
+    fn foundry(&self) -> Result<(), String> {
         match &self.java {
             None => Ok(()),
             Some(java) => Err(format!(
-                "{} plays Minecraft {} (Java Edition), not Horizon: Play starts it, without a \
-                 Horizon version.",
+                "{} plays Minecraft {} (Java Edition), not Foundry Client: Play starts it, without a \
+                 Foundry Client version.",
                 self.name, java.minecraft
             )),
         }
     }
 
-    /// The Horizon version it pins when that version isn't in `installed` (deleted while the
+    /// The Foundry Client version it pins when that version isn't in `installed` (deleted while the
     /// window was open, or not installed yet). Such an instance never falls back to another
     /// version: opening its worlds in one could upgrade them.
     pub fn missing_pin(&self, installed: &[String]) -> Option<&str> {
@@ -317,7 +317,7 @@ impl Instance {
         (!installed.iter().any(|t| t == pin)).then_some(pin)
     }
 
-    /// It takes Home's Horizon update offers: it pins no version and plays Horizon, not Java (#18394).
+    /// It takes Home's Foundry Client update offers: it pins no version and plays Foundry Client, not Java (#18394).
     pub fn follows_horizon(&self) -> bool {
         self.version.is_none() && self.java.is_none()
     }
@@ -326,11 +326,11 @@ impl Instance {
     /// command line's `--version`), else on Stable its channel's ([`crate::nightly::stable_latest`],
     /// as Home's), else the launcher's (`backend::resolve_version`).
     pub fn resolve_version(&self, requested: Option<&str>) -> Result<String, String> {
-        self.horizon()?;
+        self.foundry()?;
         match (requested, &self.version) {
             (None, Some(pinned)) => backend::resolve_version(Some(pinned)).map_err(|_| {
                 format!(
-                    "{} plays {pinned}, which is not installed: install it, or horizon-launcher \
+                    "{} plays {pinned}, which is not installed: install it, or foundry-launcher \
                      instance version \"{}\" latest",
                     self.name, self.name
                 )
@@ -345,7 +345,7 @@ impl Instance {
     }
 }
 
-/// The instances, by the default game home and the launcher's data folder: Horizon first, then
+/// The instances, by the default game home and the launcher's data folder: Foundry Client first, then
 /// by group and name.
 pub fn list() -> Vec<Instance> {
     list_in(&backend::game_home(), &backend::data_dir())
@@ -355,7 +355,7 @@ fn list_in(game_home: &Path, data: &Path) -> Vec<Instance> {
     let mut store = Store::load(data);
     let mut found = vec![(
         DEFAULT.to_string(),
-        "Horizon".to_string(),
+        "Foundry Client".to_string(),
         Kind::Default,
         game_home.to_path_buf(),
         game_home.to_path_buf(),
@@ -377,7 +377,7 @@ fn list_in(game_home: &Path, data: &Path) -> Vec<Instance> {
             .retain(|id, _| id == DEFAULT || id.contains(':') || own.contains(id));
         if store.instances.len() != before {
             if let Err(e) = store.save(data) {
-                eprintln!("Horizon: instances.json is not saved: {e}");
+                eprintln!("Foundry Client: instances.json is not saved: {e}");
             }
         }
     }
@@ -395,7 +395,7 @@ fn list_in(game_home: &Path, data: &Path) -> Vec<Instance> {
             home,
         ));
     }
-    for p in registry_pack::list_in(&game_home.join("horizon-packs")) {
+    for p in registry_pack::list_in(&game_home.join("foundry-packs")) {
         let home = registry_pack::home(&p.work);
         found.push((format!("pack:{}", p.id), p.name, Kind::Pack, p.work, home));
     }
@@ -442,11 +442,11 @@ fn find_in(all: &[Instance], query: &str) -> Result<Instance, String> {
         .or_else(|| all.iter().find(|i| i.name.eq_ignore_ascii_case(q)))
         .or_else(|| all.iter().find(|i| bare(&i.id) == q))
         .cloned()
-        .ok_or_else(|| format!("No instance {q}: horizon-launcher instance list shows them"))
+        .ok_or_else(|| format!("No instance {q}: foundry-launcher instance list shows them"))
 }
 
 /// Moves an instance's folder to the Trash (where the player can get it back, worlds and all)
-/// and forgets it: its choices, and the selection when Play started it. Horizon's own instance,
+/// and forgets it: its choices, and the selection when Play started it. Foundry Client's own instance,
 /// the game's home, stays.
 pub fn delete(query: &str) -> Result<Instance, String> {
     let (gone, saved) = delete_with_selection(query)?;
@@ -495,7 +495,7 @@ fn delete_in(
     Ok(instance)
 }
 
-/// The instance Play starts: the one picked in the launcher, else Horizon.
+/// The instance Play starts: the one picked in the launcher, else Foundry Client.
 pub fn selected() -> Instance {
     let all = list();
     backend::Settings::load()
@@ -513,7 +513,7 @@ pub fn select(query: &str) -> Result<Instance, String> {
 }
 
 /// The game's cache folder in each instance; the game rebuilds it on start.
-const GAME_CACHE: &str = ".horizon-cache";
+const GAME_CACHE: &str = ".foundry-cache";
 
 /// Where the game makes its cache under `game_home`: directly in each instance's home, never
 /// deeper, since a world may carry the same name. Every instance, port and pack folder counts,
@@ -536,7 +536,7 @@ pub(crate) fn game_caches(game_home: &Path) -> Vec<PathBuf> {
     std::iter::once(game_home.to_path_buf())
         .chain(children(game_home.join(OWN)))
         .chain(children(game_home.join("ports")).map(|w| modpacks::profile_home(&w)))
-        .chain(children(game_home.join("horizon-packs")).map(|w| registry_pack::home(&w)))
+        .chain(children(game_home.join("foundry-packs")).map(|w| registry_pack::home(&w)))
         .map(|home| home.join(GAME_CACHE))
         .collect()
 }
@@ -546,7 +546,7 @@ pub(crate) fn game_caches(game_home: &Path) -> Vec<PathBuf> {
 const NOT_COPIED: &[&str] = &[
     OWN,
     "ports",
-    "horizon-packs",
+    "foundry-packs",
     "logs",
     "crash-reports",
     "sessions",
@@ -558,7 +558,7 @@ const NOT_COPIED: &[&str] = &[
 
 /// Files of the player, not of one instance, that a new instance starts with: the keys and video
 /// settings, and the offline name (so the player stays the same player in its worlds).
-const PLAYER_FILES: &[&str] = &["options.txt", "horizon-player.txt"];
+const PLAYER_FILES: &[&str] = &["options.txt", "foundry-player.txt"];
 
 /// Creates an instance named `name`: empty but for the player's options and offline name, or a
 /// copy of `from`'s game folder (its worlds, options and packs). Nothing of `from` changes.
@@ -772,14 +772,14 @@ pub fn play_time(played: Duration) -> String {
 /// player's answers that hold everywhere follow it in: data collection and No AI as the
 /// launcher has them, and options.txt and the offline name when it has none yet.
 pub fn apply(cmd: &mut Command, instance: &Instance) -> Result<(), String> {
-    instance.horizon()?;
+    instance.foundry()?;
     match instance.kind {
         Kind::Default => return Ok(()),
         Kind::Own => {
             fs::create_dir_all(&instance.home)
                 .map_err(|e| format!("{}: {e}", instance.home.display()))?;
             cmd.current_dir(&instance.home)
-                .env("HORIZON_HOME", &instance.home);
+                .env("FOUNDRY_HOME", &instance.home);
         }
         Kind::Port | Kind::Pack => modpacks::apply_profile(cmd, &instance.work)?,
     }
@@ -793,15 +793,15 @@ fn follow_player(game_home: &Path, home: &Path) {
             let _ = fs::copy(game_home.join(f), home.join(f));
         }
     }
-    let consent = horizon_telemetry::consent::Consent::path(game_home);
+    let consent = foundry_telemetry::consent::Consent::path(game_home);
     if consent.is_file() {
-        let to = horizon_telemetry::consent::Consent::path(home);
+        let to = foundry_telemetry::consent::Consent::path(home);
         let _ = fs::create_dir_all(to.parent().unwrap());
         let _ = fs::copy(consent, to);
     }
-    let no_ai = horizon_platform::no_ai::is_on(game_home);
-    if horizon_platform::no_ai::is_on(home) != no_ai {
-        let _ = horizon_platform::no_ai::set(home, no_ai);
+    let no_ai = foundry_platform::no_ai::is_on(game_home);
+    if foundry_platform::no_ai::is_on(home) != no_ai {
+        let _ = foundry_platform::no_ai::set(home, no_ai);
     }
 }
 

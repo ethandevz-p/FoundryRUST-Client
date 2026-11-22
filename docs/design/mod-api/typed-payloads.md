@@ -1,8 +1,8 @@
 # Registered payloads and the typed-payload design
 
-The registered **raw** transport implements [arismoko/horizon#2882](https://github.com/arismoko/horizon/issues/2882).
+The registered **raw** transport implements [arismoko/foundry#2882](https://github.com/arismoko/foundry/issues/2882).
 Typed registration and token binding over it are [below](#typed-registration-and-tokens-813-step-4b-1);
-configuration snapshots remain work for [arismoko/horizon#813](https://github.com/arismoko/horizon/issues/813).
+configuration snapshots remain work for [arismoko/foundry#813](https://github.com/arismoko/foundry/issues/813).
 The transport contract is detailed in [Registered raw custom payload transport](../raw-custom-payload-transport.md).
 
 ## Register raw payloads once
@@ -22,7 +22,7 @@ as Parts, not a separate manifest channel list.
 ```rust,ignore
 use mod_api::{
     Hooks, IPayloadContext, IPayloadHandler, PayloadBytes, PayloadHandleError, PayloadId, Registrar,
-    RegistrationContext, horizon_mod,
+    RegistrationContext, foundry_mod,
 };
 use std::sync::Arc;
 
@@ -41,7 +41,7 @@ impl IPayloadHandler for Update {
 }
 struct ExampleMod;
 
-#[horizon_mod]
+#[foundry_mod]
 impl Hooks for ExampleMod {
     fn register(&self, r: &mut dyn Registrar, _: &RegistrationContext) {
         r.payload_handlers().registrar("1")
@@ -84,25 +84,25 @@ A missing required declaration refuses admission. Matching protocol/id declarati
 must agree on version and direction even when optional; mismatches refuse with the
 id, reason and both declarations. Only one-sided optional absence permits admission,
 and send then returns `UnsupportedPeer`
-without a packet. Horizon-branded peers must also answer the global raw transport
-revision mark on `horizon:payloads`, even with empty or all-optional declarations.
+without a packet. Foundry Client-branded peers must also answer the global raw transport
+revision mark on `foundry:payloads`, even with empty or all-optional declarations.
 Query is `[0, 1]`; Offer starts `[1, 1]` followed by the record count. A missing
 response or wrong revision refuses admission with a named raw-protocol cause. One
-exception: a client meeting a Horizon server that sent nothing on `horizon:payloads`
+exception: a client meeting a Foundry Client server that sent nothing on `foundry:payloads`
 (a build from before this negotiation) joins it like a vanilla server, with nothing
 negotiated. This applies only to the connection's initial configuration; a
 reconfiguration without a response still refuses. Once that initial configuration
-finished with nothing received on `horizon:payloads`, payloads on channels the client
+finished with nothing received on `foundry:payloads`, payloads on channels the client
 declared are dropped instead of refused: they are never decoded or delivered to a mod.
 Such payloads arriving during configuration, before its finish, still refuse. A required
 local declaration the server lacks still refuses admission.
-In the initial configuration each end first names its build on `horizon:build` (one
+In the initial configuration each end first names its build on `foundry:build` (one
 string, `Nightly 2026-11-18 · 0c02067`): the server before its Query, the client before
-its first message on `horizon:payloads`. A refusal then says which builds met
-("This server runs Horizon X; your game is Horizon Y.", which side to update when two
+its first message on `foundry:payloads`. A refusal then says which builds met
+("This server runs Foundry Client X; your game is Foundry Client Y.", which side to update when two
 nightlies or two releases meet, and the raw-protocol cause below it); an end that never named its build is
 older than this. Vanilla clients discard the payload, as they discard the Query.
-This is not a build authentication mechanism. Non-Horizon vanilla peers retain
+This is not a build authentication mechanism. Non-Foundry Client vanilla peers retain
 optional admission. Peers with no mod declarations exchange only protocol metadata and
 an Offer of the engine's optional declarations (below); there is no per-tick scan of
 loaded mods.
@@ -152,7 +152,7 @@ commit and the same physical protocol incarnation. It refuses every locally owne
 registered channel and engine-reserved channel; it cannot bypass negotiation,
 direction, or service authority. The former envelope hooks and tick-capped send
 methods are removed, without aliases or fallback handlers. Private custom books
-advertise their own version on `horizon:recipe_book_settings`; book support does not
+advertise their own version on `foundry:recipe_book_settings`; book support does not
 depend on a mod transport flag.
 
 ## Raw plugin channels
@@ -163,13 +163,13 @@ declaring it by its exact id: `registrar.play_raw(PayloadId(id), Some(handler))`
 or `None` for a channel the mod only sends on. A raw declaration is a server's
 unnegotiated policy for that channel, not a payload: it is not in the
 negotiation offer, makes no client mod-required, and a raw-only mod needs no
-Horizon peer. `PlayerRef::send_payload` sends the exact bytes in a vanilla
+Foundry Client peer. `PlayerRef::send_payload` sends the exact bytes in a vanilla
 custom payload to any client in play; above vanilla's clientbound limit
 (1,048,576 bytes) it returns `PayloadTooLarge`. What a client sends on the
 channel reaches every mod that declared it with a handler, once each, in mod
 load order and on the main thread; one mod's error is logged and rolls back its
 own work only. The serverbound limit stays vanilla's 32,767 bytes. An
-undeclared channel is ignored as before. `minecraft:` and `horizon:` ids cannot
+undeclared channel is ignored as before. `minecraft:` and `foundry:` ids cannot
 be declared, and a raw id that a typed payload also registers refuses load,
 naming both mods. `PlayerRef::announced_channels` reads what the client
 announced in `minecraft:register` (less `minecraft:unregister`), in
@@ -204,7 +204,7 @@ impl IPayloadHandler for VoiceSecret {
 }
 
 struct MyMod;
-#[mod_api::horizon_mod]
+#[mod_api::foundry_mod]
 impl Hooks for MyMod {
     fn register(&self, r: &mut dyn Registrar, _: &RegistrationContext) {
         r.payload_handlers()
@@ -218,7 +218,7 @@ impl Hooks for MyMod {
 
 ## Stage 2: the value codec
 
-`crates/horizon-mod-vocab/src/content/payload_codec.rs` holds the pure codec half of stage 2, exported from `mod_api`, and `#[derive(PayloadCodec)]` writes a type's codec from its fields. It is the part that touches neither registration nor delivery, so it stands apart from the raw transport of [arismoko/horizon#2882](https://github.com/arismoko/horizon/issues/2882). The typed handler adapter decodes a received body with it, and the token sends encode one.
+`crates/foundry-mod-vocab/src/content/payload_codec.rs` holds the pure codec half of stage 2, exported from `mod_api`, and `#[derive(PayloadCodec)]` writes a type's codec from its fields. It is the part that touches neither registration nor delivery, so it stands apart from the raw transport of [arismoko/foundry#2882](https://github.com/arismoko/foundry/issues/2882). The typed handler adapter decodes a received body with it, and the token sends encode one.
 
 | Item | Contract |
 | --- | --- |
@@ -229,18 +229,18 @@ impl Hooks for MyMod {
 | `PAYLOAD_MAX_DEPTH` | 64. Each list, each present option and each `nested` level counts one; level 65 is `TooDeep` |
 | `PAYLOAD_MAX_STRING_BYTES`, `PAYLOAD_MAX_LIST_ENTRIES` | 4096 each, the defaults of `String` and `Vec<T>`. A schema with another bound calls `str_within(limit)`, `bytes(limit)` or `list(limit, read)` itself, so these are not a transport ceiling |
 | `PAYLOAD_DECODE_BUDGET` | 8,388,608 bytes of allocation for one value. A list is charged `count * size_of::<T>()` before it is reserved, an owned string its length, so a small body cannot ask for a large allocation |
-| `#[derive(PayloadCodec)]` | The generated codec, in `crates/horizon-mod-api-macros/src/payload.rs`. A struct is its fields in declaration order with nothing between them. An enum is a VarInt tag, the variant's position from 0 whatever its discriminant, then that variant's fields; a tag no variant has is `InvalidDiscriminant`. Each field goes through its own `PayloadCodec`, so the bounds above hold inside a derived type, and it adds no nesting level of its own. An enum with no variants, a union and a field without a codec do not compile |
+| `#[derive(PayloadCodec)]` | The generated codec, in `crates/foundry-mod-api-macros/src/payload.rs`. A struct is its fields in declaration order with nothing between them. An enum is a VarInt tag, the variant's position from 0 whatever its discriminant, then that variant's fields; a tag no variant has is `InvalidDiscriminant`. Each field goes through its own `PayloadCodec`, so the bounds above hold inside a derived type, and it adds no nesting level of its own. An enum with no variants, a union and a field without a codec do not compile |
 | `PayloadDecodeError` | `UnexpectedEnd`, `VarIntTooLong`, `NegativeLength`, `LengthOverLimit`, `Utf8`, `TooDeep`, `InvalidDiscriminant`, `NonFinite`, `BudgetExhausted`, `Trailing`, `InvalidValue`; has a Wire form |
 | `PayloadEncodeError` | `TooLarge`, `LengthOverLimit`, `TooDeep`, `NonFinite`, `BudgetExhausted`; has a Wire form. An encoder refuses what the peer's decoder would refuse, its allocation budget included |
 
 A length is read as a signed VarInt and checked for sign and bound before anything is reserved or copied; strings and byte arrays are borrowed from the body. A boolean other than 0 or 1 is refused (vanilla reads any non-zero byte as true). `finite_f32` and `finite_f64` are how a schema declares a finite float. No decode path indexes, and none panics on any input.
 
-Two things this stage does not do. The bounded field kinds of [arismoko/horizon#811](https://github.com/arismoko/horizon/issues/811) (`DatapackFieldKind`) are not merged with this reader: they describe JSON entries the game decodes, are named for datapacks, and their issue is in flight; a shared name for the two belongs to whoever lands second. And the budget counts what the reader's own primitives allocate, not what a hand-written codec allocates beside them; native code has to obey the contract, as the section above says.
+Two things this stage does not do. The bounded field kinds of [arismoko/foundry#811](https://github.com/arismoko/foundry/issues/811) (`DatapackFieldKind`) are not merged with this reader: they describe JSON entries the game decodes, are named for datapacks, and their issue is in flight; a shared name for the two belongs to whoever lands second. And the budget counts what the reader's own primitives allocate, not what a hand-written codec allocates beside them; native code has to obey the contract, as the section above says.
 
 
 Strings use a 4096 UTF-8 byte default, not a character count. A schema may pass 3N bytes to `str_within` for a vanilla N-character limit. Each box, list and present option consumes one of 64 nesting levels; boxes charge their inner allocation size before decoding.
 
-## Typed registration and tokens (arismoko/horizon#813 step 4b-1)
+## Typed registration and tokens (arismoko/foundry#813 step 4b-1)
 
 A typed payload is an ordinary raw declaration whose body is exactly `encode_payload(&value)`.
 There is no second route and no envelope: the typed layer is registration, a token and two sends.
@@ -285,7 +285,7 @@ fn register(r: &mut dyn Registrar) {
 | Wasm | The same declarations, adapter and tokens: the guest decodes and runs its handler; the token crosses the Wire ABI as data and the host checks it as it does a native one |
 | Cost | Registration and reading a token as a type walk the schema. A declared payload with no traffic makes no codec call; a send or reply checks its token with two `u64` compares and one table lookup, with no schema walk and no allocation before it encodes |
 
-## Remaining typed work in arismoko/horizon#813
+## Remaining typed work in arismoko/foundry#813
 
 The earlier accepted design is amended by the raw transport's actual codec and
 framing contracts above: its generic registered-body ceilings, typed application
@@ -294,10 +294,10 @@ layer above keeps registration and helpers outside object-safe Host dispatch, de
 to the same raw transport and binds its token to the checked declaration, type,
 protocol, direction and load.
 
-Share schema/value codec primitives with arismoko/horizon#811. Wire is an ABI representation, not
+Share schema/value codec primitives with arismoko/foundry#811. Wire is an ABI representation, not
 permission to serialize Rust pointers, memory layouts, or `Any`. A typed value needs
 `PayloadCodec` only: it never crosses Wire, only its encoded body and its token do
-(the contract amendment on arismoko/horizon#813). Structured
+(the contract amendment on arismoko/foundry#813). Structured
 codecs must check signed lengths, overflow, remaining bytes, cumulative allocation,
 depth, discriminants, and registry references before allocating; require complete
 consumption. Per-schema bounds must not silently reinstate a lower generic transport
@@ -311,8 +311,8 @@ get no separate networking implementation.
 ## Engine declarations: attachment sync (step 4a)
 
 An engine service that sends on a registered channel declares it in the same negotiated
-table as a mod (`raw_payloads::engine` in `horizon-client`). Every installation offers
-its engine declarations, so a Horizon peer's Offer carries them even with no mods; each
+table as a mod (`raw_payloads::engine` in `foundry-client`). Every installation offers
+its engine declarations, so a Foundry Client peer's Offer carries them even with no mods; each
 is optional, so a peer without one is admitted and a send returns `UnsupportedPeer`
 without a packet. The channel stays reserved: no mod may declare it, and the generic
 packet API refuses it. With only engine declarations a client does not open negotiation
@@ -322,18 +322,18 @@ an un-negotiated one, or one in the wrong direction or protocol, is a session re
 
 | Item | Contract |
 | --- | --- |
-| Declaration | `horizon:attachment_sync`, play, to-client, version `1`, optional |
+| Declaration | `foundry:attachment_sync`, play, to-client, version `1`, optional |
 | Recipients | Placed players whose play epoch has the channel negotiated, then the holder's trackers as before |
 | Send | Prepared against the connection's current epoch, published at root commit after the player's held packets; rollback publishes none, a stale epoch publishes nothing |
 | Format | Unchanged, byte for byte (holder, replace, changes) |
-| Size | The connection's frame limits (arismoko/horizon#3087); the former 1,048,576-byte body cap is removed |
+| Size | The connection's frame limits (arismoko/foundry#3087); the former 1,048,576-byte body cap is removed |
 | Refusals | Past the frame limits or unencodable: the typed `PayloadSendError` logged once per connection epoch, message not sent, player stays joined. `Backpressure` closes the connection, as a full queue did before |
-| Removed | The `brand == "horizon"` gate and the direct write to the connection |
+| Removed | The `brand == "foundry"` gate and the direct write to the connection |
 
-Attachment sync keeps its message format. arismoko/horizon#796 stage 2 (tracked Part state) adds, on
+Attachment sync keeps its message format. arismoko/foundry#796 stage 2 (tracked Part state) adds, on
 top of this route, scoped incarnation, schema and committed revision, authorised tracking
 snapshots, stale-update rejection, revision-gap handling and visibility-loss cleanup,
-with arismoko/horizon#796's world/dimension, residency join, full-before-delta ordering, bounded assembly
+with arismoko/foundry#796's world/dimension, residency join, full-before-delta ordering, bounded assembly
 and rollback proofs.
 
 Acceptance for those future layers must exercise native and wasm over the real

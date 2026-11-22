@@ -1,4 +1,4 @@
 target/
 mod.wasm
-# Built by `cargo horizon-mod build --wasm`, which also writes [wasm] into horizon-mod.toml.
+# Built by `cargo foundry-mod build --wasm`, which also writes [wasm] into foundry-mod.toml.
 Cargo.lock

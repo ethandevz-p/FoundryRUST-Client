@@ -1,0 +1,2 @@
+# foundry-rust/foundry: entity_range_percent reads the hub's broadcast range; the test sets 50 and reads it back.
+foundry-client game::native_entity_range_percent::tests::entity_range_percent_reads_the_hubs_range lib daily resources

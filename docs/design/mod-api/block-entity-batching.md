@@ -1,12 +1,12 @@
 # Design: per-type batched block entity ticks
 
 **Provisional; implementation waits for a maintainer decision.** This answers
-[arismoko/horizon#2759](https://github.com/arismoko/horizon/issues/2759).
+[arismoko/foundry#2759](https://github.com/arismoko/foundry/issues/2759).
 The recommendation is contiguous same-type runs in the existing ticker order,
 with each entity committed before the next one starts. This reduces outer calls
 where runs exist; it does not promise one call per type across a whole level.
 
-**Implemented separately in arismoko/horizon#3669:** the existing individual tick now has
+**Implemented separately in arismoko/foundry#3669:** the existing individual tick now has
 `BlockEntityTickReply::{Changed, Unchanged}` on native and wasm. Set
 `*event.reply = BlockEntityTickReply::Unchanged` to omit that Part's reply snapshot
 entirely. Each Part starts with `Changed` and sees only preceding accepted edits;
@@ -22,30 +22,30 @@ Audit inputs for this implemented subset (not evidence of batching performance):
 
 | Owner | Audited behavior / executable input |
 | --- | --- |
-| `crates/horizon-mod-vocab/src/block/types.rs`, `hooks/block_entity_tick.rs` | One reply model and the existing execution hook; default `Changed`. |
-| `crates/horizon-mod-api-gen/src/dispatch.rs`, `ModBlockEntityView` | Per-Part reply reset and acceptance; native payload rollback is captured lazily on the first actual mutation, not on an untouched Unchanged call. |
-| `crates/horizon-mod-api-gen/src/wire/calls.rs`, `wire/host.rs` | Reply discriminator precedes optional snapshot bytes; Unchanged omits both snapshot encode and decode/apply, with no legacy wire fallback. |
-| `crates/horizon-client/src/game/native_hooks/block_entity_tick.rs` | Original placeholder identity checked before unchanged restoration; no dirty/effect owner called. |
-| `crates/horizon-client/src/game/modding/block_entity_tick_reply.rs`, `block_entity_tick_items.rs` | Changed reuses checked write-back; independent dropped-item Host proposals retain their existing acceptance checks even on Unchanged. |
-| `crates/horizon-client/src/game/modding/block_entity_tick_reply_tests.rs` and `crates/horizon-mod-wasm/tests/fixture/src/tick_reply.rs` | Shared native/compiled-wasm Parts: repeated clean constant-revision ticks, Unchanged→Changed and Changed→Unchanged transitions, default reply reset, aborted item transactions with unnormalized original slots, accepted Host writes, replacement, and container/comparator callback counts. `wasm-mods.yml` owns its compiled-fixture prerequisites; ordinary prepared-data shards exclude it. |
+| `crates/foundry-mod-vocab/src/block/types.rs`, `hooks/block_entity_tick.rs` | One reply model and the existing execution hook; default `Changed`. |
+| `crates/foundry-mod-api-gen/src/dispatch.rs`, `ModBlockEntityView` | Per-Part reply reset and acceptance; native payload rollback is captured lazily on the first actual mutation, not on an untouched Unchanged call. |
+| `crates/foundry-mod-api-gen/src/wire/calls.rs`, `wire/host.rs` | Reply discriminator precedes optional snapshot bytes; Unchanged omits both snapshot encode and decode/apply, with no legacy wire fallback. |
+| `crates/foundry-client/src/game/native_hooks/block_entity_tick.rs` | Original placeholder identity checked before unchanged restoration; no dirty/effect owner called. |
+| `crates/foundry-client/src/game/modding/block_entity_tick_reply.rs`, `block_entity_tick_items.rs` | Changed reuses checked write-back; independent dropped-item Host proposals retain their existing acceptance checks even on Unchanged. |
+| `crates/foundry-client/src/game/modding/block_entity_tick_reply_tests.rs` and `crates/foundry-mod-wasm/tests/fixture/src/tick_reply.rs` | Shared native/compiled-wasm Parts: repeated clean constant-revision ticks, Unchanged→Changed and Changed→Unchanged transitions, default reply reset, aborted item transactions with unnormalized original slots, accepted Host writes, replacement, and container/comparator callback counts. `wasm-mods.yml` owns its compiled-fixture prerequisites; ordinary prepared-data shards exclude it. |
 
 ## Existing moments and verified owners
 
 The existing plural `block_entity_ticks` is **not a batched execution hook**.
-`crates/horizon-mod-vocab/src/hooks/block_entity_ticks.rs:4` declares a server,
+`crates/foundry-mod-vocab/src/hooks/block_entity_ticks.rs:4` declares a server,
 read-Host eligibility query, keyed by block, asked for block states at world open.
 `BlockEntityTicksEvent.ticks` selects whether a ticker exists; it contains no list
 of entities. The Part example at
-`crates/horizon-mod-vocab/src/parts/block_entities.rs:334` sets it to true, then
+`crates/foundry-mod-vocab/src/parts/block_entities.rs:334` sets it to true, then
 implements the separate mutable individual tick. The adapter is
-`crates/horizon-client/src/game/native_hooks/base.rs:1083`, called by
-`crates/horizon-client/src/game/native_hooks/shared.rs:3112` (`native_ticks`).
+`crates/foundry-client/src/game/native_hooks/base.rs:1083`, called by
+`crates/foundry-client/src/game/native_hooks/shared.rs:3112` (`native_ticks`).
 Reuse this eligibility decision and its frozen state tables. Do not turn it into
 a second execution callback, or introduce a parallel batch moment.
 
 Extend the existing singular execution moment instead:
-`crates/horizon-mod-vocab/src/hooks/block_entity_tick.rs:4` and
-`crates/horizon-client/src/game/native_hooks/block_entity_tick.rs`.
+`crates/foundry-mod-vocab/src/hooks/block_entity_tick.rs:4` and
+`crates/foundry-client/src/game/native_hooks/block_entity_tick.rs`.
 Replace its individual event/dispatch shape with the approved run cursor shape
 in one clean break, updating all callers, generated catalog/coverage, examples
 and the machine sample together. No legacy individual callback or compatibility
@@ -54,18 +54,18 @@ It remains a `BlockEntityPart` listener with `&mut dyn ServerHost` on both targe
 
 | Route / owner on inspected main | Integration requirement |
 | --- | --- |
-| `crates/horizon-client/src/game.rs:8564` | Server world pass calls the common ticker loop; integrated and dedicated execution use this route. Remote clients do not run authoritative saved-data ticks. |
-| `crates/horizon-client-render/src/world.rs:502` | Supplies the ordered ticker snapshot. Do not regroup the level by type. |
-| `crates/horizon-client-render/src/block_entities.rs:750,787` | Pending additions enter the list at snapshot acquisition; validate each live slot immediately before use. Ticker slots are not durable holder identities. |
-| `crates/horizon-client/src/game/blocks/block_entity_ticks.rs:45,60,91` | Preserve chunk ticking, sleep, liveness and border checks; replace only the mod-entity dispatch branch. Built-in ticks remain at their existing positions. |
-| `crates/horizon-client/src/game/native_hooks/block_entity_tick.rs`, `native_hooks/shared.rs::put_back_mod_block_entity` | Individual take/placeholder/restore owner: Unchanged already avoids dirty/effect owners and checks original placeholder identity. Changed retains the existing restore/effect owner. Batched holder-safe per-entry processing remains future work. |
-| `crates/horizon-client/src/game/modding/block_entity_tick_reply.rs`, `modding/api_values.rs` | API conversion and checked write-back owners; reuse validation rather than adding an unchecked delta route. |
-| `crates/horizon-mod-api-gen/src/dispatch.rs:280,447` | Existing Part dispatch and generated Wire event machinery own the new shape for both targets. |
-| `crates/horizon-mod-api-gen/dispatch-tests/src/fixtures/stateful_block_entity.rs:1` | Existing factory/eligibility fixture is a model for dispatch ownership, not evidence of batched execution. Extend generated fixtures for the new execution shape. |
-| `crates/horizon-client/src/game/blocks/spill.rs:1303` | Direct tick invocation is in a regression test. Update it to execute a singleton run through the same owner. |
+| `crates/foundry-client/src/game.rs:8564` | Server world pass calls the common ticker loop; integrated and dedicated execution use this route. Remote clients do not run authoritative saved-data ticks. |
+| `crates/foundry-client-render/src/world.rs:502` | Supplies the ordered ticker snapshot. Do not regroup the level by type. |
+| `crates/foundry-client-render/src/block_entities.rs:750,787` | Pending additions enter the list at snapshot acquisition; validate each live slot immediately before use. Ticker slots are not durable holder identities. |
+| `crates/foundry-client/src/game/blocks/block_entity_ticks.rs:45,60,91` | Preserve chunk ticking, sleep, liveness and border checks; replace only the mod-entity dispatch branch. Built-in ticks remain at their existing positions. |
+| `crates/foundry-client/src/game/native_hooks/block_entity_tick.rs`, `native_hooks/shared.rs::put_back_mod_block_entity` | Individual take/placeholder/restore owner: Unchanged already avoids dirty/effect owners and checks original placeholder identity. Changed retains the existing restore/effect owner. Batched holder-safe per-entry processing remains future work. |
+| `crates/foundry-client/src/game/modding/block_entity_tick_reply.rs`, `modding/api_values.rs` | API conversion and checked write-back owners; reuse validation rather than adding an unchecked delta route. |
+| `crates/foundry-mod-api-gen/src/dispatch.rs:280,447` | Existing Part dispatch and generated Wire event machinery own the new shape for both targets. |
+| `crates/foundry-mod-api-gen/dispatch-tests/src/fixtures/stateful_block_entity.rs:1` | Existing factory/eligibility fixture is a model for dispatch ownership, not evidence of batched execution. Extend generated fixtures for the new execution shape. |
+| `crates/foundry-client/src/game/blocks/spill.rs:1303` | Direct tick invocation is in a regression test. Update it to execute a singleton run through the same owner. |
 
 The loop also invokes built-in hoppers, furnaces and other vanilla tickers.
-Separate sculk passes (`crates/horizon-client/src/game.rs:8565`) and client
+Separate sculk passes (`crates/foundry-client/src/game.rs:8565`) and client
 animation work are outside this mod saved-data listener; do not move them into
 it. Implementation must audit all generated callers and any newly added routes.
 These anchors identify present owners, not already implemented guarantees.
@@ -133,7 +133,7 @@ revision, position and state. Recommend a full saved-data snapshot on cache miss
 and a compact validity record on hit. `NeedFull` supplies that same entry's full
 snapshot once without advancing the cursor or executing a second tick. Recheck
 versions after host writes; a stale reply refuses rather than recomputing or
-writing over another entity. The saved-data revision owner is unresolved: arismoko/horizon#2794 is the outside-engine
+writing over another entity. The saved-data revision owner is unresolved: arismoko/foundry#2794 is the outside-engine
 JVM/language-host workstream, not this prerequisite. Identify the actual revision
 owner and audit every saved-data and inventory mutation path before implementation;
 cache reuse is gated on complete mutation coverage.
@@ -147,7 +147,7 @@ callback there. A replacement invalidates the old reply and cache match. New
 pending tickers wait until the next pass; wrapper rebinding must preserve the
 vanilla distinction between updating a ticker and appending a new one.
 
-Reuse `crates/horizon-client/src/game/runtime/transactions.rs:193,212,293`
+Reuse `crates/foundry-client/src/game/runtime/transactions.rs:193,212,293`
 for action savepoints and block-entity journaling, and the
 [Part instance state contract](part-instance-state.md) for holder identity and
 state. During lifted outer actions, per-entry commit merges into the parent:
@@ -170,7 +170,7 @@ mark solely for ticking or receiving a delta. A real write marks the owning
 chunk and emits required container/comparator effects once through existing
 owners. A listener's independent Host write still has its own normal dirty
 effects. The individual Unchanged path implements the first piece of
-[arismoko/horizon#1780](https://github.com/arismoko/horizon/issues/1780); delta/caching semantics remain proposed.
+[arismoko/foundry#1780](https://github.com/arismoko/foundry/issues/1780); delta/caching semantics remain proposed.
 
 API-owned Wire records must represent cursor tokens, holder/revision metadata,
 full snapshots and results; no engine NBT types, guest pointers or native-only
@@ -192,13 +192,13 @@ savepoint and invalidate that cache entry. Keep already root-committed A1.
 Use the runtime's existing fault policy to disable/stop the failing listener;
 do not retry it later in this run. Other listeners and built-in entries follow
 the existing dispatch policy. Process-aborting native panics are unrecoverable.
-Wasm stop/disable owners include `crates/horizon-mod-wasm/src/runtime.rs:426,631`;
+Wasm stop/disable owners include `crates/foundry-mod-wasm/src/runtime.rs:426,631`;
 precise native recovery and later-listener continuation need an explicit audit
 before implementation claims parity. A lifted root abort can still undo A1.
 
 A mod may keep a bounded, evictable cache in its own memory, never saved or synced;
 losing it only causes a rebuild. Persistent typed per-holder data must use
-arismoko/horizon#796/#781's attachment-backed contract. No new engine cache store or generation
+arismoko/foundry#796/#781's attachment-backed contract. No new engine cache store or generation
 is introduced. Invalidation notices may be an optimization of existing holder
 lifecycle notices, never necessary for correctness. A 4096-entry LRU is the
 external experiment's policy, not an engine or vanilla limit.
@@ -212,7 +212,7 @@ Do not scan every mod or serialize data to discover whether someone listens.
 Subscribed cost is linear in processed entries and changed bytes, with bounded
 buffer reuse; alternating types may offer no batching gain.
 
-[reservedbytes' measurements on arismoko/horizon#2759](https://github.com/arismoko/horizon/issues/2759)
+[reservedbytes' measurements on arismoko/foundry#2759](https://github.com/arismoko/foundry/issues/2759)
 are external input, **not re-measured here**. Their 1000 cooking entities ran on
 a Ryzen 9 9950X, Ubuntu 26.04, pinned to eight physical cores on a loaded box
 (load 40–58), fork `964de9d3f`, Wasmtime 50.0.1, a custom single-store runtime
@@ -224,11 +224,11 @@ in/out changed 371/287 to 21/24 per entity; in-game host calls 46 to 33, offline
 cost about 260k and delta comparison added about 127k. Post-collection live heap
 rose 1.1 to 6.2 MB. **All results still used one call per entity; batching was
 not measured.** They motivate cache experiments and GC accounting, not a claimed
-Horizon batching speedup.
+Foundry Client batching speedup.
 
 Existing measurements are
-`crates/horizon-mod-wasm/tests/bench.rs:84` (1000 fake in-memory dispatches) and
-`crates/horizon-client/src/game/modding/native_live_holder_tests.rs:46` (real
+`crates/foundry-mod-wasm/tests/bench.rs:84` (1000 fake in-memory dispatches) and
+`crates/foundry-client/src/game/modding/native_live_holder_tests.rs:46` (real
 Game holder path). Neither establishes this proposed batching's performance.
 Measure no-listener, singleton, long-run and alternating-type scenes on both
 targets, including collection, memory, payload bytes, host calls and multi-listener
@@ -274,7 +274,7 @@ The individual Unchanged subset is implemented; this note adds no batching runti
    hook, generator, adapters, all callers and coverage in one clean break while
    retaining the plural eligibility moment.
 4. Implement and test native/wasm matrix cases through the real holders and
-   transaction owners; integrate changed-only apply with arismoko/horizon#1780.
+   transaction owners; integrate changed-only apply with arismoko/foundry#1780.
 5. Measure both existing benchmark paths and real ordered world scenes,
    including GC and unused-path costs, before claiming batching support.
 
@@ -283,8 +283,8 @@ The individual Unchanged subset is implemented; this note adds no batching runti
 - **Execution shape:** approve the cursor and singleton scheduling for multiple
   listeners. Recommendation: preserve exact order even at reduced batching gain;
   an eventual reply list cannot satisfy immediate visibility.
-- **Revision completeness:** identify the actual saved-data revision owner and coordinate arismoko/horizon#1780;
-  arismoko/horizon#2794 does not own revisions. Recommendation: require
+- **Revision completeness:** identify the actual saved-data revision owner and coordinate arismoko/foundry#1780;
+  arismoko/foundry#2794 does not own revisions. Recommendation: require
   saved-data/items revision coverage and atomic checked apply before enabling
   cache reuse; never treat generation as a revision.
 - **Replacement and faults:** confirm wrapper rebinding and native recovery,

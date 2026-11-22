@@ -6,7 +6,7 @@ impl Home {
     pub(super) fn new() -> Self {
         static NEXT: AtomicU64 = AtomicU64::new(0);
         let path = std::env::temp_dir().join(format!(
-            "horizon-storage-{}-{}",
+            "foundry-storage-{}-{}",
             std::process::id(),
             NEXT.fetch_add(1, Ordering::Relaxed)
         ));
@@ -62,8 +62,8 @@ fn a_game_made_link_counts_nothing_and_is_not_followed() {
     let vanilla = outside.0.join("version/assets/minecraft/textures");
     fs::create_dir_all(&vanilla).unwrap();
     fs::write(vanilla.join("atlas.png"), vec![7; 4 << 20]).unwrap();
-    home.seed(".horizon-cache/resourcepacks/0123456789abcdef/assets/minecraft/pack.json");
-    let cache = home.0.join(".horizon-cache");
+    home.seed(".foundry-cache/resourcepacks/0123456789abcdef/assets/minecraft/pack.json");
+    let cache = home.0.join(".foundry-cache");
     let alone = allocated_bytes(&cache).unwrap();
     link_dir(
         &vanilla,

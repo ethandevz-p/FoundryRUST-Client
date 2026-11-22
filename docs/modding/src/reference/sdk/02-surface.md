@@ -1,7 +1,7 @@
 # `surface.json`
 
 `surface.json` is the stable surface of one build: everything a mod on the mod API alone can name. It is generated
-from the declarations the build parses (`horizon-stage surface ROOT OUT`), never kept by hand or committed, and is
+from the declarations the build parses (`foundry-stage surface ROOT OUT`), never kept by hand or committed, and is
 byte-identical for one commit: sorted, with no paths or timestamps.
 
 ## Records
@@ -16,7 +16,7 @@ public, so a re-export added later never changes its id; otherwise its shortest 
 lists every public path a mod can name it by. Types inside signatures are normalised Rust, with paths relative to
 `mod_api` and lifetimes kept.
 
-`cargo horizon-mod hooks <text>` searches these records offline ([Commands](05-commands.md)).
+`cargo foundry-mod hooks <text>` searches these records offline ([Commands](05-commands.md)).
 
 ## What a hash covers
 
@@ -40,7 +40,7 @@ changes nothing, one lost is named by the fit test. The document's own `hash` is
 
 ## What a change is
 
-`horizon-stage surface-diff OLD NEW` compares two documents by id. A record only in the new one is added, only in the
+`foundry-stage surface-diff OLD NEW` compares two documents by id. A record only in the new one is added, only in the
 old one removed; in both with another hash, changed. A rename shows as a removal and an addition. Each change is in
 one of three classes:
 
@@ -62,13 +62,13 @@ one of three classes:
   item no longer required, an enum no longer `#[non_exhaustive]`.
 
 Each change says what changed in words a mod author can act on, for example
-``argument `player`: `PlayerRef` → `ServerPlayerRef` ``. `cargo horizon-mod sdk diff <build> <build>` prints the
+``argument `player`: `PlayerRef` → `ServerPlayerRef` ``. `cargo foundry-mod sdk diff <build> <build>` prints the
 same report for two published builds.
 
 When the `verify (mod API)` check runs on a pull request, its summary carries this report, comparing the merge
-base with the head; `--calls` adds the calls and core each build's wasm mods are checked by (`horizon-stage surface
+base with the head; `--calls` adds the calls and core each build's wasm mods are checked by (`foundry-stage surface
 ROOT OUT --calls CALLS` writes them). `--layouts` adds what both builds compiled: the core layout and every call's
-hash, exactly as the game compares them (`crates/horizon-mod-api/examples/wire_layouts.rs` prints them). Every
+hash, exactly as the game compares them (`crates/foundry-mod-api/examples/wire_layouts.rs` prints them). Every
 compiled change is reported under the call's id or `core:wire`, even when the source shows a cause (a type the call
 reaches, for example): one hash per call cannot tell whether that cause is all of it, so a note names the call or
 `core:wire` too. One note can list all of a change's ids. This also catches what the source shows nothing of, a
@@ -106,7 +106,7 @@ The game still refuses a mod, naming the call or point, when:
   reply tags and limits, and `CORE_VERSION`, bumped by hand for a transport change no value shows), the file
   roots, the prepared ABI, or a hand-written codec, including the NBT tag ids and limits and the `serde` shapes
   some codecs embed (one added counts too). Encodings written outside those files, such as the NBT reader and
-  writer, are pinned byte for byte by `horizon-mod-vocab/tests/wire_golden.rs` instead;
+  writer, are pinned byte for byte by `foundry-mod-vocab/tests/wire_golden.rs` instead;
 - the members of one linked group were built against different builds;
 - a point it listens to changed or is gone.
 
@@ -126,7 +126,7 @@ empty list when the argument has no completions.
 
 ## Change notes
 
-A change can carry a note: one file per change in `crates/horizon-mod-vocab/changes/<name>.toml`.
+A change can carry a note: one file per change in `crates/foundry-mod-vocab/changes/<name>.toml`.
 
 ```toml
 ids = ["hook:player_logged_in", "type:PlayerLoggedIn.player"]
@@ -135,19 +135,19 @@ migrate = "Take `ServerPlayerRef` instead of `PlayerRef`."   # optional
 ```
 
 A note with an unknown key, a missing `ids` or `why`, an empty `ids`, or an id that did not change is refused. The SDK's `sdk.json`
-carries the notes of the changes since the SDK before it (`surface.notes`), and `cargo horizon-mod update` prints a
+carries the notes of the changes since the SDK before it (`surface.notes`), and `cargo foundry-mod update` prints a
 changed item's `migrate` line beside it.
 
 ## Behaviours
 
-A few promises are neither a type nor a signature, so no other record can pin them: how `horizon:add_to` files merge,
+A few promises are neither a type nor a signature, so no other record can pin them: how `foundry:add_to` files merge,
 or what block entity a block with a vanilla template gets. Each is a `behaviour:<name>` record, generated from one
-file in `crates/horizon-mod-vocab/behaviours/<name>.toml` (the file name is the name; there is no list to keep):
+file in `crates/foundry-mod-vocab/behaviours/<name>.toml` (the file name is the name; there is no list to keep):
 
 ```toml
 version = 1
 doc = "What the engine promises, stated so that a test could check it."
-tests = ["crates/horizon-client/src/some_tests.rs::the_test_that_pins_it"]
+tests = ["crates/foundry-client/src/some_tests.rs::the_test_that_pins_it"]
 ```
 
 `version` starts at 1 and goes up when a mod that relies on the behaviour can see a different meaning. `tests` lists
@@ -164,5 +164,5 @@ diagnostics or behaviour that vanilla fixes.
 A hook's `version` changes when a listener can see a different meaning under the same signature: its answer now
 decides the action, or the order or timing it observes changed. It stays when the engine is only corrected to the
 contract the hook already documents. Every bump comes with a change note in the same change, so `sdk diff` and
-`cargo horizon-mod update` say what a listener must now do; the version is outside the hook's hash, so the diff
+`cargo foundry-mod update` say what a listener must now do; the version is outside the hook's hash, so the diff
 counts a bump as a conditional change for the mods that name that version.

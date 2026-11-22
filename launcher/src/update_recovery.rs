@@ -17,19 +17,19 @@ mod tests {
     #[test]
     fn package_roots_are_matched_as_path_components() {
         for path in [
-            "/usr/bin/horizon-launcher",
-            "/nix/store/hash-horizon/bin/horizon-launcher",
-            "/app/bin/horizon-launcher",
+            "/usr/bin/foundry-launcher",
+            "/nix/store/hash-foundry/bin/foundry-launcher",
+            "/app/bin/foundry-launcher",
         ] {
             assert!(package_managed(Path::new(path)), "{path}");
         }
         for path in [
-            "/home/player/Downloads/Horizon.AppImage",
-            "/usr/local/bin/horizon-launcher",
-            "/usr-backup/horizon-launcher",
-            "/nix/storehouse/horizon-launcher",
-            "/application/horizon-launcher",
-            "/tmp/.mount_Horizon/usr/bin/horizon-launcher",
+            "/home/player/Downloads/Foundry Client.AppImage",
+            "/usr/local/bin/foundry-launcher",
+            "/usr-backup/foundry-launcher",
+            "/nix/storehouse/foundry-launcher",
+            "/application/foundry-launcher",
+            "/tmp/.mount_Horizon/usr/bin/foundry-launcher",
         ] {
             assert!(!package_managed(Path::new(path)), "{path}");
         }

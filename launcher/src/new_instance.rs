@@ -1,12 +1,12 @@
-//! New instance's kinds (docs/design-system.md, "Night"; plan R0, screen 4): Horizon, Vanilla
+//! New instance's kinds (docs/design-system.md, "Night"; plan R0, screen 4): Foundry Client, Vanilla
 //! (Minecraft: Java Edition as Mojang ships it) and Modded (with Fabric, Quilt, Forge or NeoForge). A Java kind picks
 //! its version from Mojang's public list (`minecraft_versions`), fetched once when the dialog first
 //! needs it; the game itself comes with the first Play, for an account that owns it.
 use super::*;
 use crate::plate::alpha;
 use crate::shell::{c, Action};
-use horizon_launcher::loaders::{self, Kind as Loader};
-use horizon_launcher::minecraft_versions::{Kind as VersionKind, Versions};
+use foundry_launcher::loaders::{self, Kind as Loader};
+use foundry_launcher::minecraft_versions::{Kind as VersionKind, Versions};
 use servers_page::Field;
 use std::sync::Arc;
 use theme::night;
@@ -16,7 +16,7 @@ const ROWS: usize = 60;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum NewKind {
-    Horizon,
+    Foundry Client,
     Vanilla,
     Modded,
 }
@@ -61,7 +61,7 @@ impl LoaderVersions {
 impl Default for JavaChoice {
     fn default() -> Self {
         JavaChoice {
-            kind: NewKind::Horizon,
+            kind: NewKind::Foundry Client,
             loader: Loader::Fabric,
             version: None,
             snapshots: false,
@@ -118,7 +118,7 @@ impl Launcher {
     }
 
     /// The name a new instance gets for what it plays now (the mockup's `defaultName`): "My
-    /// Horizon", "Vanilla 1.21.4", "Fabric 1.21.4", numbered past the ones already taken.
+    /// Foundry Client", "Vanilla 1.21.4", "Fabric 1.21.4", numbered past the ones already taken.
     fn default_name(&self) -> Option<String> {
         let j = &self.instances.dialog.as_ref()?.java;
         let versions = match &self.instances.versions {
@@ -126,7 +126,7 @@ impl Launcher {
             _ => None,
         };
         let base = match j.kind {
-            NewKind::Horizon => tr("My Horizon").to_string(),
+            NewKind::Foundry Client => tr("My Foundry Client").to_string(),
             _ => j.default_name(&j.minecraft(versions)?),
         };
         let taken: Vec<&str> = self
@@ -168,7 +168,7 @@ impl Launcher {
     /// Picks the dialog's kind; a Java one fetches Mojang's list the first time.
     pub(super) fn pick_kind(&mut self, kind: NewKind, cx: &mut Context<Self>) {
         self.change(|j| j.kind = kind);
-        if kind != NewKind::Horizon {
+        if kind != NewKind::Foundry Client {
             self.load_versions(cx);
         }
     }
@@ -181,7 +181,7 @@ impl Launcher {
         self.instances.versions = VersionList::Loading;
         let task = cx
             .background_executor()
-            .spawn(async { horizon_launcher::minecraft_versions::load() });
+            .spawn(async { foundry_launcher::minecraft_versions::load() });
         cx.spawn(async move |this, cx| {
             let list = task.await;
             let _ = this.update(cx, |this, cx| {
@@ -213,7 +213,7 @@ impl Launcher {
         j.loader_versions = LoaderVersions::Loading(loader, minecraft.to_string());
         let mc = minecraft.to_string();
         let task = cx.background_executor().spawn(async move {
-            loaders::versions(loader, &mc, &horizon_launcher::backend::get_bytes)
+            loaders::versions(loader, &mc, &foundry_launcher::backend::get_bytes)
         });
         let mc = minecraft.to_string();
         cx.spawn(async move |this, cx| {
@@ -236,13 +236,13 @@ impl Launcher {
         .detach();
     }
 
-    /// The tabs over a new instance's dialog: Horizon, Vanilla, Modded.
+    /// The tabs over a new instance's dialog: Foundry Client, Vanilla, Modded.
     pub(super) fn kind_tabs(&self, cx: &mut Context<Self>) -> Div {
         let t = self.theme;
         let now = self.instances.dialog.as_ref().map(|d| d.java.kind);
         div().flex().gap(px(4.)).children(
             [
-                (NewKind::Horizon, "Horizon"),
+                (NewKind::Foundry Client, "Foundry Client"),
                 (NewKind::Vanilla, "Vanilla"),
                 (NewKind::Modded, "Modded"),
             ]
@@ -577,10 +577,10 @@ mod tests {
 
     #[test]
     fn a_default_name_skips_the_ones_taken() {
-        assert_eq!(free_name("My Horizon".into(), &["Horizon"]), "My Horizon");
+        assert_eq!(free_name("My Foundry Client".into(), &["Foundry Client"]), "My Foundry Client");
         assert_eq!(
-            free_name("My Horizon".into(), &["my horizon", "My Horizon 2"]),
-            "My Horizon 3"
+            free_name("My Foundry Client".into(), &["my foundry", "My Foundry Client 2"]),
+            "My Foundry Client 3"
         );
     }
 }

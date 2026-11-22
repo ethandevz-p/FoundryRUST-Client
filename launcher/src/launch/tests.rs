@@ -65,7 +65,7 @@ fn a_summary_says_what_runs() {
 
 #[test]
 fn each_system_gets_its_plan() {
-    let game = os(&["/opt/horizon-client", "--world", "My World"]);
+    let game = os(&["/opt/foundry-client", "--world", "My World"]);
     let wrapper = Launch {
         wrapper: "nice -n 5".into(),
         ..Launch::default()
@@ -76,7 +76,7 @@ fn each_system_gets_its_plan() {
             "nice",
             "-n",
             "5",
-            "/opt/horizon-client",
+            "/opt/foundry-client",
             "--world",
             "My World"
         ]))
@@ -94,7 +94,7 @@ fn each_system_gets_its_plan() {
     assert_eq!(
         plan(
             &both,
-            os(&[r"C:\Horizon\horizon-client.exe", "--world", "My World"]),
+            os(&[r"C:\Foundry Client\foundry-client.exe", "--world", "My World"]),
             true,
             &Found::default()
         ),
@@ -104,7 +104,7 @@ fn each_system_gets_its_plan() {
                 "nice",
                 "-n",
                 "5",
-                r"C:\Horizon\horizon-client.exe",
+                r"C:\Foundry Client\foundry-client.exe",
                 "--world",
                 "My World"
             ])
@@ -123,12 +123,12 @@ fn windows_game_words_never_reach_cmd() {
     };
     for special in ["&", "|", "^", "%", "\"", "<", ">", "(", ")", "!"] {
         let game = os(&[
-            &format!(r"C:\Horizon {special} Co\horizon-client.exe"),
+            &format!(r"C:\Foundry Client {special} Co\foundry-client.exe"),
             "--world",
             &format!("a{special}b"),
             "--server",
             // cmd reads a comma as a space: no space for the quoting to catch.
-            &format!(r"example.com{special}echo,PWNED>%TEMP%\horizon-poc.txt"),
+            &format!(r"example.com{special}echo,PWNED>%TEMP%\foundry-poc.txt"),
         ]);
         let Plan::Cmd { line, .. } = plan(&launch, game, true, &Found::default()) else {
             panic!()
@@ -221,14 +221,14 @@ fn one_hook() -> std::sync::MutexGuard<'static, ()> {
 /// A new empty folder for one test.
 #[cfg(windows)]
 fn fresh(name: &str) -> std::path::PathBuf {
-    let dir = std::env::temp_dir().join(format!("horizon-launch-{name}-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("foundry-launch-{name}-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(&dir).unwrap();
     dir
 }
 
 /// Words with every character cmd or the C runtime reads specially, and a variable that is set
-/// (`HORIZON_CANARY`): a game gets each as it is.
+/// (`FOUNDRY_CANARY`): a game gets each as it is.
 #[cfg(windows)]
 const HOSTILE: [&str; 16] = [
     "--server",
@@ -240,8 +240,8 @@ const HOSTILE: [&str; 16] = [
     "say \"hi\"",
     "\"",
     "\"&echo,PWNED>poc.txt",
-    "%HORIZON_CANARY%",
-    "!HORIZON_CANARY!",
+    "%FOUNDRY_CANARY%",
+    "!FOUNDRY_CANARY!",
     "(x);=,`~'",
     r"C:\trailing\",
     r#"a\"b"#,
@@ -250,10 +250,10 @@ const HOSTILE: [&str; 16] = [
 ];
 
 /// The game of the tests below: this test binary, which writes the words after `--` to the file
-/// `HORIZON_TEST_ARGV` names. Run on its own, it does nothing.
+/// `FOUNDRY_TEST_ARGV` names. Run on its own, it does nothing.
 #[test]
 fn argv_actor() {
-    let Some(file) = std::env::var_os("HORIZON_TEST_ARGV") else {
+    let Some(file) = std::env::var_os("FOUNDRY_TEST_ARGV") else {
         return;
     };
     let words: Vec<String> = std::env::args().skip_while(|w| w != "--").skip(1).collect();
@@ -261,10 +261,10 @@ fn argv_actor() {
 }
 
 /// A program the pre-launch command starts: it writes its process id to the file
-/// `HORIZON_TEST_SLEEPER` names, then waits two minutes. Run on its own, it does nothing.
+/// `FOUNDRY_TEST_SLEEPER` names, then waits two minutes. Run on its own, it does nothing.
 #[test]
 fn sleeper_actor() {
-    let Some(file) = std::env::var_os("HORIZON_TEST_SLEEPER") else {
+    let Some(file) = std::env::var_os("FOUNDRY_TEST_SLEEPER") else {
         return;
     };
     let part = std::path::Path::new(&file).with_extension("part");
@@ -289,12 +289,12 @@ fn the_pre_launch_command_runs_first_and_the_game_gets_its_words_as_they_are() {
     let dir = fresh("argv");
     let mut game = actor("argv_actor", &HOSTILE);
     game.current_dir(&dir)
-        .env("HORIZON_TEST_ARGV", dir.join("argv.json"))
-        .env("HORIZON_CANARY", "expanded")
+        .env("FOUNDRY_TEST_ARGV", dir.join("argv.json"))
+        .env("FOUNDRY_CANARY", "expanded")
         .env("FROM_LAUNCHER", "yes")
         .env(crate::run_leases::GAME, "the sign-in");
     let launch = Launch {
-        pre_launch: "echo %FROM_LAUNCHER% %FROM_INSTANCE% %HORIZON_LAUNCHER_GAME_COMMAND%> pre.txt"
+        pre_launch: "echo %FROM_LAUNCHER% %FROM_INSTANCE% %FOUNDRY_LAUNCHER_GAME_COMMAND%> pre.txt"
             .into(),
         env: parse_env("FROM_INSTANCE=works").unwrap(),
         ..Launch::default()
@@ -302,7 +302,7 @@ fn the_pre_launch_command_runs_first_and_the_game_gets_its_words_as_they_are() {
     let mut out = wrap(game, &launch).unwrap();
     assert_eq!(
         std::fs::read_to_string(dir.join("pre.txt")).unwrap(),
-        "yes works %HORIZON_LAUNCHER_GAME_COMMAND%\r\n"
+        "yes works %FOUNDRY_LAUNCHER_GAME_COMMAND%\r\n"
     );
     assert_eq!(out.get_current_dir(), Some(dir.as_path()));
     let ran = out.output().unwrap();
@@ -316,7 +316,7 @@ fn the_pre_launch_command_runs_first_and_the_game_gets_its_words_as_they_are() {
         pre_launch: "echo nothing to back up 1>&2 & exit /b 3".into(),
         ..Launch::default()
     };
-    let mut game = Command::new(dir.join("horizon-client.exe"));
+    let mut game = Command::new(dir.join("foundry-client.exe"));
     game.current_dir(&dir);
     let error = wrap(game, &failing).unwrap_err();
     assert!(
@@ -361,9 +361,9 @@ fn stop_ends_the_pre_launch_command_with_what_it_started() {
         ),
         ..Launch::default()
     };
-    let mut game = Command::new(dir.join("horizon-client.exe"));
+    let mut game = Command::new(dir.join("foundry-client.exe"));
     game.current_dir(&dir)
-        .env("HORIZON_TEST_SLEEPER", &pid_file);
+        .env("FOUNDRY_TEST_SLEEPER", &pid_file);
     let stop = std::sync::Arc::new(AtomicBool::new(false));
     let stop_there = std::sync::Arc::clone(&stop);
     let start = std::thread::spawn(move || wrap_stoppable(game, &launch, &stop_there));
@@ -427,9 +427,9 @@ fn a_program_left_running_does_not_hold_up_the_game() {
             ),
             ..Launch::default()
         };
-        let mut game = Command::new(dir.join("horizon-client.exe"));
+        let mut game = Command::new(dir.join("foundry-client.exe"));
         game.current_dir(&dir)
-            .env("HORIZON_TEST_SLEEPER", &pid_file);
+            .env("FOUNDRY_TEST_SLEEPER", &pid_file);
         let result = wrap(game, &launch);
         let since = std::fs::metadata(&pid_file)
             .and_then(|m| m.modified())
@@ -475,7 +475,7 @@ fn a_noisy_pre_launch_command_fails_with_the_end_of_its_output() {
         pre_launch: "(for /l %i in (1,1,4000) do @echo noisy line %i 1>&2) & exit /b 4".into(),
         ..Launch::default()
     };
-    let mut game = Command::new(dir.join("horizon-client.exe"));
+    let mut game = Command::new(dir.join("foundry-client.exe"));
     game.current_dir(&dir);
     let error = wrap(game, &launch).unwrap_err();
     assert!(error.contains("failed (exit 4)"), "{error}");
@@ -497,10 +497,10 @@ fn a_bat_wrapper_gets_the_games_words_quoted_or_does_not_start() {
         ..Launch::default()
     };
     let wrapped = |words: &[&str]| {
-        let mut game = Command::new(dir.join("horizon-client.exe"));
+        let mut game = Command::new(dir.join("foundry-client.exe"));
         game.args(words)
             .current_dir(&dir)
-            .env("HORIZON_CANARY", "expanded");
+            .env("FOUNDRY_CANARY", "expanded");
         wrap(game, &launch).unwrap().output()
     };
     let ran = wrapped(&HOSTILE).unwrap();
@@ -522,7 +522,7 @@ fn a_bat_wrapper_gets_the_games_words_quoted_or_does_not_start() {
 #[cfg(unix)]
 #[test]
 fn the_wrapped_game_runs_after_its_pre_launch_command_in_its_folder() {
-    let dir = std::env::temp_dir().join(format!("horizon-launch-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("foundry-launch-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(&dir).unwrap();
     let mut game = Command::new("/bin/sh");
@@ -618,7 +618,7 @@ fn the_linux_switches_act_only_where_their_tools_are() {
 
 #[test]
 fn the_post_exit_command_runs_with_the_instance_variables() {
-    let dir = std::env::temp_dir().join(format!("horizon-post-exit-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("foundry-post-exit-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(&dir).unwrap();
     assert!(after_exit(&Launch::default(), &dir, &[]).is_none());
@@ -655,8 +655,8 @@ fn the_post_exit_command_runs_with_the_instance_variables() {
         .success());
     let written = std::fs::read_to_string(dir.join("after.txt")).unwrap();
     assert_eq!(written.trim(), "My Pack my-pack java 1");
-    // A Horizon instance has no Java.
-    assert!(!instance_vars("H", "horizon", &dir, None)
+    // A Foundry Client instance has no Java.
+    assert!(!instance_vars("H", "foundry", &dir, None)
         .iter()
         .any(|(k, _)| *k == "INST_JAVA"));
     let _ = std::fs::remove_dir_all(&dir);

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""How much of Horizon's own text each language carries, and where it still says English.
+"""How much of Foundry Client's own text each language carries, and where it still says English.
 
-`crates/horizon-client/assets/horizon/lang/en_us.json` is the reference: every key the
+`crates/foundry-client/assets/foundry/lang/en_us.json` is the reference: every key the
 game asks for. A language that misses a key falls back to English at runtime
-(`Language::load` in `crates/horizon-client-core/src/lang.rs` layers `en_us` under it), so
+(`Language::load` in `crates/foundry-client-core/src/lang.rs` layers `en_us` under it), so
 a gap is not an error — it is an English sentence on a translated screen. That file's
 tests catch stale keys, repeated keys, empty values and changed placeholders, but
 deliberately not gaps, because a language is allowed to lag. This tool reports them.
@@ -47,7 +47,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-GAME = ROOT / "crates/horizon-client/assets/horizon/lang"
+GAME = ROOT / "crates/foundry-client/assets/foundry/lang"
 CRATES = ROOT / "crates"
 LAUNCHER = ROOT / "launcher/lang"
 REVIEW = ROOT / "tools/lang_review"
@@ -346,7 +346,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     which = parser.add_mutually_exclusive_group()
-    which.add_argument("--game-only", action="store_true", help="only the game's assets/horizon/lang")
+    which.add_argument("--game-only", action="store_true", help="only the game's assets/foundry/lang")
     which.add_argument("--launcher-only", action="store_true", help="only the launcher's lang")
     parser.add_argument("--game-dir", type=Path, default=GAME,
                         help="the game's lang folder (default: %(default)s)")

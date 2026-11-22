@@ -1,7 +1,7 @@
 //! Cached storage inventory; filesystem work never runs on the render thread.
 use super::*;
 use crate::glass_ui as ui;
-use horizon_launcher::browser;
+use foundry_launcher::browser;
 use storage::Category;
 
 /// What a Clear click asks to confirm, and what answering does: `Some(clear)` starts that
@@ -271,7 +271,7 @@ impl Launcher {
             card = card.child(self.storage_confirmation(asked, cx));
         }
         let summary = card;
-        let mut card = crate::glass::plate(horizon_theme::glass::radius::PANEL)
+        let mut card = crate::glass::plate(foundry_theme::glass::radius::PANEL)
             .flex()
             .flex_col()
             .p(px(8.));
@@ -325,7 +325,7 @@ impl Launcher {
             ));
         }
         let breakdown = card;
-        let mut card = crate::glass::plate(horizon_theme::glass::radius::PANEL).p(px(8.));
+        let mut card = crate::glass::plate(foundry_theme::glass::radius::PANEL).p(px(8.));
         if self.settings.native_mods_allowed_at.is_some() {
             // Turn off asks first: it switches mods off in every instance, and each comes back
             // only from its own instance. Counting and switching off read every instance's
@@ -334,7 +334,7 @@ impl Launcher {
                 None => (
                     tr(
                         "Allowed: they run with access to your computer. Turn off takes the \
-                        permission back; Horizon asks again before the next build.",
+                        permission back; Foundry Client asks again before the next build.",
                     )
                     .to_string(),
                     div().child(match self.storage_counting {
@@ -352,7 +352,7 @@ impl Launcher {
                 Some((mods, instances_)) => (
                     match (mods, instances_) {
                         (0, _) => tr("No native mods are switched on. Turning off only takes \
-                                      the permission back; Horizon asks again before the next \
+                                      the permission back; Foundry Client asks again before the next \
                                       build.")
                         .to_string(),
                         (1, _) => tr("This takes the permission back and switches off your \
@@ -419,7 +419,7 @@ impl Launcher {
                 Some(
                     div()
                         .child(tr(
-                            "Not allowed: Horizon asks before it builds the first one.",
+                            "Not allowed: Foundry Client asks before it builds the first one.",
                         ))
                         .children(
                             self.storage_revoke_error

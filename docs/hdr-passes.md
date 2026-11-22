@@ -4,7 +4,7 @@ Read this before adding or changing anything that reads, filters or redraws the 
 DLSS in a native mod), anti-aliasing and TAA, sharpening, frame generation, post effects and screen-space effects,
 and anything that captures the picture (screenshots, recordings, streams). With HDR the frame holds light above
 white, and a pass written for SDR alone breaks it, mostly without any test failing. HDR's work is tracked in
-[#12989](https://github.com/horizon-rust/horizon/issues/12989); the design behind it is
+[#12989](https://github.com/foundry-rust/foundry/issues/12989); the design behind it is
 [design/hdr-linear-light.md](design/hdr-linear-light.md), and what players see is in [graphics.md](graphics.md).
 
 ## The frame
@@ -18,7 +18,7 @@ HDR is on only where the device draws the float frame and keeps the HUD on a lay
 page says so and the picture is SDR's. Under a `shaders/` pack HDR output shows the pack's 8-bit picture at paper
 white, the HUD with it.
 
-On the float frame Horizon's own light reaches several times paper white, the sun the most, and a shader pack of
+On the float frame Foundry Client's own light reaches several times paper white, the sun the most, and a shader pack of
 API 0.2 may write any value half float holds. It's stored in vanilla's gamma (the 2.2 power), as the other frames are.
 A 0.2 pack's `[frame] blend = "linear"` stores linear light instead ([shaders.md](api/shaders.md)), so a pass
 doesn't hard-code the gamma.
@@ -69,7 +69,7 @@ curve, the HUD's layer and the last pass as the real one does.
    temporal upscaler and anything else that keeps a history blends `c / (1 + m)`, where `m` is the largest of `c`'s
    channels, clamps the history in that space too, and turns the result back with `c / (1 - m)`. Raw linear light
    lets a few very bright pixels win the history: torches and the sun's edge sparkle, and smear when the camera
-   moves. Horizon's own TAA on the default frame accumulates vanilla's gamma, and blends it as stored: weighted on
+   moves. Foundry Client's own TAA on the default frame accumulates vanilla's gamma, and blends it as stored: weighted on
    top of the gamma, the sun scene's largest per-pixel standard deviation rose from 11 to 27 PQ code values (40
    still captures at native resolution).
 4. **Follow a library's colour contract.** Temporal upscalers such as FSR 2 and 3 and DLSS take HDR input as
@@ -89,10 +89,10 @@ curve, the HUD's layer and the last pass as the real one does.
   `python3 tools/test_frame_identity_parity.py --base origin/main`, and the `frame-identity` label
   ([release-flow.md](release-flow.md)). It also draws the float frame with HDR on, and holds it to SDR.
 - **Its sessions run with anti-aliasing and frame generation off,** as by default: TAA and frame generation build
-  on earlier frames, which `HORIZON_STILL` doesn't repeat. Check a temporal pass by hand: offscreen with HDR on
-  (`hdr:true` in `horizon-graphics.txt`) and `HORIZON_HDR_OUTPUT=pq`, with the camera moving over torches, lava and
+  on earlier frames, which `FOUNDRY_STILL` doesn't repeat. Check a temporal pass by hand: offscreen with HDR on
+  (`hdr:true` in `foundry-graphics.txt`) and `FOUNDRY_HDR_OUTPUT=pq`, with the camera moving over torches, lava and
   the sun.
-- **The `-hdr.png` beside an HDR screenshot** (F2, or `horizon-ctl screenshot`) keeps the whole picture, and its
+- **The `-hdr.png` beside an HDR screenshot** (F2, or `foundry-ctl screenshot`) keeps the whole picture, and its
   `cLLI` chunk gives its brightest pixel in nits. With the sun in view offscreen it is near the peak, 1000 nits; a
   pass that clips brings it down to paper white, 203.
 - **Mention #12989 in the pull request**, so HDR's side gets reviewed.

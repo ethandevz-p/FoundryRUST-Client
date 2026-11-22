@@ -8,7 +8,7 @@ from tools.layering import rust_text, scan_engine_mod_edges as scan
 
 LIB = """\
 use mod_api::{Flow, HookId, Host};
-use horizon_mod_runtime::attachments::Holder;
+use foundry_mod_runtime::attachments::Holder;
 // mod_api::InComment is not code
 const S: &str = "mod_api::InString";
 struct Game<'a> { level: u8, items: &'a [u8] }
@@ -54,29 +54,29 @@ class ScanTest(unittest.TestCase):
         self.dir = tempfile.TemporaryDirectory()
         self.root = Path(self.dir.name).resolve()
         files = {
-            "crates/horizon-client/Cargo.toml": "[package]\nname = \"horizon-client\"\n\n[dependencies]\n"
-                                                "horizon-mod-api = { path = \"x\" }\nhorizon-mod-runtime = 1\n",
-            "crates/horizon-client/src/lib.rs": LIB,
-            "crates/horizon-client/src/more_tests.rs": "fn t() { mod_api::Flow::Continue; }\n",
-            "crates/horizon-client/src/game.rs": "impl Game<'_> { fn private_helper(&self) {} }\n",
-            "crates/horizon-client/src/game/modding/drops.rs": MODDING,
-            "crates/horizon-mod-api/Cargo.toml": "[package]\nname = \"horizon-mod-api\"\n",
-            "crates/horizon-mod-api/build.rs": "fn main() {}\n",
-            "crates/horizon-mod-api/src/lib.rs": "pub struct Flow;\nstatic TABLE: Vec<u8> = Vec::new();\n"
+            "crates/foundry-client/Cargo.toml": "[package]\nname = \"foundry-client\"\n\n[dependencies]\n"
+                                                "foundry-mod-api = { path = \"x\" }\nfoundry-mod-runtime = 1\n",
+            "crates/foundry-client/src/lib.rs": LIB,
+            "crates/foundry-client/src/more_tests.rs": "fn t() { mod_api::Flow::Continue; }\n",
+            "crates/foundry-client/src/game.rs": "impl Game<'_> { fn private_helper(&self) {} }\n",
+            "crates/foundry-client/src/game/modding/drops.rs": MODDING,
+            "crates/foundry-mod-api/Cargo.toml": "[package]\nname = \"foundry-mod-api\"\n",
+            "crates/foundry-mod-api/build.rs": "fn main() {}\n",
+            "crates/foundry-mod-api/src/lib.rs": "pub struct Flow;\nstatic TABLE: Vec<u8> = Vec::new();\n"
                                                  "include!(concat!(env!(\"OUT_DIR\"), \"/mod_api_generated.rs\"));\n",
-            "crates/horizon-mod-api/src/types.rs": "pub struct BlockPos(pub i32);\n",
-            "tools/layers.json": json.dumps({"crates": {"horizon-client": "engine", "horizon-mod-api": "platform",
-                                                        "horizon-mod-runtime": "engine"},
-                                             "allowed": ["horizon-client -> horizon-mod-api"]}),
+            "crates/foundry-mod-api/src/types.rs": "pub struct BlockPos(pub i32);\n",
+            "tools/layers.json": json.dumps({"crates": {"foundry-client": "engine", "foundry-mod-api": "platform",
+                                                        "foundry-mod-runtime": "engine"},
+                                             "allowed": ["foundry-client -> foundry-mod-api"]}),
         }
         for path, text in files.items():
             (self.root / path).parent.mkdir(parents=True, exist_ok=True)
             (self.root / path).write_text(text)
         packages = [
-            package("horizon-client", self.root / "crates/horizon-client",
-                    [("horizon-mod-api", None), ("horizon-mod-runtime", None)]),
-            package("horizon-mod-api", self.root / "crates/horizon-mod-api", [("horizon-core", None)], "mod_api"),
-            package("horizon-mod-runtime", self.root / "crates/horizon-mod-runtime"),
+            package("foundry-client", self.root / "crates/foundry-client",
+                    [("foundry-mod-api", None), ("foundry-mod-runtime", None)]),
+            package("foundry-mod-api", self.root / "crates/foundry-mod-api", [("foundry-core", None)], "mod_api"),
+            package("foundry-mod-runtime", self.root / "crates/foundry-mod-runtime"),
         ]
         patches = [mock.patch.object(scan, "ROOT", self.root), mock.patch.object(scan, "metadata", lambda: packages),
                    mock.patch.object(scan, "git_head", lambda: "0" * 40)]
@@ -90,12 +90,12 @@ class ScanTest(unittest.TestCase):
 
     def edges(self, file):
         return [(e["line"], e["kind"], e["path"], e["test"]) for e in self.result["edges"]
-                if e["file"] == f"crates/horizon-client/src/{file}"]
+                if e["file"] == f"crates/foundry-client/src/{file}"]
 
     def test_finds_uses_impls_calls_and_skips_comments_and_strings(self):
         found = self.edges("lib.rs")
         self.assertIn((1, "use", "mod_api::Flow", False), found)
-        self.assertIn((2, "use", "horizon_mod_runtime::attachments::Holder", False), found)
+        self.assertIn((2, "use", "foundry_mod_runtime::attachments::Holder", False), found)
         self.assertIn((6, "impl", "mod_api::Host", False), found)
         self.assertIn((9, "call", "mod_api::__private::listened", False), found)
         self.assertFalse([e for e in found if "InComment" in e[2] or "InString" in e[2]])
@@ -108,15 +108,15 @@ class ScanTest(unittest.TestCase):
         by_path = {e["path"]: e["strand"] for e in self.result["edges"]}
         self.assertEqual("hooks", by_path["mod_api::__private::listened"])
         self.assertEqual("host", by_path["mod_api::Host"])
-        self.assertEqual("attachments", by_path["horizon_mod_runtime::attachments::Holder"])
+        self.assertEqual("attachments", by_path["foundry_mod_runtime::attachments::Holder"])
         self.assertEqual("loading", by_path["mod_api::__private::install"])
 
     def test_manifest_edges_carry_their_line_and_layer(self):
         rows = [(e["dep"], e["line"], e["layer_exception"]) for e in self.result["manifest_edges"]]
-        self.assertEqual([("horizon-mod-api", 5, True), ("horizon-mod-runtime", 6, False)], rows)
+        self.assertEqual([("foundry-mod-api", 5, True), ("foundry-mod-runtime", 6, False)], rows)
 
     def test_move_set_reports_impls_inbound_and_private_items(self):
-        drops = self.result["move_set"]["crates/horizon-client/src/game/modding/drops.rs"]
+        drops = self.result["move_set"]["crates/foundry-client/src/game/modding/drops.rs"]
         self.assertEqual((1, "loading"), (drops["inherent_impls"], drops["strand"]))
         self.assertIn("fn:private_helper", drops["outbound"])
         inbound = [(e["file"], e["name"]) for e in self.result["inbound"]]
@@ -140,7 +140,7 @@ class ScanTest(unittest.TestCase):
         self.assertEqual(0, scan.main(["--map", str(out)]))
         tables = out.read_text()
         self.assertTrue(tables.startswith(f"# Mod-host map tables at {'0' * 40}\n"))
-        self.assertIn("horizon-mod-api", tables)
+        self.assertIn("foundry-mod-api", tables)
         self.assertEqual("hand-written\n", page.read_text())
 
 

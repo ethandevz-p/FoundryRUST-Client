@@ -2,7 +2,7 @@
 //! updates. The GUI, the CLI and the MCP server all go through this module. Functions here
 //! block; the GUI runs them on threads and reads their messages.
 use crate::{account, mojang, sources};
-use horizon_platform::{prepare, prepared_files};
+use foundry_platform::{prepare, prepared_files};
 use std::fs;
 use std::io::{BufRead, BufReader, Read, Write};
 use std::path::{Path, PathBuf};
@@ -11,19 +11,19 @@ use std::sync::mpsc::Sender;
 use std::sync::{Arc, Mutex};
 
 /// Authority for game, launcher and native SDK release reads on this fork.
-pub const REPO: &str = "horizon-rust/horizon";
+pub const REPO: &str = "foundry-rust/foundry";
 
 /// Where a crash is reported.
 pub fn issues_url() -> String {
     format!("https://github.com/{REPO}/issues")
 }
-pub const README_URL: &str = "https://github.com/horizon-rust/horizon/blob/main/launcher/README.md";
+pub const README_URL: &str = "https://github.com/foundry-rust/foundry/blob/main/launcher/README.md";
 /// The players' page on connecting an AI agent (the website's docs/agents.md).
-pub const AGENT_DOCS_URL: &str = "https://playhorizon.dev/docs/agents";
-/// This launcher's version: the release workflow sets `HORIZON_LAUNCHER_VERSION` from the
+pub const AGENT_DOCS_URL: &str = "https://playfoundry.dev/docs/agents";
+/// This launcher's version: the release workflow sets `FOUNDRY_LAUNCHER_VERSION` from the
 /// tag it builds (no version-bump commits); other builds say Cargo.toml's.
-pub const VERSION: &str = version_or(option_env!("HORIZON_LAUNCHER_VERSION"));
-/// Launcher releases are tagged `launcher@X.Y.Z` from 0.2 on (docs/versioning.md), and Horizon's
+pub const VERSION: &str = version_or(option_env!("FOUNDRY_LAUNCHER_VERSION"));
+/// Launcher releases are tagged `launcher@X.Y.Z` from 0.2 on (docs/versioning.md), and Foundry Client's
 /// own `vX.Y.Z`. Before 0.2 they were `launcher-vX.Y.Z` and `vYYYY.MM.DD[.N]`: every 0.2 tag is
 /// newer than every one of those ([`release_order`]).
 pub const LAUNCHER_TAG_PREFIX: &str = "launcher@";
@@ -94,10 +94,10 @@ const fn platform_assets(os: &str, arch: &str) -> Option<(&'static str, &'static
 /// Both follow this launcher's own architecture. An x64 launcher on a Windows ARM64 PC (under
 /// emulation) keeps updating itself, installing games and building native mods as x64, so a player
 /// whose emulated setup works is never moved to an ARM64 build by an update. The ARM64 launcher is
-/// what `horizon-launcher-setup-arm64.exe` installs.
+/// what `foundry-launcher-setup-arm64.exe` installs.
 const OWN_ASSETS: Option<(&str, &str)> =
     platform_assets(std::env::consts::OS, std::env::consts::ARCH);
-/// The game build this launcher installs, None where Horizon has none.
+/// The game build this launcher installs, None where Foundry Client has none.
 pub const ASSET: Option<&str> = match OWN_ASSETS {
     Some((game, _)) => Some(game),
     None => None,
@@ -142,7 +142,7 @@ impl GameArchitecture {
     }
 }
 
-const GAME_BUILD_ARCHITECTURE: &str = ".horizon-game-architecture.json";
+const GAME_BUILD_ARCHITECTURE: &str = ".foundry-game-architecture.json";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 struct InstalledGameArchitecture {
@@ -162,8 +162,8 @@ fn architecture_for_platform(architecture: &str) -> Option<GameArchitecture> {
 
 fn architecture_for_asset(asset: &str) -> Option<GameArchitecture> {
     match asset.rsplit('/').next()? {
-        "horizon-windows-x64.zip" => Some(GameArchitecture::X64),
-        "horizon-windows-arm64.zip" => Some(GameArchitecture::Arm64),
+        "foundry-windows-x64.zip" => Some(GameArchitecture::X64),
+        "foundry-windows-arm64.zip" => Some(GameArchitecture::Arm64),
         _ => None,
     }
 }
@@ -449,20 +449,20 @@ const fn game_fallback_for(os: &str, arch: &str) -> Option<&'static str> {
 /// one file. A launcher running from one updates by replacing that file ([`appimage_path`]), so it
 /// needs this archive rather than the platform's `.tar.gz`.
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
-pub const LAUNCHER_APPIMAGE_ASSET: Option<&str> = Some("horizon-launcher-linux-x86_64.AppImage");
+pub const LAUNCHER_APPIMAGE_ASSET: Option<&str> = Some("foundry-launcher-linux-x86_64.AppImage");
 #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
 pub const LAUNCHER_APPIMAGE_ASSET: Option<&str> = None;
 
 const LAUNCHER_BINARY: &str = if cfg!(windows) {
-    "horizon-launcher.exe"
+    "foundry-launcher.exe"
 } else {
-    "horizon-launcher"
+    "foundry-launcher"
 };
 
 pub(crate) const CLIENT: &str = if cfg!(windows) {
-    "horizon-client.exe"
+    "foundry-client.exe"
 } else {
-    "horizon-client"
+    "foundry-client"
 };
 
 /// The agent `url` is fetched with: the launcher's own user agent, through the player's proxy when
@@ -470,7 +470,7 @@ pub(crate) const CLIENT: &str = if cfg!(windows) {
 pub(crate) fn agent(url: &str) -> ureq::Agent {
     crate::proxy::agent(
         ureq::AgentBuilder::new()
-            .user_agent(&format!("horizon-launcher/{VERSION}"))
+            .user_agent(&format!("foundry-launcher/{VERSION}"))
             // A connection that goes quiet fails instead of waiting for ever.
             .timeout_connect(std::time::Duration::from_secs(15))
             .timeout_read(std::time::Duration::from_secs(60)),
@@ -497,7 +497,7 @@ pub(crate) fn get(url: &str) -> Result<ureq::Response, String> {
 pub(crate) fn get_unless_missing(url: &str) -> Result<Option<ureq::Response>, String> {
     let mut request = agent(url).get(url);
     // CI runners share addresses and hit GitHub's anonymous rate limit; they pass their own token.
-    if let Some(token) = std::env::var("HORIZON_GITHUB_TOKEN")
+    if let Some(token) = std::env::var("FOUNDRY_GITHUB_TOKEN")
         .ok()
         .filter(|t| !t.is_empty())
     {
@@ -521,7 +521,7 @@ pub(crate) fn get_unless_missing(url: &str) -> Result<Option<ureq::Response>, St
     }
 }
 
-/// A Horizon game tag: `v` then a digit (`v2026.10.13`). Launcher tags never match.
+/// A Foundry Client game tag: `v` then a digit (`v2026.10.13`). Launcher tags never match.
 pub fn is_game_tag(tag: &str) -> bool {
     tag.strip_prefix('v')
         .is_some_and(|rest| rest.starts_with(|c: char| c.is_ascii_digit()))
@@ -534,13 +534,13 @@ pub fn launcher_version(tag: &str) -> Option<&str> {
         .filter(|v| v.starts_with(|c: char| c.is_ascii_digit()))
 }
 
-/// The tag this launcher was released as. launcher.yml gives it (`HORIZON_LAUNCHER_TAG`); a release
+/// The tag this launcher was released as. launcher.yml gives it (`FOUNDRY_LAUNCHER_TAG`); a release
 /// built before it did gave only the version, of a `launcher-v` tag; a build from source is
 /// Cargo.toml's version on the 0.2 line.
 pub fn own_tag() -> String {
     own_tag_of(
-        option_env!("HORIZON_LAUNCHER_TAG"),
-        option_env!("HORIZON_LAUNCHER_VERSION"),
+        option_env!("FOUNDRY_LAUNCHER_TAG"),
+        option_env!("FOUNDRY_LAUNCHER_VERSION"),
     )
 }
 
@@ -555,7 +555,7 @@ fn own_tag_of(tag: Option<&str>, injected: Option<&str>) -> String {
     }
 }
 
-/// Where a tag or version stands among Horizon's releases (docs/versioning.md): the tags from
+/// Where a tag or version stands among Foundry Client's releases (docs/versioning.md): the tags from
 /// before 0.2 (`vYYYY.MM.DD[.N]`, `launcher-vX.Y.Z`) and bare versions first, compared number by
 /// number with missing parts as zero and anything after a `-` ignored, as launchers always did;
 /// then the 0.2 tags (`vX.Y.Z`, `launcher@X.Y.Z`) in semver's order, a pre-release
@@ -566,7 +566,7 @@ pub enum ReleaseOrder {
     Before02(Vec<u64>),
     Semver([u64; 3], Prerelease),
     /// A Nightly (`nightly-<date>-<commit>`), by its date: newer than every release, since the
-    /// Nightly is the only build Horizon ships.
+    /// Nightly is the only build Foundry Client ships.
     Nightly(String),
 }
 
@@ -727,7 +727,7 @@ fn is_launcher_tag(tag: &str) -> bool {
     launcher_version(tag).is_some()
 }
 
-/// Published Horizon builds, newest first: the current Nightly (the only build Horizon ships since
+/// Published Foundry Client builds, newest first: the current Nightly (the only build Foundry Client ships since
 /// 2026-10-28, docs/release-flow.md), the last week's Nightlies, then the releases from before.
 /// Drafts never reach the anonymous API, and launcher releases are left out.
 pub fn releases() -> Result<Vec<Release>, String> {
@@ -757,7 +757,7 @@ fn game_releases_with(
     asset: Option<&str>,
     fallback: Option<&str>,
 ) -> Vec<Release> {
-    let keep = |tag: &str| is_game_tag(tag) || horizon_release_sign::is_nightly(tag);
+    let keep = |tag: &str| is_game_tag(tag) || foundry_release_sign::is_nightly(tag);
     let mut out = parse_releases(list, asset, keep);
     if fallback.is_some() {
         // The same releases in the same order: only the asset looked for differs.
@@ -768,10 +768,10 @@ fn game_releases_with(
         }
     }
     for r in &mut out {
-        if horizon_release_sign::is_nightly(&r.tag) {
+        if foundry_release_sign::is_nightly(&r.tag) {
             let version = crate::nightly::version_of(r);
             let tag = std::mem::replace(&mut r.tag, version);
-            r.prerelease = tag != horizon_release_sign::NIGHTLY;
+            r.prerelease = tag != foundry_release_sign::NIGHTLY;
             r.nightly = Some(tag);
         }
     }
@@ -835,7 +835,7 @@ fn newest_launcher_tags(refs: &serde_json::Value) -> Vec<String> {
     tags
 }
 
-/// The newest Horizon release that has a build for this platform.
+/// The newest Foundry Client release that has a build for this platform.
 pub fn latest(releases: &[Release]) -> Option<&Release> {
     releases.iter().find(|r| r.asset.is_some())
 }
@@ -936,9 +936,9 @@ pub fn links() -> Links {
         .map_or_else(Links::default, |text| Links::parse(&text))
 }
 
-/// The launcher's data folder; `HORIZON_LAUNCHER_HOME` overrides it (for tests and scripts).
+/// The launcher's data folder; `FOUNDRY_LAUNCHER_HOME` overrides it (for tests and scripts).
 pub fn data_dir() -> PathBuf {
-    if let Some(home) = std::env::var_os("HORIZON_LAUNCHER_HOME").filter(|h| !h.is_empty()) {
+    if let Some(home) = std::env::var_os("FOUNDRY_LAUNCHER_HOME").filter(|h| !h.is_empty()) {
         return PathBuf::from(home);
     }
     if cfg!(test) {
@@ -951,7 +951,7 @@ pub fn data_dir() -> PathBuf {
     }
     dirs::data_dir()
         .unwrap_or_else(std::env::temp_dir)
-        .join("horizon-launcher")
+        .join("foundry-launcher")
 }
 
 /// A canonical path without Windows' verbatim prefix: `canonicalize` gives `\\?\C:\...` there,
@@ -979,11 +979,11 @@ fn tool_safe(path: &Path) -> bool {
 
 /// Where builds happen — the Rust toolchain, its Cargo home and `native_mods::root` — as a
 /// path every build tool can read: `data_dir()` resolved, so the tools are never handed a
-/// link (horizon-mixins refuses one, and macOS's /tmp is one). On Windows, when the resolved
+/// link (foundry-mixins refuses one, and macOS's /tmp is one). On Windows, when the resolved
 /// path isn't [`tool_safe`], [`windows_build_dir`] names the same folder a way MinGW-w64 can open.
 pub fn build_dir() -> PathBuf {
     // Tests keep it inside their scratch launcher folder (`data_dir`).
-    if !cfg!(test) && std::env::var_os("HORIZON_LAUNCHER_HOME").is_none_or(|p| p.is_empty()) {
+    if !cfg!(test) && std::env::var_os("FOUNDRY_LAUNCHER_HOME").is_none_or(|p| p.is_empty()) {
         // A location that does not open stands in as the default folders, as
         // `data_location::startup` makes it for the window: never a panic here.
         if let Ok(Some(roots)) = crate::data_location::configured_roots() {
@@ -1030,7 +1030,7 @@ fn ascii_build_dir(real: &Path, program_data: Option<PathBuf>) -> PathBuf {
         .unwrap_or_else(|| PathBuf::from(r"C:\ProgramData"));
     let key = Sha256::digest(real.as_os_str().as_encoded_bytes());
     let key: String = key[..4].iter().map(|b| format!("{b:02x}")).collect();
-    public.join(format!("horizon-launcher-{key}"))
+    public.join(format!("foundry-launcher-{key}"))
 }
 
 /// `GetShortPathNameW`: `path`'s short (8.3) name, or None on error. A folder with no short
@@ -1175,7 +1175,7 @@ fn signed_digest(tag: &str, asset: &str) -> Result<String, String> {
     crate::signed::digest(
         tag,
         asset,
-        &horizon_release_sign::trusted_keys_for(REPO),
+        &foundry_release_sign::trusted_keys_for(REPO),
         fetch_small,
     )
 }
@@ -1246,7 +1246,7 @@ fn write_checked(
     stop: &dyn Fn() -> Result<(), String>,
 ) -> Result<(), String> {
     let mut file = fs::File::create(to).map_err(|e| e.to_string())?;
-    let mut hash = horizon_release_sign::Sha256::default();
+    let mut hash = foundry_release_sign::Sha256::default();
     let (mut done, mut buf) = (0u64, vec![0u8; 1 << 16]);
     loop {
         stop()?;
@@ -1261,7 +1261,7 @@ fn write_checked(
         done += n as u64;
         progress((done as f32 / size.max(1) as f32).min(1.0) * 0.9);
     }
-    horizon_release_sign::check(name, sha256, &hash.hex())
+    foundry_release_sign::check(name, sha256, &hash.hex())
 }
 
 fn unpack(archive: &Path, url: &str, to: &Path) -> Result<(), String> {
@@ -1307,7 +1307,7 @@ pub fn install(release: &Release, progress: impl Fn(f32)) -> Result<(), String> 
                 .filter(|v| *v == release.tag)
                 .ok_or_else(|| {
                     crate::i18n::trf(
-                        "This Nightly's title ({title}) doesn't name its date and commit as Horizon \
+                        "This Nightly's title ({title}) doesn't name its date and commit as Foundry Client \
                          signs them, so it can't be checked: it was not installed.",
                         &[("title", &format!("{:?}", release.name))],
                     )
@@ -1316,12 +1316,12 @@ pub fn install(release: &Release, progress: impl Fn(f32)) -> Result<(), String> 
                 github_tag,
                 &version,
                 asset,
-                &horizon_release_sign::trusted_keys_for(REPO),
+                &foundry_release_sign::trusted_keys_for(REPO),
                 fetch_small,
             )?
         }
         None if is_game_tag(tag) => signed_digest(tag, asset)?,
-        None => return Err(format!("{tag} is not a Horizon release.")),
+        None => return Err(format!("{tag} is not a Foundry Client release.")),
     };
     install_as(
         release,
@@ -1398,7 +1398,7 @@ pub fn disk_use(tag: &str) -> u64 {
     size(&version_dir(tag))
 }
 
-/// The Minecraft version a Horizon build targets, from its research-lock.json.
+/// The Minecraft version a Foundry Client build targets, from its research-lock.json.
 pub fn game_version(tag: &str) -> String {
     game_version_at(&version_dir(tag))
 }
@@ -1410,7 +1410,7 @@ fn read_json(path: &Path) -> Option<serde_json::Value> {
 fn game_version_at(dir: &Path) -> String {
     read_json(&dir.join("research-lock.json"))
         .and_then(|v| v["minecraft"]["version"].as_str().map(String::from))
-        .unwrap_or_else(|| horizon_platform::version::VANILLA_VERSION.into())
+        .unwrap_or_else(|| foundry_platform::version::VANILLA_VERSION.into())
 }
 
 pub fn resources(tag: &str) -> PathBuf {
@@ -1425,10 +1425,10 @@ pub fn prepared_in(tag: &str) -> String {
 }
 
 fn resources_at(dir: &Path) -> PathBuf {
-    dir.join(".local/horizon-client").join(game_version_at(dir))
+    dir.join(".local/foundry-client").join(game_version_at(dir))
 }
 
-const RESOURCES_MANIFEST: &str = "horizon-resources.json";
+const RESOURCES_MANIFEST: &str = "foundry-resources.json";
 
 /// How long a drawn page believes an answer of [`is_prepared`] without looking at the disk again.
 /// What the launcher itself changes (a preparation, an install, a removal) drops it at once
@@ -1537,7 +1537,7 @@ pub fn has_sounds(tag: &str) -> bool {
 }
 
 fn sounds_in(resources: &Path) -> bool {
-    // What the game's sound registry reads (horizon-client sound_events.rs).
+    // What the game's sound registry reads (foundry-client sound_events.rs).
     resources.join("assets/minecraft/sounds.json").is_file()
 }
 
@@ -1546,7 +1546,7 @@ pub fn resources_summary(prepared: bool, sounds: bool, version: &str) -> String 
     use crate::i18n::trf;
     match (prepared, sounds) {
         (false, _) => trf(
-            "Not prepared. Horizon needs the files of your own Minecraft {version}.",
+            "Not prepared. Foundry Client needs the files of your own Minecraft {version}.",
             &[("version", version)],
         ),
         (true, true) => trf("Prepared for Minecraft {version}", &[("version", version)]),
@@ -1560,7 +1560,7 @@ pub fn resources_summary(prepared: bool, sounds: bool, version: &str) -> String 
 
 /// Whether the resources `from` prepared are the ones preparing `to` would make: both pin the same
 /// Minecraft jars (research-lock.json) and their preparers make the same output. A preparer
-/// declares what it makes with `OUTPUT_VERSION` (crates/horizon-prepare/src/lib.rs, whose sources
+/// declares what it makes with `OUTPUT_VERSION` (crates/foundry-prepare/src/lib.rs, whose sources
 /// ship in the release folder), bumped by hand when the output changes and checked by CI
 /// (tools/prepare_output.py), so a release that changes the preparer's code but not its output
 /// keeps the resources. Preparers from before the number are known by their sources
@@ -1626,7 +1626,7 @@ const LEGACY_OUTPUT_VERSIONS: [(&str, u32); 2] = [
 ];
 
 /// The vanilla exporters those preparers ran (the `*_exporters_sha256` of their manifests), in
-/// mods/horizon/src/test/java/dev/horizonlab/parity.
+/// mods/foundry/src/test/java/dev/foundrylab/parity.
 const LEGACY_EXPORTERS: [&str; 18] = [
     "ParityData.java",
     "VanillaBlockBehaviourExporter.java",
@@ -1657,7 +1657,7 @@ fn legacy_fingerprint(dir: &Path) -> Option<String> {
     let mut hash = sha2::Sha256::new();
     hash.update(sources.as_bytes());
     for name in LEGACY_EXPORTERS {
-        let path = format!("mods/horizon/src/test/java/dev/horizonlab/parity/{name}");
+        let path = format!("mods/foundry/src/test/java/dev/foundrylab/parity/{name}");
         let data: Vec<u8> = fs::read(dir.join(&path))
             .ok()?
             .into_iter()
@@ -1671,9 +1671,9 @@ fn legacy_fingerprint(dir: &Path) -> Option<String> {
 
 /// How launchers before `OUTPUT_VERSION` compared two preparers, for versions older than the
 /// ones `LEGACY_OUTPUT_VERSIONS` knows. The manifest records the hashes of the vanilla exporters
-/// the resources were made with (mods/horizon/src/test/java/.../parity), and the preparer writes
+/// the resources were made with (mods/foundry/src/test/java/.../parity), and the preparer writes
 /// every file and the manifest's `schema`, so both need the same preparer and the same exporter
-/// sources. The preparer is crates/horizon-prepare and tools/prepare_native_client.py (the
+/// sources. The preparer is crates/foundry-prepare and tools/prepare_native_client.py (the
 /// Python preparer of older versions, a wrapper of the binary since); a file only one of the two
 /// versions has is a different preparer. The helpers the Python preparer imported (lab.py and
 /// the test_*_parity.py modules) change between releases in how they find and check the
@@ -1697,7 +1697,7 @@ fn same_preparer(from: &Path, to: &Path, manifest: &serde_json::Value) -> bool {
         return false;
     }
     let mut sources = vec![
-        "mods/horizon/src/test/java/dev/horizonlab/parity/VanillaHeightmapOracle.java".to_string(),
+        "mods/foundry/src/test/java/dev/foundrylab/parity/VanillaHeightmapOracle.java".to_string(),
     ];
     for (_, value) in fields
         .iter()
@@ -1720,7 +1720,7 @@ fn same_preparer(from: &Path, to: &Path, manifest: &serde_json::Value) -> bool {
 }
 
 /// Where a version folder keeps the preparer's sources (the release package copies them).
-const PREPARER_CRATE: &str = "crates/horizon-prepare";
+const PREPARER_CRATE: &str = "crates/foundry-prepare";
 
 /// The files under `dir/relative`, as paths relative to `dir`.
 fn files_under(dir: &Path, relative: &Path) -> Vec<PathBuf> {
@@ -1764,7 +1764,7 @@ pub(crate) fn copy_dir_except(from: &Path, to: &Path, skip: Option<&Path>) -> st
 /// After an install: when `tag` is not prepared but another installed version made the same
 /// resources, copies them (not hard links: preparing again rewrites files in place, which would
 /// change both). The player then needs neither their Minecraft folder nor a new preparation to
-/// play a release that only changed Horizon. Returns the version they came from.
+/// play a release that only changed Foundry Client. Returns the version they came from.
 fn reuse_prepared(versions: &Path, tag: &str) -> Option<String> {
     let target = versions.join(tag);
     let to = resources_at(&target);
@@ -1831,7 +1831,7 @@ pub(crate) fn reuse_prepared_for(tag: &str) {
     }
 }
 
-/// Writes a prepared version's `horizon-data.bin` so its first start already reads one file, not
+/// Writes a prepared version's `foundry-data.bin` so its first start already reads one file, not
 /// thousands: over a minute under Windows Defender (#1961), and a player who updates would pay it
 /// after every update. After `complete_assets`, as the file answers "missing" for what it lacks.
 /// The game still writes it when this didn't finish. Only looks for the file, as
@@ -1934,9 +1934,9 @@ fn complete_reports(versions: &Path, tag: &str) -> bool {
 }
 
 /// What a prepared version may lack that the launcher adds without preparing again, each copied
-/// from the player's own Minecraft asset store as `horizon-prepare <kind>` does: what the
+/// from the player's own Minecraft asset store as `foundry-prepare <kind>` does: what the
 /// player misses without it, its kind (`prepare::missing_extras`, the same check as
-/// `horizon-prepare --check`), and the copy.
+/// `foundry-prepare --check`), and the copy.
 type Completion = (
     &'static str,
     &'static str,
@@ -1969,7 +1969,7 @@ fn should_refill_own_store(own: &Path, resources: &Path) -> bool {
     own.join("assets/indexes").is_dir() && !prepare::missing_extras(resources).is_empty()
 }
 
-/// Horizon's own download (an owner's) may have stopped before the extras (such as fonts, sounds,
+/// Foundry Client's own download (an owner's) may have stopped before the extras (such as fonts, sounds,
 /// or languages), and the copies of `complete_assets` read them from its store: asked again, once per
 /// run, through the same owner gate as any download from Mojang (`download_for_owner`), which keeps
 /// the files already whole. Called where a download is expected (`reuse_prepared_everywhere`), never
@@ -2056,8 +2056,8 @@ fn complete_assets_in(
 }
 
 /// The Minecraft folders whose asset store can hold what a prepared version lacks: the one
-/// chosen in the launcher, the official launcher's (or HORIZON_MINECRAFT_DIR), the folder
-/// other launchers' files are linked into and Horizon's own download, then every launcher's
+/// chosen in the launcher, the official launcher's (or FOUNDRY_MINECRAFT_DIR), the folder
+/// other launchers' files are linked into and Foundry Client's own download, then every launcher's
 /// default folder.
 fn minecraft_folders() -> Vec<PathBuf> {
     let mut folders: Vec<PathBuf> = Settings::load().minecraft_dir.into_iter().collect();
@@ -2112,19 +2112,19 @@ fn python() -> Option<&'static str> {
 
 /// How a version's resources are prepared.
 pub enum Preparer {
-    /// horizon-prepare, linked into the launcher: the version ships the same preparer sources.
+    /// foundry-prepare, linked into the launcher: the version ships the same preparer sources.
     InProcess(prepare::Options),
-    /// The version's own preparer: its horizon-prepare binary when its sources differ from the
+    /// The version's own preparer: its foundry-prepare binary when its sources differ from the
     /// launcher's (a newer or older release), or the Python script of versions made before it.
     Process(Command),
 }
 
-/// The version's horizon-prepare binary, when it ships one.
+/// The version's foundry-prepare binary, when it ships one.
 fn preparer_binary(dir: &Path) -> Option<PathBuf> {
     let binary = dir.join(if cfg!(windows) {
-        "horizon-prepare.exe"
+        "foundry-prepare.exe"
     } else {
-        "horizon-prepare"
+        "foundry-prepare"
     });
     binary.is_file().then_some(binary)
 }
@@ -2147,13 +2147,13 @@ fn download_for_owner(
         &mut accounts,
     );
     if let Err(e) = accounts.save_renewed() {
-        log(format!("Horizon: the accounts are not saved: {e}"));
+        log(format!("Foundry Client: the accounts are not saved: {e}"));
     }
     download_for(pins, dir, pass, !accounts.accounts.is_empty(), fetch, log)
 }
 
 /// Downloads Minecraft `id` (any version on Mojang's list, its version file's sha1 from it) into
-/// Horizon's own game folder, in the official launcher's layout, for an account that owns the
+/// Foundry Client's own game folder, in the official launcher's layout, for an account that owns the
 /// game (asked again now). Returns that folder.
 pub fn download_version_for_owner(
     id: &str,
@@ -2180,7 +2180,7 @@ pub fn java_game(
 ) -> Result<Command, String> {
     let game = instance.java.as_ref().ok_or_else(|| {
         format!(
-            "{} plays Horizon, not Minecraft: Java Edition",
+            "{} plays Foundry Client, not Minecraft: Java Edition",
             instance.name
         )
     })?;
@@ -2289,7 +2289,7 @@ fn download_for(
                 sources::Os::Windows => "windows",
             };
             mojang::download_http(pins, dir, os, mojang::JOBS, fetch, &mojang::CANCEL, log).map_err(|e| {
-                format!("\n  • Horizon tried to download {v} from Mojang for {name}, but: {e}")
+                format!("\n  • Foundry Client tried to download {v} from Mojang for {name}, but: {e}")
             })
         }
         // An owner by its last answer, who can't be asked now.
@@ -2299,7 +2299,7 @@ fn download_for(
             pass.offline.unwrap_or_default()
         )),
         Err(_) if signed_in => Err(
-            "\n  • No signed-in account owns Minecraft: Java Edition, so Horizon can't download it."
+            "\n  • No signed-in account owns Minecraft: Java Edition, so Foundry Client can't download it."
                 .into(),
         ),
         Err(_) => Err(crate::i18n::trf(
@@ -2321,7 +2321,7 @@ fn store_launcher_folder(local: &Path) -> PathBuf {
 /// The Java home for this version: a runtime for precompiled exporters, a JDK for older
 /// preparers or changed sources. Forward the selection to external preparers too.
 /// Else try the official launcher's Java in `games`, then download the runtime named by
-/// `manifest` into Horizon's game folder (Mojang's runtimes are whole JDKs).
+/// `manifest` into Foundry Client's game folder (Mojang's runtimes are whole JDKs).
 fn java(
     major: i64,
     compiler: bool,
@@ -2364,7 +2364,7 @@ fn java(
     let runtime = data_dir().join("minecraft").join("runtime");
     let home = mojang::java_runtime_http(&component, &runtime, mojang::JOBS, &fetch, &mojang::CANCEL, log)
         .map_err(|e| {
-        format!("{missing}\n  • Horizon also tried to download Minecraft's own Java from Mojang, but: {e}")
+        format!("{missing}\n  • Foundry Client also tried to download Minecraft's own Java from Mojang, but: {e}")
     })?;
     // On macOS the download's Java home is inside its jre.bundle (#17894).
     let home = prepare::java::runtime_home(&home).unwrap_or(home);
@@ -2455,7 +2455,7 @@ pub enum PrepareStep {
     Files,
     Java,
     Sounds,
-    /// horizon-prepare's own work on those files.
+    /// foundry-prepare's own work on those files.
     Prepare,
 }
 
@@ -2494,7 +2494,7 @@ pub fn prepare_offers_mojang() -> bool {
 
 /// Checks what the preparation needs and picks how to run it. PLAY.txt describes the same
 /// steps: the player's own launcher install, the server jar from that version's own json, and
-/// Java (and Python, for versions before horizon-prepare). Also returns the Minecraft folder
+/// Java (and Python, for versions before foundry-prepare). Also returns the Minecraft folder
 /// to prepare from: `minecraft`, or the files another launcher keeps, linked into the official
 /// launcher's layout (sources.rs).
 pub fn preparer(
@@ -2519,7 +2519,7 @@ pub fn preparer(
             .and_then(|lock| sources::Pins::read(&lock))
             .ok_or("The version's research-lock.json doesn't pin the Minecraft files")?;
         let own = data_dir().join("minecraft");
-        let mut known = vec![("Horizon's own download", own.clone())];
+        let mut known = vec![("Foundry Client's own download", own.clone())];
         known.extend(
             sources::Folders::current()
                 .map(|f| sources::known_folders(sources::Os::current(), &f))
@@ -2572,7 +2572,7 @@ pub fn preparer(
             "This version prepares with Python: Python 3.10 or newer is needed. Install it, or pick a newer version.",
         )?),
     };
-    // The Java the version pins, found as horizon-prepare finds it, so a missing one is
+    // The Java the version pins, found as foundry-prepare finds it, so a missing one is
     // reported (or downloaded) before the server jar is downloaded. Versions from before
     // java_major ran Java 25.
     let major = read_json(&dir.join("research-lock.json"))
@@ -2658,7 +2658,7 @@ pub fn preparer(
 }
 
 /// Copies the pinned version's sounds from the player's own launcher install into the version's
-/// resources (`horizon-prepare sounds`), each line to `log`. Sound is optional, so a launcher
+/// resources (`foundry-prepare sounds`), each line to `log`. Sound is optional, so a launcher
 /// install without them is a line in the log, never a failed preparation. The version's own
 /// preparer does it when it is not the launcher's and knows how; versions from before it read
 /// the sounds where the launcher's preparer puts them.
@@ -2670,7 +2670,7 @@ pub fn sounds(tag: &str, minecraft: &Path, log: &dyn Fn(String)) {
         !own && crate::process::command(binary)
             .arg("--help")
             .output()
-            .is_ok_and(|o| String::from_utf8_lossy(&o.stdout).contains("horizon-prepare sounds"))
+            .is_ok_and(|o| String::from_utf8_lossy(&o.stdout).contains("foundry-prepare sounds"))
     });
     set_prepare_step(PrepareStep::Sounds);
     log("Copying the sounds from your Minecraft install".into());
@@ -2715,11 +2715,11 @@ pub fn prepare_in_process(options: &prepare::Options, log: &dyn Fn(String)) -> R
     .map(|_| ())
 }
 
-/// Where the game keeps saves and options.txt: `HORIZON_HOME`, else `horizon` in the platform's
-/// data folder (~/.local/share/horizon on Linux, as the release folders' horizon.sh uses). It is
+/// Where the game keeps saves and options.txt: `FOUNDRY_HOME`, else `foundry` in the platform's
+/// data folder (~/.local/share/foundry on Linux, as the release folders' foundry.sh uses). It is
 /// never inside a version folder, so installing, updating or removing a version keeps the saves.
 pub fn game_home() -> PathBuf {
-    if let Some(home) = std::env::var_os("HORIZON_HOME").filter(|h| !h.is_empty()) {
+    if let Some(home) = std::env::var_os("FOUNDRY_HOME").filter(|h| !h.is_empty()) {
         return PathBuf::from(home);
     }
     if cfg!(test) {
@@ -2732,18 +2732,18 @@ pub fn game_home() -> PathBuf {
     }
     dirs::data_dir()
         .unwrap_or_else(std::env::temp_dir)
-        .join("horizon")
+        .join("foundry")
 }
 
-/// Whether No AI is on: every AI feature hidden and off (`horizon_platform::no_ai`, kept in the
-/// game's `horizon-extras.txt` so the game reads the same switch).
+/// Whether No AI is on: every AI feature hidden and off (`foundry_platform::no_ai`, kept in the
+/// game's `foundry-extras.txt` so the game reads the same switch).
 pub fn no_ai() -> bool {
-    horizon_platform::no_ai::is_on(&game_home())
+    foundry_platform::no_ai::is_on(&game_home())
 }
 
 /// Turns No AI on or off for the launcher and the game.
 pub fn set_no_ai(on: bool) -> Result<(), String> {
-    horizon_platform::no_ai::set(&game_home(), on).map_err(|e| format!("Could not save No AI: {e}"))
+    foundry_platform::no_ai::set(&game_home(), on).map_err(|e| format!("Could not save No AI: {e}"))
 }
 
 // ----- Logs and crash reports ---------------------------------------------------------------------
@@ -2810,7 +2810,7 @@ pub fn crash_summary(report: &str) -> Option<String> {
 }
 
 /// The line the game prints when it has drawn its first frame.
-pub const GAME_FIRST_FRAME: &str = "Horizon: first frame";
+pub const GAME_FIRST_FRAME: &str = "Foundry Client: first frame";
 
 /// A graphics API whose driver can crash natively at the renderer's start, before the game
 /// can catch it.
@@ -2831,7 +2831,7 @@ impl StartCrash {
 }
 
 /// The API a game's output ends in a crash on while its renderer started: the last adapter line
-/// (`Horizon renderer: <GPU> (<backend>, <type>)`) names Vulkan or OpenGL (`Gl`), and no first
+/// (`Foundry Client renderer: <GPU> (<backend>, <type>)`) names Vulkan or OpenGL (`Gl`), and no first
 /// frame follows. A native crash in a graphics driver leaves no crash report, only those lines
 /// (#746, #18291).
 pub fn renderer_start_crash<S: AsRef<str>>(
@@ -2854,18 +2854,18 @@ pub fn renderer_start_crash<S: AsRef<str>>(
     crashed
 }
 
-/// The backend an adapter line names: `Horizon renderer: <GPU> (<backend>, <type>)`, `<type>`
+/// The backend an adapter line names: `Foundry Client renderer: <GPU> (<backend>, <type>)`, `<type>`
 /// one of wgpu's device types. The start's step lines can end in a parenthesis too, such as
 /// `device ready; configuring the surface (1280x720 Bgra8Unorm, Fifo)`.
 fn adapter_backend(line: &str) -> Option<&str> {
     const DEVICE_TYPES: [&str; 5] = ["Other", "IntegratedGpu", "DiscreteGpu", "VirtualGpu", "Cpu"];
-    let (_, tail) = line.strip_prefix("Horizon renderer: ")?.rsplit_once(" (")?;
+    let (_, tail) = line.strip_prefix("Foundry Client renderer: ")?.rsplit_once(" (")?;
     let (backend, kind) = tail.strip_suffix(')')?.split_once(", ")?;
     DEVICE_TYPES.contains(&kind).then_some(backend)
 }
 
 /// The game's graphics settings file in its home (the game's `graphics.rs`).
-const GRAPHICS_FILE: &str = "horizon-graphics.txt";
+const GRAPHICS_FILE: &str = "foundry-graphics.txt";
 
 /// The graphics API (the game's setting name, and its label) Auto switches to after a native
 /// crash at the renderer's start on `crashed`. Windows: DirectX 12 (#746), which then never
@@ -2887,7 +2887,7 @@ pub fn start_crash_fallback(crashed: StartCrash, os: &str) -> Option<(&'static s
 /// code such as 0xC0000005; Stop's `TerminateProcess` leaves exit code 1. On Unix, a signal other
 /// than the SIGKILL Stop sends to the game's group or the SIGTERM and SIGINT of a shutdown; or
 /// exit code 1, which the run holder reports for a game that died by a signal
-/// (`horizon_mod_package::holder::enter`).
+/// (`foundry_mod_package::holder::enter`).
 pub fn native_crash_exit(status: std::process::ExitStatus) -> bool {
     #[cfg(windows)]
     {
@@ -2918,7 +2918,7 @@ pub fn switch_after_start_crash(
     }
     if game_home != run_home {
         if let Err(e) = switch_from_auto(game_home, api) {
-            eprintln!("Horizon launcher: could not switch the game home to {api}: {e}");
+            eprintln!("Foundry Client launcher: could not switch the game home to {api}: {e}");
         }
     }
     Ok(true)
@@ -3084,34 +3084,34 @@ pub fn client_command(tag: &str) -> Command {
     let _ = fs::create_dir_all(&home);
     let mut cmd = Command::new(client_program(tag));
     if crate::developer_install::uses_developer(tag) {
-        cmd.env("HORIZON_TELEMETRY_URL", "off");
+        cmd.env("FOUNDRY_TELEMETRY_URL", "off");
     }
     crate::run_leases::mark(&mut cmd, &version_dir(tag));
     strip_launcher_render_env(&mut cmd);
     crate::telemetry::ping_only_if_allowed(&mut cmd, !Settings::load().ping_off);
     cmd.current_dir(&home)
-        .env("HORIZON_HOME", &home)
-        .env_remove("HORIZON_ACCOUNT_SESSIONS")
+        .env("FOUNDRY_HOME", &home)
+        .env_remove("FOUNDRY_ACCOUNT_SESSIONS")
         .arg("--resources")
         .arg(resources(tag));
     // How the game asks for a renewed session (`account session`) while it runs.
     if let Ok(exe) = std::env::current_exe() {
-        cmd.env("HORIZON_LAUNCHER_EXE", exe);
+        cmd.env("FOUNDRY_LAUNCHER_EXE", exe);
     }
     // PipeWire remembers volume and mute per application name. The game's own name is
-    // "PipeWire ALSA [horizon-client]", shared with development and test runs, where
-    // muting it once left every later game silent: played from here it is "Horizon".
+    // "PipeWire ALSA [foundry-client]", shared with development and test runs, where
+    // muting it once left every later game silent: played from here it is "Foundry Client".
     if std::env::var_os("PIPEWIRE_PROPS").is_none() {
         cmd.env(
             "PIPEWIRE_PROPS",
-            "{ application.name = \"Horizon\" media.role = \"Game\" }",
+            "{ application.name = \"Foundry Client\" media.role = \"Game\" }",
         );
     }
     cmd
 }
 
-/// The game's program: on macOS the one inside the version's Horizon.app, so the Dock and Cmd+Tab
-/// show Horizon's name and icon (game_app.rs); the bare binary elsewhere, or if that fails.
+/// The game's program: on macOS the one inside the version's Foundry Client.app, so the Dock and Cmd+Tab
+/// show Foundry Client's name and icon (game_app.rs); the bare binary elsewhere, or if that fails.
 pub(crate) fn client_program(tag: &str) -> PathBuf {
     let dir = version_dir(tag);
     #[cfg(target_os = "macos")]
@@ -3125,7 +3125,7 @@ pub(crate) fn client_program(tag: &str) -> PathBuf {
 pub fn server_command(tag: &str, folder: &Path) -> Command {
     let mut cmd = Command::new(version_dir(tag).join(CLIENT));
     if crate::developer_install::uses_developer(tag) {
-        cmd.env("HORIZON_TELEMETRY_URL", "off");
+        cmd.env("FOUNDRY_TELEMETRY_URL", "off");
     }
     crate::run_leases::mark(&mut cmd, &version_dir(tag));
     cmd.current_dir(folder)
@@ -3171,7 +3171,7 @@ pub fn no_version_installed() -> String {
     format!(
         "{} {}",
         tr("No version is installed yet."),
-        tr("Run `horizon-launcher install latest` to get one.")
+        tr("Run `foundry-launcher install latest` to get one.")
     )
 }
 
@@ -3245,7 +3245,7 @@ fn stale_versions(
 #[cfg(unix)]
 pub(crate) fn in_use(tag: &str) -> bool {
     let folder = format!("{}/", version_dir(tag).display());
-    // A client started as `./horizon-client` from its own folder names no absolute path, and its
+    // A client started as `./foundry-client` from its own folder names no absolute path, and its
     // relative `--resources` names the folder by its last component only (#18393 review).
     let named = format!("{tag}/");
     Command::new("ps")
@@ -3348,7 +3348,7 @@ impl From<NotReady> for String {
 /// build) is not prepared. The window prepares it instead (#18659).
 pub fn prepare_hint(tag: &str) -> String {
     format!(
-        "{tag} is not prepared yet. Prepare it first: `horizon-launcher prepare --version {tag}` \
+        "{tag} is not prepared yet. Prepare it first: `foundry-launcher prepare --version {tag}` \
          uses your own Minecraft {v}, or downloads it from Mojang for the signed-in account \
          that owns it.",
         v = game_version(tag)
@@ -3384,7 +3384,7 @@ pub fn need_prepared(tag: &str) -> Result<(), String> {
 /// Says on stderr which step Play is at, one line each: a terminal run shows where it stops when
 /// it never gets to the game (#12179).
 pub fn play_step(step: &str) {
-    eprintln!("Horizon: Play: {step}…");
+    eprintln!("Foundry Client: Play: {step}…");
 }
 
 /// The client's command, once the owner gate lets it start and its resources are prepared. Past
@@ -3395,14 +3395,14 @@ pub fn client(tag: &str) -> Result<Command, String> {
 }
 
 /// What the command line adds to a refusal to play for want of an account.
-pub const SIGN_IN_HINT: &str = "Sign in with `horizon-launcher account sign-in`.";
+pub const SIGN_IN_HINT: &str = "Sign in with `foundry-launcher account sign-in`.";
 
 /// Start the game straight into a friend's world: `--server friend:CODE`.
 pub fn join_friend(cmd: &mut Command, code: &str) -> Result<(), String> {
-    horizon_friends::invite::parse_detailed(code).map_err(|e| e.to_string())?;
+    foundry_friends::invite::parse_detailed(code).map_err(|e| e.to_string())?;
     let code: String = code.chars().filter(|c| !c.is_whitespace()).collect();
     cmd.arg("--server")
-        .arg(format!("{}{code}", horizon_friends::ADDRESS_PREFIX));
+        .arg(format!("{}{code}", foundry_friends::ADDRESS_PREFIX));
     Ok(())
 }
 
@@ -3430,7 +3430,7 @@ pub fn release_notes(tag: Option<&str>) -> Result<Release, String> {
     match tag {
         Some(tag) => release_selection::by_tag(&releases, tag)
             .cloned()
-            .ok_or_else(|| format!("No Horizon release is tagged {tag}.")),
+            .ok_or_else(|| format!("No Foundry Client release is tagged {tag}.")),
         None => releases
             .into_iter()
             .next()
@@ -3508,17 +3508,17 @@ impl Logged {
 
 // ----- Updates -----------------------------------------------------------------------------------
 
-/// What a check found: a Horizon build newer than every installed one, and a newer launcher.
+/// What a check found: a Foundry Client build newer than every installed one, and a newer launcher.
 #[derive(Clone, Debug, Default, serde::Serialize)]
 pub struct Updates {
-    pub horizon: Option<Release>,
+    pub foundry: Option<Release>,
     pub launcher: Option<Release>,
 }
 
-/// The newest Horizon build with a build here (the current Nightly), if it isn't installed and
+/// The newest Foundry Client build with a build here (the current Nightly), if it isn't installed and
 /// no installed version is newer. Two Nightlies of one day compare equal: the one on GitHub is
 /// the update.
-pub fn horizon_update(releases: &[Release], installed: &[String]) -> Option<Release> {
+pub fn foundry_update(releases: &[Release], installed: &[String]) -> Option<Release> {
     let newest = latest(releases)?;
     let newer = !installed.contains(&newest.tag)
         && installed
@@ -3565,11 +3565,11 @@ fn releases_and_updates_with(
     };
     let releases = game_releases(&list);
     let installed_versions = installed();
-    let horizon = horizon_update(&installable_updates(&releases), &installed_versions)
+    let foundry = foundry_update(&installable_updates(&releases), &installed_versions)
         .or_else(|| architecture_update(&releases, &installed_versions));
     on_releases(Ok(releases));
     Ok(Updates {
-        horizon,
+        foundry,
         launcher: launcher_update(&launchers(&list)),
     })
 }
@@ -3611,7 +3611,7 @@ pub fn install_tag(tag: &str, as_update: bool, progress: impl Fn(f32)) -> Result
             .ok_or_else(|| crate::refusals::no_build(None))?
     } else {
         release_selection::by_tag(&releases, tag)
-            .ok_or_else(|| format!("No Horizon release is tagged {tag}."))?
+            .ok_or_else(|| format!("No Foundry Client release is tagged {tag}."))?
     };
     if release.asset.is_none() {
         return Err(crate::refusals::no_build(Some(&release.tag)));
@@ -3728,15 +3728,15 @@ fn launcher_asset_running_from(appimage: bool) -> Option<&'static str> {
     }
 }
 
-/// Development builds and `HORIZON_LAUNCHER_NO_SELF_UPDATE` never replace themselves.
+/// Development builds and `FOUNDRY_LAUNCHER_NO_SELF_UPDATE` never replace themselves.
 pub fn self_update_allowed() -> bool {
-    !cfg!(debug_assertions) && std::env::var_os("HORIZON_LAUNCHER_NO_SELF_UPDATE").is_none()
+    !cfg!(debug_assertions) && std::env::var_os("FOUNDRY_LAUNCHER_NO_SELF_UPDATE").is_none()
 }
 
-/// The version in `horizon-launcher --version`'s output (`horizon-launcher 0.1.5`).
+/// The version in `foundry-launcher --version`'s output (`foundry-launcher 0.1.5`).
 fn parse_version_output(out: &str) -> Option<&str> {
     out.trim()
-        .strip_prefix("horizon-launcher ")
+        .strip_prefix("foundry-launcher ")
         .map(str::trim)
         .filter(|v| !v.is_empty())
 }
@@ -3894,8 +3894,8 @@ pub(crate) fn remove_replaced_once(dir: &Path, name: &str, own_pid: u32, lock: &
     !left
 }
 
-/// The app bundle the launcher runs from (`…/Horizon.app` for `…/Horizon.app/Contents/MacOS/
-/// horizon-launcher`), or None for a bare binary, as launchers before the .app shipped.
+/// The app bundle the launcher runs from (`…/Foundry Client.app` for `…/Foundry Client.app/Contents/MacOS/
+/// foundry-launcher`), or None for a bare binary, as launchers before the .app shipped.
 pub fn app_bundle(exe: &Path) -> Option<&Path> {
     let macos = exe.parent()?;
     let contents = macos.parent()?;
@@ -4095,7 +4095,7 @@ pub(crate) fn process_alive(pid: u32) -> bool {
 
 fn file_sha256(path: &Path) -> Result<String, String> {
     let mut file = fs::File::open(path).map_err(|e| e.to_string())?;
-    let mut hash = horizon_release_sign::Sha256::default();
+    let mut hash = foundry_release_sign::Sha256::default();
     let mut buf = vec![0u8; 1 << 16];
     loop {
         let n = file.read(&mut buf).map_err(|e| e.to_string())?;
@@ -4126,7 +4126,7 @@ pub fn place_checked(
         .map(|ending| stage.join(format!("download{ending}")))
         .find(|path| path.is_file())
         .ok_or_else(not_staged)?;
-    horizon_release_sign::check(&staged.tag, &staged.sha256, &file_sha256(&archive)?)?;
+    foundry_release_sign::check(&staged.tag, &staged.sha256, &file_sha256(&archive)?)?;
     let payload = if staged.payload == archive {
         archive
     } else {
@@ -4234,9 +4234,9 @@ fn fill_stage(
     }
     let unpacked = stage.join(UNPACKED);
     unpack(&archive, url, &unpacked)?;
-    // A launcher inside Horizon.app replaces the whole bundle (its Info.plist, icon and
+    // A launcher inside Foundry Client.app replaces the whole bundle (its Info.plist, icon and
     // signature belong with the binary); a bare binary, as older launchers are, only the binary,
-    // which the macOS archive also holds (Horizon.app/Contents/MacOS/horizon-launcher).
+    // which the macOS archive also holds (Foundry Client.app/Contents/MacOS/foundry-launcher).
     if app_bundle(exe_path()).is_some() {
         if let Some(new) = find_app(&unpacked) {
             return staged(new);
@@ -4306,7 +4306,7 @@ pub fn package_managed_launcher() -> bool {
 }
 
 fn writable(dir: &Path) -> bool {
-    let probe = dir.join(format!(".horizon-write-check-{}", std::process::id()));
+    let probe = dir.join(format!(".foundry-write-check-{}", std::process::id()));
     let made = fs::OpenOptions::new()
         .write(true)
         .create_new(true)
@@ -4410,7 +4410,7 @@ pub fn prepare_command(cmd: Command) -> Result<(Command, RuntimeGuard), String> 
     #[cfg_attr(not(windows), allow(unused_mut))]
     let mut leases = match crate::run_leases::shared(&cmd) {
         Ok(leases) => leases,
-        // Leases keep cleanup away from what a running game uses, and only Horizon's own game
+        // Leases keep cleanup away from what a running game uses, and only Foundry Client's own game
         // runs from what the launcher cleans up: Java Edition starts without them (#18018).
         // A busy tree is a cleanup that ends soon, and its message says to wait for it.
         Err(error)
@@ -4601,7 +4601,7 @@ pub struct Settings {
     /// Game asset architecture. Auto preserves the launcher's process-architecture behavior.
     #[serde(default)]
     pub game_architecture: GameArchitecture,
-    /// The instance Play starts (`instances`), by id. Unset means Horizon, the game's home.
+    /// The instance Play starts (`instances`), by id. Unset means Foundry Client, the game's home.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub instance: Option<String>,
     pub minecraft_dir: Option<PathBuf>,
@@ -4642,7 +4642,7 @@ pub struct Settings {
     #[serde(default)]
     pub ping_notice_seen: bool,
     /// The player turned the anonymous "I'm playing" ping off (`telemetry::PING`): the game is
-    /// started with `HORIZON_NO_HEARTBEAT`. On by default, as upstream sends it.
+    /// started with `FOUNDRY_NO_HEARTBEAT`. On by default, as upstream sends it.
     #[serde(default)]
     pub ping_off: bool,
     /// The look's flourishes, each on or off (`effects`): glow, gradients, the hover shine.
@@ -4665,7 +4665,7 @@ pub struct Settings {
     /// What the window does while the game runs. Stays by default.
     #[serde(default)]
     pub while_playing: WhilePlaying,
-    /// The accent colour on top of the appearance (`themes::Accent`). Horizon's violet by default.
+    /// The accent colour on top of the appearance (`themes::Accent`). Foundry Client's violet by default.
     #[serde(default)]
     pub accent: crate::themes::Accent,
     /// How much white the glass look's plates take, in percent (the mockup's Glass, 0 to 16).
@@ -4677,7 +4677,7 @@ pub struct Settings {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub blur: Option<f32>,
     /// The launcher theme (`themes::theme`): its sky behind the light appearance. Unset is
-    /// Horizon's own.
+    /// Foundry Client's own.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub theme: Option<String>,
     /// The cheaper scene for older computers (a lower-resolution sky, a box blur, the scene
@@ -4685,14 +4685,14 @@ pub struct Settings {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub performance: Option<bool>,
     /// Home's background: a picture the player picked, kept in the data folder under this name
-    /// (`themes::keep_background`). Unset shows Horizon's landscape.
+    /// (`themes::keep_background`). Unset shows Foundry Client's landscape.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub background: Option<String>,
     /// The window's language. Unset follows the system's (`i18n::Language::system`).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub language: Option<crate::i18n::Language>,
-    /// Whether what the browser installed from Horizon's registry updates by itself, at start
-    /// and before Play (`browser::horizon::auto`). Unset is on.
+    /// Whether what the browser installed from Foundry Client's registry updates by itself, at start
+    /// and before Play (`browser::foundry::auto`). Unset is on.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mods_auto_update: Option<bool>,
     /// First-use native code permission for this launcher install, Unix seconds.
@@ -4701,7 +4701,7 @@ pub struct Settings {
     /// Managed cache limit in GiB (unset: 25; zero: no automatic cleanup). Player data isn't cache.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cache_limit_gib: Option<u64>,
-    /// The accent picked under each launcher theme, by its id (`themes::HORIZON` for Horizon's
+    /// The accent picked under each launcher theme, by its id (`themes::FOUNDRY` for Foundry Client's
     /// own), so going back to a theme brings back its colour. A launcher older than this map
     /// drops it when it saves: the themes then only start from their own accents again.
     #[serde(default, skip_serializing_if = "std::collections::BTreeMap::is_empty")]
@@ -4890,7 +4890,7 @@ impl Settings {
     pub fn language(&self) -> crate::i18n::Language {
         self.language.unwrap_or_else(crate::i18n::Language::system)
     }
-    /// Whether new Horizon versions are installed automatically.
+    /// Whether new Foundry Client versions are installed automatically.
     pub fn auto_install(&self) -> bool {
         self.install_new_versions.unwrap_or(true)
     }
@@ -4902,13 +4902,13 @@ impl Settings {
     pub fn glass_tint(&self) -> f32 {
         self.glass
             .filter(|v| v.is_finite())
-            .map_or(horizon_theme::glass::TINT, |v| v.clamp(0., 16.) / 100.)
+            .map_or(foundry_theme::glass::TINT, |v| v.clamp(0., 16.) / 100.)
     }
     /// The plates' blur in px (0 to 48).
     pub fn glass_blur(&self) -> f32 {
         self.blur
             .filter(|v| v.is_finite())
-            .map_or(horizon_theme::glass::BLUR, |v| v.clamp(0., 48.))
+            .map_or(foundry_theme::glass::BLUR, |v| v.clamp(0., 48.))
     }
     /// Whether the cheaper scene is on ([`performance`](Self::performance)).
     pub fn performance(&self) -> bool {
@@ -4986,15 +4986,15 @@ mod tests {
                     "backend::tests::failed_removal_is_incomplete_and_can_be_retried"
                 ])
                 .env("REMOVE_TEST_ROOT", root.path())
-                .env("HORIZON_LAUNCHER_HOME", root.path())
-                .env("HORIZON_HOME", root.path().join("home"))
+                .env("FOUNDRY_LAUNCHER_HOME", root.path())
+                .env("FOUNDRY_HOME", root.path().join("home"))
                 .env("XDG_DATA_HOME", root.path().join("xdg-data"))
                 .env("XDG_CONFIG_HOME", root.path().join("xdg-config"))
-                .env("HORIZON_LAUNCHER_TRASH", root.path().join("trash"))
-                .env("HORIZON_LAUNCHER_CLIPBOARD", root.path().join("clipboard"))
-                .env("HORIZON_LAUNCHER_DESKTOP", root.path().join("desktop"))
-                .env("HORIZON_LAUNCHER_NO_SELF_UPDATE", "1")
-                .env("HORIZON_NO_AUDIO", "1")
+                .env("FOUNDRY_LAUNCHER_TRASH", root.path().join("trash"))
+                .env("FOUNDRY_LAUNCHER_CLIPBOARD", root.path().join("clipboard"))
+                .env("FOUNDRY_LAUNCHER_DESKTOP", root.path().join("desktop"))
+                .env("FOUNDRY_LAUNCHER_NO_SELF_UPDATE", "1")
+                .env("FOUNDRY_NO_AUDIO", "1")
                 .status()
                 .unwrap()
                 .success());
@@ -5006,7 +5006,7 @@ mod tests {
         fs::write(dir.join(COMPLETE), b"").unwrap();
         fs::write(
             dir.join(CLIENT),
-            horizon_platform::mod_package::holder::CAPABILITY,
+            foundry_platform::mod_package::holder::CAPABILITY,
         )
         .unwrap();
         crate::run_leases::publish(&dir).unwrap();
@@ -5029,7 +5029,7 @@ mod tests {
         assert!(!dir.exists());
     }
 
-    /// [#18393](https://github.com/horizon-rust/horizon/issues/18393): a client from before the
+    /// [#18393](https://github.com/foundry-rust/foundry/issues/18393): a client from before the
     /// capability marker takes no runtime lease and never can, so nothing but the process check
     /// can prove its folder unused — and a shared cache, which any installed build reads without
     /// a lease, stays refused.
@@ -5043,15 +5043,15 @@ mod tests {
                     "backend::tests::a_version_whose_client_predates_runtime_leases_is_removed"
                 ])
                 .env("LEGACY_REMOVE_TEST_ROOT", root.path())
-                .env("HORIZON_LAUNCHER_HOME", root.path())
-                .env("HORIZON_HOME", root.path().join("home"))
+                .env("FOUNDRY_LAUNCHER_HOME", root.path())
+                .env("FOUNDRY_HOME", root.path().join("home"))
                 .env("XDG_DATA_HOME", root.path().join("xdg-data"))
                 .env("XDG_CONFIG_HOME", root.path().join("xdg-config"))
-                .env("HORIZON_LAUNCHER_TRASH", root.path().join("trash"))
-                .env("HORIZON_LAUNCHER_CLIPBOARD", root.path().join("clipboard"))
-                .env("HORIZON_LAUNCHER_DESKTOP", root.path().join("desktop"))
-                .env("HORIZON_LAUNCHER_NO_SELF_UPDATE", "1")
-                .env("HORIZON_NO_AUDIO", "1")
+                .env("FOUNDRY_LAUNCHER_TRASH", root.path().join("trash"))
+                .env("FOUNDRY_LAUNCHER_CLIPBOARD", root.path().join("clipboard"))
+                .env("FOUNDRY_LAUNCHER_DESKTOP", root.path().join("desktop"))
+                .env("FOUNDRY_LAUNCHER_NO_SELF_UPDATE", "1")
+                .env("FOUNDRY_NO_AUDIO", "1")
                 .status()
                 .unwrap()
                 .success());
@@ -5079,7 +5079,7 @@ mod tests {
         assert!(installed_in(&versions).is_empty());
     }
 
-    /// [#18393](https://github.com/horizon-rust/horizon/issues/18393): the proof is the check that
+    /// [#18393](https://github.com/foundry-rust/foundry/issues/18393): the proof is the check that
     /// nothing runs from the version, so a version somebody still runs is refused whole — the
     /// completion marker stays and the folder stays listed — and the same call removes it once
     /// that program is gone.
@@ -5095,15 +5095,15 @@ mod tests {
                     "backend::tests::a_running_legacy_version_is_refused_whole_and_removed_once_it_closes"
                 ])
                 .env("OPEN_LEGACY_TEST_ROOT", root.path())
-                .env("HORIZON_LAUNCHER_HOME", root.path())
-                .env("HORIZON_HOME", root.path().join("home"))
+                .env("FOUNDRY_LAUNCHER_HOME", root.path())
+                .env("FOUNDRY_HOME", root.path().join("home"))
                 .env("XDG_DATA_HOME", root.path().join("xdg-data"))
                 .env("XDG_CONFIG_HOME", root.path().join("xdg-config"))
-                .env("HORIZON_LAUNCHER_TRASH", root.path().join("trash"))
-                .env("HORIZON_LAUNCHER_CLIPBOARD", root.path().join("clipboard"))
-                .env("HORIZON_LAUNCHER_DESKTOP", root.path().join("desktop"))
-                .env("HORIZON_LAUNCHER_NO_SELF_UPDATE", "1")
-                .env("HORIZON_NO_AUDIO", "1")
+                .env("FOUNDRY_LAUNCHER_TRASH", root.path().join("trash"))
+                .env("FOUNDRY_LAUNCHER_CLIPBOARD", root.path().join("clipboard"))
+                .env("FOUNDRY_LAUNCHER_DESKTOP", root.path().join("desktop"))
+                .env("FOUNDRY_LAUNCHER_NO_SELF_UPDATE", "1")
+                .env("FOUNDRY_NO_AUDIO", "1")
                 .status()
                 .unwrap()
                 .success());
@@ -5134,7 +5134,7 @@ mod tests {
         assert!(installed_in(&versions).is_empty());
     }
 
-    /// [#18393](https://github.com/horizon-rust/horizon/issues/18393): the dependency veto belongs
+    /// [#18393](https://github.com/foundry-rust/foundry/issues/18393): the dependency veto belongs
     /// to the one removal path, so an automatic cleanup stops at a base an installed native build
     /// takes its resources from as well — not only a removal a player asks for.
     #[test]
@@ -5147,15 +5147,15 @@ mod tests {
                     "backend::tests::a_version_a_native_build_takes_its_resources_from_is_kept"
                 ])
                 .env("DEPENDENT_BASE_TEST_ROOT", root.path())
-                .env("HORIZON_LAUNCHER_HOME", root.path())
-                .env("HORIZON_HOME", root.path().join("home"))
+                .env("FOUNDRY_LAUNCHER_HOME", root.path())
+                .env("FOUNDRY_HOME", root.path().join("home"))
                 .env("XDG_DATA_HOME", root.path().join("xdg-data"))
                 .env("XDG_CONFIG_HOME", root.path().join("xdg-config"))
-                .env("HORIZON_LAUNCHER_TRASH", root.path().join("trash"))
-                .env("HORIZON_LAUNCHER_CLIPBOARD", root.path().join("clipboard"))
-                .env("HORIZON_LAUNCHER_DESKTOP", root.path().join("desktop"))
-                .env("HORIZON_LAUNCHER_NO_SELF_UPDATE", "1")
-                .env("HORIZON_NO_AUDIO", "1")
+                .env("FOUNDRY_LAUNCHER_TRASH", root.path().join("trash"))
+                .env("FOUNDRY_LAUNCHER_CLIPBOARD", root.path().join("clipboard"))
+                .env("FOUNDRY_LAUNCHER_DESKTOP", root.path().join("desktop"))
+                .env("FOUNDRY_LAUNCHER_NO_SELF_UPDATE", "1")
+                .env("FOUNDRY_NO_AUDIO", "1")
                 .status()
                 .unwrap()
                 .success());
@@ -5173,7 +5173,7 @@ mod tests {
         fs::write(
             build.join("native-mods.json"),
             format!(
-                r#"{{"base":"nightly-2026-11-13-9f42064","horizon":"{}","target":"client","left_out":[]}}"#,
+                r#"{{"base":"nightly-2026-11-13-9f42064","foundry":"{}","target":"client","left_out":[]}}"#,
                 "0".repeat(40)
             ),
         )
@@ -5189,15 +5189,15 @@ mod tests {
         assert!(!base.exists());
     }
 
-    /// A canonical path loses Windows' verbatim prefix on a drive (horizon-mixins' output
+    /// A canonical path loses Windows' verbatim prefix on a drive (foundry-mixins' output
     /// check stats `\\?\C:`, the volume itself, which Windows refuses, os error 1), and keeps
     /// it where there is no drive form.
     #[test]
     fn a_canonical_windows_path_loses_only_a_drives_verbatim_prefix() {
         let plain = |p: &str| plain(PathBuf::from(p));
         assert_eq!(
-            plain(r"\\?\C:\Users\me\AppData\Roaming\horizon-launcher\native"),
-            PathBuf::from(r"C:\Users\me\AppData\Roaming\horizon-launcher\native")
+            plain(r"\\?\C:\Users\me\AppData\Roaming\foundry-launcher\native"),
+            PathBuf::from(r"C:\Users\me\AppData\Roaming\foundry-launcher\native")
         );
         // A share has no drive form to fall back to; other paths have no prefix.
         assert_eq!(
@@ -5205,25 +5205,25 @@ mod tests {
             PathBuf::from(r"\\?\UNC\server\share\native")
         );
         assert_eq!(
-            plain("/home/me/.local/share/horizon-launcher/native"),
-            PathBuf::from("/home/me/.local/share/horizon-launcher/native")
+            plain("/home/me/.local/share/foundry-launcher/native"),
+            PathBuf::from("/home/me/.local/share/foundry-launcher/native")
         );
     }
 
-    /// [#5189](https://github.com/horizon-rust/horizon/issues/5189): MinGW-w64's tools can't
+    /// [#5189](https://github.com/foundry-rust/foundry/issues/5189): MinGW-w64's tools can't
     /// read a non-ASCII path, so the build root is the data folder's resolved ASCII spelling —
     /// which a link's target or a short (8.3) name already is.
     #[test]
     fn the_build_dir_is_a_path_the_tools_can_read() {
         assert!(ascii(Path::new(
-            r"C:\Users\me\AppData\Roaming\horizon-launcher"
+            r"C:\Users\me\AppData\Roaming\foundry-launcher"
         )));
         assert!(!ascii(Path::new(
-            r"C:\Users\Кириченко Павло\AppData\Roaming\horizon-launcher"
+            r"C:\Users\Кириченко Павло\AppData\Roaming\foundry-launcher"
         )));
-        assert!(!ascii(Path::new("/høme/me/horizon-launcher")));
+        assert!(!ascii(Path::new("/høme/me/foundry-launcher")));
         // A space splits windres' include folders, which matters on Windows only.
-        let spaced = Path::new(r"C:\Users\Jane Doe\AppData\Roaming\horizon-launcher");
+        let spaced = Path::new(r"C:\Users\Jane Doe\AppData\Roaming\foundry-launcher");
         assert!(ascii(spaced));
         assert_eq!(tool_safe(spaced), !cfg!(windows));
         let built = build_dir();
@@ -5241,20 +5241,20 @@ mod tests {
         }
     }
 
-    /// [#6009](https://github.com/horizon-rust/horizon/issues/6009): with a Cyrillic user name the
+    /// [#6009](https://github.com/foundry-rust/foundry/issues/6009): with a Cyrillic user name the
     /// build folder is a real ASCII folder of ProgramData's (not a short name of the data folder,
     /// which rustc resolves back to the Cyrillic one), its own for each data folder.
     #[test]
     fn a_cyrillic_data_folder_builds_in_an_ascii_folder_of_its_own() {
-        let pavlo = Path::new(r"C:\Users\Кириченко Павло\AppData\Roaming\horizon-launcher");
-        let other = Path::new(r"C:\Users\Олена\AppData\Roaming\horizon-launcher");
+        let pavlo = Path::new(r"C:\Users\Кириченко Павло\AppData\Roaming\foundry-launcher");
+        let other = Path::new(r"C:\Users\Олена\AppData\Roaming\foundry-launcher");
         let public = PathBuf::from(if cfg!(windows) { r"D:\Data" } else { "/data" });
         let dir = ascii_build_dir(pavlo, Some(public.clone()));
         assert!(ascii(&dir), "{}", dir.display());
         assert_eq!(dir.parent(), Some(public.as_path()));
         let name = dir.file_name().unwrap().to_str().unwrap();
         assert!(
-            name.starts_with("horizon-launcher-") && name.len() == 25,
+            name.starts_with("foundry-launcher-") && name.len() == 25,
             "{name}"
         );
         assert_eq!(dir, ascii_build_dir(pavlo, Some(public.clone())), "stable");
@@ -5273,7 +5273,7 @@ mod tests {
     /// the developer option (`Settings::dev_offline`), whose pass has no owner.
     #[test]
     fn mojang_downloads_only_for_an_owner() {
-        let dir = std::env::temp_dir().join(format!("horizon-owner-only-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("foundry-owner-only-{}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
         let pins = sources::Pins::read(&serde_json::json!({ "minecraft": {
             "version": "26.3",
@@ -5432,7 +5432,7 @@ pub fn {f}("
     #[test]
     fn reused_imports_take_the_assets_from_the_launcher_that_has_them() {
         let dir =
-            std::env::temp_dir().join(format!("horizon-reused-assets-{}", std::process::id()));
+            std::env::temp_dir().join(format!("foundry-reused-assets-{}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
         let client = b"fake client jar";
         let manifest = br#"{"id": "26.3"}"#;
@@ -5475,7 +5475,7 @@ pub fn {f}("
 
     #[test]
     fn native_resources_resolve_to_the_base_and_prevent_its_removal() {
-        const ACTOR: &str = "HORIZON_RESOURCE_TEST_ACTOR";
+        const ACTOR: &str = "FOUNDRY_RESOURCE_TEST_ACTOR";
         if std::env::var_os(ACTOR).is_none() {
             let home = tempfile::tempdir().unwrap();
             assert!(Command::new(std::env::current_exe().unwrap())
@@ -5485,7 +5485,7 @@ pub fn {f}("
                     "--nocapture"
                 ])
                 .env(ACTOR, "1")
-                .env("HORIZON_LAUNCHER_HOME", home.path())
+                .env("FOUNDRY_LAUNCHER_HOME", home.path())
                 .status()
                 .unwrap()
                 .success());
@@ -5500,7 +5500,7 @@ pub fn {f}("
         fs::write(base_dir.join(COMPLETE), "").unwrap();
         fs::write(native_dir.join(COMPLETE), "").unwrap();
         fs::write(native_dir.join("native-mods.json"), serde_json::json!({
-            "base": base, "horizon": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "target": "client"
+            "base": base, "foundry": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "target": "client"
         }).to_string()).unwrap();
         assert_eq!(resources(&native), resources(&base));
         assert_eq!(
@@ -5521,7 +5521,7 @@ pub fn {f}("
 
     #[test]
     fn resources_without_sounds_are_reported() {
-        let dir = std::env::temp_dir().join(format!("horizon-no-sounds-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("foundry-no-sounds-{}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
         fs::create_dir_all(dir.join("assets/minecraft/textures")).unwrap();
         fs::write(dir.join(RESOURCES_MANIFEST), "{}").unwrap();
@@ -5548,26 +5548,26 @@ pub fn {f}("
         assert_eq!(
             platform_assets("macos", "aarch64"),
             Some((
-                "horizon-macos-arm64.zip",
-                "horizon-launcher-macos-arm64.zip"
+                "foundry-macos-arm64.zip",
+                "foundry-launcher-macos-arm64.zip"
             ))
         );
         assert_eq!(
             platform_assets("macos", "x86_64"),
-            Some(("horizon-macos-x64.zip", "horizon-launcher-macos-x64.zip"))
+            Some(("foundry-macos-x64.zip", "foundry-launcher-macos-x64.zip"))
         );
         assert_eq!(
             platform_assets("windows", "x86_64"),
             Some((
-                "horizon-windows-x64.zip",
-                "horizon-launcher-windows-x64.zip"
+                "foundry-windows-x64.zip",
+                "foundry-launcher-windows-x64.zip"
             ))
         );
         assert_eq!(
             platform_assets("windows", "aarch64"),
             Some((
-                "horizon-windows-arm64.zip",
-                "horizon-launcher-windows-arm64.zip"
+                "foundry-windows-arm64.zip",
+                "foundry-launcher-windows-arm64.zip"
             ))
         );
         assert_eq!(platform_assets("linux", "aarch64"), None);
@@ -5578,7 +5578,7 @@ pub fn {f}("
         );
         assert_eq!(
             game_fallback_for("windows", "aarch64"),
-            Some("horizon-windows-x64.zip")
+            Some("foundry-windows-x64.zip")
         );
         assert_eq!(game_fallback_for("windows", "x86_64"), None);
         assert_eq!(game_fallback_for("macos", "aarch64"), None);
@@ -5589,7 +5589,7 @@ pub fn {f}("
     #[test]
     fn a_snapshot_is_never_offered_or_picked_as_an_update() {
         const SNAPSHOT: &str = "snapshot-2026-11-13-bbbbbbb";
-        let zip = "horizon-windows-x64.zip";
+        let zip = "foundry-windows-x64.zip";
         let asset = |tag: &str| serde_json::json!([{"name": zip, "browser_download_url": format!("https://example.test/{tag}/{zip}"), "size": 1}]);
         let list = serde_json::json!([
             {"tag_name": SNAPSHOT, "name": "Snapshot 2026-11-13 · bbbbbbb", "prerelease": true,
@@ -5605,7 +5605,7 @@ pub fn {f}("
             ["nightly-2026-11-12-aaaaaaa", "v0.2.81"]
         );
         for installed in [vec![], vec![SNAPSHOT.to_owned()]] {
-            let update = horizon_update(&releases, &installed).unwrap();
+            let update = foundry_update(&releases, &installed).unwrap();
             assert_eq!(update.tag, "nightly-2026-11-12-aaaaaaa", "{installed:?}");
         }
         // A snapshot the developer selected stays selected when that Nightly installs as an
@@ -5626,14 +5626,14 @@ pub fn {f}("
     /// signed checksum.
     #[test]
     fn an_arm64_windows_launcher_falls_back_to_the_x64_game() {
-        let (arm, x64) = ("horizon-windows-arm64.zip", "horizon-windows-x64.zip");
+        let (arm, x64) = ("foundry-windows-arm64.zip", "foundry-windows-x64.zip");
         let asset = |name: &str, url: &str| serde_json::json!({"name": name, "browser_download_url": url, "size": 1});
         let list = serde_json::json!([
             {"tag_name": "v2026.11.05", "assets": [
-                asset(x64, "https://example.test/v2026.11.05/horizon-windows-x64.zip"),
-                asset(arm, "https://example.test/v2026.11.05/horizon-windows-arm64.zip")]},
+                asset(x64, "https://example.test/v2026.11.05/foundry-windows-x64.zip"),
+                asset(arm, "https://example.test/v2026.11.05/foundry-windows-arm64.zip")]},
             {"tag_name": "v2026.11.04", "assets": [
-                asset(x64, "https://example.test/v2026.11.04/horizon-windows-x64.zip")]},
+                asset(x64, "https://example.test/v2026.11.04/foundry-windows-x64.zip")]},
             {"tag_name": "v2026.11.03", "assets": []},
         ]);
         let releases = game_releases_with(&list, Some(arm), Some(x64));
@@ -5661,7 +5661,7 @@ pub fn {f}("
 
     #[test]
     fn a_game_architecture_choice_is_independent_of_the_launcher_process() {
-        let (arm, x64) = ("horizon-windows-arm64.zip", "horizon-windows-x64.zip");
+        let (arm, x64) = ("foundry-windows-arm64.zip", "foundry-windows-x64.zip");
         // GetNativeSystemInfo reports ARM64 even when std::env::consts::ARCH is x86_64.
         assert!(supports_game_architecture_choice(
             "windows",
@@ -5710,7 +5710,7 @@ pub fn {f}("
         );
         assert_eq!(
             game_assets_for("linux", None, "x86_64", GameArchitecture::Arm64),
-            Some(("horizon-linux-x86_64.tar.gz", None))
+            Some(("foundry-linux-x86_64.tar.gz", None))
         );
     }
 
@@ -5719,7 +5719,7 @@ pub fn {f}("
     fn windows_native_architecture_detection_sees_the_host_under_emulation() {
         let native = native_windows_architecture().expect("supported Windows machine");
         assert!(matches!(native, "x86_64" | "aarch64"));
-        if std::env::var_os("HORIZON_TEST_EXPECT_NATIVE_ARM64").is_some() {
+        if std::env::var_os("FOUNDRY_TEST_EXPECT_NATIVE_ARM64").is_some() {
             assert_eq!(std::env::consts::ARCH, "x86_64");
             assert_eq!(native, "aarch64");
         }
@@ -5733,11 +5733,11 @@ pub fn {f}("
             )
             .unwrap();
             if std::env::consts::ARCH == "x86_64" {
-                assert_eq!((asset, fallback), ("horizon-windows-x64.zip", None));
+                assert_eq!((asset, fallback), ("foundry-windows-x64.zip", None));
             } else {
                 assert_eq!(
                     (asset, fallback),
-                    ("horizon-windows-arm64.zip", Some("horizon-windows-x64.zip"))
+                    ("foundry-windows-arm64.zip", Some("foundry-windows-x64.zip"))
                 );
             }
         }
@@ -5745,8 +5745,8 @@ pub fn {f}("
 
     #[test]
     fn selected_architecture_uses_available_assets_and_only_the_safe_fallback() {
-        let arm = "horizon-windows-arm64.zip";
-        let x64 = "horizon-windows-x64.zip";
+        let arm = "foundry-windows-arm64.zip";
+        let x64 = "foundry-windows-x64.zip";
         let asset = |name: &str| serde_json::json!({"name": name, "browser_download_url": format!("https://example.test/{name}"), "size": 1});
         let list = serde_json::json!([
             {"tag_name": "v2026.11.05", "assets": [asset(x64), asset(arm)]},
@@ -5889,8 +5889,8 @@ pub fn {f}("
     #[test]
     fn an_arm64_launcher_skips_a_release_without_its_zip() {
         let (arm, x64) = (
-            "horizon-launcher-windows-arm64.zip",
-            "horizon-launcher-windows-x64.zip",
+            "foundry-launcher-windows-arm64.zip",
+            "foundry-launcher-windows-x64.zip",
         );
         let asset = |name: &str| serde_json::json!({"name": name, "browser_download_url": format!("https://example.test/{name}"), "size": 1});
         let list = serde_json::json!([
@@ -5939,30 +5939,30 @@ pub fn {f}("
             .and_then(|(_, v)| v);
         assert!(props.is_some_and(|v| {
             v.to_string_lossy()
-                .contains("application.name = \"Horizon\"")
+                .contains("application.name = \"Foundry Client\"")
         }));
     }
 
     #[test]
     fn a_crash_after_the_vulkan_adapter_line_and_before_the_first_frame_is_a_start_crash() {
         let start = [
-            "Horizon: resources loaded in 11.3s; 35723 block states, 1658 items, 67 biomes",
-            "Horizon renderer: Intel(R) HD Graphics 530 (Vulkan, IntegratedGpu)",
+            "Foundry Client: resources loaded in 11.3s; 35723 block states, 1658 items, 67 biomes",
+            "Foundry Client renderer: Intel(R) HD Graphics 530 (Vulkan, IntegratedGpu)",
         ];
         let vulkan = Some(StartCrash::Vulkan);
         assert_eq!(renderer_start_crash(start), vulkan);
         // Step lines after the adapter, one ending in a parenthesis, keep it a start crash.
         let step = [
             start[1],
-            "Horizon renderer: device ready; configuring the surface (1920x1080 Bgra8Unorm, Fifo)",
-            "Horizon renderer: creating the pipelines",
+            "Foundry Client renderer: device ready; configuring the surface (1920x1080 Bgra8Unorm, Fifo)",
+            "Foundry Client renderer: creating the pipelines",
         ];
         assert_eq!(renderer_start_crash(step), vulkan);
         // A crash after the first frame is the game's, not the renderer start's.
-        let later = [start[1], "Horizon: first frame after 812 ms"];
+        let later = [start[1], "Foundry Client: first frame after 812 ms"];
         assert_eq!(renderer_start_crash(later), None);
         // Already on DirectX 12, or no renderer yet: nothing to switch.
-        let dx12 = ["Horizon renderer: Intel(R) HD Graphics 530 (Dx12, IntegratedGpu)"];
+        let dx12 = ["Foundry Client renderer: Intel(R) HD Graphics 530 (Dx12, IntegratedGpu)"];
         assert_eq!(renderer_start_crash(dx12), None);
         assert_eq!(renderer_start_crash(&start[..1]), None);
         // Vulkan failed to open and DirectX 12 took over: its line is the last adapter.
@@ -5974,21 +5974,21 @@ pub fn {f}("
     #[test]
     fn a_crash_after_the_opengl_adapter_line_and_before_the_first_frame_is_an_opengl_start_crash() {
         let log = [
-            "Horizon renderer: asking Vulkan for a graphics device",
-            "Horizon renderer: trying DirectX 12 (Vulkan surface: Failed to create surface for any enabled backend: {})",
-            "Horizon renderer: DirectX 12 has no conformant adapter (DirectX 12: only a software adapter (Microsoft Basic Render Driver)); asking again for the ones wgpu hides as non-conformant",
-            "Horizon renderer: trying OpenGL (Vulkan surface: Failed to create surface for any enabled backend: {}; DirectX 12: only a software adapter (Microsoft Basic Render Driver))",
-            "Horizon renderer: Intel(R) HD Graphics (Gl, IntegratedGpu)",
-            "Horizon renderer: requesting the device (driver 4.0.0 - Build 10.18.10.5161) with features [CLEAR_TEXTURE | TIMESTAMP_QUERY] and the adapter's limits (buffers up to 2147483647 bytes)",
-            "Horizon renderer: device ready; configuring the surface (1280x720 Bgra8Unorm, Fifo)",
-            "Horizon renderer: HDR output not offered by this display",
-            "Horizon renderer: creating the pipelines",
+            "Foundry Client renderer: asking Vulkan for a graphics device",
+            "Foundry Client renderer: trying DirectX 12 (Vulkan surface: Failed to create surface for any enabled backend: {})",
+            "Foundry Client renderer: DirectX 12 has no conformant adapter (DirectX 12: only a software adapter (Microsoft Basic Render Driver)); asking again for the ones wgpu hides as non-conformant",
+            "Foundry Client renderer: trying OpenGL (Vulkan surface: Failed to create surface for any enabled backend: {}; DirectX 12: only a software adapter (Microsoft Basic Render Driver))",
+            "Foundry Client renderer: Intel(R) HD Graphics (Gl, IntegratedGpu)",
+            "Foundry Client renderer: requesting the device (driver 4.0.0 - Build 10.18.10.5161) with features [CLEAR_TEXTURE | TIMESTAMP_QUERY] and the adapter's limits (buffers up to 2147483647 bytes)",
+            "Foundry Client renderer: device ready; configuring the surface (1280x720 Bgra8Unorm, Fifo)",
+            "Foundry Client renderer: HDR output not offered by this display",
+            "Foundry Client renderer: creating the pipelines",
         ];
         assert_eq!(renderer_start_crash(log), Some(StartCrash::OpenGl));
-        let framed = [log[4], log[8], "Horizon: first frame after 2310 ms"];
+        let framed = [log[4], log[8], "Foundry Client: first frame after 2310 ms"];
         assert_eq!(renderer_start_crash(framed), None);
         // Vulkan had a device but OpenGL took over later: OpenGL's crash, not Vulkan's.
-        let vulkan = "Horizon renderer: Intel(R) HD Graphics 4000 (Vulkan, IntegratedGpu)";
+        let vulkan = "Foundry Client renderer: Intel(R) HD Graphics 4000 (Vulkan, IntegratedGpu)";
         assert_eq!(
             renderer_start_crash([vulkan, log[4], log[8]]),
             Some(StartCrash::OpenGl)
@@ -6011,7 +6011,7 @@ pub fn {f}("
 
     #[test]
     fn a_renderer_start_crash_switches_auto_to_dx12_once() {
-        let home = std::env::temp_dir().join(format!("horizon-dx12-switch-{}", std::process::id()));
+        let home = std::env::temp_dir().join(format!("foundry-dx12-switch-{}", std::process::id()));
         let _ = fs::remove_dir_all(&home);
         // No settings file yet: one with the API alone.
         assert_eq!(switch_from_auto(&home, "dx12"), Ok(true));
@@ -6068,7 +6068,7 @@ pub fn {f}("
     /// Video Settings' Graphics API (options.txt) is the player's own choice under `graphicsApi:auto`.
     #[test]
     fn an_api_chosen_in_options_txt_is_not_switched() {
-        let home = std::env::temp_dir().join(format!("horizon-options-api-{}", std::process::id()));
+        let home = std::env::temp_dir().join(format!("foundry-options-api-{}", std::process::id()));
         let _ = fs::remove_dir_all(&home);
         fs::create_dir_all(&home).unwrap();
         fs::write(home.join(GRAPHICS_FILE), "graphicsApi:auto\n").unwrap();
@@ -6094,7 +6094,7 @@ pub fn {f}("
     /// An instance that chose its own API crashes: neither its home nor the game home switches.
     #[test]
     fn a_start_crash_switches_the_game_home_only_after_the_crashed_runs_own() {
-        let root = std::env::temp_dir().join(format!("horizon-run-switch-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("foundry-run-switch-{}", std::process::id()));
         let _ = fs::remove_dir_all(&root);
         let (run, game) = (root.join("instance"), root.join("game"));
         fs::create_dir_all(&run).unwrap();
@@ -6123,7 +6123,7 @@ pub fn {f}("
     #[test]
     fn a_vulkan_start_crash_on_linux_switches_auto_to_opengl() {
         let (api, _) = start_crash_fallback(StartCrash::Vulkan, "linux").unwrap();
-        let home = std::env::temp_dir().join(format!("horizon-gl-switch-{}", std::process::id()));
+        let home = std::env::temp_dir().join(format!("foundry-gl-switch-{}", std::process::id()));
         let _ = fs::remove_dir_all(&home);
         fs::create_dir_all(&home).unwrap();
         fs::write(home.join(GRAPHICS_FILE), "graphicsApi:auto\nvsync:true\n").unwrap();
@@ -6190,8 +6190,8 @@ pub fn {f}("
         assert_eq!(launcher_version("v2026.10.13"), None);
         assert_eq!(launcher_version("launcher-vx"), None);
         let list = serde_json::json!([
-            {"tag_name": "v2026.10.12", "assets": [{"name": "horizon-linux-x86_64.tar.gz", "browser_download_url": "u", "size": 1}]},
-            {"tag_name": "launcher-v9.0.0", "assets": [{"name": "horizon-launcher-linux-x86_64.tar.gz", "browser_download_url": "u", "size": 1}]},
+            {"tag_name": "v2026.10.12", "assets": [{"name": "foundry-linux-x86_64.tar.gz", "browser_download_url": "u", "size": 1}]},
+            {"tag_name": "launcher-v9.0.0", "assets": [{"name": "foundry-launcher-linux-x86_64.tar.gz", "browser_download_url": "u", "size": 1}]},
             {"tag_name": "v2026.10.13", "assets": []},
             {"tag_name": "launcher-v0.0.1", "draft": true, "assets": []},
         ]);
@@ -6211,7 +6211,7 @@ pub fn {f}("
     /// previous one the newest again: it is what `install latest` and the update check offer.
     #[test]
     fn withdrawn_release_is_never_offered() {
-        let asset = ASSET.unwrap_or("horizon-linux-x86_64.tar.gz");
+        let asset = ASSET.unwrap_or("foundry-linux-x86_64.tar.gz");
         let list = serde_json::json!([
             {"tag_name": "v2026.10.15.1", "draft": true, "assets": [{"name": asset, "browser_download_url": "bad", "size": 1}]},
             {"tag_name": "v2026.10.15", "assets": [{"name": asset, "browser_download_url": "good", "size": 1}]},
@@ -6225,7 +6225,7 @@ pub fn {f}("
         );
         let offered = |installed: &[&str]| {
             let installed: Vec<String> = installed.iter().map(|t| t.to_string()).collect();
-            horizon_update(&releases, &installed).map(|r| r.tag)
+            foundry_update(&releases, &installed).map(|r| r.tag)
         };
         assert_eq!(offered(&["v2026.10.14"]), Some("v2026.10.15".into()));
         assert_eq!(offered(&[]), Some("v2026.10.15".into()));
@@ -6238,7 +6238,7 @@ pub fn {f}("
     /// had one installed waits for the next release instead of going back.
     #[test]
     fn updates_follow_every_release_and_leave_the_old_alpha_ones_out() {
-        let asset = ASSET.unwrap_or("horizon-linux-x86_64.tar.gz");
+        let asset = ASSET.unwrap_or("foundry-linux-x86_64.tar.gz");
         let list = serde_json::json!([
             {"tag_name": "v0.2.13", "assets": [{"name": asset, "browser_download_url": "n", "size": 1}]},
             {"tag_name": "v0.2.12", "prerelease": true, "assets": [{"name": asset, "browser_download_url": "a", "size": 1}]},
@@ -6251,7 +6251,7 @@ pub fn {f}("
         );
         let offered = |releases: &[Release], installed: &[&str]| {
             let installed: Vec<String> = installed.iter().map(|t| t.to_string()).collect();
-            horizon_update(&installable_updates(releases), &installed).map(|r| r.tag)
+            foundry_update(&installable_updates(releases), &installed).map(|r| r.tag)
         };
         assert_eq!(offered(&releases, &[]), Some("v0.2.13".into()));
         assert_eq!(offered(&releases, &["v0.2.0"]), Some("v0.2.13".into()));
@@ -6428,7 +6428,7 @@ pub fn {f}("
         assert_eq!(version_or(None), env!("CARGO_PKG_VERSION"));
         assert_eq!(
             VERSION,
-            option_env!("HORIZON_LAUNCHER_VERSION")
+            option_env!("FOUNDRY_LAUNCHER_VERSION")
                 .filter(|v| !v.is_empty())
                 .unwrap_or(env!("CARGO_PKG_VERSION"))
         );
@@ -6446,7 +6446,7 @@ pub fn {f}("
         assert!(launcher_update(&[r(own_tag())]).is_none());
         assert_eq!(launcher_version(&own_tag()), Some(VERSION));
         assert_eq!(
-            parse_version_output(&format!("horizon-launcher {VERSION}\n")),
+            parse_version_output(&format!("foundry-launcher {VERSION}\n")),
             Some(VERSION)
         );
     }
@@ -6562,7 +6562,7 @@ pub fn {f}("
         #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
         assert_eq!(
             launcher_asset_running_from(true),
-            Some("horizon-launcher-linux-x86_64.AppImage")
+            Some("foundry-launcher-linux-x86_64.AppImage")
         );
     }
 
@@ -6575,7 +6575,7 @@ pub fn {f}("
         let inside = |dir: &str| in_temp_folder(Path::new(dir), temp);
         assert!(inside("/tmp/t"));
         assert!(inside(
-            "/tmp/t/Temp12_horizon-launcher-windows-x64.zip/inner"
+            "/tmp/t/Temp12_foundry-launcher-windows-x64.zip/inner"
         ));
         assert!(inside("/tmp/t/7zO8A1B2C3D"));
         assert!(!inside("/tmp/tools"));
@@ -6602,7 +6602,7 @@ pub fn {f}("
 
         let system = std::env::temp_dir();
         let long = system.canonicalize().unwrap();
-        let copy = long.join(format!("horizon-temp-copy-{}", std::process::id()));
+        let copy = long.join(format!("foundry-temp-copy-{}", std::process::id()));
         fs::create_dir_all(&copy).unwrap();
         let found = in_temp_folder(&copy, &system);
         let _ = fs::remove_dir_all(&copy);
@@ -6612,7 +6612,7 @@ pub fn {f}("
 
     /// A fresh folder for one test, under the temporary folder.
     fn scratch(name: &str) -> PathBuf {
-        let dir = std::env::temp_dir().join(format!("horizon-{name}-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("foundry-{name}-{}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
         fs::create_dir_all(&dir).unwrap();
         dir
@@ -6667,8 +6667,8 @@ pub fn {f}("
         fs::write(theirs.join("download.zip"), b"their download").unwrap();
         fs::write(mine.join("download.zip"), b"mine").unwrap();
 
-        remove_stage(&work, &work.join("unpacked").join("horizon-launcher"));
-        remove_stage(&work, &mine.join("..").join("horizon-launcher"));
+        remove_stage(&work, &work.join("unpacked").join("foundry-launcher"));
+        remove_stage(&work, &mine.join("..").join("foundry-launcher"));
         remove_stage(&work, &work);
         assert!(mine.exists() && theirs.exists());
 
@@ -6688,8 +6688,8 @@ pub fn {f}("
         let dir = scratch("save-checked");
         let to = dir.join("download.zip");
         let bytes: &[u8] = b"the launcher";
-        let right = horizon_release_sign::sha256_hex(bytes);
-        let wrong = horizon_release_sign::sha256_hex(b"something else");
+        let right = foundry_release_sign::sha256_hex(bytes);
+        let wrong = foundry_release_sign::sha256_hex(b"something else");
         fs::write(&to, b"finished earlier").unwrap();
 
         assert!(save_checked(bytes, 0, "asset", &wrong, &to, &|_: f32| {}).is_err());
@@ -6725,7 +6725,7 @@ pub fn {f}("
             Endless(&reads),
             1 << 30,
             "asset",
-            &horizon_release_sign::sha256_hex(b""),
+            &foundry_release_sign::sha256_hex(b""),
             &to,
             &|_: f32| {},
             &stop,
@@ -6758,7 +6758,7 @@ pub fn {f}("
     #[test]
     fn a_read_only_folder_takes_no_update() {
         use std::os::unix::fs::PermissionsExt;
-        let dir = std::env::temp_dir().join(format!("horizon-read-only-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("foundry-read-only-{}", std::process::id()));
         fs::create_dir_all(&dir).unwrap();
         assert!(writable(&dir));
         fs::set_permissions(&dir, fs::Permissions::from_mode(0o555)).unwrap();
@@ -6784,29 +6784,29 @@ pub fn {f}("
     fn only_an_appimage_file_counts() {
         use std::ffi::OsStr;
         let mount = OsStr::new("/tmp/.mount_Horizon123");
-        let exe = Path::new("/tmp/.mount_Horizon123/usr/bin/horizon-launcher");
+        let exe = Path::new("/tmp/.mount_Horizon123/usr/bin/foundry-launcher");
         assert_eq!(appimage_path_in(None, Some(mount), exe), None);
         assert_eq!(
-            appimage_path_in(Some(OsStr::new("Horizon.AppImage")), Some(mount), exe),
+            appimage_path_in(Some(OsStr::new("Foundry Client.AppImage")), Some(mount), exe),
             None,
             "a relative path is no $APPIMAGE"
         );
         assert_eq!(
             appimage_path_in(
-                Some(OsStr::new("/nonexistent/Horizon.AppImage")),
+                Some(OsStr::new("/nonexistent/Foundry Client.AppImage")),
                 Some(mount),
                 exe
             ),
             None
         );
-        let file = std::env::temp_dir().join(format!("horizon-appimage-{}", std::process::id()));
+        let file = std::env::temp_dir().join(format!("foundry-appimage-{}", std::process::id()));
         std::fs::write(&file, b"#!AppImage").unwrap();
         assert_eq!(
             appimage_path_in(Some(file.as_os_str()), Some(mount), exe),
             Some(file.clone())
         );
         // Inherited from another AppImage: this launcher is installed elsewhere.
-        let elsewhere = Path::new("/home/a/.local/bin/horizon-launcher");
+        let elsewhere = Path::new("/home/a/.local/bin/foundry-launcher");
         assert_eq!(
             appimage_path_in(Some(file.as_os_str()), Some(mount), elsewhere),
             None
@@ -6839,7 +6839,7 @@ pub fn {f}("
         );
         assert_eq!(compare_versions("launcher@0.2.0", "v0.2.0"), Equal);
 
-        let asset = ASSET.unwrap_or("horizon-linux-x86_64.tar.gz");
+        let asset = ASSET.unwrap_or("foundry-linux-x86_64.tar.gz");
         let list = serde_json::json!([
             {"tag_name": "v0.2.0", "prerelease": true, "assets": [{"name": asset, "browser_download_url": "b", "size": 1}]},
             {"tag_name": "v2026.10.21", "prerelease": true, "assets": [{"name": asset, "browser_download_url": "d", "size": 1}]},
@@ -6849,7 +6849,7 @@ pub fn {f}("
         let installed = ["v2026.10.19.15".to_string(), "v2026.10.12".to_string()];
         // A pre-release 0.2.0 is not an update; once published as the release, it is one.
         let offered = |releases: &[Release]| {
-            horizon_update(&installable_updates(releases), &installed).map(|r| r.tag)
+            foundry_update(&installable_updates(releases), &installed).map(|r| r.tag)
         };
         assert_eq!(offered(&releases), None);
         let mut released = releases.clone();
@@ -6954,10 +6954,10 @@ pub fn {f}("
         };
         let releases = [r("v2026.10.13"), r("v2026.10.12")];
         assert_eq!(
-            horizon_update(&releases, &["v2026.10.12".into()]).map(|r| r.tag),
+            foundry_update(&releases, &["v2026.10.12".into()]).map(|r| r.tag),
             Some("v2026.10.13".into())
         );
-        assert!(horizon_update(&releases, &["v2026.10.13".into()]).is_none());
+        assert!(foundry_update(&releases, &["v2026.10.13".into()]).is_none());
         assert!(launcher_update(&[r("launcher-v0.0.1")]).is_none());
         assert!(launcher_update(&[r("launcher@99.0.0")]).is_some());
         assert!(launcher_update_from(&[r("launcher-v99.0.0")], "launcher-v0.16.0").is_some());
@@ -7323,11 +7323,11 @@ pub fn {f}("
         );
     }
 
-    /// The Nightly is the only build Horizon ships (docs/release-flow.md): every launcher takes the
+    /// The Nightly is the only build Foundry Client ships (docs/release-flow.md): every launcher takes the
     /// current one as its update, over every release; the last week's are listed, never offered.
     #[test]
     fn every_launcher_updates_to_the_current_nightly() {
-        let asset = ASSET.unwrap_or("horizon-linux-x86_64.tar.gz");
+        let asset = ASSET.unwrap_or("foundry-linux-x86_64.tar.gz");
         let build = |url: &str| serde_json::json!([{"name": asset, "browser_download_url": url, "size": 1}]);
         let list = serde_json::json!([
             {"tag_name": "nightly", "name": "Nightly 2026-10-28 · 9b772b2", "prerelease": true,
@@ -7363,7 +7363,7 @@ pub fn {f}("
         );
         let offered = |installed: &[&str]| {
             let installed: Vec<String> = installed.iter().map(|t| t.to_string()).collect();
-            horizon_update(&installable_updates(&releases), &installed).map(|r| r.tag)
+            foundry_update(&installable_updates(&releases), &installed).map(|r| r.tag)
         };
         let current = Some("nightly-2026-10-28-9b772b2".to_string());
         // A player of the release channel, a new player, one on an older Nightly of the same day.
@@ -7464,9 +7464,9 @@ pub fn {f}("
     #[test]
     fn links_fall_back_to_the_built_in_ones() {
         let defaults = Links::default();
-        assert_eq!(defaults.discord, "https://discord.gg/playhorizon");
+        assert_eq!(defaults.discord, "https://discord.gg/playfoundry");
         assert_eq!(defaults.sponsor, "https://github.com/sponsors/ludovic111");
-        assert_eq!(defaults.website, "https://playhorizon.dev");
+        assert_eq!(defaults.website, "https://playfoundry.dev");
         assert_eq!(
             Links::parse(r#"{"roadmap":"https://example.org/tasks","docs":" "}"#),
             Links {
@@ -7521,7 +7521,7 @@ pub fn {f}("
     fn a_drawn_page_asks_the_disk_once_and_the_launch_check_asks_again() {
         use std::time::{Duration, Instant};
         let dir =
-            std::env::temp_dir().join(format!("horizon-launcher-cached-{}", std::process::id()));
+            std::env::temp_dir().join(format!("foundry-launcher-cached-{}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
         fs::create_dir_all(&dir).unwrap();
         fs::write(dir.join(RESOURCES_MANIFEST), "{}").unwrap();
@@ -7590,7 +7590,7 @@ pub fn {f}("
     #[test]
     fn a_prepared_folder_with_an_empty_table_is_not_prepared() {
         let dir =
-            std::env::temp_dir().join(format!("horizon-launcher-empty-{}", std::process::id()));
+            std::env::temp_dir().join(format!("foundry-launcher-empty-{}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
         fs::create_dir_all(&dir).unwrap();
         assert!(!prepared_at(&dir), "no manifest is not prepared");
@@ -7613,9 +7613,9 @@ pub fn {f}("
 
     #[test]
     fn a_prepared_version_gets_a_data_file_that_holds_its_files() {
-        use horizon_platform::prepared_files::FILE_NAME;
+        use foundry_platform::prepared_files::FILE_NAME;
         let resources =
-            std::env::temp_dir().join(format!("horizon-launcher-data-file-{}", std::process::id()));
+            std::env::temp_dir().join(format!("foundry-launcher-data-file-{}", std::process::id()));
         let _ = fs::remove_dir_all(&resources);
         let recipe = resources.join("data/minecraft/recipe/stick.json");
         fs::create_dir_all(recipe.parent().unwrap()).unwrap();
@@ -7641,12 +7641,12 @@ pub fn {f}("
     #[test]
     fn a_new_version_reuses_resources_prepared_by_a_compatible_one() {
         let versions =
-            std::env::temp_dir().join(format!("horizon-launcher-test-{}", std::process::id()));
+            std::env::temp_dir().join(format!("foundry-launcher-test-{}", std::process::id()));
         let _ = fs::remove_dir_all(&versions);
-        let oracle = "mods/horizon/src/test/java/dev/horizonlab/parity/VanillaHeightmapOracle.java";
-        let camera = "mods/horizon/src/test/java/dev/horizonlab/parity/VanillaCameraOracle.java";
+        let oracle = "mods/foundry/src/test/java/dev/foundrylab/parity/VanillaHeightmapOracle.java";
+        let camera = "mods/foundry/src/test/java/dev/foundrylab/parity/VanillaCameraOracle.java";
         let collision =
-            "mods/horizon/src/test/java/dev/horizonlab/parity/VanillaCollisionOracle.java";
+            "mods/foundry/src/test/java/dev/foundrylab/parity/VanillaCollisionOracle.java";
         let write = |tag: &str, path: &str, text: &str| {
             let path = versions.join(tag).join(path);
             fs::create_dir_all(path.parent().unwrap()).unwrap();
@@ -7666,12 +7666,12 @@ pub fn {f}("
                 serde_json::json!({"schema": 7, "collision_exporters_sha256": {collision: "x"}});
             write(
                 tag,
-                &format!(".local/horizon-client/{minecraft}/{RESOURCES_MANIFEST}"),
+                &format!(".local/foundry-client/{minecraft}/{RESOURCES_MANIFEST}"),
                 &manifest.to_string(),
             );
             write(
                 tag,
-                &format!(".local/horizon-client/{minecraft}/worldgen/biomes.json"),
+                &format!(".local/foundry-client/{minecraft}/worldgen/biomes.json"),
                 "{}",
             );
         };
@@ -7682,10 +7682,10 @@ pub fn {f}("
         release("v2026.10.12", "26.2");
         prepared("v2026.10.12", "26.2");
         // A data file names its own root: the new version writes its own.
-        let data_file = horizon_platform::prepared_files::FILE_NAME;
+        let data_file = foundry_platform::prepared_files::FILE_NAME;
         write(
             "v2026.10.13",
-            &format!(".local/horizon-client/26.3/{data_file}"),
+            &format!(".local/foundry-client/26.3/{data_file}"),
             "written for v2026.10.13",
         );
         release("v2026.10.13.1", "26.3");
@@ -7703,7 +7703,7 @@ pub fn {f}("
         assert!(resources_at(&versions.join("v2026.10.13"))
             .join(data_file)
             .exists());
-        let left: Vec<_> = fs::read_dir(versions.join("v2026.10.13.1/.local/horizon-client"))
+        let left: Vec<_> = fs::read_dir(versions.join("v2026.10.13.1/.local/foundry-client"))
             .unwrap()
             .flatten()
             .map(|e| e.file_name())
@@ -7735,9 +7735,9 @@ pub fn {f}("
         assert!(!is_prepared("v2026.10.15") && !is_prepared("v2026.10.16"));
         assert!(reuse_prepared_in(&versions).is_empty());
 
-        // Versions with horizon-prepare: its sources are the preparer, so the same sources
+        // Versions with foundry-prepare: its sources are the preparer, so the same sources
         // reuse each other's resources, and a change or a version without them prepares again.
-        let crate_file = "crates/horizon-prepare/src/lib.rs";
+        let crate_file = "crates/foundry-prepare/src/lib.rs";
         release("v2026.10.18", "26.3");
         write("v2026.10.18", crate_file, "rust preparer");
         assert_eq!(reuse_prepared(&versions, "v2026.10.18"), None);
@@ -7757,7 +7757,7 @@ pub fn {f}("
     #[test]
     fn prepared_resources_follow_the_preparers_output_version() {
         let versions = std::env::temp_dir().join(format!(
-            "horizon-launcher-output-test-{}",
+            "foundry-launcher-output-test-{}",
             std::process::id()
         ));
         let _ = fs::remove_dir_all(&versions);
@@ -7766,19 +7766,19 @@ pub fn {f}("
             fs::create_dir_all(path.parent().unwrap()).unwrap();
             fs::write(path, text).unwrap();
         };
-        let lib = "crates/horizon-prepare/src/lib.rs";
+        let lib = "crates/foundry-prepare/src/lib.rs";
         // A preparer with its sources (as releases ship them) and the exporters it runs.
         let release = |tag: &str, code: &str| {
             write(tag, COMPLETE, "");
             let lock = serde_json::json!({"minecraft": {"version": "26.3", "client_sha1": "c", "server_sha1": "s"}});
             write(tag, "research-lock.json", &lock.to_string());
-            write(tag, "crates/horizon-prepare/Cargo.toml", "[package]");
-            write(tag, "crates/horizon-prepare/build.rs", "fn main() {}");
+            write(tag, "crates/foundry-prepare/Cargo.toml", "[package]");
+            write(tag, "crates/foundry-prepare/build.rs", "fn main() {}");
             write(tag, lib, code);
             for name in LEGACY_EXPORTERS {
                 write(
                     tag,
-                    &format!("mods/horizon/src/test/java/dev/horizonlab/parity/{name}"),
+                    &format!("mods/foundry/src/test/java/dev/foundrylab/parity/{name}"),
                     name,
                 );
             }
@@ -7786,10 +7786,10 @@ pub fn {f}("
         let prepared = |tag: &str| {
             write(
                 tag,
-                &format!(".local/horizon-client/26.3/{RESOURCES_MANIFEST}"),
+                &format!(".local/foundry-client/26.3/{RESOURCES_MANIFEST}"),
                 r#"{"schema": 7}"#,
             );
-            write(tag, ".local/horizon-client/26.3/facts.json", tag);
+            write(tag, ".local/foundry-client/26.3/facts.json", tag);
         };
         let facts = |tag: &str| {
             fs::read_to_string(resources_at(&versions.join(tag)).join("facts.json")).ok()
@@ -7833,13 +7833,13 @@ pub fn {f}("
         // Line endings as checked out don't count; an exporter's or the sources' change does.
         write(
             "v0.2.64",
-            "mods/horizon/src/test/java/dev/horizonlab/parity/ParityData.java",
+            "mods/foundry/src/test/java/dev/foundrylab/parity/ParityData.java",
             "ParityData.java\r",
         );
         assert_eq!(at("v0.2.64"), Some(1));
         write(
             "v0.2.64",
-            "mods/horizon/src/test/java/dev/horizonlab/parity/VanillaCollisionOracle.java",
+            "mods/foundry/src/test/java/dev/foundrylab/parity/VanillaCollisionOracle.java",
             "changed",
         );
         assert_eq!(at("v0.2.64"), None);
@@ -7853,7 +7853,7 @@ pub fn {f}("
     #[test]
     fn prepared_versions_get_the_run_time_reports_without_preparing_again() {
         let versions = std::env::temp_dir().join(format!(
-            "horizon-launcher-reports-test-{}",
+            "foundry-launcher-reports-test-{}",
             std::process::id()
         ));
         let _ = fs::remove_dir_all(&versions);
@@ -7868,7 +7868,7 @@ pub fn {f}("
             write(tag, "research-lock.json", &lock.to_string());
             write(
                 tag,
-                &format!(".local/horizon-client/26.3/{RESOURCES_MANIFEST}"),
+                &format!(".local/foundry-client/26.3/{RESOURCES_MANIFEST}"),
                 "{}",
             );
         };
@@ -7912,7 +7912,7 @@ pub fn {f}("
     #[test]
     fn prepared_versions_get_what_the_asset_store_adds_without_preparing_again() {
         let dir = std::env::temp_dir().join(format!(
-            "horizon-launcher-packs-test-{}",
+            "foundry-launcher-packs-test-{}",
             std::process::id()
         ));
         let _ = fs::remove_dir_all(&dir);
@@ -8004,7 +8004,7 @@ pub fn {f}("
 
         // Resources prepared without any of them: a folder without an asset store is skipped.
         release("v0.2.1", true);
-        let data_file = horizon_platform::prepared_files::FILE_NAME;
+        let data_file = foundry_platform::prepared_files::FILE_NAME;
         write(
             resources_at(&versions.join("v0.2.1")).join(data_file),
             b"older",
@@ -8117,20 +8117,20 @@ pub fn {f}("
 
     #[test]
     fn finds_the_app_bundle_around_the_binary() {
-        let exe = Path::new("/Applications/Horizon.app/Contents/MacOS/horizon-launcher");
+        let exe = Path::new("/Applications/Foundry Client.app/Contents/MacOS/foundry-launcher");
         assert_eq!(
             app_bundle(exe),
-            Some(Path::new("/Applications/Horizon.app"))
+            Some(Path::new("/Applications/Foundry Client.app"))
         );
-        assert_eq!(app_bundle(Path::new("/Users/me/horizon-launcher")), None);
+        assert_eq!(app_bundle(Path::new("/Users/me/foundry-launcher")), None);
         assert_eq!(
-            app_bundle(Path::new("/x/Contents/MacOS/horizon-launcher")),
+            app_bundle(Path::new("/x/Contents/MacOS/foundry-launcher")),
             None
         );
-        let work = std::env::temp_dir().join(format!("horizon-find-app-{}", std::process::id()));
+        let work = std::env::temp_dir().join(format!("foundry-find-app-{}", std::process::id()));
         let _ = fs::remove_dir_all(&work);
-        fs::create_dir_all(work.join("dist/Horizon.app/Contents/MacOS")).unwrap();
-        assert_eq!(find_app(&work), Some(work.join("dist/Horizon.app")));
+        fs::create_dir_all(work.join("dist/Foundry Client.app/Contents/MacOS")).unwrap();
+        assert_eq!(find_app(&work), Some(work.join("dist/Foundry Client.app")));
         let _ = fs::remove_dir_all(&work);
     }
 
@@ -8140,13 +8140,13 @@ pub fn {f}("
     #[test]
     fn an_app_bundle_updates_in_place() {
         use std::os::unix::fs::PermissionsExt;
-        let work = std::env::temp_dir().join(format!("horizon-bundle-{}", std::process::id()));
+        let work = std::env::temp_dir().join(format!("foundry-bundle-{}", std::process::id()));
         let _ = fs::remove_dir_all(&work);
         let make = |dir: &Path, version: &str| {
-            let app = dir.join("Horizon.app");
+            let app = dir.join("Foundry Client.app");
             fs::create_dir_all(app.join("Contents/MacOS")).unwrap();
             fs::create_dir_all(app.join("Contents/Resources")).unwrap();
-            let bin = app.join("Contents/MacOS/horizon-launcher");
+            let bin = app.join("Contents/MacOS/foundry-launcher");
             // This test binary, not a system one: an ad-hoc re-signed arm64e system binary is killed on
             // GitHub's macOS 15 runners.
             fs::copy(std::env::current_exe().unwrap(), &bin).unwrap();
@@ -8155,8 +8155,8 @@ pub fn {f}("
             fs::write(
                 app.join("Contents/Info.plist"),
                 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<plist version=\"1.0\"><dict>\
-                 <key>CFBundleExecutable</key><string>horizon-launcher</string>\
-                 <key>CFBundleIdentifier</key><string>dev.horizon.test</string>\
+                 <key>CFBundleExecutable</key><string>foundry-launcher</string>\
+                 <key>CFBundleIdentifier</key><string>dev.foundry.test</string>\
                  <key>CFBundlePackageType</key><string>APPL</string></dict></plist>\n",
             )
             .unwrap();
@@ -8183,7 +8183,7 @@ pub fn {f}("
         replace_bundle(&new, &installed).unwrap();
         let version = fs::read_to_string(installed.join("Contents/Resources/version")).unwrap();
         assert_eq!(version, "2.0.0");
-        let bin = installed.join("Contents/MacOS/horizon-launcher");
+        let bin = installed.join("Contents/MacOS/foundry-launcher");
         assert!(
             // Lists no test and runs none.
             Command::new(&bin)
@@ -8207,7 +8207,7 @@ pub fn {f}("
             .collect();
         assert_eq!(
             left,
-            ["Horizon.app"],
+            ["Foundry Client.app"],
             "nothing staged or moved aside is left"
         );
 
@@ -8225,7 +8225,7 @@ pub fn {f}("
     #[test]
     fn launcher_versions_read_from_the_binary() {
         assert_eq!(
-            parse_version_output("horizon-launcher 0.1.5\n"),
+            parse_version_output("foundry-launcher 0.1.5\n"),
             Some("0.1.5")
         );
         assert_eq!(parse_version_output("something else"), None);
@@ -8236,7 +8236,7 @@ pub fn {f}("
             None
         );
         assert_eq!(
-            installed_launcher_version(Path::new("/nonexistent/horizon-launcher")),
+            installed_launcher_version(Path::new("/nonexistent/foundry-launcher")),
             None
         );
     }
@@ -8248,10 +8248,10 @@ pub fn {f}("
     fn a_replaced_binary_is_replaced_again_at_its_path() {
         use std::os::unix::fs::PermissionsExt;
         let dir =
-            std::env::temp_dir().join(format!("horizon-launcher-replace-{}", std::process::id()));
+            std::env::temp_dir().join(format!("foundry-launcher-replace-{}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
         fs::create_dir_all(&dir).unwrap();
-        let exe = dir.join("horizon-launcher");
+        let exe = dir.join("foundry-launcher");
         fs::write(&exe, "old").unwrap();
         // Another update swaps the file under the running launcher.
         fs::write(dir.join("other"), "other update").unwrap();
@@ -8279,7 +8279,7 @@ pub fn {f}("
             .map(|e| e.file_name().to_string_lossy().into_owned())
             .collect();
         names.sort();
-        assert_eq!(names, ["horizon-launcher", "new"]);
+        assert_eq!(names, ["foundry-launcher", "new"]);
         let _ = fs::remove_dir_all(&dir);
     }
 
@@ -8358,7 +8358,7 @@ pub fn {f}("
     #[test]
     fn pruning_preserves_manual_and_legacy_nightlies() {
         let root =
-            std::env::temp_dir().join(format!("horizon-prune-origin-{}", std::process::id()));
+            std::env::temp_dir().join(format!("foundry-prune-origin-{}", std::process::id()));
         let _ = fs::remove_dir_all(&root);
         let installed = [
             "nightly-2026-11-05-aaaaaaa", // automatically updated, selected
@@ -8384,12 +8384,12 @@ pub fn {f}("
     #[test]
     fn crash_reports_are_found_and_summarised() {
         let dir =
-            std::env::temp_dir().join(format!("horizon-launcher-crash-{}", std::process::id()));
+            std::env::temp_dir().join(format!("foundry-launcher-crash-{}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
         let start = std::time::SystemTime::now() - std::time::Duration::from_secs(2);
         assert!(crash_report_in_since(&dir, start).is_none());
         fs::create_dir_all(&dir).unwrap();
-        let report = "---- Horizon Crash Report ----\n// Details below.\n\nTime: 2026-10-14 09:05:07\nDescription: Unexpected error\n\npanicked at src/game.rs:10:5:\nboom\n\t0: horizon_client::game::frame\n";
+        let report = "---- Foundry Client Crash Report ----\n// Details below.\n\nTime: 2026-10-14 09:05:07\nDescription: Unexpected error\n\npanicked at src/game.rs:10:5:\nboom\n\t0: foundry_client::game::frame\n";
         fs::write(dir.join("crash-2026-10-14_09.05.07-client.txt"), report).unwrap();
         fs::write(dir.join("notes.txt"), "x").unwrap();
         assert_eq!(

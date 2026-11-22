@@ -1,23 +1,23 @@
 //! Trust status and runtime privacy follow a developer base through imported and native games.
-use horizon_launcher::{backend, developer_install};
+use foundry_launcher::{backend, developer_install};
 use std::fs;
 
 #[test]
 fn instance_status_and_runtime_keep_developer_provenance() {
     let home = tempfile::tempdir().unwrap();
     for name in [
-        "HORIZON_HOME",
-        "HORIZON_LAUNCHER_HOME",
+        "FOUNDRY_HOME",
+        "FOUNDRY_LAUNCHER_HOME",
         "XDG_DATA_HOME",
         "XDG_CONFIG_HOME",
-        "HORIZON_LAUNCHER_TRASH",
-        "HORIZON_LAUNCHER_CLIPBOARD",
-        "HORIZON_LAUNCHER_DESKTOP",
+        "FOUNDRY_LAUNCHER_TRASH",
+        "FOUNDRY_LAUNCHER_CLIPBOARD",
+        "FOUNDRY_LAUNCHER_DESKTOP",
     ] {
         std::env::set_var(name, home.path().join(name));
     }
-    std::env::set_var("HORIZON_LAUNCHER_NO_SELF_UPDATE", "1");
-    std::env::set_var("HORIZON_NO_AUDIO", "1");
+    std::env::set_var("FOUNDRY_LAUNCHER_NO_SELF_UPDATE", "1");
+    std::env::set_var("FOUNDRY_NO_AUDIO", "1");
     let revision = "0123456789abcdef0123456789abcdef01234567";
     let developer = "developer-012345";
     let imported = "imported-2026-11-10-012345";
@@ -31,12 +31,12 @@ fn instance_status_and_runtime_keep_developer_provenance() {
         (
             imported,
             "imported.json",
-            serde_json::json!({"base": developer, "file": "horizon-client"}),
+            serde_json::json!({"base": developer, "file": "foundry-client"}),
         ),
         (
             native,
             "native-mods.json",
-            serde_json::json!({"base": developer, "horizon": revision, "target": "client", "left_out": []}),
+            serde_json::json!({"base": developer, "foundry": revision, "target": "client", "left_out": []}),
         ),
     ] {
         let folder = backend::version_dir(tag);
@@ -61,7 +61,7 @@ fn instance_status_and_runtime_keep_developer_provenance() {
         ] {
             assert!(command
                 .get_envs()
-                .any(|(key, value)| key == "HORIZON_TELEMETRY_URL"
+                .any(|(key, value)| key == "FOUNDRY_TELEMETRY_URL"
                     && value == Some(std::ffi::OsStr::new("off"))));
         }
     }

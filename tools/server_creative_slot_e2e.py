@@ -13,10 +13,10 @@ A second bot sends stone ×100 into slot 36 and a third sends stone ×100 into s
 counts of 1 to 99, so vanilla fails the packet and disconnects the player, before `validSlot` or the
 creative-mode check is reached.
 
-horizon-bots stand in for the clients (`--give`). The server runs in a fresh folder with fresh HORIZON_HOME
+foundry-bots stand in for the clients (`--give`). The server runs in a fresh folder with fresh FOUNDRY_HOME
 and XDG folders (lab.game_env), on a free port. Build first:
-    cargo build --profile fast -p horizon-game --bin horizon-client
-    cargo build --profile fast -p horizon-bots
+    cargo build --profile fast -p foundry-game --bin foundry-client
+    cargo build --profile fast -p foundry-bots
 """
 import argparse
 import json
@@ -44,7 +44,7 @@ def bot(bins, port, out, name, give, seconds):
     report = out / f'{name}.json'
     spec = ','.join(f'{s}:{i}:{c}' for s, i, c in give)
     return report, subprocess.Popen(
-        [bins / f'horizon-bots{EXE}', '--server', f'127.0.0.1:{port}', '--bots', '1', '--behaviour', 'idle',
+        [bins / f'foundry-bots{EXE}', '--server', f'127.0.0.1:{port}', '--bots', '1', '--behaviour', 'idle',
          '--height', '0', '--seconds', str(seconds), '--name', name, '--give', spec, '--report', report],
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 

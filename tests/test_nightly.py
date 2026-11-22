@@ -21,7 +21,7 @@ NOW = "2026-10-28T12:00:00+00:00"
 PATTERNS = ns.guarded_patterns((Path(__file__).resolve().parents[1] / ".github/CODEOWNERS").read_text())
 
 
-def pr(n, head="h", state="open", files=("crates/horizon-world/src/lib.rs",), base="main"):
+def pr(n, head="h", state="open", files=("crates/foundry-world/src/lib.rs",), base="main"):
     return ns.PullRequest(n, state, f"{head}{n}", f"Fix {n}", f"dev{n}", base, list(files))
 
 
@@ -37,7 +37,7 @@ def run(state, text, login="kacpherek", *prs):
 T = dt.datetime(2026, 10, 28, 12, 0, tzinfo=dt.timezone.utc)
 
 
-def merged_pr(n, title, labels, issues=(), paths=("crates/horizon-world/src/lib.rs",)):
+def merged_pr(n, title, labels, issues=(), paths=("crates/foundry-world/src/lib.rs",)):
     return {"number": n, "title": title, "labels": labels, "issues": list(issues), "author": f"dev{n}",
             "paths": list(paths)}
 
@@ -84,12 +84,12 @@ class NightlyTests(unittest.TestCase):
 
     def test_notes_open_with_the_way_to_the_launcher(self):
         # A raw HTML line that launchers skip, as on a game release.
-        with mock.patch.object(nightly.train, "REPO", "horizon-rust/horizon"):
+        with mock.patch.object(nightly.train, "REPO", "foundry-rust/foundry"):
             self.assertTrue(notes().startswith(nightly.train.PLAYERS + "\n\nNightly 2026-10-28 · bbbbbbb: "))
             self.assertIn(nightly.PLAYERS, notes())
 
     def test_other_repositories_keep_the_upstream_intro(self):
-        with mock.patch.object(nightly.train, "REPO", "another/horizon"):
+        with mock.patch.object(nightly.train, "REPO", "another/foundry"):
             self.assertTrue(notes().startswith(nightly.train.PLAYERS + "\n\n"))
             self.assertIn(nightly.PLAYERS, notes())
 
@@ -136,7 +136,7 @@ class RotateTests(unittest.TestCase):
 
         with mock.patch.object(nightly, "gh", fake_gh), \
                 mock.patch.object(nightly, "dt", fake_dt), \
-                mock.patch.dict(nightly.os.environ, {"GITHUB_REPOSITORY": "horizon-rust/horizon"}):
+                mock.patch.dict(nightly.os.environ, {"GITHUB_REPOSITORY": "foundry-rust/foundry"}):
             nightly.rotate()
 
         rename = next(a for a in calls if a[:3] == ("release", "edit", "nightly"))
@@ -238,7 +238,7 @@ CLEANUP_IFS = ("always()", "always() && runner.environment == 'self-hosted'")
 ASSIGNMENT = re.compile(r"(?<![\w$\{])([A-Za-z_][A-Za-z0-9_]*)="
                         r"|\b(?:export|declare\s+-x|typeset\s+-x)\s+([A-Za-z_][A-Za-z0-9_]*)")
 CARGO_CALL = re.compile(r"\bcargo\b(?!-home)|\bxtask\b|\brustup\b|vanilla-data\.sh|runner-env\.sh")
-ENV_WRITE = re.compile(r"\b(CARGO_\w+|RUSTC\w*|RUSTDOC\w*|RUSTFLAGS|HORIZON_NO_SCCACHE)=.*GITHUB_ENV")
+ENV_WRITE = re.compile(r"\b(CARGO_\w+|RUSTC\w*|RUSTDOC\w*|RUSTFLAGS|FOUNDRY_NO_SCCACHE)=.*GITHUB_ENV")
 
 
 SHELL_BUILTINS = {"set", "[", "echo", "printf", "exit"}
@@ -267,7 +267,7 @@ def self_hosted(job):
 
 def machine_cache_problems(workflow):
     """(job, problem) for each job that builds on a self-hosted runner, or sets up its tools (runner-env.sh), without
-    the protections: HORIZON_NO_SCCACHE: '1', empty compiler wrappers, cargo_isolation.py before the first cargo
+    the protections: FOUNDRY_NO_SCCACHE: '1', empty compiler wrappers, cargo_isolation.py before the first cargo
     call on every self-hosted leg, no step that sets what it refuses, and the cargo home's removal."""
     found = []
     for name, job in workflow["jobs"].items():
@@ -303,12 +303,12 @@ def machine_cache_problems(workflow):
         for step, run in zip(steps, runs):
             step_env = step.get("env", {})
             for key, value in step_env.items():
-                if key == "HORIZON_NO_SCCACHE" and value == "1":
+                if key == "FOUNDRY_NO_SCCACHE" and value == "1":
                     continue
-                if key in ("CARGO_HOME", "HORIZON_NO_SCCACHE") or cargo_isolation.forbidden(key):
+                if key in ("CARGO_HOME", "FOUNDRY_NO_SCCACHE") or cargo_isolation.forbidden(key):
                     problem(f"a step sets {key}")
-            if "runner-env.sh" in run and {**env, **step_env}.get("HORIZON_NO_SCCACHE") != "1":
-                problem("runner-env.sh without HORIZON_NO_SCCACHE: '1'")
+            if "runner-env.sh" in run and {**env, **step_env}.get("FOUNDRY_NO_SCCACHE") != "1":
+                problem("runner-env.sh without FOUNDRY_NO_SCCACHE: '1'")
             if ENV_WRITE.search(run):
                 problem("a step writes cargo settings to GITHUB_ENV")
             for match in ASSIGNMENT.finditer(run):
@@ -363,7 +363,7 @@ class UntrustedBuildTests(unittest.TestCase):
         hosted = [line for line in runs_on if line.strip() in ("runs-on: ubuntu-22.04", "runs-on: windows-latest")]
         self.assertEqual(len(hosted), 2)
         # The nightly's own runner: never the release runner, and never behind pull requests' parity queue.
-        nightly_runner = "fromJSON('[\"self-hosted\", \"macOS\", \"horizon-nightly\"]')"
+        nightly_runner = "fromJSON('[\"self-hosted\", \"macOS\", \"foundry-nightly\"]')"
         for line in runs_on:
             if line in hosted:
                 continue
@@ -378,7 +378,7 @@ class UntrustedBuildTests(unittest.TestCase):
         self.assertEqual(job["runs-on"], "windows-latest")
         self.assertEqual(job["env"]["RUSTFLAGS"], "-C target-feature=+crt-static")
         self.assertEqual(job["steps"][-1]["run"].strip(),
-                         "cargo test --release --locked -p horizon-client-render --lib particles::polytone::tests::")
+                         "cargo test --release --locked -p foundry-client-render --lib particles::polytone::tests::")
         self.assertEqual(polytone_gate_bypasses(game, nightly_build), [])
         # Each way around the gate is caught: a step or job allowed to fail, a skipped test, a publishing job that
         # runs after a failed build.
@@ -438,14 +438,14 @@ class UntrustedBuildTests(unittest.TestCase):
             "setup script changed": lambda job: setup(job).update({"run": "true"}),
             "setup gets env": lambda job: setup(job).update({"env": {"PYTHONPATH": "x"}}),
             "setup after the cargo calls": lambda job: job["steps"].append(job["steps"].pop(job["steps"].index(setup(job)))),
-            "cargo before setup": before_setup({"run": "cargo build --release --locked -p horizon-prepare"}),
+            "cargo before setup": before_setup({"run": "cargo build --release --locked -p foundry-prepare"}),
             "xtask before setup": before_setup({"run": "cargo xtask package"}),
             "script before setup": before_setup({"run": "bash tools/ci/vanilla-data.sh"}),
             "step overrides RUSTC_WRAPPER": lambda job: later(job).setdefault("env", {}).update(RUSTC_WRAPPER="sccache"),
             "step overrides CARGO_HOME": lambda job: later(job).setdefault("env", {}).update(CARGO_HOME="/x"),
             "step sets RUSTFLAGS": lambda job: later(job).setdefault("env", {}).update(RUSTFLAGS="-C x"),
             "sccache conditional": lambda job: runner_env(job)["env"].update(
-                HORIZON_NO_SCCACHE="${{ inputs.trusted && '1' || '' }}"),
+                FOUNDRY_NO_SCCACHE="${{ inputs.trusted && '1' || '' }}"),
             "step writes RUSTC_WRAPPER": lambda job: later(job).update(run='echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"'),
             "job env wrapper dropped": lambda job: job["env"].pop("RUSTC_WRAPPER"),
             "job env CARGO_HOME": lambda job: job["env"].update(CARGO_HOME="/x"),
@@ -479,7 +479,7 @@ class UntrustedBuildTests(unittest.TestCase):
             mutated["jobs"]["new-mac"] = new
             self.assertEqual({job for job, _ in machine_cache_problems(mutated)}, {"new-mac"})
         env = (Path(__file__).resolve().parents[1] / "tools/ci/runner-env.sh").read_text()
-        self.assertEqual(env.count('-z "${HORIZON_NO_SCCACHE:-}"'), 2)
+        self.assertEqual(env.count('-z "${FOUNDRY_NO_SCCACHE:-}"'), 2)
 
     def test_the_guard_never_comes_from_the_checkout_it_checks(self):
         # Fetched at the workflow's own commit into a new RUNNER_TEMP folder, so a Nightly of an older commit still
@@ -535,7 +535,7 @@ class UntrustedBuildTests(unittest.TestCase):
                     tool.chmod(0o755)
                 environ = {key: value for key, value in os.environ.items() if not cargo_isolation.forbidden(key)}
                 environ.update(RUNNER_TEMP=str(runner_temp), GITHUB_ENV=str(runner_temp / "github-env"),
-                               GITHUB_WORKSPACE=str(checkout), GITHUB_REPOSITORY="horizon-rust/horizon",
+                               GITHUB_WORKSPACE=str(checkout), GITHUB_REPOSITORY="foundry-rust/foundry",
                                GITHUB_WORKFLOW_SHA="abc123")
                 # The ancestor walk ends at the temporary folder: a developer machine may hold configs above it.
                 run = (SETUP_RUN.replace("/usr/bin/curl", str(curl)).replace("/usr/bin/python3", str(python))
@@ -579,12 +579,12 @@ class PruneBuildsTests(unittest.TestCase):
     def test_the_source_is_archived_from_git_signed_attached_and_tagged(self):
         build = (WORKFLOWS / "nightly-build.yml").read_text()
         pick = build.split("\n  build:", 1)[0]
-        self.assertIn('git archive --format=tar.gz --prefix="horizon-${SHA:0:7}/" -o horizon-source.tar.gz "$SHA"',
+        self.assertIn('git archive --format=tar.gz --prefix="foundry-${SHA:0:7}/" -o foundry-source.tar.gz "$SHA"',
                       pick)
         sign = build.split("\n  sign:", 1)[1].split("\n  publish:", 1)[0]
-        self.assertIn("dist/horizon-source.tar.gz", sign.split("sign_release.sh nightly", 1)[1])
+        self.assertIn("dist/foundry-source.tar.gz", sign.split("sign_release.sh nightly", 1)[1])
         publish = build.split("\n  publish:", 1)[1].split("\n  answer:", 1)[0]
-        self.assertIn('"dist/horizon-source.tar.gz#Source of this Nightly', publish)
+        self.assertIn('"dist/foundry-source.tar.gz#Source of this Nightly', publish)
         self.assertIn('nightly.py keep-source "$SHA" "$DATE"', publish)
 
     def test_the_workflow_prunes_on_schedule_only(self):
@@ -676,18 +676,18 @@ class SdkPairTests(unittest.TestCase):
                 mock.patch.object(nightly, "sdk_ready", side_effect=AssertionError("asked")), \
                 mock.patch.object(nightly, "is_ancestor", return_value=True), \
                 mock.patch.object(nightly, "git", side_effect=["a" * 40, NOW]):
-            self.assertEqual(nightly.green_base("horizon-rust/horizon", "").sha, "a" * 40)
+            self.assertEqual(nightly.green_base("foundry-rust/foundry", "").sha, "a" * 40)
             automatic.assert_called_once_with(parity=True)
         with mock.patch.dict(nightly.os.environ, {"NIGHTLY_BASE": "b" * 40}), \
                 mock.patch.object(nightly.train, "green_main_head") as automatic, \
                 mock.patch.object(nightly, "is_ancestor", return_value=False), \
                 mock.patch.object(nightly, "stop", side_effect=SystemExit):
             with self.assertRaises(SystemExit):
-                nightly.green_base("horizon-rust/horizon", "")
+                nightly.green_base("foundry-rust/foundry", "")
             automatic.assert_not_called()
 
     def test_a_final_source_that_is_not_mains_commit_stops_before_pushing(self):
-        with mock.patch.dict(nightly.os.environ, {"GITHUB_REPOSITORY": "horizon-rust/horizon"}), \
+        with mock.patch.dict(nightly.os.environ, {"GITHUB_REPOSITORY": "foundry-rust/foundry"}), \
                 mock.patch.object(nightly.ns, "fetch_heads", return_value=[]), \
                 mock.patch.object(nightly.ns, "assemble", return_value="b" * 40), \
                 mock.patch.object(nightly.ns, "push") as push:
@@ -696,7 +696,7 @@ class SdkPairTests(unittest.TestCase):
             push.assert_not_called()
 
     def test_publication_checks_fresh_inventory_for_the_current_repository(self):
-        with mock.patch.dict(nightly.os.environ, {"GITHUB_REPOSITORY": "horizon-rust/horizon"}), \
+        with mock.patch.dict(nightly.os.environ, {"GITHUB_REPOSITORY": "foundry-rust/foundry"}), \
                 mock.patch.object(nightly, "ready_sdk_shas", side_effect=[{"a" * 40}, set()]) as inventory, \
                 mock.patch.object(nightly, "published_index") as index:
             nightly.require_sdk("a" * 40)
@@ -704,7 +704,7 @@ class SdkPairTests(unittest.TestCase):
             with self.assertRaisesRegex(SystemExit, "publication refused"):
                 nightly.require_sdk("a" * 40)
             self.assertEqual(inventory.call_count, 2)
-        with mock.patch.object(nightly.train, "REPO", "someone/horizon"), \
+        with mock.patch.object(nightly.train, "REPO", "someone/foundry"), \
                 mock.patch.object(nightly, "sdk_ready", return_value=True) as sdk, \
                 mock.patch.object(nightly, "published_index") as index:
             nightly.require_sdk("a" * 40)
@@ -732,9 +732,9 @@ class SdkPairTests(unittest.TestCase):
 
     def test_an_sdk_asset_is_trusted_only_under_the_forks_signature_for_its_own_tag(self):
         command = nightly.signature_check("a" * 40, Path("/tmp/x"), ["sdk.json"])
-        self.assertEqual(command[:6], ["cargo", "run", "--locked", "--quiet", "-p", "horizon-release-sign"])
+        self.assertEqual(command[:6], ["cargo", "run", "--locked", "--quiet", "-p", "foundry-release-sign"])
         arguments = command[command.index("--") + 1:]
-        self.assertEqual(arguments, ["verify", "--repository", "horizon-rust/horizon", "--tag", "sdk-" + "a" * 40,
+        self.assertEqual(arguments, ["verify", "--repository", "foundry-rust/foundry", "--tag", "sdk-" + "a" * 40,
                                      "--only", "sdk.json", "/tmp/x"])
         self.assertNotIn("--publishing", command, "an unsigned SDK is refused, as the launcher refuses it")
 
@@ -752,7 +752,7 @@ class SdkPairTests(unittest.TestCase):
         main = nightly.Ref("main", "a" * 40, T)
         saved = [{"number": 17, "head": "b" * 40}]
         explicit = [{"number": 19, "head": "c" * 40}]
-        for repo in ("horizon-rust/horizon", "another/fork"):
+        for repo in ("foundry-rust/foundry", "another/fork"):
             for spec in ("", "19"):
                 with self.subTest(repo=repo, spec=spec), \
                         mock.patch.dict(nightly.os.environ, {"GITHUB_REPOSITORY": repo, "NIGHTLY_PRS": spec,
@@ -763,7 +763,7 @@ class SdkPairTests(unittest.TestCase):
                         mock.patch.object(nightly.ns, "lookup"), \
                         mock.patch.object(nightly, "requested", return_value=explicit) as requested, \
                         mock.patch.object(nightly, "build_set") as build:
-                    if repo == "horizon-rust/horizon" and spec:
+                    if repo == "foundry-rust/foundry" and spec:
                         with self.assertRaises(SystemExit):
                             nightly.pick(False)
                         build.assert_not_called()
@@ -771,9 +771,9 @@ class SdkPairTests(unittest.TestCase):
                         state.assert_not_called()
                     else:
                         nightly.pick(False)
-                        expected = [] if repo == "horizon-rust/horizon" else explicit if spec else saved
+                        expected = [] if repo == "foundry-rust/foundry" else explicit if spec else saved
                         self.assertEqual(build.call_args.args[:3], (main, expected, []))
-                        if repo == "horizon-rust/horizon":
+                        if repo == "foundry-rust/foundry":
                             state.assert_not_called()
                             requested.assert_not_called()
 
@@ -823,7 +823,7 @@ class OffMainDryRunTests(unittest.TestCase):
                    "GIT_CONFIG_NOSYSTEM": "1", "GIT_CONFIG_GLOBAL": os.devnull}
         with contextlib.chdir(clone), mock.patch.dict(os.environ, environ), \
                 mock.patch.object(nightly, "stop", side_effect=stop):
-            return nightly.green_base("horizon-rust/horizon", "")
+            return nightly.green_base("foundry-rust/foundry", "")
 
     def test_only_a_dry_run_marked_off_main_builds_a_dry_run_branch(self):
         with tempfile.TemporaryDirectory() as folder:
@@ -995,7 +995,7 @@ class PrebuiltGameBaseTests(unittest.TestCase):
                   "false", "GH_TOKEN": "", "RELEASES_PAUSED": ""}
         text = ""
         for step in (s for s in steps if "run" in s):
-            env = {**os.environ, **self.GIT, "GITHUB_OUTPUT": str(output), "GITHUB_REPOSITORY": "horizon-rust/horizon",
+            env = {**os.environ, **self.GIT, "GITHUB_OUTPUT": str(output), "GITHUB_REPOSITORY": "foundry-rust/foundry",
                    **{key: values[key] for key in step["env"]}}
             # By its PATH entry: on Windows a bare "bash" can start WSL's, which drops the environment.
             done = subprocess.run([shutil.which("bash"), "-c", step["run"]], cwd=folder / step["working-directory"],

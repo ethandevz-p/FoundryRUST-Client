@@ -4,11 +4,11 @@ Native mods run with your rights. Read their source and dependencies before allo
 Install them into the selected instance from the Mods page, then choose **Build**, or run:
 
 ```sh
-horizon-launcher native-build path/to/mod --instance INSTANCE --trust-native-code
+foundry-launcher native-build path/to/mod --instance INSTANCE --trust-native-code
 ```
 
 Omit the folder to build the instance's enabled native mods. The launcher keeps the instance on
-its pinned Horizon commit; `--update` selects a newer installed base and rebuilds the mods against
+its pinned Foundry Client commit; `--update` selects a newer installed base and rebuilds the mods against
 that commit's SDK.
 
 ## Build steps
@@ -26,12 +26,12 @@ that commit's SDK.
    launcher's pinned Rust toolchain and required linker tools if needed; the player's Rust is not used.
 5. Compile the mods against the SDK's game libraries. Registry dependencies use the mod's supplied
    lockfile and the same immutable SDK. The launcher asks for permission before executing dependency
-   build scripts or procedural macros. Cargo downloads those dependencies, and horizon-mixins when
+   build scripts or procedural macros. Cargo downloads those dependencies, and foundry-mixins when
    the launcher builds it from source, through the proxy set on the Settings page
    (`CARGO_HTTP_PROXY`, a SOCKS proxy as `socks5h://`); without one, Cargo reads `HTTPS_PROXY` as
    the launcher does.
 6. For `[[native.mixin]]` rows, download the pinned game source, copy the targeted functions into one patch
-   library, apply the rows with horizon-mixins, and compile that library against the SDK. The game
+   library, apply the rows with foundry-mixins, and compile that library against the SDK. The game
    crates are not compiled. Each checked replacement is installed through its typed installer.
 7. Install the SDK's unchanged executable alongside each mod's dynamic library and any patch library as
    `native-<commit>-<key>`, then select that build for the instance.
@@ -59,10 +59,10 @@ transformations are refusals, not reasons to build the game locally.
 
 ## Mods made for another build
 
-A native mod is made for one game build (its `[native] horizon` pin). On another build the
+A native mod is made for one game build (its `[native] foundry` pin). On another build the
 launcher compiles it when it fits: the mod uses only the mod API (no `[native.*]` table, no
 internals), its package lists what it uses (`uses.json`, written by
-`cargo horizon-mod build`), and every item on that list is unchanged in the build's
+`cargo foundry-mod build`), and every item on that list is unchanged in the build's
 `surface.json`. The compile stays the final check: a mod that fits and still doesn't compile is
 left out of that build and the others build.
 
@@ -82,7 +82,7 @@ fails stops the build with nothing changed.
 
 ## Where SDKs come from
 
-SDK releases are read from this repository's releases. `HORIZON_SDK_BASE` replaces that base with
+SDK releases are read from this repository's releases. `FOUNDRY_SDK_BASE` replaces that base with
 a mirror URL or a folder holding `sdk-<build id>/` folders (and the game releases' folders, for
 their build ids), for example a copy for building offline. Every base is checked the same way,
 against the release signature. Offline, a build whose SDK files are already kept works; one whose

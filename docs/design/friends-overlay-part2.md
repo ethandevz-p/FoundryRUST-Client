@@ -6,11 +6,11 @@
 > No implementation, game launch or visual acceptance is implied by this document.
 
 This work is the **vanilla account Friends overlay**: account friends, incoming/outgoing
-requests, presence and notifications. **Play with Friends** is Horizon's separate invite-code
-host/share feature. Its approved migration spec [#14167](https://github.com/horizon-rust/horizon/issues/14167)
+requests, presence and notifications. **Play with Friends** is Foundry Client's separate invite-code
+host/share feature. Its approved migration spec [#14167](https://github.com/foundry-rust/foundry/issues/14167)
 is not approval for this overlay.
 
-PR [#14224](https://github.com/horizon-rust/horizon/pull/14224) contains the old combined
+PR [#14224](https://github.com/foundry-rust/foundry/pull/14224) contains the old combined
 implementation (about 4,090 insertions across 21 files). Keep it intact as historical work, not
 as the base for new implementation PRs. This proposal does not close, rewrite or supersede that
 PR by itself. Do not copy its 2,215-line overlay module into one new PR.
@@ -22,27 +22,27 @@ the earlier single, open-ended "list and request behaviour" PR scope.
 ## Ownership and entry decisions
 
 Vanilla social service, screens, faces and toast behaviour belong to the **engine**
-([layers](../layers.md#engine)), not to `horizon-friends` or `horizon-official`. They must work
-without registering Horizon's host/share extension. Vanilla `gui.friends.*` and `options.*`
-keys are not the Horizon-only `horizon.friends.*` language files being moved by #14430/#14433.
-No engine dependency on a Horizon crate or new `allowed` exception is introduced.
+([layers](../layers.md#engine)), not to `foundry-friends` or `foundry-official`. They must work
+without registering Foundry Client's host/share extension. Vanilla `gui.friends.*` and `options.*`
+keys are not the Foundry Client-only `foundry.friends.*` language files being moved by #14430/#14433.
+No engine dependency on a Foundry Client crate or new `allowed` exception is introduced.
 
 The local vanilla references show that both `TitleScreen.init` and
 `PauseScreen.createPauseMenu` call `CommonButtons.friends`, then
 `OnlineOptionsScreen.confirmFriendsListEnabled`, then `FriendsOverlayScreen(parent)`.
-However, #14167's migration uses those existing Horizon icon slots for Play with Friends and
+However, #14167's migration uses those existing Foundry Client icon slots for Play with Friends and
 Join a Friend. **The allocation below is proposed, not approved.** This is a UI integration
-decision, not a reason to move the account overlay into the Horizon layer.
+decision, not a reason to move the account overlay into the Foundry Client layer.
 
 | Action | Proposed entry and owner |
 | --- | --- |
-| Manage Minecraft account friends and requests | The engine owns the existing vanilla Friends icon on Title and Pause. Both open the account overlay through the vanilla consent path, independent of the Horizon extension. |
-| Host or share a world with an invite code | The Horizon extension owns a separate **Play with Friends** row in Pause, using the existing `Place::Pause` registration. Keep the same sharing page and availability rules; do not add another icon. |
-| Join a world with an invite code | The Horizon extension owns a **Join a Friend** button on the Multiplayer screen, present only when the extension provides the join form and resolver. Open the same form, preserving full codes, short codes and the Relay field. Direct Connection's full-code support does not replace the form. |
+| Manage Minecraft account friends and requests | The engine owns the existing vanilla Friends icon on Title and Pause. Both open the account overlay through the vanilla consent path, independent of the Foundry Client extension. |
+| Host or share a world with an invite code | The Foundry Client extension owns a separate **Play with Friends** row in Pause, using the existing `Place::Pause` registration. Keep the same sharing page and availability rules; do not add another icon. |
+| Join a world with an invite code | The Foundry Client extension owns a **Join a Friend** button on the Multiplayer screen, present only when the extension provides the join form and resolver. Open the same form, preserving full codes, short codes and the Relay field. Direct Connection's full-code support does not replace the form. |
 
 `Place::Title` still names the existing title icon slot, not a Multiplayer entry. The Multiplayer
 registration point is a proposed extension interface, not an API the current engine offers.
-The engine must not name a Horizon crate or page ID to draw either extension entry. The account
+The engine must not name a Foundry Client crate or page ID to draw either extension entry. The account
 UI remains an engine overlay, not a generic `Page`/`Row` form.
 
 ### Migration and acceptance
@@ -62,7 +62,7 @@ UI remains an engine overlay, not a generic `Page`/`Row` form.
    proposed Multiplayer entry is for Join a Friend, not an implicit fallback for other pages.
 4. Verify the official build can still host from Pause and join from Multiplayer with full and
    short codes, including Relay, and that Escape returns to the invoking menu. Check the existing
-   sharing gates, including splitscreen. With no Horizon extension, neither invite-code entry is
+   sharing gates, including splitscreen. With no Foundry Client extension, neither invite-code entry is
    present, while the account icon follows vanilla's demo/offline and consent gates rather than
    invite resolver availability. Check layout, keyboard/controller navigation, and narration in
    each affected menu before switching its icon.
@@ -112,10 +112,10 @@ decompilation.
 
 ## Implementation structure and size gates
 
-Prefer small, cohesive files under `crates/horizon-client/src/friends_overlay/`:
+Prefer small, cohesive files under `crates/foundry-client/src/friends_overlay/`:
 `mod.rs`, `model.rs`, `layout.rs`, `shell.rs`, `add.rs`, `entries.rs`, `requests.rs`,
 `links.rs`, `focus.rs` and `faces.rs`. These are proposed responsibility boundaries, not a
-requirement to create every file. Keep social data in `horizon-client-render/src/social.rs`;
+requirement to create every file. Keep social data in `foundry-client-render/src/social.rs`;
 use a sibling toast module for account notifications rather than embedding it in screen state.
 
 The split checklist names explicit backend/notification/face steps and **eight UI work
@@ -134,14 +134,14 @@ existing seam exists, first propose a **separate pure-move PR** with before/afte
 never hide a relocation inside a parity fix. Keep `hud.rs`'s legitimate NUL bytes intact using
 Read-before-edit and an anchored binary patch under `.local` if it is eventually modified.
 
-Do not put vanilla behaviour behind the Horizon host/share feature or move vanilla translation
-keys into `horizon-friends`. No new machine translations or "reviewed" language flags.
+Do not put vanilla behaviour behind the Foundry Client host/share feature or move vanilla translation
+keys into `foundry-friends`. No new machine translations or "reviewed" language flags.
 
 ## Validation and evidence
 
 Use the current manifests to choose test targets. On the inspected main,
-`horizon-client/src/lib.rs` declares gameplay and `main.rs` is a thin executable. Therefore
-`cargo test -p horizon-client --bin horizon-client ...` matching zero tests does not validate
+`foundry-client/src/lib.rs` declares gameplay and `main.rs` is a thin executable. Therefore
+`cargo test -p foundry-client --bin foundry-client ...` matching zero tests does not validate
 pause routing. Verify a nonzero match count for the actual library/module filter.
 
 For each implementation PR:

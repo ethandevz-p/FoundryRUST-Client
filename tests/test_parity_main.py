@@ -345,7 +345,7 @@ class ParityMainTests(unittest.TestCase):
         root = Path(__file__).resolve().parents[1]
         with mock.patch("sys.path", [str(root / "tools/ci/vendor/pyyaml-6.0.3.zip"), *sys.path]):
             import yaml
-        switch = "HORIZON_PARITY_PREBUILD_TIMINGS"
+        switch = "FOUNDRY_PARITY_PREBUILD_TIMINGS"
         setting = [path.name for path in (root / ".github").rglob("*") if path.is_file()
                    and switch in path.read_text(encoding="utf-8", errors="replace")]
         self.assertEqual(setting, ["parity-main.yml"], "PR parity, nightly and parity-hosted upload nothing")

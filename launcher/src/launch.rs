@@ -7,7 +7,7 @@
 //! exit, Stop). The game's words never pass through a shell: they can hold a server address or
 //! a world's name, and a shell would read its special characters as commands.
 //!
-//! - Unix: `/bin/sh -c '(<pre-launch>) || exit; exec "$@"' horizon <wrapper…> <game> <args…>`.
+//! - Unix: `/bin/sh -c '(<pre-launch>) || exit; exec "$@"' foundry <wrapper…> <game> <args…>`.
 //!   The pre-launch command is the player's own shell line, run in the instance's folder; the
 //!   game's words go through `"$@"`, so they are never parsed by the shell. `exec` makes the
 //!   shell become the wrapper (or the game).
@@ -143,9 +143,9 @@ pub struct Found {
     pub nvidia: bool,
 }
 
-/// `HORIZON_LAUNCHER_LINUX_TOOLS=gamemode,mangohud,gpu,nvidia`: what [`Found::here`] says is
+/// `FOUNDRY_LAUNCHER_LINUX_TOOLS=gamemode,mangohud,gpu,nvidia`: what [`Found::here`] says is
 /// installed, on any system (for tests and screenshots).
-pub const TOOLS_ENV: &str = "HORIZON_LAUNCHER_LINUX_TOOLS";
+pub const TOOLS_ENV: &str = "FOUNDRY_LAUNCHER_LINUX_TOOLS";
 
 pub(crate) fn on_path(program: &str) -> bool {
     std::env::var_os("PATH").is_some_and(|path| {
@@ -460,7 +460,7 @@ pub fn refused(launch: &Launch, words: &[OsString], windows: bool) -> Option<&'s
 pub enum Plan {
     /// Run as given (`words[0]` is the program).
     Direct(Vec<OsString>),
-    /// `/bin/sh -c <script> horizon <words…>`.
+    /// `/bin/sh -c <script> foundry <words…>`.
     Shell {
         script: String,
         words: Vec<OsString>,
@@ -545,7 +545,7 @@ pub fn wrap_stoppable(
         Plan::Direct(words) => direct(&words),
         Plan::Shell { script, words } => {
             let mut c = Command::new("/bin/sh");
-            c.arg("-c").arg(script).arg("horizon").args(words);
+            c.arg("-c").arg(script).arg("foundry").args(words);
             c
         }
         Plan::Cmd { line, words } => {

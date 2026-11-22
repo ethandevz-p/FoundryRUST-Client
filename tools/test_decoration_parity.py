@@ -51,7 +51,7 @@ def corpus(resources):
             f=fixture(biomes,rng.randrange(-2**63,2**63),mode,selected)
             f['cx']=rng.randrange(-1875000,1875000);f['cz']=rng.randrange(-1875000,1875000)
             yield f
-    # A mod feature inserted into bundled steps (arismoko/horizon#815): the oracle pins how global
+    # A mod feature inserted into bundled steps (arismoko/foundry#815): the oracle pins how global
     # indices, and so the feature seeds of the vanilla features after it, move.
     added=len(names)
     def insert(steps,where):
@@ -80,8 +80,8 @@ def main():
     lock,jars,libraries=base.verify_artifacts()
     resources=sort.biome_features(jars['server'])
     if len(resources)!=67 or resources!=sort.biome_features(jars['client']):raise ValueError('pinned biome feature resources differ')
-    oracle=lab.ROOT/'mods/horizon/src/test/java/dev/horizonlab/parity/VanillaDecorationOracle.java';helper=oracle.with_name('VanillaPlacementOracle.java')
-    sources=[oracle,helper,Path(__file__),lab.ROOT/'tools/test_feature_sort_parity.py',lab.ROOT/'tools/test_rust_parity.py',lab.ROOT/'tools/lab.py',lab.ROOT/'Cargo.toml',lab.ROOT/'Cargo.lock',lab.ROOT/'crates/horizon-core/Cargo.toml',lab.ROOT/'crates/horizon-world/Cargo.toml',*sorted((lab.ROOT/'crates/horizon-core/src').rglob('*.rs')),*sorted((lab.ROOT/'crates/horizon-world/src').rglob('*.rs')),lab.ROOT/'crates/horizon-world/examples/probe/decoration_fixture.rs']
+    oracle=lab.ROOT/'mods/foundry/src/test/java/dev/foundrylab/parity/VanillaDecorationOracle.java';helper=oracle.with_name('VanillaPlacementOracle.java')
+    sources=[oracle,helper,Path(__file__),lab.ROOT/'tools/test_feature_sort_parity.py',lab.ROOT/'tools/test_rust_parity.py',lab.ROOT/'tools/lab.py',lab.ROOT/'Cargo.toml',lab.ROOT/'Cargo.lock',lab.ROOT/'crates/foundry-core/Cargo.toml',lab.ROOT/'crates/foundry-world/Cargo.toml',*sorted((lab.ROOT/'crates/foundry-core/src').rglob('*.rs')),*sorted((lab.ROOT/'crates/foundry-world/src').rglob('*.rs')),lab.ROOT/'crates/foundry-world/examples/probe/decoration_fixture.rs']
     tested_sources=base.source_hashes(sources)
     fixtures=list(corpus(resources));inputs=build/'inputs.txt';inputs.write_text(''.join(json.dumps(f,separators=(',',':'))+'\n' for f in fixtures),encoding='utf-8')
     resource_path=build/'biome-features.json';resource_path.write_text(json.dumps(resources,separators=(',',':')),encoding='utf-8')
@@ -90,13 +90,13 @@ def main():
     def run(command,name):
         with (build/(name+'.log')).open('w',encoding='utf-8') as log:base.run(list(map(str,command)),stdout=log,stderr=subprocess.STDOUT)
     dependency_path=os.pathsep.join(map(str,libraries))
-    run(['javac','--release',lock['minecraft']['java_major'],'-proc:none','-sourcepath',str(lab.ROOT/'mods/horizon/src/test/java'),'-cp',str(jars['server'])+os.pathsep+dependency_path,'-d',classes,oracle,helper],'compile-java')
-    run(['cargo','build','--profile','fast','-p','horizon-world','--example','world_probe'],'compile-rust')
+    run(['javac','--release',lock['minecraft']['java_major'],'-proc:none','-sourcepath',str(lab.ROOT/'mods/foundry/src/test/java'),'-cp',str(jars['server'])+os.pathsep+dependency_path,'-d',classes,oracle,helper],'compile-java')
+    run(['cargo','build','--profile','fast','-p','foundry-world','--example','world_probe'],'compile-rust')
     metadata=json.loads(subprocess.check_output(['cargo','metadata','--no-deps','--format-version','1'],cwd=lab.ROOT,text=True))
     binary=Path(metadata['target_directory'])/'fast/examples'/('world_probe.exe' if os.name=='nt' else 'world_probe')
     run([binary,'decoration_fixture',build],'rust');references=[]
     for side,jar in jars.items():
-        run(['java','-Xmx768M','-cp',os.pathsep.join([str(classes),str(jar),dependency_path]),'dev.horizonlab.parity.VanillaDecorationOracle',side,build],side)
+        run(['java','-Xmx768M','-cp',os.pathsep.join([str(classes),str(jar),dependency_path]),'dev.foundrylab.parity.VanillaDecorationOracle',side,build],side)
         reference=build/f'{side}.txt';matched=base.compare(reference,build/'rust.txt')
         references.append({'side':side,'jar_sha256':lab.digest(jar,'sha256'),'output_sha256':lab.digest(reference,'sha256'),'matched_output_lines':matched})
         print(f'{side}: {matched:,} decoration output lines match Rust',flush=True)

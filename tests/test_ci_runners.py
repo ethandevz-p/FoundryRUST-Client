@@ -1,9 +1,9 @@
 """Which jobs may run on our own runners (docs/ci-runners.md).
 
-- horizon-light (playhorizon's and other small runners, which refuse a fork's pull request): main's own scripts only.
-- horizon-checks (isolated runners; an approved fork's pull request ending in 0 runs there too): no secret and
+- foundry-light (playfoundry's and other small runners, which refuse a fork's pull request): main's own scripts only.
+- foundry-checks (isolated runners; an approved fork's pull request ending in 0 runs there too): no secret and
   no token that writes.
-- Neither takes a job that holds a secret or whose token can push, publish or start workflows: playhorizon is a
+- Neither takes a job that holds a secret or whose token can push, publish or start workflows: playfoundry is a
   partner's server, and a checks runner keeps what a fork's job left behind.
 """
 import hashlib
@@ -19,8 +19,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOWS = ROOT / ".github/workflows"
-LIGHT = ("horizon-light", "playhorizon-light", "playhorizon-ci")
-CHECKS = ("horizon-checks",)
+LIGHT = ("foundry-light", "playfoundry-light", "playfoundry-ci")
+CHECKS = ("foundry-checks",)
 FORK_GUARD = "github.event.pull_request.head.repo.full_name == github.repository"
 # verify-scope decides on a small runner which of the launcher and Rust parts start; it goes where they go.
 VERIFY_PARTS = ("verify-scope", "verify-tree", "verify-lint", "verify-server", "verify-launcher", "verify-test",
@@ -31,7 +31,7 @@ VERIFY_NEEDS = (*VERIFY_PARTS, WINDOWS_WASM_JOB)
 BASH = shutil.which("bash")
 # verify's parts: our checks runners only with SELF_HOSTED_CI=all, Blacksmith's otherwise.
 ONLY_WITH_ALL = re.compile(r"^\$\{\{ vars\.SELF_HOSTED_CI == 'all' && fromJSON\('\[\"self-hosted\", \"linux\", "
-                           r"\"horizon-checks\"\]'\) \|\| 'blacksmith-\d+vcpu-ubuntu-2404' \}\}$")
+                           r"\"foundry-checks\"\]'\) \|\| 'blacksmith-\d+vcpu-ubuntu-2404' \}\}$")
 TRUSTED_WRITES = re.compile(r"^\s*(contents|actions|packages|id-token|deployments|attestations): write", re.M)
 # actions: write can start workflows too; cancel-on-close needs it to cancel runs and runs no checkout at all.
 CANCELS_RUNS = {"cancel-on-close.yml cancel"}
@@ -136,7 +136,7 @@ class OwnRunnerTests(unittest.TestCase):
         self.assertIn("if: always()", ci["verify"])
 
     def test_forks_reach_only_the_checks_runners(self):
-        # An approved fork's pull request ending in 0 runs on horizon-checks like this repository's own (GitHub's
+        # An approved fork's pull request ending in 0 runs on foundry-checks like this repository's own (GitHub's
         # 20-job pool is not the only place it may wait). Never the light runners: every light job that a pull request
         # can start carries the fork guard (test_light_runners_take_main_code_only), and ci.yml's two runs-on
         # expressions (the other workflows keep their own guards) no longer test the head repository.
@@ -150,17 +150,17 @@ class OwnRunnerTests(unittest.TestCase):
 
     def test_only_the_checks_runners_take_forks(self):
         script = (ROOT / "tools/ci/checks-runners.sh").read_text()
-        self.assertIn('[ "${HORIZON_RUNNER_POOL:-}" != checks ]', script)
-        self.assertIn('echo "HORIZON_RUNNER_POOL=checks"', script)
+        self.assertIn('[ "${FOUNDRY_RUNNER_POOL:-}" != checks ]', script)
+        self.assertIn('echo "FOUNDRY_RUNNER_POOL=checks"', script)
         # Only inside the branch of the runner that has the rust toolchain (the checks runner), never the light ones.
-        env = script.split('echo "HORIZON_RUNNER_POOL=checks"')[0].rsplit("if [", 1)[1]
-        self.assertTrue(env.startswith(' "$label" = playhorizon-ci'), env)
+        env = script.split('echo "FOUNDRY_RUNNER_POOL=checks"')[0].rsplit("if [", 1)[1]
+        self.assertTrue(env.startswith(' "$label" = playfoundry-ci'), env)
 
     def test_the_light_runners_refuse_forks_themselves(self):
         script = (ROOT / "tools/ci/checks-runners.sh").read_text()
         self.assertIn("ACTIONS_RUNNER_HOOK_JOB_STARTED=$shared/job-started.sh", script)
         self.assertIn('.pull_request.head.repo.full_name // "unknown"', script)
-        self.assertIn('if [ "$head" != "${GITHUB_REPOSITORY:-}" ]', script)  # refuses unless HORIZON_RUNNER_POOL=checks
+        self.assertIn('if [ "$head" != "${GITHUB_REPOSITORY:-}" ]', script)  # refuses unless FOUNDRY_RUNNER_POOL=checks
 
 
 class HostedParityTests(unittest.TestCase):
@@ -462,7 +462,7 @@ class HostedParityTests(unittest.TestCase):
             for step in body["steps"]:
                 uses = step.get("uses", "")
                 self.assertFalse(re.search(r"^actions/cache@|sticky|useblacksmith/|rust-cache", uses), uses)
-        self.assertEqual(self.workflow["jobs"]["run"]["env"]["HORIZON_NO_SCCACHE"], "1")
+        self.assertEqual(self.workflow["jobs"]["run"]["env"]["FOUNDRY_NO_SCCACHE"], "1")
 
     def test_the_harnesses_see_nothing_that_differs_between_a_saving_and_a_reading_run(self):
         # The oracle shim keys every variable the harnesses see but those it ignores (tools/parity_shim.py): one that
@@ -610,7 +610,7 @@ class VerifyGateTests(unittest.TestCase):
         self.assertIs(checkout["with"]["persist-credentials"], False)
         self.assertIn("tools/ci/rust-version", version["run"])
         self.assertEqual(toolchain["with"]["toolchain"], "${{ steps.rust.outputs.version }}-x86_64-pc-windows-msvc")
-        self.assertEqual(test["run"], "cargo test --locked --target x86_64-pc-windows-msvc -p horizon-mod-wasm --lib module_cache")
+        self.assertEqual(test["run"], "cargo test --locked --target x86_64-pc-windows-msvc -p foundry-mod-wasm --lib module_cache")
 
     def test_verify_requires_the_windows_cache_result_only_on_selected_pull_requests(self):
         for event in ("push", "merge_group", "workflow_dispatch"):
@@ -830,8 +830,8 @@ class TryRunTests(unittest.TestCase):
         self.assertIn("github.event_name == 'pull_request'", report[0])
         # The job runs only where verify-scope's answer let it start: no step asks again.
         self.assertNotIn("steps.rust", report[0])
-        self.assertIn("cargo build --locked --quiet -p horizon-mod-api-gen --bin horizon-stage\n", report[0])
-        self.assertIn("HORIZON_STAGE_TOOL=", report[0])
+        self.assertIn("cargo build --locked --quiet -p foundry-mod-api-gen --bin foundry-stage\n", report[0])
+        self.assertIn("FOUNDRY_STAGE_TOOL=", report[0])
         self.assertIn("EVENT: ${{ github.event_name }}\n", report[0])
         self.assertNotIn("continue-on-error", report[0])
         # The base's compiled layouts come from the store main's runs fill (wire-layouts, by commit).

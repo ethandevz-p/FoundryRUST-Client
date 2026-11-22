@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Redstone machines through the real tick loop in vanilla 26.3 and in Horizon, one tick at a time.
+"""Redstone machines through the real tick loop in vanilla 26.3 and in Foundry Client, one tick at a time.
 
   redstone_diff.py [--machines N] [--seed S] [--ticks T] [--only NAME...] [--keep DIR]
 
@@ -11,10 +11,10 @@ after every tick both games report the machine's blocks (with their properties),
 where the blocks differ is printed with the ones that differ. The entities near the machine are recorded
 too (see --keep) but not compared yet.
 
-Vanilla is the client of tools/perf_bench.py's driver (mods/horizon/src/bench: RedstoneDiff snapshots
-the box around every stepped overworld tick; no server, no EULA); Horizon is horizon-ctl on the same
+Vanilla is the client of tools/perf_bench.py's driver (mods/foundry/src/bench: RedstoneDiff snapshots
+the box around every stepped overworld tick; no server, no EULA); Foundry Client is foundry-ctl on the same
 commands, reading `simulation blocks`. Needs the same artifacts as perf_bench.py (your own client
-jar, built horizon-client and horizon-ctl, prepared resources).
+jar, built foundry-client and foundry-ctl, prepared resources).
 """
 import argparse
 import json
@@ -349,7 +349,7 @@ def run_vanilla(batch, args, work):
     return result
 
 
-# ---- Horizon -----------------------------------------------------------------------------------
+# ---- Foundry Client -----------------------------------------------------------------------------------
 
 class Ctl:
     def __init__(self, ctl, sock):
@@ -372,20 +372,20 @@ class Ctl:
 
 
 def run_horizon(batch, args, work):
-    ctl_path = ROOT / 'target' / args.profile / ('horizon-ctl.exe' if os.name == 'nt' else 'horizon-ctl')
-    sock = work / 'horizon.sock'
-    game_dir = work / 'horizon-game'
+    ctl_path = ROOT / 'target' / args.profile / ('foundry-ctl.exe' if os.name == 'nt' else 'foundry-ctl')
+    sock = work / 'foundry.sock'
+    game_dir = work / 'foundry-game'
     import shutil
     shutil.rmtree(game_dir, ignore_errors=True)
     game_dir.mkdir(parents=True)
-    env = lab.game_env(HORIZON_HOME=str(game_dir), HORIZON_TELEMETRY_URL='off')
+    env = lab.game_env(FOUNDRY_HOME=str(game_dir), FOUNDRY_TELEMETRY_URL='off')
     ctl = Ctl(ctl_path, sock)
     launch = subprocess.run([str(ctl_path), '--socket', str(sock), 'launch', '--world', WORLD, '--seed', str(SEED),
                              '--creative', '--wait', '--offscreen', '--resources', str(args.resources),
                              '--game-dir', str(game_dir), '--render-distance', '8', '--width', '640', '--height', '360'],
                             env=env, capture_output=True, text=True, timeout=900)
     if launch.returncode:
-        raise SystemExit('horizon launch failed: ' + launch.stdout + launch.stderr)
+        raise SystemExit('foundry launch failed: ' + launch.stdout + launch.stderr)
     ox, oy, oz = ORIGIN
     ctl.command('gamemode spectator')
     ctl.run('tp', ox + SPACING * 3.5, oy + 6.0, oz + 4.0)
@@ -466,7 +466,7 @@ def main():
     p.add_argument('--seed', type=int, default=1)
     p.add_argument('--ticks', type=int, default=40)
     p.add_argument('--only', nargs='*', help='machine names')
-    p.add_argument('--profile', default='fast', help='the cargo profile of the built horizon-client and horizon-ctl')
+    p.add_argument('--profile', default='fast', help='the cargo profile of the built foundry-client and foundry-ctl')
     p.add_argument('--resources', default=str(lab.RESOURCES))
     p.add_argument('--near', nargs=4, type=int, metavar=('DX', 'DY', 'DZ', 'R'),
                    help='keep only the setup commands within R blocks of this offset from the machine\'s origin')
@@ -482,7 +482,7 @@ def main():
     batches = {}
     for batch_no, m in machines:
         batches.setdefault(batch_no, []).append((batch_no, m))
-    vanilla, horizon = {}, {}
+    vanilla, foundry = {}, {}
     for batch_no, batch in sorted(batches.items()):
         print(f'batch {batch_no}: {len(batch)} machines', flush=True)
         if args.skip_vanilla:
@@ -490,13 +490,13 @@ def main():
             vanilla = {k: [{'tick': f['tick'], 'blocks': {tuple(map(int, q.split(','))): s for q, s in f['blocks'].items()}, 'entities': f['entities']} for f in v] for k, v in vanilla.items()}
         else:
             vanilla.update(run_vanilla(batch, args, work))
-        horizon.update(run_horizon(batch, args, work))
+        foundry.update(run_horizon(batch, args, work))
     different = 0
     for _, m in machines:
         name = m['name']
-        a, b = vanilla.get(name), horizon.get(name)
+        a, b = vanilla.get(name), foundry.get(name)
         if not a or not b:
-            print(f'{name}: missing ({"vanilla" if not a else "horizon"})')
+            print(f'{name}: missing ({"vanilla" if not a else "foundry"})')
             different += 1
             continue
         d = diff_frames(a, b)
@@ -507,12 +507,12 @@ def main():
         tick, rows = d
         print(f'{name}: DIFFERS from tick {tick}: {len(rows)} blocks')
         for pos, x, y in rows[:6]:
-            print(f'    {pos}: vanilla {x}  horizon {y}')
+            print(f'    {pos}: vanilla {x}  foundry {y}')
     if args.keep:
         keep = Path(args.keep)
         keep.mkdir(parents=True, exist_ok=True)
         dump = lambda t: {k: [{'tick': f['tick'], 'blocks': {','.join(map(str, q)): s for q, s in f['blocks'].items()}, 'entities': f['entities']} for f in v] for k, v in t.items()}
-        (keep / 'timelines.json').write_text(json.dumps({'vanilla': dump(vanilla), 'horizon': dump(horizon), 'machines': [m for _, m in machines]}))
+        (keep / 'timelines.json').write_text(json.dumps({'vanilla': dump(vanilla), 'foundry': dump(foundry), 'machines': [m for _, m in machines]}))
     print(f'{different} of {len(machines)} machines differ')
     return 1 if different else 0
 

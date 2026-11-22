@@ -1,6 +1,6 @@
 # Design: general entity types
 
-Provisional answer to [arismoko/horizon#792](https://github.com/arismoko/horizon/issues/792): register a type once, store each instance in a game-owned general entity row, and dispatch its catalog-generated EntityPart behavior through a resolved type slot. The row owns identity, residency, persistence and tracking. It must never create a throwable or other template entity. This is a proposal for Ari's decision on the issue, not implemented API or a closure claim.
+Provisional answer to [arismoko/foundry#792](https://github.com/arismoko/foundry/issues/792): register a type once, store each instance in a game-owned general entity row, and dispatch its catalog-generated EntityPart behavior through a resolved type slot. The row owns identity, residency, persistence and tracking. It must never create a throwable or other template entity. This is a proposal for Ari's decision on the issue, not implemented API or a closure claim.
 
 ## Implemented stage 2 API
 
@@ -51,9 +51,9 @@ The remaining sections describe the wider design, not shipped lifecycle support.
 
 ## Evidence and limits
 
-Vanilla 26.3 was queried from `/workspace/horizon` with `python3 tools/rea_vanilla.py`: `method net.minecraft.server.level.ServerLevel tickNonPassenger` runs commonTick, tick, then passenger ticking. `--overload-index 0 method net.minecraft.world.entity.EntityType loadEntityRecursive` delegates compound input through registry-aware TagValueInput and a problem reporter; this wrapper alone does not establish unknown-type recovery. `callers net.minecraft.server.level.ServerLevel addFreshEntity` reports 36 callers, including dispenser vehicles, loot drops, TNT, hatching and dragon creation. Creation is consequently wider than summon. Exact recursive-load internals, passenger tick semantics and global vanilla iteration ordering remain unverified; do not infer them from these queries.
+Vanilla 26.3 was queried from `/workspace/foundry` with `python3 tools/rea_vanilla.py`: `method net.minecraft.server.level.ServerLevel tickNonPassenger` runs commonTick, tick, then passenger ticking. `--overload-index 0 method net.minecraft.world.entity.EntityType loadEntityRecursive` delegates compound input through registry-aware TagValueInput and a problem reporter; this wrapper alone does not establish unknown-type recovery. `callers net.minecraft.server.level.ServerLevel addFreshEntity` reports 36 callers, including dispenser vehicles, loot drops, TNT, hatching and dragon creation. Creation is consequently wider than summon. Exact recursive-load internals, passenger tick semantics and global vanilla iteration ordering remain unverified; do not infer them from these queries.
 
-The issue names NeoForge 26.3 RegisterEvent and Registries.ENTITY_TYPE. The permitted [entity guide](https://docs.neoforged.net/docs/entities/) describes registered singleton types, instance behavior, separate renderers, server insertion and configurable tracking. It is explicitly labelled **26.1**, not 26.3. The [26.3 RegisterEvent Javadoc](https://aldak.netlify.app/javadoc/26.3.x/net/neoforged/neoforge/registries/RegisterEvent.html) was inaccessible through the web reader. Exact NeoForge 26.3 registration, lifecycle ordering, persistence and tracking contracts are **unverified**. No NeoForge source, patches or other project's implementation was read. The following is an explicit Horizon proposal, not asserted NeoForge equivalence.
+The issue names NeoForge 26.3 RegisterEvent and Registries.ENTITY_TYPE. The permitted [entity guide](https://docs.neoforged.net/docs/entities/) describes registered singleton types, instance behavior, separate renderers, server insertion and configurable tracking. It is explicitly labelled **26.1**, not 26.3. The [26.3 RegisterEvent Javadoc](https://aldak.netlify.app/javadoc/26.3.x/net/neoforged/neoforge/registries/RegisterEvent.html) was inaccessible through the web reader. Exact NeoForge 26.3 registration, lifecycle ordering, persistence and tracking contracts are **unverified**. No NeoForge source, patches or other project's implementation was read. The following is an explicit Foundry Client proposal, not asserted NeoForge equivalence.
 
 ## Registration and ownership
 
@@ -61,15 +61,15 @@ Freeze a namespaced entity-type registry before worlds or connections open. A de
 
 Use one dense general-entity store per level, with constant-time identity-to-slot lookup and generation validation; removal may swap rows while updating the index. A row contains type slot, UUID, runtime network id, incarnation/join identity, dimension, pose, velocity, lifecycle flags and attachment holder. Never persist runtime slots, network ids or pointers. EntityRef validates world epoch, dimension and incarnation before exposing a row. Reusing id 42 cannot make an old handle address its replacement. UUID continuity on reload does not revive an old live handle.
 
-EntityPart is shared behavior, not mutable per-instance storage. Follow [PR arismoko/horizon#2328](https://github.com/arismoko/horizon/pull/2328), the provisional arismoko/horizon#796 state design: existing attachments are the sole Part-data store, with typed authoring erased at registration, snapshot reads and checked transactional edits. Do not introduce a parallel entity data map. arismoko/horizon#779 supplies entity scope and scoped moments; it does not by itself supply entity ownership. Generate new methods only for named verified moments, with ServerHost or ClientHost and the existing dependency dispatch order. No Game references escape.
+EntityPart is shared behavior, not mutable per-instance storage. Follow [PR arismoko/foundry#2328](https://github.com/arismoko/foundry/pull/2328), the provisional arismoko/foundry#796 state design: existing attachments are the sole Part-data store, with typed authoring erased at registration, snapshot reads and checked transactional edits. Do not introduce a parallel entity data map. arismoko/foundry#779 supplies entity scope and scoped moments; it does not by itself supply entity ownership. Generate new methods only for named verified moments, with ServerHost or ClientHost and the existing dependency dispatch order. No Game references escape.
 
 ## Tick and residency
 
 At the authoritative entity phase, walk eligible general rows once in stable join order, with an indexed iteration schedule maintained on mutation rather than sorting each tick. For each root run common bookkeeping, its subscribed server behavior, then its passenger subtree. A passenger is not also ticked as a root. Newly committed spawns first tick next phase; a row removed before its turn receives no tick. Buffer structural edits until safe boundaries. Revalidate deferred operations after listener writes and refuse stale decisions without recomputing.
 
-Join ordering and next-phase spawn visibility are proposed Horizon choices pending vanilla oracle comparison. They must not reorder existing vanilla families incidentally. Client interpolation/render updates never execute authoritative behavior.
+Join ordering and next-phase spawn visibility are proposed Foundry Client choices pending vanilla oracle comparison. They must not reorder existing vanilla families incidentally. Client interpolation/render updates never execute authoritative behavior.
 
-Use arismoko/horizon#1606's residency journal and visibility boundary for insert, lift, restore, move and retirement. Unloaded or parked entities persist but do not tick; ordinary entities do not acquire chunk tickets merely by existing. Temporary lift is not removal and cannot retire attachments or emit a tracking despawn. Commit publishes changes once; abort restores the original join identity, row and attachments. Save refuses while a lifted pass or entity transaction is open. Dimension transfer preserves UUID and data, invalidates source-scoped handles, removes source tracking and creates destination tracking atomically. World close invalidates its epoch.
+Use arismoko/foundry#1606's residency journal and visibility boundary for insert, lift, restore, move and retirement. Unloaded or parked entities persist but do not tick; ordinary entities do not acquire chunk tickets merely by existing. Temporary lift is not removal and cannot retire attachments or emit a tracking despawn. Commit publishes changes once; abort restores the original join identity, row and attachments. Save refuses while a lifted pass or entity transaction is open. Dimension transfer preserves UUID and data, invalidates source-scoped handles, removes source tracking and creates destination tracking atomically. World close invalidates its epoch.
 
 ## Save, load and missing mods
 
@@ -81,7 +81,7 @@ For a missing type/mod or unsupported payload version, preserve the original bou
 
 Negotiate required type/schema/features before joining. A client missing a required entity implementation is refused with a clear reason before world state is sent. Map stable keys to connection-local protocol slots; server ids alone are insufficient. Interest entry sends one bounded spawn snapshot (identity, type, pose and explicitly synchronized fields); subsequent revisioned deltas follow declared update cadence. Late join receives current state, not replayed ticks. Interest exit, removal and dimension departure send one removal; reconnect gets a fresh snapshot. Ignore stale-incarnation deltas and request a bounded resnapshot after revision gaps.
 
-Persistence does not imply synchronization: only declared fields cross the network. arismoko/horizon#813's shared payload transport should own attachment synchronization rather than adding a competing channel. Decode into client-owned tracked rows. Hand immutable render snapshots to a client type renderer through the existing drawing context; no server Part tick or mutable simulation access during drawing. Missing optional visual assets use a diagnostic visual; missing required behavior refuses connection. Resource reload disposes cached render resources without replacing entity identity.
+Persistence does not imply synchronization: only declared fields cross the network. arismoko/foundry#813's shared payload transport should own attachment synchronization rather than adding a competing channel. Decode into client-owned tracked rows. Hand immutable render snapshots to a client type renderer through the existing drawing context; no server Part tick or mutable simulation access during drawing. Missing optional visual assets use a diagnostic visual; missing required behavior refuses connection. Resource reload disposes cached render resources without replacing entity identity.
 
 The [moving-structures carrier](moving-structures.md) remains a game-owned specialized type and does not depend on general registration. Share identity, residency, tracking and save boundaries; its cell ownership, swept collision and assembly journal remain specialized. Never create two carrier tickers or serialize its cells twice.
 
@@ -91,15 +91,15 @@ Paths below are verified existing integration owners relative to this repository
 
 | Route | Existing file:line owner; required treatment |
 | --- | --- |
-| Part registration and dispatch | `crates/horizon-mod-vocab/src/parts/entities.rs:124` registers behavior; `:53` resolves a type's Parts. Resolve into slots at load. |
-| Mod spawning, including callers using level handles | `crates/horizon-client/src/game/modding/native_level_spawning.rs:15` owns level_spawn_mob. Add a general insertion path without pretending every entity is a mob. |
-| Natural/spawner policy | `crates/horizon-client/src/game/mobs/natural_spawning.rs:43` gates eligible chunks. General MISC types do not gain natural spawning implicitly. Explicit spawn adapters use the same insertion boundary. |
-| Identity, reads and queries | `crates/horizon-client/src/game/modding/native_entity_refs.rs:101` resolves targets, `:176` creates refs, `:245` queries entities. Extend all three to general rows; do not scan families for each lookup. |
-| Temporary lift | `crates/horizon-client/src/game/modding/native_entity_refs.rs:86` owns held-out access. General rows must retain residency visibility and balance restoration after panic. |
-| Residency insert/remove/unload/restore/world reset | `crates/horizon-client/src/join_seq/residency.rs:95` journals events, `:108` drains them, `:121` resets epoch. Integrate the general owner here; retirement waits for root commit. |
-| Save and chunk reload | `crates/horizon-client/src/save.rs:3101` loads entity tags; `:3316` and `:3320` save synchronously/asynchronously. Both consume the same committed general snapshots, including quarantine. |
-| Dimension/passenger transfer | `crates/horizon-client/src/game/entities/vehicle_teleport.rs:231` transfers vehicles, `:391` passengers. Validate the entire tree before moving any row. |
-| Server tracking and ids | `crates/horizon-client/src/game/network/lan_entities.rs:130` runs native tracking, `:197` builds object states, `:578` supplies UUIDs, `:590` assigns ids. Include general rows once. |
+| Part registration and dispatch | `crates/foundry-mod-vocab/src/parts/entities.rs:124` registers behavior; `:53` resolves a type's Parts. Resolve into slots at load. |
+| Mod spawning, including callers using level handles | `crates/foundry-client/src/game/modding/native_level_spawning.rs:15` owns level_spawn_mob. Add a general insertion path without pretending every entity is a mob. |
+| Natural/spawner policy | `crates/foundry-client/src/game/mobs/natural_spawning.rs:43` gates eligible chunks. General MISC types do not gain natural spawning implicitly. Explicit spawn adapters use the same insertion boundary. |
+| Identity, reads and queries | `crates/foundry-client/src/game/modding/native_entity_refs.rs:101` resolves targets, `:176` creates refs, `:245` queries entities. Extend all three to general rows; do not scan families for each lookup. |
+| Temporary lift | `crates/foundry-client/src/game/modding/native_entity_refs.rs:86` owns held-out access. General rows must retain residency visibility and balance restoration after panic. |
+| Residency insert/remove/unload/restore/world reset | `crates/foundry-client/src/join_seq/residency.rs:95` journals events, `:108` drains them, `:121` resets epoch. Integrate the general owner here; retirement waits for root commit. |
+| Save and chunk reload | `crates/foundry-client/src/save.rs:3101` loads entity tags; `:3316` and `:3320` save synchronously/asynchronously. Both consume the same committed general snapshots, including quarantine. |
+| Dimension/passenger transfer | `crates/foundry-client/src/game/entities/vehicle_teleport.rs:231` transfers vehicles, `:391` passengers. Validate the entire tree before moving any row. |
+| Server tracking and ids | `crates/foundry-client/src/game/network/lan_entities.rs:130` runs native tracking, `:197` builds object states, `:578` supplies UUIDs, `:590` assigns ids. Include general rows once. |
 
 Every creation source must reach the general insertion coordinator: summon, mod/fake-player spawn, item use, dispenser, projectile creation, breeding, natural and block spawners, conversion, chunk load and dimension arrival. Every exit must reach retirement: discard, death, despawn, conversion, chunk unload, dimension departure, disconnect-owned cleanup and world close. Client spawn/update/remove packets and renderer disposal require parallel coverage. Exact leaf owners for those sources, the authoritative general tick seam and client renderer/packet dispatch are **not yet verified** by this note; implementation must trace and record file:line callers before enabling them. Existing vanilla-only routes remain unchanged until explicitly migrated. This is a coverage gap, not an exhaustive verified caller inventory.
 
@@ -134,7 +134,7 @@ Future implementation tests, not results of this documentation change:
 | Native panic / wasm trap during tick | Counter and listener edits rolled back, balanced lift, zero outbound deltas; next valid built-in step succeeds. |
 | No Parts on 1000 general entities | 1000 common ticks, zero callback calls and zero callback payload allocations; no per-entity scans. |
 
-Run the scene on integrated, LAN and dedicated servers for both targets. Pin ordinary entity ordering and lifecycle behavior against vanilla oracles separately from Horizon-specific expected values.
+Run the scene on integrated, LAN and dedicated servers for both targets. Pin ordinary entity ordering and lifecycle behavior against vanilla oracles separately from Foundry Client-specific expected values.
 
 ## Proposed stages (file none)
 
@@ -147,9 +147,9 @@ Run the scene on integrated, LAN and dedicated servers for both targets. Pin ord
 
 ## Open questions
 
-- Exact NeoForge 26.3 contract remains unavailable. Recommendation: obtain its public Javadoc before claiming counterpart parity; ask Ari to approve explicit Horizon choices where public documentation is silent.
+- Exact NeoForge 26.3 contract remains unavailable. Recommendation: obtain its public Javadoc before claiming counterpart parity; ask Ari to approve explicit Foundry Client choices where public documentation is silent.
 - Must general ticks share one order with all vanilla families immediately? Recommendation: maintain stable general join order initially and require oracle evidence before migrating existing family scheduling.
 - Missing-mod recovery versus fail-open world load? Recommendation: quarantine losslessly with visible diagnostics; malformed/oversized records require explicit recovery, never silent deletion.
 - Which exact bounds are acceptable? Recommendation: start with the provisional limits above, measure valid workloads and agree aggregate world/connection quotas before enablement.
-- Which EntityPart moments ship first? Recommendation: authoritative tick plus required lifecycle/codec integration only after matching existing named moments; do not invent parallel join/remove hooks. Coordinate with arismoko/horizon#779 and arismoko/horizon#796 before API generation.
+- Which EntityPart moments ship first? Recommendation: authoritative tick plus required lifecycle/codec integration only after matching existing named moments; do not invent parallel join/remove hooks. Coordinate with arismoko/foundry#779 and arismoko/foundry#796 before API generation.
 - How does a vanilla client connect? Recommendation: refuse when required general types exist; approve a separate explicit protocol decision before advertising any vanilla-client representation.

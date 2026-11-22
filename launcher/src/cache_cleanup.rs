@@ -84,7 +84,7 @@ impl Access {
             (&versions, crate::backend::CLIENT.to_owned()),
             (
                 &servers,
-                format!("horizon-engine{}", std::env::consts::EXE_SUFFIX),
+                format!("foundry-engine{}", std::env::consts::EXE_SUFFIX),
             ),
         ] {
             if let Ok(relative) = path.strip_prefix(root) {
@@ -125,7 +125,7 @@ impl Access {
                         let unit = entry.path();
                         for binary in [
                             crate::backend::CLIENT.to_owned(),
-                            format!("horizon-engine{}", std::env::consts::EXE_SUFFIX),
+                            format!("foundry-engine{}", std::env::consts::EXE_SUFFIX),
                         ] {
                             if unit.join(&binary).is_file() {
                                 images.push(unit.join(&binary));
@@ -148,7 +148,7 @@ impl Access {
         if path.is_dir() {
             for binary in [
                 crate::backend::CLIENT.to_owned(),
-                format!("horizon-engine{}", std::env::consts::EXE_SUFFIX),
+                format!("foundry-engine{}", std::env::consts::EXE_SUFFIX),
             ] {
                 if path.join(&binary).is_file() {
                     images.push(path.join(binary));
@@ -196,7 +196,7 @@ fn capable_image(image: &Path, data: &Path) -> Result<bool, Error> {
     if !image.starts_with(data) {
         return Ok(false);
     }
-    horizon_platform::mod_package::holder::capable(&image).map_err(Into::into)
+    foundry_platform::mod_package::holder::capable(&image).map_err(Into::into)
 }
 
 /// Operational locks are neither disposable outputs nor user reports/jar-cache entries.
@@ -451,7 +451,7 @@ fn delete_unit(
     veto: impl FnOnce() -> Result<(), Error>,
     after_classification: impl FnOnce(),
 ) -> Result<(), Error> {
-    use horizon_platform::mod_package::{locks::Release, runtime_leases::Registry};
+    use foundry_platform::mod_package::{locks::Release, runtime_leases::Registry};
     let data = crate::backend::data_dir();
     crate::native_cache::checked(&data, true)?;
     let real_data = data.canonicalize()?;

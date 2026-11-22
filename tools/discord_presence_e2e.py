@@ -2,14 +2,14 @@
 """End-to-end check of Discord Rich Presence: real games talk to a fake Discord.
 
 Each game gets its own fake Discord IPC server (a Unix socket in a scratch folder, pointed to by
-HORIZON_DISCORD_IPC_DIR) that answers the handshake with READY and records every SET_ACTIVITY.
-The game goes title -> world -> Nether -> quit through horizon-ctl, and the activities must say
+FOUNDRY_DISCORD_IPC_DIR) that answers the handshake with READY and records every SET_ACTIVITY.
+The game goes title -> world -> Nether -> quit through foundry-ctl, and the activities must say
 "In the menus", "Singleplayer" in the Overworld, then the Nether, and be cleared on quit:
 
     single     single player on its server thread
     lan        a host opens its world to LAN and a guest joins: the guest shows "Multiplayer",
                the host "Hosting a world" with a party of 2 of 8
-    setting    off in horizon-extras.txt: nothing reaches Discord; the Extras switch
+    setting    off in foundry-extras.txt: nothing reaches Discord; the Extras switch
                turns it on (the activity appears) and off (it is cleared)
     late       Discord starts after the game: found within the 15 s retry
 
@@ -17,7 +17,7 @@ The game goes title -> world -> Nether -> quit through horizon-ctl, and the acti
     python3 tools/discord_presence_e2e.py --check lan --bin-dir target/fast
 
 macOS and Linux (Discord's Windows pipes aren't faked here). Games render offscreen, have no audio
-and use scratch homes (lab.game_env). Needs the prepared resources in .local/horizon-client.
+and use scratch homes (lab.game_env). Needs the prepared resources in .local/foundry-client.
 """
 import argparse
 import json
@@ -124,20 +124,20 @@ def shows(details, state=None):
 
 
 class Game:
-    """One game started by horizon-ctl in a scratch home, with its own fake Discord."""
+    """One game started by foundry-ctl in a scratch home, with its own fake Discord."""
 
     def __init__(self, bins, name, args=(), extras=None, discord_running=True):
-        self.ctl = lab.binary(bins, 'horizon-ctl')
+        self.ctl = lab.binary(bins, 'foundry-ctl')
         self.home = Path(tempfile.mkdtemp(prefix=f'hzdp-{name}-'))
         if extras:
-            (self.home / 'horizon-extras.txt').write_text(extras)
+            (self.home / 'foundry-extras.txt').write_text(extras)
         self.socket = self.home / 'c.sock'
         self.discord = FakeDiscord()
         if discord_running:
             self.discord.start()
-        extra = {'HORIZON_HOME': self.home, 'HORIZON_TELEMETRY_URL': 'off', 'HORIZON_DISCORD_IPC_DIR': self.discord.dir}
+        extra = {'FOUNDRY_HOME': self.home, 'FOUNDRY_TELEMETRY_URL': 'off', 'FOUNDRY_DISCORD_IPC_DIR': self.discord.dir}
         self.env = lab.game_env(**extra)
-        self.ctl_run('launch', '--offscreen', '--game', str(lab.binary(bins, 'horizon-official')), '--resources',
+        self.ctl_run('launch', '--offscreen', '--game', str(lab.binary(bins, 'foundry-official')), '--resources',
                      str(lab.RESOURCES.resolve()), *args)
 
     def ctl_run(self, *words, timeout=600):
@@ -146,7 +146,7 @@ class Game:
         out = r.stdout.strip().splitlines()
         reply = json.loads(out[-1]) if out else {'error': r.stderr.strip()}
         if r.returncode or 'error' in reply:
-            raise AssertionError(f'horizon-ctl {" ".join(words)}: exit {r.returncode}: {reply}')
+            raise AssertionError(f'foundry-ctl {" ".join(words)}: exit {r.returncode}: {reply}')
         return reply
 
     def quit(self):
@@ -222,7 +222,7 @@ def extras_row(game, label):
 
 
 def setting(bins):
-    """Off in horizon-extras.txt: Discord never hears from the game. Turned on in Extras: the
+    """Off in foundry-extras.txt: Discord never hears from the game. Turned on in Extras: the
     activity appears; off again: it is cleared."""
     game = Game(bins, 'setting', extras='discordPresence:false\n')
     d = game.discord
@@ -237,7 +237,7 @@ def setting(bins):
         d.wait('turned on', shows('In the menus'))
         game.ctl_run('click', switch['id'])
         d.wait('turned off', lambda a: a is None)
-        assert 'discordPresence:false' in (game.home / 'horizon-extras.txt').read_text()
+        assert 'discordPresence:false' in (game.home / 'foundry-extras.txt').read_text()
         print('  ok: saved off')
         game.quit()
     finally:
@@ -265,19 +265,19 @@ CHECKS = {'single': single, 'lan': lan, 'setting': setting, 'late': late}
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--check', choices=[*CHECKS, 'all'], default='all')
-    parser.add_argument('--bin-dir', help='prebuilt horizon-official and horizon-ctl (default: build with the fast profile)')
+    parser.add_argument('--bin-dir', help='prebuilt foundry-official and foundry-ctl (default: build with the fast profile)')
     args = parser.parse_args()
     if sys.platform == 'win32':
         sys.exit('the fake Discord is a Unix socket: macOS or Linux only')
     if args.bin_dir:
         bins = Path(args.bin_dir).resolve()
     else:
-        subprocess.run(fast_bins.command('horizon-official', 'horizon-ctl'),
+        subprocess.run(fast_bins.command('foundry-official', 'foundry-ctl'),
                        cwd=ROOT, check=True)
         meta = json.loads(subprocess.run(['cargo', 'metadata', '--format-version', '1', '--no-deps'], cwd=ROOT,
                                          capture_output=True, text=True, check=True).stdout)
         bins = Path(meta['target_directory']) / 'fast'
-    if not (lab.RESOURCES / 'horizon-resources.json').exists():
+    if not (lab.RESOURCES / 'foundry-resources.json').exists():
         sys.exit(f'no prepared resources in {lab.RESOURCES}')
     results = {}
     for name in CHECKS if args.check == 'all' else [args.check]:

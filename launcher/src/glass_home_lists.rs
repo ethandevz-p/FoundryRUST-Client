@@ -6,8 +6,8 @@
 use super::*;
 use crate::glass_ui::{self as ui, white};
 use gpui::{deferred, ExternalPaths};
-use horizon_launcher::worlds::World;
-use horizon_theme::glass::{fill, ink, radius};
+use foundry_launcher::worlds::World;
+use foundry_theme::glass::{fill, ink, radius};
 use std::path::Path;
 use worlds_page::Action;
 
@@ -154,7 +154,7 @@ impl Launcher {
                 .child(ui::icon("arrow-right-01", 15., white(ink::FULL)))
         } else {
             ui::text(13., FontWeight::NORMAL, ink::QUIET)
-                .child(horizon_launcher::storage::format_bytes(w.size))
+                .child(foundry_launcher::storage::format_bytes(w.size))
         };
         let more = ui::icon_button(
             SharedString::from(format!("{key}-more")),
@@ -349,7 +349,7 @@ impl Launcher {
     fn glass_server_row(
         &mut self,
         i: usize,
-        server: horizon_launcher::server_list::Server,
+        server: foundry_launcher::server_list::Server,
         icon: Option<std::sync::Arc<gpui::Image>>,
         pictures: bool,
         cx: &mut Context<Self>,
@@ -393,7 +393,7 @@ impl Launcher {
         );
         // Signed out, Join signs in first, as Play does; otherwise a dimmed Join says why.
         let signed_out =
-            self.owner == Some(false) && !horizon_launcher::developer_offline::selected();
+            self.owner == Some(false) && !foundry_launcher::developer_offline::selected();
         let join = if signed_out && !offline {
             join.tooltip(ui::tip(tr("Sign in to join")))
                 .on_click(cx.listener(|this, _: &ClickEvent, _, cx| {
@@ -531,7 +531,7 @@ pub(super) fn danger_button(id: SharedString, label: SharedString) -> Stateful<D
         .cursor_pointer()
         .child(ui::back_tint(
             radius::CONTROL,
-            gpui::rgba(horizon_theme::glass::DANGER_HOVER << 8 | 0x1f).into(),
+            gpui::rgba(foundry_theme::glass::DANGER_HOVER << 8 | 0x1f).into(),
         ))
         .child(
             ui::text(13., FontWeight::MEDIUM, ink::FULL)

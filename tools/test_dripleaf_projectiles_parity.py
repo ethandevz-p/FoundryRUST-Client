@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Projectile-triggered big-dripleaf tilt on fresh Java/Horizon servers.
+"""Projectile-triggered big-dripleaf tilt on fresh Java/Foundry Client servers.
 
 Arrow, snowball, ender pearl and powered-arrow hit scenes plus an unhit control.
 Only block tilt and its reset timing are compared, not sounds or vibrations.
@@ -112,31 +112,31 @@ def run_side(command, out, label):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--binary', type=Path, help='prebuilt Horizon server (otherwise build fast)')
+    parser.add_argument('--binary', type=Path, help='prebuilt Foundry Client server (otherwise build fast)')
     parser.add_argument('--out', type=Path, default=lab.LOCAL / 'dripleaf-projectiles-parity')
     args = parser.parse_args()
     lock, jars, libraries = base.verify_artifacts()
     if args.binary:
         binary = args.binary.resolve(strict=True)
     else:
-        subprocess.run(fast_bins.command('horizon-client'), cwd=lab.ROOT, check=True)
+        subprocess.run(fast_bins.command('foundry-client'), cwd=lab.ROOT, check=True)
         metadata = json.loads(subprocess.check_output(
             ['cargo', 'metadata', '--no-deps', '--format-version', '1'], cwd=lab.ROOT, text=True))
         binary = Path(metadata['target_directory']) / 'fast' / (
-            'horizon-client.exe' if os.name == 'nt' else 'horizon-client')
+            'foundry-client.exe' if os.name == 'nt' else 'foundry-client')
     out = args.out.resolve()
     out.mkdir(parents=True, exist_ok=True)
     cp = os.pathsep.join(map(str, [jars['server'], *libraries]))
     commands = {'vanilla': ['java', '-Xmx2g', '-cp', cp, 'net.minecraft.server.Main', 'nogui'],
-                'horizon': [binary, '--resources', lab.RESOURCES.resolve(), '--dedicated', '--nogui']}
+                'foundry': [binary, '--resources', lab.RESOURCES.resolve(), '--dedicated', '--nogui']}
     results = {label: run_side(command, out, label) for label, command in commands.items()}
-    expected, actual = results['vanilla'], results['horizon']
+    expected, actual = results['vanilla'], results['foundry']
     assert len(expected) == len(actual) == 51
     for row in expected:
         assert row['messages'], row
         if row['tick'] is not None:
             assert any('Test passed' in m for m in row['messages']), row
-    failures = [{'vanilla': v, 'horizon': h} for v, h in zip(expected, actual) if v != h]
+    failures = [{'vanilla': v, 'foundry': h} for v, h in zip(expected, actual) if v != h]
     lab.write_json(out / 'records.json', results)
     lab.write_json(out / 'report.json', {'schema': 1, 'minecraft': lock['minecraft']['version'],
                                        'observations': len(expected), 'failures': failures,

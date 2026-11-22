@@ -3,7 +3,7 @@
 use crate::theme::Theme;
 use crate::{glass_ui as ui, motion};
 use gpui::{div, prelude::*, px, Div, ScrollHandle, Window};
-use horizon_theme::glass::{fill, ink, radius};
+use foundry_theme::glass::{fill, ink, radius};
 use std::{
     cell::{Cell, RefCell},
     rc::Rc,
@@ -34,7 +34,7 @@ struct Tween {
 }
 
 impl Tween {
-    fn sample(self, now: Instant, curve: horizon_theme::Motion) -> (f32, bool) {
+    fn sample(self, now: Instant, curve: foundry_theme::Motion) -> (f32, bool) {
         let progress = now.saturating_duration_since(self.began).as_secs_f32() / curve.secs();
         if progress >= 1. {
             (self.to, false)
@@ -57,7 +57,7 @@ impl Fade {
     fn sample(&self, now: Instant) -> (f32, bool) {
         self.tween
             .map_or((if self.shown { 1. } else { 0. }, false), |tween| {
-                tween.sample(now, horizon_theme::QUICK)
+                tween.sample(now, foundry_theme::QUICK)
             })
     }
 
@@ -106,7 +106,7 @@ impl Motion {
         let (offset, running) = if instant {
             (slide.to, false)
         } else {
-            slide.sample(now, horizon_theme::MOVE)
+            slide.sample(now, foundry_theme::MOVE)
         };
         if !running || max <= 0. {
             self.slide = None;
@@ -334,7 +334,7 @@ mod tests {
             .unwrap();
         assert!(reversed > visible && reversed < 0., "turn back immediately");
         assert_eq!(
-            state.step(midway + horizon_theme::MOVE.duration(), 600., false),
+            state.step(midway + foundry_theme::MOVE.duration(), 600., false),
             Some(0.)
         );
         assert!(state.slide.is_none());
@@ -377,7 +377,7 @@ mod tests {
             "fade back in without flashing"
         );
         assert_eq!(
-            fade.sample(later + horizon_theme::QUICK.duration()),
+            fade.sample(later + foundry_theme::QUICK.duration()),
             (1., false)
         );
         assert_eq!(

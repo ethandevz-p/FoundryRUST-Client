@@ -33,7 +33,7 @@ fn baseline(load: impl Fn() -> Result<serde_json::Value, String>) -> (Vec<Releas
     let releases = parse_releases(&load().unwrap(), ASSET, is_game_tag);
     let list = load().unwrap();
     let updates = Updates {
-        horizon: horizon_update(
+        foundry: foundry_update(
             &parse_releases(&list, ASSET, is_game_tag),
             &installed_fixture(),
         ),
@@ -153,7 +153,7 @@ fn empty_or_prebuilt_only_fork_has_no_game_or_launcher_update() {
         serde_json::json!([{
             "tag_name": "prebuilt-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
             "prerelease": true,
-            "assets": [{"name": "horizon-prebuilt-v3-x86_64-unknown-linux-gnu.tar.gz",
+            "assets": [{"name": "foundry-prebuilt-v3-x86_64-unknown-linux-gnu.tar.gz",
                         "browser_download_url": "https://example.test/sdk", "size": 9}]
         }]),
     ] {
@@ -165,7 +165,7 @@ fn empty_or_prebuilt_only_fork_has_no_game_or_launcher_update() {
                 |list| {
                     launcher_releases_in_with(list, |url| {
                         assert!(
-                            url.starts_with("https://api.github.com/repos/horizon-rust/horizon/")
+                            url.starts_with("https://api.github.com/repos/foundry-rust/foundry/")
                         );
                         Ok(missing.clone())
                     })
@@ -174,7 +174,7 @@ fn empty_or_prebuilt_only_fork_has_no_game_or_launcher_update() {
             )
             .unwrap();
             assert!(games.unwrap().is_empty());
-            assert!(updates.horizon.is_none());
+            assert!(updates.foundry.is_none());
             assert!(updates.launcher.is_none());
         }
     }
@@ -186,25 +186,25 @@ fn each_platform_download_is_bound_to_the_fork_not_the_provider_url() {
         (
             "linux",
             "x86_64",
-            "horizon-linux-x86_64.tar.gz",
-            "horizon-launcher-linux-x86_64.tar.gz",
+            "foundry-linux-x86_64.tar.gz",
+            "foundry-launcher-linux-x86_64.tar.gz",
         ),
         (
             "windows",
             "x86_64",
-            "horizon-windows-x64.zip",
-            "horizon-launcher-windows-x64.zip",
+            "foundry-windows-x64.zip",
+            "foundry-launcher-windows-x64.zip",
         ),
         (
             "macos",
             "aarch64",
-            "horizon-macos-arm64.zip",
-            "horizon-launcher-macos-arm64.zip",
+            "foundry-macos-arm64.zip",
+            "foundry-launcher-macos-arm64.zip",
         ),
     ];
     let assets: Vec<_> = platforms.iter().flat_map(|(_, _, game, launcher)| [game, launcher])
         .map(|name| serde_json::json!({"name": name, "size": 9,
-            "browser_download_url": "https://github.com/horizon-rust/horizon/releases/download/wrong/file"}))
+            "browser_download_url": "https://github.com/foundry-rust/foundry/releases/download/wrong/file"}))
         .collect();
     let list = serde_json::json!([
         {"tag_name": "v0.9.9", "assets": assets},
@@ -227,7 +227,7 @@ fn each_platform_download_is_bound_to_the_fork_not_the_provider_url() {
                 parsed[0].asset,
                 Some((
                     format!(
-                        "https://github.com/horizon-rust/horizon/releases/download/{tag}/{expected}"
+                        "https://github.com/foundry-rust/foundry/releases/download/{tag}/{expected}"
                     ),
                     9
                 ))
@@ -238,7 +238,7 @@ fn each_platform_download_is_bound_to_the_fork_not_the_provider_url() {
 
 #[test]
 fn decoy_asset_names_never_replace_the_exact_platform_asset() {
-    let asset = "horizon-linux-x86_64.tar.gz";
+    let asset = "foundry-linux-x86_64.tar.gz";
     for decoy in [
         format!("../{asset}"),
         format!("prefix-{asset}"),
@@ -257,7 +257,7 @@ fn decoy_asset_names_never_replace_the_exact_platform_asset() {
                 got[0].asset,
                 Some((
                     format!(
-                        "https://github.com/horizon-rust/horizon/releases/download/{encoded}/{asset}"
+                        "https://github.com/foundry-rust/foundry/releases/download/{encoded}/{asset}"
                     ),
                     2
                 ))
@@ -280,7 +280,7 @@ fn decoy_asset_names_never_replace_the_exact_platform_asset() {
     assert!(draft.is_empty());
     assert_eq!(
         crate::signed::asset_url("../../x", "../evil.zip"),
-        "https://github.com/horizon-rust/horizon/releases/download/..%2F..%2Fx/..%2Fevil.zip"
+        "https://github.com/foundry-rust/foundry/releases/download/..%2F..%2Fx/..%2Fevil.zip"
     );
 }
 
@@ -310,7 +310,7 @@ fn benchmark_shared_startup_response() {
             let updates = scope.spawn(|| {
                 let list = load(Duration::from_millis(5)).unwrap();
                 Updates {
-                    horizon: horizon_update(
+                    foundry: foundry_update(
                         &parse_releases(&list, ASSET, is_game_tag),
                         &installed_fixture(),
                     ),

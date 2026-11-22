@@ -17,7 +17,7 @@ except ImportError:
 
 
 def counts(output):
-    marker = "HORIZON_COLLISION_RESULT "
+    marker = "FOUNDRY_COLLISION_RESULT "
     found = [json.loads(line.split(marker, 1)[1]) for line in output.splitlines() if marker in line]
     if len(found) != 1:
         raise AssertionError(f"Missing collision counts: {found}")
@@ -29,7 +29,7 @@ def counts(output):
 
 def oracle_command(classpath, mode, folder):
     # Set, the property lets `generate` exit 0 without inputs.txt; here it wins over JAVA_TOOL_OPTIONS and JDK_JAVA_OPTIONS.
-    return ["java", "-Xmx1G", "-Dhorizon.prepare.reuse=false", "-cp", classpath, "dev.horizonlab.parity.VanillaCollisionOracle",
+    return ["java", "-Xmx1G", "-Dhorizon.prepare.reuse=false", "-cp", classpath, "dev.foundrylab.parity.VanillaCollisionOracle",
             mode, str(folder)]
 
 
@@ -51,8 +51,8 @@ def main():
     rust = directory / "rust"
     shutil.rmtree(rust, ignore_errors=True)
     rust.mkdir()
-    oracle = lab.ROOT / "mods/horizon/src/test/java/dev/horizonlab/parity/VanillaCollisionOracle.java"
-    sources = [oracle, Path(__file__).resolve(), lab.ROOT / "tools/test_rust_parity.py", lab.ROOT / "Cargo.toml", lab.ROOT / "Cargo.lock", lab.ROOT / "crates/horizon-core/Cargo.toml", lab.ROOT / "crates/horizon-world/Cargo.toml", *sorted((lab.ROOT / "crates/horizon-core/src").rglob("*.rs")), *sorted((lab.ROOT / "crates/horizon-world/src").rglob("*.rs")), lab.ROOT / "crates/horizon-world/examples/probe/collision_fixture.rs"]
+    oracle = lab.ROOT / "mods/foundry/src/test/java/dev/foundrylab/parity/VanillaCollisionOracle.java"
+    sources = [oracle, Path(__file__).resolve(), lab.ROOT / "tools/test_rust_parity.py", lab.ROOT / "Cargo.toml", lab.ROOT / "Cargo.lock", lab.ROOT / "crates/foundry-core/Cargo.toml", lab.ROOT / "crates/foundry-world/Cargo.toml", *sorted((lab.ROOT / "crates/foundry-core/src").rglob("*.rs")), *sorted((lab.ROOT / "crates/foundry-world/src").rglob("*.rs")), lab.ROOT / "crates/foundry-world/examples/probe/collision_fixture.rs"]
     tested_sources = test_rust_parity.source_hashes(sources)
     classes = directory / "classes"
     classes.mkdir(exist_ok=True)
@@ -66,7 +66,7 @@ def main():
     generated = oracle_folders.folder(directory / "oracle-generate", call=(classes, jars["server"], "generate"))
     inputs = generated / "inputs.txt"
     expected = counts(java("server", "generate", generated))
-    test_rust_parity.run(["cargo", "build", "--profile", "fast", "-p", "horizon-world", "--example", "world_probe"])
+    test_rust_parity.run(["cargo", "build", "--profile", "fast", "-p", "foundry-world", "--example", "world_probe"])
     metadata = json.loads(subprocess.check_output(["cargo", "metadata", "--no-deps", "--format-version", "1"], cwd=lab.ROOT, text=True))
     binary = Path(metadata["target_directory"]) / "fast/examples" / ("world_probe.exe" if os.name=="nt" else "world_probe")
     oracle_folders.copy(generated, rust, "block-registry.nbt", "cached-collision.nbt", "inputs.txt")

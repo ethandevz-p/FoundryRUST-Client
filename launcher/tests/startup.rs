@@ -10,12 +10,12 @@ use std::{
 };
 
 fn fixture() -> PathBuf {
-    let root = std::env::temp_dir().join(format!("horizon-startup-{}", std::process::id()));
+    let root = std::env::temp_dir().join(format!("foundry-startup-{}", std::process::id()));
     for folder in ["game/telemetry", "launcher", "data", "config", "probes"] {
         fs::create_dir_all(root.join(folder)).unwrap();
     }
     fs::write(root.join("launcher/settings.json"), r#"{"skip_opening":true,"install_new_versions":false,"desktop_entry":false,"ping_notice_seen":true}"#).unwrap();
-    let consent = serde_json::json!({"version":horizon_telemetry::CONSENT_VERSION,"choices":{}});
+    let consent = serde_json::json!({"version":foundry_telemetry::CONSENT_VERSION,"choices":{}});
     fs::write(
         root.join("game/telemetry/consent.json"),
         consent.to_string(),
@@ -28,18 +28,18 @@ fn fixture() -> PathBuf {
 fn launch(root: &Path) -> Child {
     let inherited_path = std::env::var_os("PATH").unwrap();
     let paths = std::iter::once(root.join("probes")).chain(std::env::split_paths(&inherited_path));
-    horizon_launcher::process::command(env!("CARGO_BIN_EXE_horizon-launcher"))
+    foundry_launcher::process::command(env!("CARGO_BIN_EXE_foundry-launcher"))
         .current_dir(root)
         .env("PATH", std::env::join_paths(paths).unwrap())
-        .env("HORIZON_HOME", root.join("game"))
-        .env("HORIZON_LAUNCHER_HOME", root.join("launcher"))
+        .env("FOUNDRY_HOME", root.join("game"))
+        .env("FOUNDRY_LAUNCHER_HOME", root.join("launcher"))
         .env("XDG_DATA_HOME", root.join("data"))
         .env("XDG_CONFIG_HOME", root.join("config"))
-        .env("HORIZON_LAUNCHER_NO_SELF_UPDATE", "1")
-        .env("HORIZON_NO_AUDIO", "1")
-        .env("HORIZON_TELEMETRY_URL", "off")
-        .env("HORIZON_STARTUP_PROBE_LOG", root.join("probes.log"))
-        .env("HORIZON_LAUNCHER_BENCH", root.join("timing.json"))
+        .env("FOUNDRY_LAUNCHER_NO_SELF_UPDATE", "1")
+        .env("FOUNDRY_NO_AUDIO", "1")
+        .env("FOUNDRY_TELEMETRY_URL", "off")
+        .env("FOUNDRY_STARTUP_PROBE_LOG", root.join("probes.log"))
+        .env("FOUNDRY_LAUNCHER_BENCH", root.join("timing.json"))
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
@@ -130,7 +130,7 @@ fn one_mib_entry_stack(source: &Path, directory: &Path) -> PathBuf {
 fn cli_settings_work_with_one_mib_process_stack() {
     let home = tempfile::tempdir().unwrap();
     let root = home.path();
-    let executable = one_mib_entry_stack(Path::new(env!("CARGO_BIN_EXE_horizon-launcher")), root);
+    let executable = one_mib_entry_stack(Path::new(env!("CARGO_BIN_EXE_foundry-launcher")), root);
     fs::create_dir(root.join("launcher")).unwrap();
     fs::write(
         root.join("launcher/settings.json"),
@@ -138,20 +138,20 @@ fn cli_settings_work_with_one_mib_process_stack() {
     )
     .unwrap();
     let run = |args: &[&str]| {
-        horizon_launcher::process::command(&executable)
+        foundry_launcher::process::command(&executable)
             .args(args)
             .current_dir(root)
-            .env("HORIZON_HOME", root.join("game"))
-            .env("HORIZON_LAUNCHER_HOME", root.join("launcher"))
+            .env("FOUNDRY_HOME", root.join("game"))
+            .env("FOUNDRY_LAUNCHER_HOME", root.join("launcher"))
             .env("XDG_DATA_HOME", root.join("data"))
             .env("XDG_CONFIG_HOME", root.join("config"))
-            .env("HORIZON_LAUNCHER_TRASH", root.join("trash"))
-            .env("HORIZON_LAUNCHER_CLIPBOARD", root.join("clipboard"))
-            .env("HORIZON_LAUNCHER_DESKTOP", root.join("desktop"))
-            .env("HORIZON_LAUNCHER_NO_SELF_UPDATE", "1")
-            .env("HORIZON_NO_AUDIO", "1")
-            .env("HORIZON_NO_KEYCHAIN", "1")
-            .env("HORIZON_TELEMETRY_URL", "off")
+            .env("FOUNDRY_LAUNCHER_TRASH", root.join("trash"))
+            .env("FOUNDRY_LAUNCHER_CLIPBOARD", root.join("clipboard"))
+            .env("FOUNDRY_LAUNCHER_DESKTOP", root.join("desktop"))
+            .env("FOUNDRY_LAUNCHER_NO_SELF_UPDATE", "1")
+            .env("FOUNDRY_NO_AUDIO", "1")
+            .env("FOUNDRY_NO_KEYCHAIN", "1")
+            .env("FOUNDRY_TELEMETRY_URL", "off")
             .output()
             .unwrap()
     };

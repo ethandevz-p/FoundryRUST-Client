@@ -1,7 +1,7 @@
 # The release
 
 Every SDK is the release `sdk-<build id>` of this repository, at
-`https://github.com/horizon-rust/horizon/releases/download/sdk-<build id>/<file>`. Its files:
+`https://github.com/foundry-rust/foundry/releases/download/sdk-<build id>/<file>`. Its files:
 
 {{#sdk-assets}}
 
@@ -42,13 +42,13 @@ number, removing or redefining one changes it.
 | `build.nightly` | The Nightly name that ships this build, when one does. |
 | `package_format` | The prebuilt package's layout number. A reader takes only the number it was made for. |
 | `toolchain.rust` | The Rust release everything in the SDK was compiled with. |
-| `content_api` | The content manifest's version: the `api` key of `horizon-mod.toml`. |
+| `content_api` | The content manifest's version: the `api` key of `foundry-mod.toml`. |
 | `surface.hash` | `surface.json`'s own hash: equal hashes, equal surface. |
 | `surface.previous` | The build id of the SDK published before this one, which it is compared with. Absent on the first. |
 | `surface.source` | That comparison in one word, its worst change: `identical`, `additive`, `conditional` or `breaking` ([classes](02-surface.md#what-a-change-is)). |
 | `surface.changes` | The ids of the records that changed, breaking ones first. |
 | `surface.notes` | The change notes attached to them, each `{ ids, why, migrate }` ([notes](02-surface.md#change-notes)). |
-| `mixins.rev`, `mixins.patch` | The pinned horizon-mixins tool's revision and the SHA-256 of the patch carried on it. |
+| `mixins.rev`, `mixins.patch` | The pinned foundry-mixins tool's revision and the SHA-256 of the patch carried on it. |
 | `assets` | Every file of the release but `sdk.json` and the sums, by name: `sha256`, `size`, `kind`, `codec` (`none` or `xz`), and for a compiled slice its `target` and `side` (`client` or `server`). |
 | `inputs` | The files each route needs, named before any download, build or packaging starts: its SDK slices, the programs beside the game and the checkout files, how to make each, and what each slice must hold. |
 
@@ -57,7 +57,7 @@ number, removing or redefining one changes it.
 The mod tool and the launcher check an SDK the same way, whatever the [base](03-in-a-project.md#mirrors-and-offline-use)
 it came from, and refuse it by name at the first step that fails:
 
-1. `SHA256SUMS` carries Horizon's signature for the tag `sdk-<build id>`. That signature never passes for a game
+1. `SHA256SUMS` carries Foundry Client's signature for the tag `sdk-<build id>`. That signature never passes for a game
    release, and a game release's never passes for an SDK.
 2. `sdk.json` is the file those sums list, names this build, has a schema and package format the reader knows, and
    lists only assets of known kinds and codecs under plain file names.

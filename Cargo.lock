@@ -505,18 +505,18 @@ dependencies = [
 ]
 
 [[package]]
-name = "cargo-horizon-mod"
+name = "cargo-foundry-mod"
 version = "0.1.0"
 dependencies = [
  "base64 0.22.1",
  "dunce",
- "horizon-addresses",
- "horizon-mod-package",
- "horizon-mod-source",
- "horizon-mod-surface",
- "horizon-mod-vocab",
- "horizon-port-pack",
- "horizon-release-sign",
+ "foundry-addresses",
+ "foundry-mod-package",
+ "foundry-mod-source",
+ "foundry-mod-surface",
+ "foundry-mod-vocab",
+ "foundry-port-pack",
+ "foundry-release-sign",
  "libc",
  "ring",
  "rustc-demangle",
@@ -1756,11 +1756,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "horizon-addresses"
+name = "foundry-addresses"
 version = "0.1.0"
 
 [[package]]
-name = "horizon-anticheat"
+name = "foundry-anticheat"
 version = "0.1.0"
 dependencies = [
  "serde",
@@ -1768,11 +1768,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "horizon-assets"
+name = "foundry-assets"
 version = "0.1.0"
 dependencies = [
  "flate2",
- "horizon-core",
+ "foundry-core",
  "log",
  "miniz_oxide 0.8.9",
  "png",
@@ -1782,34 +1782,34 @@ dependencies = [
 ]
 
 [[package]]
-name = "horizon-bench"
+name = "foundry-bench"
 version = "0.1.0"
 dependencies = [
- "horizon-system",
+ "foundry-system",
  "serde",
  "serde_json",
 ]
 
 [[package]]
-name = "horizon-bots"
+name = "foundry-bots"
 version = "0.1.0"
 dependencies = [
- "horizon-protocol",
+ "foundry-protocol",
  "serde_json",
 ]
 
 [[package]]
-name = "horizon-chat-filter"
+name = "foundry-chat-filter"
 version = "0.1.0"
 dependencies = [
- "horizon-server-files",
+ "foundry-server-files",
  "serde",
  "serde_json",
  "toml",
 ]
 
 [[package]]
-name = "horizon-client"
+name = "foundry-client"
 version = "0.1.0"
 dependencies = [
  "ab_glyph",
@@ -1822,47 +1822,47 @@ dependencies = [
  "fs4",
  "gilrs",
  "glam",
- "horizon-anticheat",
- "horizon-assets",
- "horizon-bench",
- "horizon-chat-filter",
- "horizon-client-core",
- "horizon-client-gameplay",
- "horizon-client-input",
- "horizon-client-lib",
- "horizon-client-render",
- "horizon-command",
- "horizon-core",
- "horizon-cosmetics",
- "horizon-dualsense",
- "horizon-engine-slots",
- "horizon-friends",
- "horizon-game-discovery",
- "horizon-gameplay",
- "horizon-guest-stack",
- "horizon-hooks",
- "horizon-items",
- "horizon-java-properties",
- "horizon-mod-api",
- "horizon-mod-api-gen",
- "horizon-mod-api-macros",
- "horizon-mod-package",
- "horizon-mod-runtime",
- "horizon-mod-vocab",
- "horizon-mod-wasm",
- "horizon-narrator",
- "horizon-optifine",
- "horizon-perf",
- "horizon-perf-format",
- "horizon-protocol",
- "horizon-server-files",
- "horizon-shader-api",
- "horizon-shaders",
- "horizon-system",
- "horizon-telemetry",
- "horizon-theme",
- "horizon-threads",
- "horizon-world",
+ "foundry-anticheat",
+ "foundry-assets",
+ "foundry-bench",
+ "foundry-chat-filter",
+ "foundry-client-core",
+ "foundry-client-gameplay",
+ "foundry-client-input",
+ "foundry-client-lib",
+ "foundry-client-render",
+ "foundry-command",
+ "foundry-core",
+ "foundry-cosmetics",
+ "foundry-dualsense",
+ "foundry-engine-slots",
+ "foundry-friends",
+ "foundry-game-discovery",
+ "foundry-gameplay",
+ "foundry-guest-stack",
+ "foundry-hooks",
+ "foundry-items",
+ "foundry-java-properties",
+ "foundry-mod-api",
+ "foundry-mod-api-gen",
+ "foundry-mod-api-macros",
+ "foundry-mod-package",
+ "foundry-mod-runtime",
+ "foundry-mod-vocab",
+ "foundry-mod-wasm",
+ "foundry-narrator",
+ "foundry-optifine",
+ "foundry-perf",
+ "foundry-perf-format",
+ "foundry-protocol",
+ "foundry-server-files",
+ "foundry-shader-api",
+ "foundry-shaders",
+ "foundry-system",
+ "foundry-telemetry",
+ "foundry-theme",
+ "foundry-threads",
+ "foundry-world",
  "log",
  "naga",
  "objc2 0.6.5",
@@ -1886,44 +1886,44 @@ dependencies = [
 ]
 
 [[package]]
-name = "horizon-client-core"
+name = "foundry-client-core"
 version = "0.1.0"
 dependencies = [
- "horizon-assets",
- "horizon-core",
- "horizon-world",
+ "foundry-assets",
+ "foundry-core",
+ "foundry-world",
  "serde_json",
 ]
 
 [[package]]
-name = "horizon-client-gameplay"
+name = "foundry-client-gameplay"
 version = "0.1.0"
 dependencies = [
  "glam",
- "horizon-client-lib",
- "horizon-core",
- "horizon-world",
+ "foundry-client-lib",
+ "foundry-core",
+ "foundry-world",
  "log",
  "serde_json",
 ]
 
 [[package]]
-name = "horizon-client-input"
+name = "foundry-client-input"
 version = "0.1.0"
 dependencies = [
  "arboard",
- "horizon-client-core",
- "horizon-engine-slots",
- "horizon-hooks",
- "horizon-mod-api-macros",
- "horizon-theme",
+ "foundry-client-core",
+ "foundry-engine-slots",
+ "foundry-hooks",
+ "foundry-mod-api-macros",
+ "foundry-theme",
  "log",
  "png",
  "winit",
 ]
 
 [[package]]
-name = "horizon-client-lib"
+name = "foundry-client-lib"
 version = "0.1.0"
 dependencies = [
  "ab_glyph",
@@ -1938,40 +1938,40 @@ dependencies = [
  "getrandom 0.3.4",
  "gilrs",
  "glam",
- "horizon-anticheat",
- "horizon-assets",
- "horizon-bench",
- "horizon-client-core",
- "horizon-client-input",
- "horizon-client-render",
- "horizon-command",
- "horizon-core",
- "horizon-engine-slots",
- "horizon-game-discovery",
- "horizon-guest-stack",
- "horizon-hdr",
- "horizon-hooks",
- "horizon-items",
- "horizon-java-properties",
- "horizon-mcp",
- "horizon-mod-api",
- "horizon-mod-api-macros",
- "horizon-mod-package",
- "horizon-mod-runtime",
- "horizon-mod-vocab",
- "horizon-mod-wasm",
- "horizon-narrator",
- "horizon-optifine",
- "horizon-perf",
- "horizon-perf-format",
- "horizon-protocol",
- "horizon-server-files",
- "horizon-shader-api",
- "horizon-shaders",
- "horizon-telemetry",
- "horizon-theme",
- "horizon-threads",
- "horizon-world",
+ "foundry-anticheat",
+ "foundry-assets",
+ "foundry-bench",
+ "foundry-client-core",
+ "foundry-client-input",
+ "foundry-client-render",
+ "foundry-command",
+ "foundry-core",
+ "foundry-engine-slots",
+ "foundry-game-discovery",
+ "foundry-guest-stack",
+ "foundry-hdr",
+ "foundry-hooks",
+ "foundry-items",
+ "foundry-java-properties",
+ "foundry-mcp",
+ "foundry-mod-api",
+ "foundry-mod-api-macros",
+ "foundry-mod-package",
+ "foundry-mod-runtime",
+ "foundry-mod-vocab",
+ "foundry-mod-wasm",
+ "foundry-narrator",
+ "foundry-optifine",
+ "foundry-perf",
+ "foundry-perf-format",
+ "foundry-protocol",
+ "foundry-server-files",
+ "foundry-shader-api",
+ "foundry-shaders",
+ "foundry-telemetry",
+ "foundry-theme",
+ "foundry-threads",
+ "foundry-world",
  "log",
  "miniz_oxide 0.8.9",
  "mio",
@@ -2002,7 +2002,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "horizon-client-render"
+name = "foundry-client-render"
 version = "0.1.0"
 dependencies = [
  "ab_glyph",
@@ -2013,33 +2013,33 @@ dependencies = [
  "flate2",
  "glam",
  "half",
- "horizon-assets",
- "horizon-client-core",
- "horizon-client-input",
- "horizon-command",
- "horizon-core",
- "horizon-engine-slots",
- "horizon-guest-stack",
- "horizon-hdr",
- "horizon-hooks",
- "horizon-items",
- "horizon-mod-api",
- "horizon-mod-api-macros",
- "horizon-mod-package",
- "horizon-mod-runtime",
- "horizon-mod-vocab",
- "horizon-narrator",
- "horizon-optifine",
- "horizon-perf",
- "horizon-perf-format",
- "horizon-polytone",
- "horizon-protocol",
- "horizon-shader-api",
- "horizon-shaders",
- "horizon-system",
- "horizon-theme",
- "horizon-threads",
- "horizon-world",
+ "foundry-assets",
+ "foundry-client-core",
+ "foundry-client-input",
+ "foundry-command",
+ "foundry-core",
+ "foundry-engine-slots",
+ "foundry-guest-stack",
+ "foundry-hdr",
+ "foundry-hooks",
+ "foundry-items",
+ "foundry-mod-api",
+ "foundry-mod-api-macros",
+ "foundry-mod-package",
+ "foundry-mod-runtime",
+ "foundry-mod-vocab",
+ "foundry-narrator",
+ "foundry-optifine",
+ "foundry-perf",
+ "foundry-perf-format",
+ "foundry-polytone",
+ "foundry-protocol",
+ "foundry-shader-api",
+ "foundry-shaders",
+ "foundry-system",
+ "foundry-theme",
+ "foundry-threads",
+ "foundry-world",
  "image-webp",
  "log",
  "lz4_flex",
@@ -2064,18 +2064,18 @@ dependencies = [
 ]
 
 [[package]]
-name = "horizon-command"
+name = "foundry-command"
 version = "0.1.0"
 dependencies = [
- "horizon-client-core",
- "horizon-core",
- "horizon-items",
- "horizon-protocol",
- "horizon-world",
+ "foundry-client-core",
+ "foundry-core",
+ "foundry-items",
+ "foundry-protocol",
+ "foundry-world",
 ]
 
 [[package]]
-name = "horizon-core"
+name = "foundry-core"
 version = "0.1.0"
 dependencies = [
  "libm",
@@ -2085,12 +2085,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "horizon-cosmetics"
+name = "foundry-cosmetics"
 version = "0.1.0"
 dependencies = [
  "base64 0.22.1",
  "glam",
- "horizon-addresses",
+ "foundry-addresses",
  "png",
  "serde",
  "serde_json",
@@ -2098,16 +2098,16 @@ dependencies = [
 ]
 
 [[package]]
-name = "horizon-discord"
+name = "foundry-discord"
 version = "0.1.0"
 dependencies = [
- "horizon-platform",
+ "foundry-platform",
  "log",
  "serde_json",
 ]
 
 [[package]]
-name = "horizon-dualsense"
+name = "foundry-dualsense"
 version = "0.1.0"
 dependencies = [
  "cpal",
@@ -2117,21 +2117,21 @@ dependencies = [
 ]
 
 [[package]]
-name = "horizon-engine-slots"
+name = "foundry-engine-slots"
 version = "0.1.0"
 dependencies = [
- "horizon-mod-vocab",
+ "foundry-mod-vocab",
 ]
 
 [[package]]
-name = "horizon-friends"
+name = "foundry-friends"
 version = "0.1.0"
 dependencies = [
  "chacha20poly1305",
  "getrandom 0.3.4",
  "hkdf",
- "horizon-addresses",
- "horizon-platform",
+ "foundry-addresses",
+ "foundry-platform",
  "if-addrs",
  "serde",
  "serde_json",
@@ -2141,25 +2141,25 @@ dependencies = [
 ]
 
 [[package]]
-name = "horizon-game"
+name = "foundry-game"
 version = "0.1.0"
 dependencies = [
- "horizon-client",
- "horizon-core",
- "horizon-guest-stack",
- "horizon-mod-host",
- "horizon-mod-package",
- "horizon-protocol",
+ "foundry-client",
+ "foundry-core",
+ "foundry-guest-stack",
+ "foundry-mod-host",
+ "foundry-mod-package",
+ "foundry-protocol",
  "serde_json",
  "tempfile",
  "winresource",
 ]
 
 [[package]]
-name = "horizon-game-discovery"
+name = "foundry-game-discovery"
 version = "0.1.0"
 dependencies = [
- "horizon-mod-source",
+ "foundry-mod-source",
  "proc-macro2",
  "quote",
  "serde_json",
@@ -2167,35 +2167,35 @@ dependencies = [
 ]
 
 [[package]]
-name = "horizon-gameplay"
+name = "foundry-gameplay"
 version = "0.1.0"
 dependencies = [
- "horizon-assets",
- "horizon-client-core",
- "horizon-client-lib",
- "horizon-command",
- "horizon-core",
- "horizon-engine-slots",
- "horizon-items",
- "horizon-mod-package",
- "horizon-mod-runtime",
- "horizon-mod-vocab",
- "horizon-protocol",
- "horizon-threads",
- "horizon-world",
+ "foundry-assets",
+ "foundry-client-core",
+ "foundry-client-lib",
+ "foundry-command",
+ "foundry-core",
+ "foundry-engine-slots",
+ "foundry-items",
+ "foundry-mod-package",
+ "foundry-mod-runtime",
+ "foundry-mod-vocab",
+ "foundry-protocol",
+ "foundry-threads",
+ "foundry-world",
  "log",
  "serde_json",
 ]
 
 [[package]]
-name = "horizon-guest-stack"
+name = "foundry-guest-stack"
 version = "0.1.0"
 dependencies = [
  "libc",
 ]
 
 [[package]]
-name = "horizon-hdr"
+name = "foundry-hdr"
 version = "0.1.0"
 dependencies = [
  "ash",
@@ -2206,82 +2206,82 @@ dependencies = [
 ]
 
 [[package]]
-name = "horizon-heartbeat"
+name = "foundry-heartbeat"
 version = "0.1.0"
 dependencies = [
- "horizon-platform",
- "horizon-telemetry",
+ "foundry-platform",
+ "foundry-telemetry",
  "log",
 ]
 
 [[package]]
-name = "horizon-hooks"
+name = "foundry-hooks"
 version = "0.1.0"
 
 [[package]]
-name = "horizon-hot-paths-game"
+name = "foundry-hot-paths-game"
 version = "0.1.0"
 dependencies = [
- "horizon-client",
- "horizon-guest-stack",
- "horizon-mod-api",
- "horizon-mod-host",
- "horizon-mod-package",
+ "foundry-client",
+ "foundry-guest-stack",
+ "foundry-mod-api",
+ "foundry-mod-host",
+ "foundry-mod-package",
 ]
 
 [[package]]
-name = "horizon-internals"
+name = "foundry-internals"
 version = "0.1.0"
 
 [[package]]
-name = "horizon-items"
+name = "foundry-items"
 version = "0.1.0"
 dependencies = [
- "horizon-client-core",
- "horizon-core",
- "horizon-mod-package",
- "horizon-mod-vocab",
- "horizon-world",
+ "foundry-client-core",
+ "foundry-core",
+ "foundry-mod-package",
+ "foundry-mod-vocab",
+ "foundry-world",
  "log",
  "serde",
  "serde_json",
 ]
 
 [[package]]
-name = "horizon-java-properties"
+name = "foundry-java-properties"
 version = "0.1.0"
 
 [[package]]
-name = "horizon-mcp"
+name = "foundry-mcp"
 version = "0.1.0"
 dependencies = [
  "serde_json",
 ]
 
 [[package]]
-name = "horizon-mod-api"
+name = "foundry-mod-api"
 version = "0.1.0"
 dependencies = [
  "bytemuck",
  "glam",
- "horizon-core",
- "horizon-mod-api-gen",
- "horizon-mod-api-macros",
- "horizon-mod-runtime",
- "horizon-mod-vocab",
+ "foundry-core",
+ "foundry-mod-api-gen",
+ "foundry-mod-api-macros",
+ "foundry-mod-runtime",
+ "foundry-mod-vocab",
  "log",
  "serde",
  "serde_json",
 ]
 
 [[package]]
-name = "horizon-mod-api-gen"
+name = "foundry-mod-api-gen"
 version = "0.1.0"
 dependencies = [
  "heck",
- "horizon-game-discovery",
- "horizon-mod-source",
- "horizon-mod-surface",
+ "foundry-game-discovery",
+ "foundry-mod-source",
+ "foundry-mod-surface",
  "prettyplease",
  "proc-macro2",
  "quote",
@@ -2295,20 +2295,20 @@ dependencies = [
 ]
 
 [[package]]
-name = "horizon-mod-api-gen-tests"
+name = "foundry-mod-api-gen-tests"
 version = "0.1.0"
 dependencies = [
- "horizon-client-core",
- "horizon-core",
- "horizon-mod-api-gen",
- "horizon-mod-api-macros",
- "horizon-mod-runtime",
+ "foundry-client-core",
+ "foundry-core",
+ "foundry-mod-api-gen",
+ "foundry-mod-api-macros",
+ "foundry-mod-runtime",
  "log",
  "serde_json",
 ]
 
 [[package]]
-name = "horizon-mod-api-macros"
+name = "foundry-mod-api-macros"
 version = "0.1.0"
 dependencies = [
  "proc-macro2",
@@ -2317,7 +2317,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "horizon-mod-deps"
+name = "foundry-mod-deps"
 version = "0.1.0"
 dependencies = [
  "gif",
@@ -2332,31 +2332,31 @@ dependencies = [
 ]
 
 [[package]]
-name = "horizon-mod-dimension-game"
+name = "foundry-mod-dimension-game"
 version = "0.1.0"
 dependencies = [
- "horizon-client",
- "horizon-mod-api",
- "horizon-mod-host",
- "horizon-mod-package",
- "horizon-mod-wasm",
+ "foundry-client",
+ "foundry-mod-api",
+ "foundry-mod-host",
+ "foundry-mod-package",
+ "foundry-mod-wasm",
  "log",
  "tempfile",
  "wat",
 ]
 
 [[package]]
-name = "horizon-mod-host"
+name = "foundry-mod-host"
 version = "0.1.0"
 dependencies = [
- "horizon-client",
- "horizon-engine-slots",
- "horizon-guest-stack",
- "horizon-mod-api",
- "horizon-mod-package",
- "horizon-mod-points",
- "horizon-mod-render",
- "horizon-mod-wasm",
+ "foundry-client",
+ "foundry-engine-slots",
+ "foundry-guest-stack",
+ "foundry-mod-api",
+ "foundry-mod-package",
+ "foundry-mod-points",
+ "foundry-mod-render",
+ "foundry-mod-wasm",
  "libloading",
  "log",
  "serde",
@@ -2365,18 +2365,18 @@ dependencies = [
 ]
 
 [[package]]
-name = "horizon-mod-package"
+name = "foundry-mod-package"
 version = "0.1.0"
 dependencies = [
  "cap-fs-ext",
  "cap-std",
  "getrandom 0.4.3",
- "horizon-core",
- "horizon-mod-api",
- "horizon-mod-api-macros",
- "horizon-mod-surface",
- "horizon-mod-vocab",
- "horizon-shader-api",
+ "foundry-core",
+ "foundry-mod-api",
+ "foundry-mod-api-macros",
+ "foundry-mod-surface",
+ "foundry-mod-vocab",
+ "foundry-shader-api",
  "libc",
  "log",
  "minisign-verify",
@@ -2400,35 +2400,35 @@ dependencies = [
 ]
 
 [[package]]
-name = "horizon-mod-points"
+name = "foundry-mod-points"
 version = "0.1.0"
 
 [[package]]
-name = "horizon-mod-render"
+name = "foundry-mod-render"
 version = "0.1.0"
 dependencies = [
  "bytemuck",
  "glam",
- "horizon-client-render",
- "horizon-engine-slots",
- "horizon-mod-api",
- "horizon-mod-api-gen",
- "horizon-mod-api-macros",
+ "foundry-client-render",
+ "foundry-engine-slots",
+ "foundry-mod-api",
+ "foundry-mod-api-gen",
+ "foundry-mod-api-macros",
  "wgpu",
 ]
 
 [[package]]
-name = "horizon-mod-runtime"
+name = "foundry-mod-runtime"
 version = "0.1.0"
 dependencies = [
- "horizon-core",
+ "foundry-core",
 ]
 
 [[package]]
-name = "horizon-mod-source"
+name = "foundry-mod-source"
 version = "0.1.0"
 dependencies = [
- "horizon-mod-surface",
+ "foundry-mod-surface",
  "proc-macro2",
  "quote",
  "syn 2.0.119",
@@ -2437,7 +2437,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "horizon-mod-surface"
+name = "foundry-mod-surface"
 version = "0.1.0"
 dependencies = [
  "libc",
@@ -2449,37 +2449,37 @@ dependencies = [
 ]
 
 [[package]]
-name = "horizon-mod-vocab"
+name = "foundry-mod-vocab"
 version = "0.1.0"
 dependencies = [
  "bytemuck",
  "glam",
- "horizon-core",
- "horizon-items",
- "horizon-mod-api",
- "horizon-mod-api-gen",
- "horizon-mod-api-macros",
- "horizon-mod-runtime",
+ "foundry-core",
+ "foundry-items",
+ "foundry-mod-api",
+ "foundry-mod-api-gen",
+ "foundry-mod-api-macros",
+ "foundry-mod-runtime",
  "log",
  "serde",
  "serde_json",
 ]
 
 [[package]]
-name = "horizon-mod-wasm"
+name = "foundry-mod-wasm"
 version = "0.1.0"
 dependencies = [
- "horizon-client-core",
- "horizon-core",
- "horizon-guest-stack",
- "horizon-java-properties",
- "horizon-mod-api",
- "horizon-mod-api-gen",
- "horizon-mod-api-macros",
- "horizon-mod-package",
- "horizon-mod-runtime",
- "horizon-threads",
- "horizon-world",
+ "foundry-client-core",
+ "foundry-core",
+ "foundry-guest-stack",
+ "foundry-java-properties",
+ "foundry-mod-api",
+ "foundry-mod-api-gen",
+ "foundry-mod-api-macros",
+ "foundry-mod-package",
+ "foundry-mod-runtime",
+ "foundry-threads",
+ "foundry-world",
  "libc",
  "log",
  "rustix 1.1.5",
@@ -2493,28 +2493,28 @@ dependencies = [
 ]
 
 [[package]]
-name = "horizon-mod-wasm-wire-loopback"
+name = "foundry-mod-wasm-wire-loopback"
 version = "0.1.0"
 dependencies = [
- "horizon-core",
- "horizon-game-discovery",
- "horizon-mod-api",
- "horizon-mod-api-gen",
- "horizon-mod-runtime",
- "horizon-world",
+ "foundry-core",
+ "foundry-game-discovery",
+ "foundry-mod-api",
+ "foundry-mod-api-gen",
+ "foundry-mod-runtime",
+ "foundry-world",
  "log",
  "serde_json",
 ]
 
 [[package]]
-name = "horizon-modding-examples"
+name = "foundry-modding-examples"
 version = "0.0.0"
 dependencies = [
- "horizon-mod-api",
+ "foundry-mod-api",
 ]
 
 [[package]]
-name = "horizon-narrator"
+name = "foundry-narrator"
 version = "0.1.0"
 dependencies = [
  "libloading",
@@ -2526,50 +2526,50 @@ dependencies = [
 ]
 
 [[package]]
-name = "horizon-official"
+name = "foundry-official"
 version = "0.1.0"
 dependencies = [
- "horizon-addresses",
- "horizon-discord",
- "horizon-friends",
- "horizon-game",
- "horizon-heartbeat",
- "horizon-official-servers",
- "horizon-perf-share",
- "horizon-platform",
+ "foundry-addresses",
+ "foundry-discord",
+ "foundry-friends",
+ "foundry-game",
+ "foundry-heartbeat",
+ "foundry-official-servers",
+ "foundry-perf-share",
+ "foundry-platform",
  "log",
  "winresource",
 ]
 
 [[package]]
-name = "horizon-official-servers"
+name = "foundry-official-servers"
 version = "0.1.0"
 dependencies = [
- "horizon-addresses",
- "horizon-platform",
+ "foundry-addresses",
+ "foundry-platform",
  "log",
 ]
 
 [[package]]
-name = "horizon-optifine"
+name = "foundry-optifine"
 version = "0.1.0"
 dependencies = [
- "horizon-assets",
- "horizon-core",
- "horizon-system",
+ "foundry-assets",
+ "foundry-core",
+ "foundry-system",
  "log",
  "regex",
  "zip",
 ]
 
 [[package]]
-name = "horizon-perf"
+name = "foundry-perf"
 version = "0.1.0"
 dependencies = [
  "flate2",
- "horizon-bench",
- "horizon-perf-format",
- "horizon-perf-share",
+ "foundry-bench",
+ "foundry-perf-format",
+ "foundry-perf-share",
  "prost",
  "regex",
  "serde",
@@ -2577,7 +2577,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "horizon-perf-format"
+name = "foundry-perf-format"
 version = "0.1.0"
 dependencies = [
  "flate2",
@@ -2588,12 +2588,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "horizon-perf-share"
+name = "foundry-perf-share"
 version = "0.1.0"
 dependencies = [
  "getrandom 0.3.4",
- "horizon-addresses",
- "horizon-platform",
+ "foundry-addresses",
+ "foundry-platform",
  "log",
  "open",
  "serde",
@@ -2603,26 +2603,26 @@ dependencies = [
 ]
 
 [[package]]
-name = "horizon-platform"
+name = "foundry-platform"
 version = "0.1.0"
 dependencies = [
- "horizon-bench",
- "horizon-core",
- "horizon-guest-stack",
- "horizon-hooks",
- "horizon-java-properties",
- "horizon-mod-api-gen",
- "horizon-mod-package",
- "horizon-perf-format",
- "horizon-prepare",
- "horizon-protocol",
- "horizon-server-files",
- "horizon-system",
- "horizon-world",
+ "foundry-bench",
+ "foundry-core",
+ "foundry-guest-stack",
+ "foundry-hooks",
+ "foundry-java-properties",
+ "foundry-mod-api-gen",
+ "foundry-mod-package",
+ "foundry-perf-format",
+ "foundry-prepare",
+ "foundry-protocol",
+ "foundry-server-files",
+ "foundry-system",
+ "foundry-world",
 ]
 
 [[package]]
-name = "horizon-polytone"
+name = "foundry-polytone"
 version = "0.1.0"
 dependencies = [
  "log",
@@ -2631,12 +2631,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "horizon-port-pack"
+name = "foundry-port-pack"
 version = "0.1.0"
 dependencies = [
- "horizon-mod-api",
- "horizon-mod-api-gen",
- "horizon-mod-package",
+ "foundry-mod-api",
+ "foundry-mod-api-gen",
+ "foundry-mod-package",
  "serde",
  "serde_json",
  "sha1",
@@ -2648,15 +2648,15 @@ dependencies = [
 ]
 
 [[package]]
-name = "horizon-port-pack-cli"
+name = "foundry-port-pack-cli"
 version = "0.1.0"
 dependencies = [
- "horizon-addresses",
- "horizon-port-pack",
+ "foundry-addresses",
+ "foundry-port-pack",
 ]
 
 [[package]]
-name = "horizon-prepare"
+name = "foundry-prepare"
 version = "0.1.0"
 dependencies = [
  "crc32fast",
@@ -2668,16 +2668,16 @@ dependencies = [
 ]
 
 [[package]]
-name = "horizon-protocol"
+name = "foundry-protocol"
 version = "0.1.0"
 dependencies = [
  "aes",
  "flate2",
  "getrandom 0.3.4",
- "horizon-core",
- "horizon-mod-runtime",
- "horizon-threads",
- "horizon-world",
+ "foundry-core",
+ "foundry-mod-runtime",
+ "foundry-threads",
+ "foundry-world",
  "idna",
  "idna_adapter",
  "ipconfig",
@@ -2689,16 +2689,16 @@ dependencies = [
 ]
 
 [[package]]
-name = "horizon-relay"
+name = "foundry-relay"
 version = "0.1.0"
 dependencies = [
  "getrandom 0.3.4",
- "horizon-friends",
+ "foundry-friends",
  "serde_json",
 ]
 
 [[package]]
-name = "horizon-release-sign"
+name = "foundry-release-sign"
 version = "0.1.0"
 dependencies = [
  "base64 0.22.1",
@@ -2706,19 +2706,19 @@ dependencies = [
 ]
 
 [[package]]
-name = "horizon-server"
+name = "foundry-server"
 version = "0.1.0"
 dependencies = [
  "ab_glyph",
  "base64 0.22.1",
  "chrono",
  "getrandom 0.3.4",
- "horizon-anticheat",
- "horizon-chat-filter",
- "horizon-mcp",
- "horizon-platform",
- "horizon-release-sign",
- "horizon-server-launch",
+ "foundry-anticheat",
+ "foundry-chat-filter",
+ "foundry-mcp",
+ "foundry-platform",
+ "foundry-release-sign",
+ "foundry-server-launch",
  "libc",
  "p12-keystore",
  "png",
@@ -2735,15 +2735,15 @@ dependencies = [
 ]
 
 [[package]]
-name = "horizon-server-files"
+name = "foundry-server-files"
 version = "0.1.0"
 dependencies = [
  "base64 0.22.1",
  "getrandom 0.3.4",
- "horizon-core",
- "horizon-java-properties",
- "horizon-protocol",
- "horizon-world",
+ "foundry-core",
+ "foundry-java-properties",
+ "foundry-protocol",
+ "foundry-world",
  "log",
  "serde",
  "ureq",
@@ -2751,15 +2751,15 @@ dependencies = [
 ]
 
 [[package]]
-name = "horizon-server-launch"
+name = "foundry-server-launch"
 version = "0.1.0"
 dependencies = [
  "dunce",
- "horizon-anticheat",
- "horizon-chat-filter",
- "horizon-core",
- "horizon-platform",
- "horizon-server-files",
+ "foundry-anticheat",
+ "foundry-chat-filter",
+ "foundry-core",
+ "foundry-platform",
+ "foundry-server-files",
  "serde",
  "toml",
  "toml_edit",
@@ -2767,7 +2767,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "horizon-shader-api"
+name = "foundry-shader-api"
 version = "0.1.0"
 dependencies = [
  "bytemuck",
@@ -2781,27 +2781,27 @@ dependencies = [
 ]
 
 [[package]]
-name = "horizon-shaders"
+name = "foundry-shaders"
 version = "0.1.0"
 dependencies = [
  "half",
- "horizon-core",
+ "foundry-core",
  "naga",
  "png",
  "zip",
 ]
 
 [[package]]
-name = "horizon-system"
+name = "foundry-system"
 version = "0.1.0"
 
 [[package]]
-name = "horizon-telemetry"
+name = "foundry-telemetry"
 version = "0.1.0"
 dependencies = [
  "getrandom 0.3.4",
- "horizon-addresses",
- "horizon-platform",
+ "foundry-addresses",
+ "foundry-platform",
  "ruzstd",
  "serde",
  "serde_json",
@@ -2809,16 +2809,16 @@ dependencies = [
 ]
 
 [[package]]
-name = "horizon-theme"
+name = "foundry-theme"
 version = "0.1.0"
 
 [[package]]
-name = "horizon-threads"
+name = "foundry-threads"
 version = "0.1.0"
 dependencies = [
  "addr2line",
  "framehop",
- "horizon-guest-stack",
+ "foundry-guest-stack",
  "libc",
  "libmimalloc-sys",
  "memmap2",
@@ -2829,15 +2829,15 @@ dependencies = [
 ]
 
 [[package]]
-name = "horizon-world"
+name = "foundry-world"
 version = "0.1.0"
 dependencies = [
  "cap-fs-ext",
  "cap-std",
  "flate2",
- "horizon-assets",
- "horizon-core",
- "horizon-threads",
+ "foundry-assets",
+ "foundry-core",
+ "foundry-threads",
  "indexmap",
  "libm",
  "log",
@@ -7254,10 +7254,10 @@ checksum = "e450f9b2ed1dff33c94c12589a87338689467b9c4f5d8a5710bd09a847d2c8a7"
 name = "xtask"
 version = "0.1.0"
 dependencies = [
- "horizon-addresses",
- "horizon-mod-api-gen",
- "horizon-mod-package",
- "horizon-theme",
+ "foundry-addresses",
+ "foundry-mod-api-gen",
+ "foundry-mod-package",
+ "foundry-theme",
 ]
 
 [[package]]

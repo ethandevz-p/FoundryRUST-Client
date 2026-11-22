@@ -1,14 +1,14 @@
-# Modpacks: porting any pack to Horizon
+# Modpacks: porting any pack to Foundry Client
 
 Goal (Ludovic, 2026-10-16): **support modpacks like All the Mods 10 far better than Minecraft
 does, and be able to port any of them.** "Better" is measured: pack load time, RAM, FPS, TPS
 and world-generation speed against the same pack on NeoForge or Fabric. "Any of them" means a
 pipeline, not a list of hand ports. It takes a pack as players download it and produces native
-Horizon mods. The pipeline is AI agents in dependency order, each port checked against the
+Foundry Client mods. The pipeline is AI agents in dependency order, each port checked against the
 original mod running in a dev-only Java instance.
 
 This page is the design. It builds on [mods.md](modding/src/how-to/content-mods.md) (content mods, native mods, and
-why Java jars cannot run in Horizon, so we port instead). The ATM10 inventory behind the numbers below is
+why Java jars cannot run in Foundry Client, so we port instead). The ATM10 inventory behind the numbers below is
 [modpacks/atm10-mods.csv](modpacks/atm10-mods.csv).
 
 ## In one picture
@@ -25,7 +25,7 @@ why Java jars cannot run in Horizon, so we port instead). The ATM10 inventory be
    │
    ├─ carry-over (mechanical, no agent): assets/ + data/ upgraded to 26.3 formats,
    │    block and item registrations from the oracle's facts export  →  <mod>.hmod
-   ├─ port (one agent per mod, tiers logic and up): a Rust native mod (a horizon-mixins
+   ├─ port (one agent per mod, tiers logic and up): a Rust native mod (a foundry-mixins
    │    bundle), iterating until its harness passes                  →  <mod>.hmod
    ├─ harness per mod: the Java mod in a dev-only NeoForge/Fabric oracle vs the port
    ▼
@@ -56,11 +56,11 @@ was downloaded.
 | Class | What it is | Port? | ATM10 |
 |---|---|---|---:|
 | **content** | adds or changes gameplay: blocks, items, machines, mobs, worldgen, magic | yes: carry-over or agent | **287** |
-| **library** | APIs and code shared by other mods (Architectury, Curios, GeckoLib, Kotlin for Forge, Balm...) | no: maps to Horizon's own code or a native mod | **80** |
+| **library** | APIs and code shared by other mods (Architectury, Curios, GeckoLib, Kotlin for Forge, Balm...) | no: maps to Foundry Client's own code or a native mod | **80** |
 | **integration** | glue between two other mods (JEI plugins, AE2 ↔ Mekanism, Create add-on wiring) | after both sides are ported | **44** |
 | **client-ui** | client-only screens, HUDs, tooltips, maps, recipe viewers | yes: client API, or built in | **32** |
 | **other** | pack tooling and engine features: KubeJS, Almost Unified, shader mods, CTM, crash/version tools | no: folded into the pipeline or the engine | **25** |
-| **performance** | Sodium, FerriteCore, ModernFix, ImmediatelyFast, spark, AI and recipe speed-ups | no: Horizon is the replacement | **16** |
+| **performance** | Sodium, FerriteCore, ModernFix, ImmediatelyFast, spark, AI and recipe speed-ups | no: Foundry Client is the replacement | **16** |
 | **server-only** | admin and server features: ranks, essentials, backups, claims, spawn control | yes: server API | **11** |
 | | | | **495** |
 
@@ -90,7 +90,7 @@ Class by tier:
 What this says:
 
 - **A quarter of ATM10 needs no port at all** (125: libraries, performance mods, pack tooling).
-  Horizon's renderer and simulation replace the performance mods. Libraries become API
+  Foundry Client's renderer and simulation replace the performance mods. Libraries become API
   features: Curios becomes accessory slots, GeckoLib an animated-model format, Patchouli,
   Modonomicon and GuideME a guide-book reader, the config libraries a config schema.
 - **68 mods are data tier.** They are the structure packs (YUNG's, Moog's, Formations, CTOV,
@@ -133,7 +133,7 @@ derivative work. These rules are part of the pipeline, not advice to users:
    Minecraft's own files: nothing is redistributed.
 2. **The licence is recorded per mod** in the inventory (`license` from `mods.toml` or
    `fabric.mod.json`, plus Modrinth's SPDX id where one exists) and travels with the port into
-   its `horizon-mod.toml` (`ported-from = { id, version, license, url }`).
+   its `foundry-mod.toml` (`ported-from = { id, version, license, url }`).
 3. **Publishing needs permission.** A port can go into a mod index, the launcher browser or a
    server's download list only if its licence allows redistributing derivatives (permissive,
    or copyleft with the port under the same licence and its source published) or the author
@@ -143,7 +143,7 @@ derivative work. These rules are part of the pipeline, not advice to users:
 4. **Mod code never enters this repository, and nobody reads it.** Mod jars, Java oracle builds
    with mod code, and ports of mods we have no permission to publish all live outside the
    repo: in the user's pipeline work directory, or for our own development in
-   `~/code/horizon-parity/modports/` (dev-only, never pushed). A mod's code is never
+   `~/code/foundry-parity/modports/` (dev-only, never pushed). A mod's code is never
    decompiled, read, quoted or paraphrased, by people or agents. Ports are written only from
    the mod's observed behaviour (the oracle and the harness), its own data files and its
    public documentation. The repository holds the pipeline, the API, metadata (ids, names, versions, licences, counts)
@@ -191,9 +191,9 @@ A content mod (`.hmod`) carries `assets/` and `data/` and no code:
 
 ```
 ruby.hmod
-├── horizon-mod.toml          id = "ruby", api = "0.2", side = "both", capabilities = ["registries"]
-├── data/ruby/horizon/block/ruby_block.json
-├── data/ruby/horizon/item/ruby.json
+├── foundry-mod.toml          id = "ruby", api = "0.2", side = "both", capabilities = ["registries"]
+├── data/ruby/foundry/block/ruby_block.json
+├── data/ruby/foundry/item/ruby.json
 ├── data/ruby/recipe/ruby_block.json            (26.3 data-pack formats)
 ├── data/ruby/loot_table/blocks/ruby_block.json
 ├── data/minecraft/tags/block/mineable/pickaxe.json   (adds to a vanilla tag)
@@ -240,7 +240,7 @@ the content root is rejected. Leave the map out to keep the template default.
 
 Most decoration and resource blocks are vanilla classes with other numbers: Macaw's doors are
 `DoorBlock`s, XTones are full cubes, ore sets are `DropExperienceBlock`s. So templates cover the
-data tier without code. Templates also give mod blocks every behaviour Horizon already
+data tier without code. Templates also give mod blocks every behaviour Foundry Client already
 implements and the harnesses already check. Items work the same way (`"template":
 "minecraft:diamond"`, overriding `max_stack_size`, `rarity`, `crafting_remainder` and any
 data component in `components`; a block's item takes `components` too).
@@ -263,25 +263,25 @@ How the game loads them, without touching vanilla's path:
   when its Java original ships them so (`namespaces = ["kaisyn", "towns_and_towers"]` for Towns
   and Towers, mod id `t_and_t`; docs/modding/src/how-to/content-mods.md). No namespace has two owners: a mod whose id or
   listed namespace another mod that is on already owns is left out, with both named in the log.
-  `horizon-port-pack` avoids that inside a pack: a namespace two carried mods both claim (YUNG's
+  `foundry-port-pack` avoids that inside a pack: a namespace two carried mods both claim (YUNG's
   structure mods all ship files under `yungsapi`, the namespace of YUNG's API, whose own jar isn't
   carried) is left to none of them, and its files stay outside. The launcher applies the game's
   rule before it starts a pack (`pipeline::loadable`) and lists what it left off.
 - Generated tables are built on the first start with a set of mods and kept for later starts. A stamp
-  (`horizon-mod-content.stamp`) hashes the game executable, the base tables and every mod file's
-  size and mtime. Adding, removing or editing a mod, or a new build of Horizon, rebuilds it. For
+  (`foundry-mod-content.stamp`) hashes the game executable, the base tables and every mod file's
+  size and mtime. Adding, removing or editing a mod, or a new build of Foundry Client, rebuilds it. For
   ATM10's 40 data-tier mods the build takes about a minute of the first start on a busy machine.
 - **Worldgen.** Mods' structures, structure sets, template pools, processor lists, configured and
   placed features join the `worldgen/*.json` bundles. Structure templates are loaded lazily from
   their original `data/<ns>/structure/` entries. Their biome tags are merged into `worldgen/biome_tags.json`, minus
-  the biomes and tags Horizon does not have. Mod biomes, noise and density functions are not
+  the biomes and tags Foundry Client does not have. Mod biomes, noise and density functions are not
   carried yet.
 - **Limits.** Chunk sections size their global palette to the registry: 16 bits for vanilla's
   35,723 states (the same chunks, saves and packets as before), one more bit each time content
   mods double it, up to 2^20 states (1,048,576). Past that the content root is refused with the
   states per mod. ATM10's 42 carried mods take the registry to 193,762 states (18 bits). On the
   network the width is the registry's: unchanged for vanilla clients as long as no content mod
-  is on, wider only between Horizons that share the same mods; a Horizon with content mods still
+  is on, wider only between Foundry Clients that share the same mods; a Foundry Client with content mods still
   reads a vanilla server's 16-bit chunks. Block sprites fill texture arrays of 2048 layers, eight
   at most (16,384; vanilla takes 1,250, identical textures share a layer; ATM10's 42 take 9,790).
 - **Broken mod files load as vanilla loads them.** A blockstate definition that does not bind
@@ -297,15 +297,15 @@ How the game loads them, without touching vanilla's path:
 - Not in 0.2: worlds opened without a mod they used (vanilla turns unknown blocks into air; we
   will ask first), vanilla ids redefined by a mod (refused).
 
-## The pipeline: `horizon-port-pack`
+## The pipeline: `foundry-port-pack`
 
-A Rust tool in this repo (`crates/horizon-port-pack`, a CLI the launcher also calls), modelled
+A Rust tool in this repo (`crates/foundry-port-pack`, a CLI the launcher also calls), modelled
 on the version-port pipeline (`tools/version_port.py`: detect, diff, regen, harnesses, report,
 publish). Each step reads and writes files in a work directory, so it can be rerun, resumed and
 inspected:
 
 ```
-<work>/                       ~/.horizon/ports/<pack-slug>/ for players; ~/code/horizon-parity/modports/ for us
+<work>/                       ~/.foundry/ports/<pack-slug>/ for players; ~/code/foundry-parity/modports/ for us
 ├── pack.json                 normalised import
 ├── inventory.json            per mod: metadata, licence, census, class, tier, deps, layer
 ├── jars/                     the user's own jars (copied or linked from their instance), never uploaded
@@ -323,19 +323,19 @@ them all for what a player's machine can port (content mods of the data tier), a
 launcher's "Import modpack" does:
 
 ```
-cargo run -p horizon-port-pack-cli -- import ~/Downloads/pack.mrpack ~/.horizon/ports/pack
-cargo run -p horizon-port-pack-cli -- inventory ~/.horizon/ports/pack     # --offline reuses modrinth.json
-cargo run -p horizon-port-pack-cli -- fetch ~/.horizon/ports/pack         # the portable mods' jars, or name them
+cargo run -p foundry-port-pack-cli -- import ~/Downloads/pack.mrpack ~/.foundry/ports/pack
+cargo run -p foundry-port-pack-cli -- inventory ~/.foundry/ports/pack     # --offline reuses modrinth.json
+cargo run -p foundry-port-pack-cli -- fetch ~/.foundry/ports/pack         # the portable mods' jars, or name them
 #   --from <folder>: copy the player's own jars (an installed instance, a downloads folder)
-cargo run -p horizon-port-pack-cli -- carry ~/.horizon/ports/pack         # content mods with a jar, or name them
-#   --resources <prepared root>: only templates Horizon's tables have
-cargo run -p horizon-port-pack-cli -- report ~/.horizon/ports/pack        # coverage.json and coverage.md
-cargo run -p horizon-port-pack-cli -- events ~/.horizon/ports/pack/jars   # NeoForge events the mods listen to, and their hooks
-cargo run -p horizon-port-pack-cli -- port ~/Downloads/pack.zip ~/.horizon/ports/pack [--from <folder>] [--resources <root>]
+cargo run -p foundry-port-pack-cli -- carry ~/.foundry/ports/pack         # content mods with a jar, or name them
+#   --resources <prepared root>: only templates Foundry Client's tables have
+cargo run -p foundry-port-pack-cli -- report ~/.foundry/ports/pack        # coverage.json and coverage.md
+cargo run -p foundry-port-pack-cli -- events ~/.foundry/ports/pack/jars   # NeoForge events the mods listen to, and their hooks
+cargo run -p foundry-port-pack-cli -- port ~/Downloads/pack.zip ~/.foundry/ports/pack [--from <folder>] [--resources <root>]
 ```
 
-The executable is still named `horizon-port-pack`. Its tool-layer package supplies the download
-host policy from `horizon-addresses`; the reusable `horizon-port-pack` library takes that policy
+The executable is still named `foundry-port-pack`. Its tool-layer package supplies the download
+host policy from `foundry-addresses`; the reusable `foundry-port-pack` library takes that policy
 from its caller, so the launcher and CLI follow the same checked redirect rules.
 
 ### Data packs in mod jars
@@ -402,7 +402,7 @@ events a mod listens to and the capabilities it uses. A listener is an `@Subscri
 parameter, or a method reference or lambda that takes one event
 (`NeoForge.EVENT_BUS.addListener(this::onTick)`). It looks each name up in the hook catalog's
 `neoforge` names, generated at build time from the Rust hook declarations (see the
-[hook notes](https://github.com/horizon-rust/horizon/tree/main/crates/horizon-mod-vocab/src/hooks)). An optional JSON
+[hook notes](https://github.com/foundry-rust/foundry/tree/main/crates/foundry-mod-vocab/src/hooks)). An optional JSON
 file with `hooks` entries containing `name` and `neoforge` can replace those labels for a report.
 Over a folder of jars it ranks the names by how many mods use them. Each name gets one of eight answers:
 
@@ -413,19 +413,19 @@ Over a folder of jars it ranks the names by how many mods use them. Each name ge
   registries or the item component a port writes instead;
 - mod API: no hook, but another part of the mod API, and the answer names the `Registrar` method a
   mod calls from `Hooks::register` or the capability key it asks and answers by;
-- load phases: a mod-loading event Horizon has no hook for by design, and the answer says where a
+- load phases: a mod-loading event Foundry Client has no hook for by design, and the answer says where a
   port does that work instead;
 - no hook: nothing in the game would fire one, and the answer says why;
 - none.
 
 The load-phase events follow the modding book's
-[load phases](https://github.com/horizon-rust/horizon/blob/main/docs/modding/src/concepts/load-phases.md).
+[load phases](https://github.com/foundry-rust/foundry/blob/main/docs/modding/src/concepts/load-phases.md).
 `FMLCommonSetupEvent`'s work goes in `Hooks::register`, then the first server reload.
 `FMLLoadCompleteEvent`'s goes after the initial config and before `server_about_to_start`.
 `FMLDedicatedServerSetupEvent`'s goes in `server_about_to_start`, when its `dedicated` flag is set.
 `FMLConstructModEvent`'s goes in `Hooks::register`: the book doesn't name the event, and
 Registration is the first phase it gives a mod declarations in.
-`InterModEnqueueEvent` and `InterModProcessEvent` carried `InterModComms` messages. A Horizon
+`InterModEnqueueEvent` and `InterModProcessEvent` carried `InterModComms` messages. A Foundry Client
 dependent calls the library directly instead, after it in dependency order.
 
 Names NeoForge changed after 1.21.1 (`Capabilities.ItemHandler`, `Capabilities.FluidHandler`,
@@ -457,9 +457,9 @@ where a port starts, for a human to check.
 
 On ATM10's 498 jars (2026-11-05, 8 s), 416 of 497 mods listen to events or use capabilities: 6,616
 uses of 326 names. Upstream's catalog at that date had a hook for 23% of those uses, and 43% once
-horizon-rust/horizon#9924 labelled 32 core hooks. The most used names with no hook are mod setup and registration
+foundry-rust/foundry#9924 labelled 32 core hooks. The most used names with no hook are mod setup and registration
 (`FMLClientSetupEvent` 208 mods, `RegisterPayloadHandlersEvent` 180,
-`RegisterCapabilitiesEvent` 162, `RegisterMenuScreensEvent` 143), which a Horizon mod does its own
+`RegisterCapabilitiesEvent` 162, `RegisterMenuScreensEvent` 143), which a Foundry Client mod does its own
 way. After those come `ClientTickEvent.Post` and `.Pre` (95, 46), `RenderLevelStageEvent` (81) and
 `ClientPlayerNetworkEvent.LoggingOut` and `.LoggingIn` (53, 35).
 
@@ -502,7 +502,7 @@ Blocks and items come from the NeoForge oracle when `<work>/oracle/facts.json` e
 every block the mod registers gets the vanilla template of the same vanilla class and states
 whose shapes, sounds, set type and wood type match best, with the mod's own hardness, blast
 resistance, light, tool need, friction, map colour and sounds as overrides. `--resources
-<prepared>` limits templates to blocks Horizon's tables have. `carry-report.json` lists, per
+<prepared>` limits templates to blocks Foundry Client's tables have. `carry-report.json` lists, per
 block, what the template does not reproduce (other shapes, sounds no vanilla block has, a class
 of its own), and the blocks left out: those whose vanilla class has no vanilla block with the
 same states (Macaw's garage doors, multi-part gates). An item of a vanilla tool or armour class
@@ -548,7 +548,7 @@ Per jar, without decompiling:
   the vanilla classes they target; whether the jar has code beyond its data.
 - **Census of classes:** the superclass names in the class files (constant pool only): how
   many block entities, menus, screens, entities, renderers, recipe serializers, payload types.
-- **Known mods:** a reviewed table in the repo (id → class, tier, Horizon equivalent: "sodium:
+- **Known mods:** a reviewed table in the repo (id → class, tier, Foundry Client equivalent: "sodium:
   performance, built in", "jei: client-ui, recipe viewer built in") wins over heuristics. It
   starts with ATM10's 495 rows.
 
@@ -571,14 +571,14 @@ API feature exists. Cycles (rare: optional mutual integrations) are broken at op
 Mechanical, the same for every mod, and no agent:
 
 1. Extract `assets/` and `data/` from the jar into `mods/<id>/carry/`.
-2. **Upgrade to 26.3.** ATM10 is 1.21.1 and Horizon is 26.3. Item models moved to `items/`
+2. **Upgrade to 26.3.** ATM10 is 1.21.1 and Foundry Client is 26.3. Item models moved to `items/`
    (1.21.4), recipe ingredients and results changed shape (1.21.2), some definitions moved to
    files of their own, and some registries and tags were renamed. The upgrader is a table of these changes generated from
    vanilla's own datafixers and pack-format notes, applied per file. A file it cannot upgrade
    is listed, not guessed.
 3. **Registrations.** Block and item ids registered in Java code are read from the oracle
    (step 6): its facts exporter writes each mod block state's hardness, sounds, shapes, light,
-   map colour and class chain. These are the same exporters that produce Horizon's vanilla
+   map colour and class chain. These are the same exporters that produce Foundry Client's vanilla
    `gameplay-facts.json`, run on the modded game. The class chain picks the template (a
    `DoorBlock` → a vanilla door). Without an oracle, the blockstate's property set gives the
    template (`facing, half, hinge, open, powered` is a door), with the template's numbers.
@@ -611,18 +611,18 @@ Two cases the oracle fills in:
   - **Start and placement rules** (#820 in the game, #821 in carry). Repurposed Structures'
     and Moog's jigsaws refuse to start in liquid and check biomes and terrain height in a
     radius; their spreads keep a minimum distance from the world origin and away from other
-    sets (named by a structure set tag). Carry writes these under `horizon:start_checks`,
-    `horizon:min_distance_from_world_origin` and `horizon:exclusion_zone`; the game runs them
-    (`horizon-world`'s `structure/start_checks.rs`). Vanilla data has none of the keys. Moog's
+    sets (named by a structure set tag). Carry writes these under `foundry:start_checks`,
+    `foundry:min_distance_from_world_origin` and `foundry:exclusion_zone`; the game runs them
+    (`foundry-world`'s `structure/start_checks.rs`). Vanilla data has none of the keys. Moog's
     also spreads its structures 1.65 times as far apart as its files say, which carry now
     applies. MVS went from 829 starts to 90 in a 128×128-chunk square (seed 1234): 294 from the
     spacing, the rest from the start checks.
   - **Mo' Structures** (LGPL-3.0; 38 files). Its `mostructures:generic` is vanilla's jigsaw
     that starts only where the terrain under the 5×5 chunks around it varies by no more than
-    its `heightRange`: carry writes `minecraft:jigsaw` with `horizon:start_checks`
+    its `heightRange`: carry writes `minecraft:jigsaw` with `foundry:start_checks`
     (`terrain_radius` 2, `terrain_range`). Its placement `mostructures:type` takes spacing and
     separation from the mod's config, not its files; carry writes the config's defaults
-    (keyed by `config_key`) and the sets it avoids within 3 chunks as `horizon:exclusion_zone`
+    (keyed by `config_key`) and the sets it avoids within 3 chunks as `foundry:exclusion_zone`
     with `"their_zones": false`: like the mod, the game tests those sets by their spread and
     frequency alone, not by their own exclusion zones. Its two block-ageing processors
     (`jungle_rot_processor`, `simple_cobblestone`, 3 uses) are still dropped, as is its
@@ -635,15 +635,15 @@ Two cases the oracle fills in:
     A structure with such a processor generates without what it adds. The ones carried are
     described below (spawners, pillars, fluid fixes, structure voids, rule tests, waterlogging,
     Lithostitched's). Still taken out: YUNG's processors and Formations'.
-  - **Spawner processors** carried as data (`horizon-port-pack/src/processors.rs`). Most
+  - **Spawner processors** carried as data (`foundry-port-pack/src/processors.rs`). Most
     chests in the mods' templates already name their loot table; what the Java processors add
     is the spawners' mobs. Moog's and Repurposed Structures' spawner randomizing processors
-    become `horizon:spawner_mobs` (a weighted mob per spawner, picked with the placement's
+    become `foundry:spawner_mobs` (a weighted mob per spawner, picked with the placement's
     random as theirs do, and the spawner NBT they write; Repurposed's `rs_spawners` lists are
     written in). Moog's vanilla loot swap acts only when a "replace vanilla" preset is on, and
     they ship off. Moog's trial
     spawner and vault processors keep the block and change its block entity: one `rule` per
-    block state, with the game's `horizon:edit` modifier, which takes out the state the
+    block state, with the game's `foundry:edit` modifier, which takes out the state the
     template was saved with (a vault saved with `state_updating_resumes_at` far in the future
     never opens; a spawner's saved `spawn_data` blocks its own mobs) and merges in the
     spawner's normal and ominous configs (by id: the carry upgrades `trial_spawner/` files'
@@ -670,26 +670,26 @@ Two cases the oracle fills in:
     keeps both.
     In Java, Lithostitched also lays out every jigsaw structure its own way (villages,
     outposts, trial chambers; CTOV's villages are `lithostitched:jigsaw`, carried as vanilla's
-    jigsaw). Horizon keeps vanilla's layouts, so with Lithostitched in a pack, structure layouts
+    jigsaw). Foundry Client keeps vanilla's layouts, so with Lithostitched in a pack, structure layouts
     differ from the Java pack's for the same seed (their positions do not).
     The processors that build outside their template are carried too: Repurposed's and
-    Moog's pillar processors become the game's `horizon:pillar` (a column from a placeholder
+    Moog's pillar processors become the game's `foundry:pillar` (a column from a placeholder
     block down to the ground, with the processor list they run on each of its blocks written
-    in), Repurposed's bottom pillars `horizon:bottom_pillar`, their fluid fix (a wall of the
+    in), Repurposed's bottom pillars `foundry:bottom_pillar`, their fluid fix (a wall of the
     structure's block over water and lava sources next to its open blocks)
-    `horizon:close_off_fluid_sources`. They write only in the chunk being generated, as the mods
+    `foundry:close_off_fluid_sources`. They write only in the chunk being generated, as the mods
     do. Dropped processors went from 570 to 456 in Repurposed Structures (its pillars, bottom
     pillars and fluid fixes: 242 lists) and 14 to 1 in Moog's; the structure starts are the
     same. Around spawn at seed 1234, 1,515 blocks change: the
     382 red glass placeholders under Repurposed's ocean outpost and pyramids become prismarine
     columns, and their gravel and prismarine pillars reach the sea floor.
     Repurposed's opposite fix, which walls off the air and other liquids beside its ocean
-    mineshafts' water, is `horizon:close_off_air_sources` (its 4 lists). It runs in the mod's
+    mineshafts' water, is `foundry:close_off_air_sources` (its 4 lists). It runs in the mod's
     order, so the walls it builds keep the later blocks of the template from the mod's "where
     the world is air, keep it" rules: around the ocean mineshaft at chunk (-18, -54), seed
     1234, 650 blocks of air and cave air become prismarine and 614 more template water blocks
     stay water (1,303 blocks change in its 81 chunks).
-    Its mineshafts' sky view processor (71 lists) is `horizon:mineshaft_sky_view`: a block
+    Its mineshafts' sky view processor (71 lists) is `foundry:mineshaft_sky_view`: a block
     of the template at or above the world's `OCEAN_FLOOR_WG` height in its column is not
     placed, so a mineshaft cut by a valley or a ravine is not built in the open, except
     plain rails over a block that can occlude, which stay (waterlogged where the world holds
@@ -712,10 +712,10 @@ Two cases the oracle fills in:
     blocks with three of the mod's own rule tests inside vanilla `rule` processors: what a
     block is made of (solid, liquid, air, with rails and chains), a chance over the distance
     from the template's origin along one axis, and a world height range. The game runs them
-    as `horizon:matter_phase`, `horizon:piece_origin_axis_aligned_linear_pos` and
-    `horizon:y_value` with the mod's fields, and carry renames them (213 in 75 lists).
+    as `foundry:matter_phase`, `foundry:piece_origin_axis_aligned_linear_pos` and
+    `foundry:y_value` with the mod's fields, and carry renames them (213 in 75 lists).
   - **Waterlogging.** Repurposed's `waterlogging_when_replacing_water_processor` (the bottom
-    pillars of its villages and outposts, 16 lists) is `horizon:waterlog_in_world_water`: a
+    pillars of its villages and outposts, 16 lists) is `foundry:waterlog_in_world_water`: a
     block that can be waterlogged is where the world holds water, dry where it does not, and
     one placed in water gets a block tick. Its dropped processors go from 370 to 253 (with
     the structure voids carried); around the ocean village at chunk (12, 10), seed 1234, 6
@@ -742,18 +742,18 @@ Two cases the oracle fills in:
     Frog" were granted on the first dive into the sea, and its boat recipes' "in water"
     criteria).
   - **Big templates** (#838). Vanilla reads structure templates with no limit on their tag
-    count; Horizon now does too (`nbt::Limits::templates`). Seven of ATM10's 8,962 carried
+    count; Foundry Client now does too (`nbt::Limits::templates`). Seven of ATM10's 8,962 carried
     templates are past the old 1,000,000-tag cap: YUNG's monument start, four When Dungeons
     Arise main pieces and two Nullscape pieces. They used to load as empty templates, so their
     structures never started.
   - **Additions to other sets and pools** (#832 in the game, #833 in carry). A set or pool file
-    holding `horizon:add_to` appends its entries to the sets or pools it names (docs/modding/src/how-to/content-mods.md).
+    holding `foundry:add_to` appends its entries to the sets or pools it names (docs/modding/src/how-to/content-mods.md).
     Carry writes these from lithostitched's `add_structure_set_entries` and
     `add_template_pool_elements` modifiers whose load conditions hold for the mods ported
     along, and from CTOV's Java registration: its 21 village types and 11 outposts join
     vanilla's `villages` and `pillager_outposts` with the mod's default weights.
   - **YUNG's API** (first #839, #846 in the game and #840, #847 in carry; redone from a
-    clean-room specification in `379692f355`). `horizon-port-pack` carries
+    clean-room specification in `379692f355`). `foundry-port-pack` carries
     `yungsapi:yung_jigsaw` structures and `yungsapi:yung_single_element` pool elements as the
     mods write them (`yung.rs`), and the game draws from their pools the way YUNG's API does:
     `is_priority` entries first, then weighted picks, an element's `name` capped at its
@@ -762,18 +762,18 @@ Two cases the oracle fills in:
     report: a structure's `adapt_noise`, `max_y`, `min_y` and `enhanced_terrain_adaptation`, and
     an element's `condition`, `enhanced_terrain_adaptation` and `modifiers`. YUNG's other
     structure, placement and processor types are left to the general code, which lists them as
-    unsupported or drops them: nothing writes the `horizon:yungsapi` and `horizon:disables`
-    keys any more, and no YUNG placement becomes a `horizon:` key.
+    unsupported or drops them: nothing writes the `foundry:yungsapi` and `foundry:disables`
+    keys any more, and no YUNG placement becomes a `foundry:` key.
   - **Repurposed Structures' and Moog's own assembler** (#850 in the game, #851 in carry). Both
     lay out their jigsaws with `PieceLimitedJigsawManager`, not vanilla's. Their structures, the
-    Nether variants too, get `horizon:piece_limited`: `y_allowance`, burying, the pools whose
+    Nether variants too, get `foundry:piece_limited`: `y_allowance`, burying, the pools whose
     fallbacks ignore the bounds, liquid, the Nether land search and ledge, and each
     structure's piece caps and required pieces from the mod's `*_pieces_spawn_counts` files.
     The game assembles them the mods' way and runs their post-layout steps (centring,
     burying, the Nether land search).
   - **Enhanced terrain adaptation.** MoogsStructureLib adds a kernel of its
     own to the Beardifier: its own size and falloff, carving or burying above and below each
-    piece's floor. Carry writes it as `horizon:enhanced_terrain_adaptation` on the structure
+    piece's floor. Carry writes it as `foundry:enhanced_terrain_adaptation` on the structure
     and on pool elements with their own (docs/modding/src/how-to/content-mods.md), and the game sums it after vanilla's
     terrain density. In seed 1234's terrain before structures are placed, Moog's mega
     fortress band held 45 % netherrack and now 30 %. YUNG's API has a kernel too, which carry
@@ -802,15 +802,15 @@ Two cases the oracle fills in:
     template per start at a height found in the noise columns under its corners and centre: on
     the surface, on water or lava, or in a cave (on its floor, under its ceiling, buried in
     stone, on a lava lake). Carry writes its `formations:simple` as the game's
-    `horizon:formations` (`horizon-world`'s `structure/formations.rs`, which reads the blocks
+    `foundry:formations` (`foundry-world`'s `structure/formations.rs`, which reads the blocks
     of ChunkGenerator.getBaseColumn through the structure context) and its pool element as
-    vanilla's with its `ground_level` under `horizon:ground_level`. In chunks -64..63 that adds
+    vanilla's with its `ground_level` under `foundry:ground_level`. In chunks -64..63 that adds
     39 Overworld and 672 Nether starts at seed 1234 (51 and 643 at seed 2), and leaves every
     other start as it was. Its processors (biome replacements, aged blocks, bed colours,
     plants) are still dropped, so its structures keep their templates' blocks.
     Its one PiecedStructure, the fountain, starts the same way and then lays out the element's
-    jigsaw children with vanilla's jigsaw: carry writes it as `horizon:formations` with
-    `horizon:pieced` (`max_depth`, `max_distance_from_center`), and the game's assembler takes
+    jigsaw children with vanilla's jigsaw: carry writes it as `foundry:formations` with
+    `foundry:pieced` (`max_depth`, `max_distance_from_center`), and the game's assembler takes
     the placed start piece (`jigsaw::add_children`), the children kept within that distance of
     the start's centre, one block above the height found. It shares Formations' "uncommon"
     structure set, so where the set now picks it, it takes the place of a statue or a house:
@@ -826,7 +826,7 @@ Two cases the oracle fills in:
 
   Repurposed's Nether city, Nether shipwrecks and End stronghold are its generic jigsaw with
   one more start check each, carried as `minecraft:jigsaw` with the check named in
-  `horizon:start_checks.repurposed`: open air from sea level + 20 to + 45 around the city's
+  `foundry:start_checks.repurposed`: open air from sea level + 20 to + 45 around the city's
   chunk, no solid block in a 33×30×33 grid over a shipwreck, and land 45 blocks up at nine
   points 35 and 70 blocks apart for the stronghold. Over chunks -320..319 in the Nether there
   are 2 cities and 45 shipwrecks (30 and 865 without the checks); the End stronghold keeps
@@ -844,8 +844,8 @@ budget allows:
 - **Input:** the inventory record, the carried-over data, the oracle's exports and traces, the
   harness, [modding/src/how-to/native-mods.md](modding/src/how-to/native-mods.md), the ports of its dependencies, and the mod's public
   documentation. Never its code: the agent doesn't decompile, read or quote it.
-- **Output:** a native mod, a horizon-mixins bundle started from
-  [horizon-native-mod-template](https://github.com/horizon-rust/horizon-native-mod-template), and its `.hmod`.
+- **Output:** a native mod, a foundry-mixins bundle started from
+  [foundry-native-mod-template](https://github.com/foundry-rust/foundry-native-mod-template), and its `.hmod`.
 - **Loop:** write → build → run the harness → read the differences → fix, until the harness
   passes or the agent reports what blocks it. Usually that is a place in the game's code the
   mixins can't reach yet, which becomes an issue ("needs a scheduled-tick hook point"), the way version ports
@@ -857,14 +857,14 @@ budget allows:
 
 ### 6. The Java oracle and per-mod harnesses
 
-The oracle is **dev-only**, like Horizon's vanilla oracles in `tools/`: the pack's own
+The oracle is **dev-only**, like Foundry Client's vanilla oracles in `tools/`: the pack's own
 Minecraft version (1.21.1 for ATM10) with NeoForge or Fabric, the mod and its dependencies,
 plus a small exporter mod (written by us, never shipped to players). It runs headless and is
 driven over a socket, as the vanilla oracles are.
 
 A **harness per mod**, generated from the tier:
 
-| Tier | What is compared, oracle vs Horizon with the port |
+| Tier | What is compared, oracle vs Foundry Client with the port |
 |---|---|
 | data | every registered block state's facts (hardness, sounds, shapes, light, map colour, drops via loot), every item's facts, every recipe's result for its inputs, loot table outputs over fixed seeds, tags; structure placement over fixed seeds and chunks |
 | logic | scripted interactions: place, use, break, tick N times; the world diff and the inventories after each step |
@@ -878,12 +878,12 @@ through the step-4 upgrader and compares only the mod's own ids and effects.
 
 ```
 python3 tools/neoforge_oracle.py export --jars <mods> --deps <their libraries> --out <work>/oracle/facts.json
-cargo run -p horizon-port-pack-cli -- carry <work> --resources .local/horizon-client/26.3
+cargo run -p foundry-port-pack-cli -- carry <work> --resources .local/foundry-client/26.3
 python3 tools/mod_port_harness.py --work <work>      # or --jars/--deps to export first
 ```
 
 - `tools/neoforge_oracle.py` installs a NeoForge server (21.1.259, ATM10's) under
-  `.local/neoforge-oracle/`, builds the exporter mod in `mods/horizon/src/neoforge-oracle/` (our code, dev
+  `.local/neoforge-oracle/`, builds the exporter mod in `mods/foundry/src/neoforge-oracle/` (our code, dev
   only), starts the server headless with the jars and writes, for every block of the mods'
   namespaces and every vanilla block: the class chain, states, per-state hardness, light, tool
   need, map colour, sounds, outline and collision shapes; drops for hand, diamond tools, shears
@@ -892,8 +892,8 @@ python3 tools/mod_port_harness.py --work <work>      # or --jars/--deps to expor
   modifiers, enchantability and repair items; armour's slot, defense, toughness, knockback resistance,
   equip sound and texture layers), recipes (type, result, count, resolved ingredients) and tags. One run
   with the seven mods below takes about 30 s.
-- `crates/horizon-client/examples/mod_port_probe.rs` builds the content root from the carried
-  mods and dumps what Horizon's loaders make of the same blocks, drops, recipes and tags.
+- `crates/foundry-client/examples/mod_port_probe.rs` builds the content root from the carried
+  mods and dumps what Foundry Client's loaders make of the same blocks, drops, recipes and tags.
 - `tools/mod_port_harness.py` compares them per mod (blocks, properties, sounds, shapes, drops,
   placement against the template's in the oracle, vanilla tags, recipes, items) and writes
   `<work>/mods/<id>/harness/result.json`. It maps 1.21.1 sound events to 26.3's through the
@@ -937,12 +937,12 @@ the self-drop tables it registers in code (step 4).
 Plus the licence summary (how many ports could be published) and, for a pack, "playable?":
 whether every required content mod is ported or partial with its blocks and items present.
 
-`horizon-port-pack report <work>` writes the per-mod rows and the class, tier and licence totals from the inventory, each mod's `carry-report.json`
+`foundry-port-pack report <work>` writes the per-mod rows and the class, tier and licence totals from the inventory, each mod's `carry-report.json`
 and its harness result. A data-tier mod is **ported** when its harness is green and nothing was
 left out (blocks with a class of their own are counted and named, since facts cannot show
 their extra code); **partial** with the failing checks, the blocks left out and what the
 templates miss; **not yet** with the API tier it waits for, or the dependency; **not needed**
-for libraries, performance mods, pack tooling and what Horizon has built in. Unclassified mods
+for libraries, performance mods, pack tooling and what Foundry Client has built in. Unclassified mods
 (the 20 CurseForge-only rows the reviewed table only guesses) count as not yet. A mod made for
 1.20 or older (its `recipes/` and `loot_tables/` folders named as before 1.21, which 26.3 does
 not read) is carried with its data files moved to 1.21's folder names (`recipe/`, `loot_table/`,
@@ -988,65 +988,65 @@ Terrarium License; nothing is published.
 
 ## Measuring "10x"
 
-`tools/perf_bench.py` already measures Horizon against vanilla and vanilla with performance
+`tools/perf_bench.py` already measures Foundry Client against vanilla and vanilla with performance
 mods on the same machine, world and camera path ([benchmark.md](benchmark.md)). With
 `--game neoforge --mod-jars <dir> --deps <dir>` it runs the mods on their own loader (NeoForge
 21.1.259 for ATM10, installed under `.local/neoforge-oracle`, `-Xmx2G` like the launcher),
 driven by the same steps through a dev-only NeoForge port of the bench mod
-(`mods/horizon/src/neoforge-bench`). `--game horizon --port-work <work>` loads a work folder's
-carried-over mods into Horizon. A whole pack (`--pack`, its recommended JVM arguments) is next.
+(`mods/foundry/src/neoforge-bench`). `--game foundry --port-work <work>` loads a work folder's
+carried-over mods into Foundry Client. A whole pack (`--pack`, its recommended JVM arguments) is next.
 
-| Metric | How | Horizon side |
+| Metric | How | Foundry Client side |
 |---|---|---|
 | **Load time** | start → title screen; start → in a fresh world, every chunk around the spawn drawn | the same with the ported pack's `.hmod`s enabled |
 | **RAM** | peak and steady RSS of the process, sampled 4 times a second from outside (the whole JVM for Java) | the whole process |
 | **FPS** | the four flight scenes: mean, 1 % and 0.1 % lows, p99 frame time | same |
-| **TPS / MSPT** | a fixed server-load world: N loaded chunks with the pack's machines and mobs placed by the harness fixtures; mean and p99 milliseconds per tick over 60 s (NeoForge: `/neoforge tps` and spark; Horizon: the integrated server's tick times, which today feed only the debug chart, exposed through `horizon-ctl`) | same fixture, the ported content |
-| **World generation** | chunks per second pregenerating a fixed square (Chunky on NeoForge; Horizon gets a pregeneration command for this) with the pack's worldgen | same |
+| **TPS / MSPT** | a fixed server-load world: N loaded chunks with the pack's machines and mobs placed by the harness fixtures; mean and p99 milliseconds per tick over 60 s (NeoForge: `/neoforge tps` and spark; Foundry Client: the integrated server's tick times, which today feed only the debug chart, exposed through `foundry-ctl`) | same fixture, the ported content |
+| **World generation** | chunks per second pregenerating a fixed square (Chunky on NeoForge; Foundry Client gets a pregeneration command for this) with the pack's worldgen | same |
 | **Disk and download** | install size of the pack against its `.hmod`s | |
 
 Two comparisons, both published:
 
-1. **Same content.** NeoForge with only the mods Horizon has ported (plus their dependencies)
-   against Horizon with those ports. Content matches, so this is the honest ratio.
+1. **Same content.** NeoForge with only the mods Foundry Client has ported (plus their dependencies)
+   against Foundry Client with those ports. Content matches, so this is the honest ratio.
 2. **What players run today.** The full pack on NeoForge as a reference row, labelled as
-   such, beside Horizon's partial pack. This is not a like-for-like ratio.
+   such, beside Foundry Client's partial pack. This is not a like-for-like ratio.
 
 "10x" is claimed per metric only where the same-content ratio reaches it over the repeats'
 confidence interval. Other ratios are reported as they come out. Caveat (in every report):
-the pack runs Minecraft 1.21.1 and Horizon runs 26.3, so the vanilla parts differ by a few
+the pack runs Minecraft 1.21.1 and Foundry Client runs 26.3, so the vanilla parts differ by a few
 versions.
 
 ### Measured: six ported mods against the same mods on NeoForge
 
 Cloud Glass, Factory Blocks, Glassential, Macaw's Fences, Paths and Trapdoors (Doors left out:
 with Trapdoors it passes the block states chunks hold, see Limits), carried over and loaded as
-dev mods in Horizon, against their jars plus Architectury and Fusion on NeoForge 21.1.259.
+dev mods in Foundry Client, against their jars plus Architectury and Fusion on NeoForge 21.1.259.
 Mac mini M4 Pro, 1280x720, seed 1234, the four flight scenes, 2 games per row, 2026-10-17.
 Means; FPS is the mean of the four scenes. "Title" is start to title screen, "world" start to
 a fresh world drawn around the spawn, "scene load" a teleport to every chunk drawn.
 
 | RD | game | title s | world s | scene load s | FPS | RSS steady / peak MB | load avg |
 |---|---|---:|---:|---:|---:|---:|---:|
-| 8 | Horizon + 6 mods | 9.8 | 16.2 | 4.0 | 122 | 2,644 / 2,771 | 32 |
+| 8 | Foundry Client + 6 mods | 9.8 | 16.2 | 4.0 | 122 | 2,644 / 2,771 | 32 |
 | 8 | NeoForge + 6 mods | 19.5 | 50.0 | 30.2 | 72 | 2,325 / 2,592 | 56 |
-| 8 | Horizon | 5.0 | 11.0 | 4.0 | 124 | 1,559 / 1,629 | 51 |
+| 8 | Foundry Client | 5.0 | 11.0 | 4.0 | 124 | 1,559 / 1,629 | 51 |
 | 8 | NeoForge | 12.8 | 36.1 | 21.9 | 104 | 2,334 / 2,558 | 30 |
-| 16 | Horizon + 6 mods | 10.8 | 27.0 | 11.3 | 90 | 2,925 / 3,032 | 40 |
+| 16 | Foundry Client + 6 mods | 10.8 | 27.0 | 11.3 | 90 | 2,925 / 3,032 | 40 |
 | 16 | NeoForge + 6 mods | 26.4 | 82.5 | 64.3 | 25 | 3,016 / 3,519 | 45 |
-| 16 | Horizon | 3.5 | 10.0 | 7.4 | 119 | 1,732 / 1,871 | 56 |
+| 16 | Foundry Client | 3.5 | 10.0 | 7.4 | 119 | 1,732 / 1,871 | 56 |
 | 16 | NeoForge | 16.9 | 73.7 | 43.2 | 36 | 2,748 / 3,425 | 48 |
 
-Same content, Horizon against NeoForge: the world is ready 3.1x sooner at 8 chunks and 3.1x at
+Same content, Foundry Client against NeoForge: the world is ready 3.1x sooner at 8 chunks and 3.1x at
 16, the title screen 2.0x and 2.4x sooner, and the flights run 1.7x and 3.6x the frames. RAM is
-not lower: Horizon's steady RSS grows 1.1 GB with the mods (61,816 block states against
+not lower: Foundry Client's steady RSS grows 1.1 GB with the mods (61,816 block states against
 vanilla's 35,723; the per-state tables are the next thing to measure), while the JVM stays
 inside its 2 GB heap. Caveats, so none of this is a "10x" claim yet: other sessions and CI
 runners kept the machine's load average between 30 and 56 on 14 threads, so the confidence
-intervals are as wide as the means (`perf_bench.py --table`); Horizon's frames are paced near
-the display's 144 Hz at 8 chunks; Horizon's title time includes building the content overlay
+intervals are as wide as the means (`perf_bench.py --table`); Foundry Client's frames are paced near
+the display's 144 Hz at 8 chunks; Foundry Client's title time includes building the content overlay
 (about 5 s for six mods; it was rebuilt on every start then, and is kept for later starts now);
-and the pack runs 1.21.1 against Horizon's 26.3.
+and the pack runs 1.21.1 against Foundry Client's 26.3.
 A quiet rerun with more games is the next measurement.
 
 **Where the RAM goes (2026-10-17).** RSS overstates it on macOS. `ps` counts pages the allocator
@@ -1057,14 +1057,14 @@ games per row:
 
 | game | RSS steady MB | footprint steady MB |
 |---|---:|---:|
-| Horizon | 1,598-1,636 | 1,277-1,295 |
-| Horizon + 6 mods | 2,996-3,052 | 1,736-1,869 |
+| Foundry Client | 1,598-1,636 | 1,277-1,295 |
+| Foundry Client + 6 mods | 2,996-3,052 | 1,736-1,869 |
 
 So the six mods cost about 0.5 GB of footprint, not 1.1-1.4 GB. ATM10's 42 mods (193,762
 states) take the game to 7.7 GB RSS but 3.9 GB footprint. The rest is startup garbage the
 allocator keeps.
 
-`crates/horizon-client/examples/resource_memory.rs` breaks it down per loader: the live heap
+`crates/foundry-client/examples/resource_memory.rs` breaks it down per loader: the live heap
 (a counting allocator), each step's peak, RSS and the footprint. Live heap after every loader,
 vanilla against ATM10's 42 mods:
 
@@ -1113,12 +1113,12 @@ game each, load average 80-125 on 14 threads; `--warm` measures a later start:
 
 | game | title / world s | RSS steady / peak MB | footprint steady / peak MB |
 |---|---|---|---|
-| Horizon before #756 (every start) | 81.1 / 102.8 | 4,008 / 4,164 | 2,368 / 2,554 |
-| Horizon, first start | 105.2 / 128.8 | 3,795 / 3,993 | 2,306 / 2,560 |
-| **Horizon, later starts** | **21.6 / 33.7** | **2,629 / 2,935** | **2,445 / 2,731** |
+| Foundry Client before #756 (every start) | 81.1 / 102.8 | 4,008 / 4,164 | 2,368 / 2,554 |
+| Foundry Client, first start | 105.2 / 128.8 | 3,795 / 3,993 | 2,306 / 2,560 |
+| **Foundry Client, later starts** | **21.6 / 33.7** | **2,629 / 2,935** | **2,445 / 2,731** |
 | NeoForge + 40 mods | 53.2 / 119.9 | 3,099 / 3,203 | 3,304 / 3,381 |
 
-On later starts, Horizon uses 15 % less RSS and 26 % less footprint than NeoForge with the
+On later starts, Foundry Client uses 15 % less RSS and 26 % less footprint than NeoForge with the
 same mods. It reaches the title 2.5x sooner and the world 3.6x sooner, and its flights ran at
 93-233 FPS against NeoForge's 27-62. The first start is slower than NeoForge's to the title,
 because it builds the content root once. One game per row on a loaded machine is not a
@@ -1128,11 +1128,11 @@ benchmark; a quiet rerun with repeats is still to do.
 
 ### Three packs through the mod browser, measured
 
-2026-10-22, Mac mini M4 Pro (offscreen, a debug launcher, release-profile `horizon-port-pack` and game), while
+2026-10-22, Mac mini M4 Pro (offscreen, a debug launcher, release-profile `foundry-port-pack` and game), while
 other sessions kept the CPU at 85 to 93 %, so times are upper bounds. The two Modrinth packs were imported with
-`horizon-launcher mods install <slug>` (the browser's Import), ATM10 from its CurseForge zip with `modpack import`
+`foundry-launcher mods install <slug>` (the browser's Import), ATM10 from its CurseForge zip with `modpack import`
 (CurseForge support is coming soon), then each ported with `--resources` for 26.3 and opened as a survival
-world with every ported mod on (horizon-ctl `launch --dev-mod ...`, from a scratch script).
+world with every ported mod on (foundry-ctl `launch --dev-mod ...`, from a scratch script).
 
 | Pack | Files | Import | Port | Ported mods | Coverage | Declared | World load (resources) | Crashes |
 |---|---|---|---|---|---|---|---|---|

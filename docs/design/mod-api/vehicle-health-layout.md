@@ -1,6 +1,6 @@
 # Design: vehicle health layout
 
-Provisional implementation contract for arismoko/horizon#2741; records the provisional answers A and B, with vanilla default sizing preserved.
+Provisional implementation contract for arismoko/foundry#2741; records the provisional answers A and B, with vanilla default sizing preserved.
 Approval admits this note only; public counterpart verification remains a shipping gate.
 Mods supply effective maximum **hearts**, not rows. The engine prepares one immutable
 result per visible HUD frame, before reserving space or drawing any status layer.
@@ -11,28 +11,28 @@ Cancelling a layer changes drawing only.
 
 References are against main at `d57e01504e`.
 
-- `crates/horizon-client/src/game/mobs/mounts.rs:951`: `draw_mount_hud` resolves
+- `crates/foundry-client/src/game/mobs/mounts.rs:951`: `draw_mount_hud` resolves
   `mount_index`, computes capacity, constructs vehicle draws, calls `keep_status_rows`
   before `gui_layer`, then returns capacity even when drawing was cancelled.
-- `crates/horizon-client/src/game.rs:8770`: initializes the frame's HUD room;
+- `crates/foundry-client/src/game.rs:8770`: initializes the frame's HUD room;
   `game.rs:8867` calls mount drawing except for spectators, then passes its returned
   `vehicle_hearts` into player layout at `game.rs:8903`. This shared client presentation
   route serves single player, LAN and remote servers; dedicated servers draw no HUD.
-- `crates/horizon-client/src/game/interface/hud_room.rs:59`: reserves status keep-outs
+- `crates/foundry-client/src/game/interface/hud_room.rs:59`: reserves status keep-outs
   from draw geometry, independently of whether the layer later draws.
-- `crates/horizon-client-render/src/hud_layout.rs:473`: default capacity;
+- `crates/foundry-client-render/src/hud_layout.rs:473`: default capacity;
   `hud_layout.rs:478`: ten containers per row, starting at `h - 39`, stepping up
   ten pixels; `hud_layout.rs:674` selects food using zero vehicle capacity;
   `hud_layout.rs:704` offsets the player's air row using vehicle row count.
   Player health hearts themselves need no new vertical displacement.
-- `crates/horizon-mod-vocab/src/client/hud_layout.rs:143`: `HealthInputs.vehicle_hearts`
+- `crates/foundry-mod-vocab/src/client/hud_layout.rs:143`: `HealthInputs.vehicle_hearts`
   is the vocabulary crossing to player layout. The exports live in
-  `crates/horizon-mod-vocab/src/exports/hud_layout.rs:1`.
-- `crates/horizon-client/src/game/native_hooks/shared.rs:2202`: `gui_layer` runs
+  `crates/foundry-mod-vocab/src/exports/hud_layout.rs:1`.
+- `crates/foundry-client/src/game/native_hooks/shared.rs:2202`: `gui_layer` runs
   preceding mod layers, Pre, conditional drawing, then Post. Today Post runs even
   when Pre cancels. Preserve that existing behavior pending verified counterpart evidence.
 
-PR arismoko/horizon#2697 moves vocabulary `hud_layout.rs`; PR arismoko/horizon#2586 touches `mounts.rs`. Re-resolve
+PR arismoko/foundry#2697 moves vocabulary `hud_layout.rs`; PR arismoko/foundry#2586 touches `mounts.rs`. Re-resolve
 these owners after they land; do not create a parallel vocabulary or mount path.
 
 ## Vanilla and public counterpart evidence
@@ -57,7 +57,7 @@ Vanilla 26.3 registers `minecraft:max_health` with default **20.0**, minimum
 **1.0** and maximum **1024.0** health. The prepared vanilla `attributes.json`
 records these as raw f64 bits `4034000000000000`, `3ff0000000000000` and
 `4090000000000000`, respectively. These registered bounds are readable through
-Horizon's attribute table: `crates/horizon-world/src/attribute_health.rs:79`
+Foundry Client's attribute table: `crates/foundry-world/src/attribute_health.rs:79`
 resolves `minecraft:max_health`, and `attribute_health.rs:114` reads its value.
 At two health per heart, the allowed effective capacity is **0.5–512 hearts**.
 The default HUD's 30-heart display cap is not the attribute maximum and must not
@@ -159,7 +159,7 @@ frame-to-frame riding changes, one invocation per frame, and no-listener equival
 1. Verify the public NeoForge counterpart and settle the provisional name. Use
    the registered attribute bounds above for implementation.
 2. Add the shared preparation record, catalog/Wire contract and both adapters;
-   update the three consumers together, after reconciling arismoko/horizon#2697 and arismoko/horizon#2586.
+   update the three consumers together, after reconciling arismoko/foundry#2697 and arismoko/foundry#2586.
 3. Add focused layout and native/wasm dispatch tests for the matrix, then regenerate
    hook and boundary documentation. This proposal itself changes documentation only.
 

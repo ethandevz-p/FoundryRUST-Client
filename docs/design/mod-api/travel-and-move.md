@@ -1,7 +1,7 @@
 # Design: travel and move hooks
 
-Proposal for [arismoko/horizon#1009](https://github.com/arismoko/horizon/issues/1009), not an implemented API.
-This is a clean-room Horizon design from vanilla 26.3 and the requested use cases.
+Proposal for [arismoko/foundry#1009](https://github.com/arismoko/foundry/issues/1009), not an implemented API.
+This is a clean-room Foundry Client design from vanilla 26.3 and the requested use cases.
 There is no NeoForge counterpart. No other project's source informs this proposal.
 Code follows agreement on this note.
 
@@ -11,7 +11,7 @@ Declare exactly two catalog moments: `living_travel` and `entity_move`. Travel
 uses `HostSide` with typed `ServerHost` or `ClientHost` access, never an
 unchecked side flag granting server writes. Entity reads and authoritative
 writes belong on typed entity/player handles; do not add entity-id movement
-methods to Host. `entity_move` is ruled otherwise (arismoko/horizon#2414 maintainer ruling): a
+methods to Host. `entity_move` is ruled otherwise (arismoko/foundry#2414 maintainer ruling): a
 loop-context hook **without a host**, like `ender_entity_teleport` — there is
 nothing at that point in the reference for the hook to mirror, so the listener
 only decides the delta: continue, cancel or replace.
@@ -60,7 +60,7 @@ and see the same hook through the generator.
 ## Ownership and route map
 
 References verified at worktree HEAD `9556bd72a8`; paths below are relative to
-`crates/horizon-client/src/`. These are current owners, not claims that hooks exist.
+`crates/foundry-client/src/`. These are current owners, not claims that hooks exist.
 
 | Route / owner | Current file:line | Required integration |
 | --- | --- | --- |
@@ -72,10 +72,10 @@ References verified at worktree HEAD `9556bd72a8`; paths below are relative to
 | Integrated, LAN and dedicated guest turns | `game/network/lan_actions/turns.rs:6`, `:18`, `:45` | Server context bound to acting guest, never host player identity |
 | Action service and scoped fake actors | `game/modding/native_server.rs:538`, `:549` | Enter existing player action validation; physical motion subsequently uses shared hooks |
 | Normal living mobs | `mobs/living.rs:1451`, `:1544` | Lift decision to game adapter; include mob air and fluid/glide equivalents, not just player motion |
-| Shared air equations | `../horizon-world/src/living_air.rs:134` | Keep physics below game independent of Host |
+| Shared air equations | `../foundry-world/src/living_air.rs:134` | Keep physics below game independent of Host |
 
 The last path is relative to the crates directory instead of the client source
-root: `crates/horizon-world/src/living_air.rs:134` is the shared owner.
+root: `crates/foundry-world/src/living_air.rs:134` is the shared owner.
 Vehicle movement must use the entity move boundary for the vehicle itself;
 passenger positioning is not a second travel or physical move. Shulker pushes and
 other external physical displacement preserve their cause and invoke move even
@@ -93,7 +93,7 @@ immutable decision, the game dispatches with Host, and apply revalidates entity
 existence, level epoch, position, velocity, attributes and collision/environment
 revision in the same transaction as listener writes. A changed precondition
 refuses the decision and rolls back that transaction; never recompute against
-changed state mid-callback. `entity_move`, ruled hostless (arismoko/horizon#2414), reduces to
+changed state mid-callback. `entity_move`, ruled hostless (arismoko/foundry#2414), reduces to
 result validation: the armed gate holds the requested delta, a listener result
 that passes the budget replaces it, malformed output falls back to it, and
 cancellation skips the invocation. A panic keeps the requested delta while its
@@ -146,7 +146,7 @@ cases isolate move from travel acceleration and gravity.
 
 Vanilla was inspected with `python3 tools/rea_vanilla.py method
 net.minecraft.world.entity.LivingEntity travel` and the corresponding `Entity move`
-query using the prepared jars under `/workspace/horizon`. The former selects fluid,
+query using the prepared jars under `/workspace/foundry`. The former selects fluid,
 glide then air; the latter limits piston movement before collision and applies fall
 and emission behavior afterward. No vanilla implementation is copied here.
 

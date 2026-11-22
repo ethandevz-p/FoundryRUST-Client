@@ -1,7 +1,7 @@
 """The sculk harness's comparator must be symmetric.
 
 `tools/test_sculk_parity.py::compare()` recorded a difference for a scenario that
-vanilla had and Horizon lacked, but ignored a scenario that only Horizon had. A
+vanilla had and Foundry Client lacked, but ignored a scenario that only Foundry Client had. A
 whole extra observed scenario therefore counted as parity. These tests load the
 real `compare()` and pin both directions of that contract.
 """
@@ -41,7 +41,7 @@ class SculkCompareSymmetryTest(unittest.TestCase):
         vanilla = {'real': {0: ['same observation']}}
         rust = {
             'real': {0: ['same observation']},
-            'ghost': {0: ['an observation only Horizon produced']},
+            'ghost': {0: ['an observation only Foundry Client produced']},
         }
         report, clean = sculk.compare(vanilla, rust)
         self.assertTrue(any('ghost' in line for line in report), report)

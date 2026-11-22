@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """Run every library test, ignored or not, with the prepared vanilla data, against a list of known failures.
 
-Usage: ignored_tests.py [--without-data] SHARD...  (HORIZON_TEST_RESOURCES points at the prepared 26.3 data)
+Usage: ignored_tests.py [--without-data] SHARD...  (FOUNDRY_TEST_RESOURCES points at the prepared 26.3 data)
        ignored_tests.py --needs VARIABLE (--one-process-each | --list) [--jobs N]
 
 A SHARD is a package, or one leg of it written `PACKAGE#NofM` (tools/ci/ignored_shards.py splits the biggest
 package so one process does not hold every test's memory). A leg runs the tests whose name hashes to its
 number, so every test runs in exactly one leg, and only judges the list's entries for those same tests.
-An unqualified horizon-client-lib runs two such selections consecutively on the same runner, releasing
+An unqualified foundry-client-lib runs two such selections consecutively on the same runner, releasing
 retained fixture memory between processes without adding a matrix job.
 
 Each package's library tests run with `--include-ignored`: the #[ignore]d ones that need the data, and the
@@ -40,7 +40,7 @@ own lockfile (`--locked`).
 (`--list` prints those commands instead), and fails unless every run reports exactly one test passed: a
 renamed test would otherwise match nothing and pass. Every test runs, then the step fails if any did.
 `--daily-tests PACKAGE TARGET` prints the tests one target's daily rows list, one per line (the Windows daily job
-runs horizon-mod-package's with `-- --ignored --exact`).
+runs foundry-mod-package's with `-- --ignored --exact`).
 `--report FILE` also writes the run's verdict as JSON for the daily run's summary (tools/ci/daily_summary.py): each
 problem's package, test identity, kind, panic location and policy file, the tests that passed, and the runs that
 did not complete with why (stopped()). It is written before each run too, naming that run as in progress, so a job
@@ -85,7 +85,7 @@ RETIRED = Path(__file__).with_name("ignored-tests-known-failures.txt")
 RESULT = re.compile(r"^test (\S+)(?: - should panic)? \.\.\. (ok|FAILED)$")
 SUMMARY = re.compile(r"^test result: \S+\. (\d+) passed; (\d+) failed; (\d+) ignored; (\d+) measured;")
 # Cargo's line as a test executable starts: `Running unittests src/lib.rs (…)`, `Running tests/x.rs (…)`, or a
-# target whose source lives in another package's folder (`Running ../horizon-client/tests/lan_bot.rs (…)`).
+# target whose source lives in another package's folder (`Running ../foundry-client/tests/lan_bot.rs (…)`).
 TARGET = re.compile(r"^\s+Running (?:unittests )?\S+ \(")
 COUNT = re.compile(r"^running (\d+) tests?$")
 PANIC = re.compile(r"^thread '([^']+)'.* panicked at (.+):$")
@@ -99,7 +99,7 @@ ABORTS = (
     (re.compile(r"^memory allocation of \d+ bytes failed$"), "a failed memory allocation"),
 )
 # Packages whose integration tests (`tests/*.rs`) run too, beside their library tests.
-INTEGRATION_TESTS = {"horizon-client"}
+INTEGRATION_TESTS = {"foundry-client"}
 LEG = re.compile(r"^(?P<package>[^#]+)#(?P<number>\d+)of(?P<count>\d+)$")
 LISTED = re.compile(r"^(\S+): test$")
 # A daily row's TARGET: the library, or one binary or integration test (cargo's --bin NAME, --test NAME).
@@ -718,21 +718,21 @@ def run(package, skip, number=None, count=None, only=None):
     started = time.monotonic()
     kills_before = cgroup_memory()["oom_kills"]
     # Resource-backed fixtures need a fresh home, not the runner user's game files.
-    with tempfile.TemporaryDirectory(prefix="horizon-ignored-") as scratch:
+    with tempfile.TemporaryDirectory(prefix="foundry-ignored-") as scratch:
         homes = {}
-        for key in ("HORIZON_HOME", "HORIZON_LAUNCHER_HOME", "XDG_DATA_HOME", "XDG_CONFIG_HOME"):
+        for key in ("FOUNDRY_HOME", "FOUNDRY_LAUNCHER_HOME", "XDG_DATA_HOME", "XDG_CONFIG_HOME"):
             home = Path(scratch) / key.lower()
             home.mkdir()
             homes[key] = home
-        for key in ("HORIZON_LAUNCHER_TRASH", "HORIZON_LAUNCHER_CLIPBOARD", "HORIZON_LAUNCHER_DESKTOP"):
+        for key in ("FOUNDRY_LAUNCHER_TRASH", "FOUNDRY_LAUNCHER_CLIPBOARD", "FOUNDRY_LAUNCHER_DESKTOP"):
             homes[key] = Path(scratch) / key.lower()
         env = lab.game_env(**homes)
-        if package == "horizon-client-lib":
+        if package == "foundry-client-lib":
             # Worldgen must meet its real-time deadlines without disabling test assertions.
             env["CARGO_PROFILE_TEST_OPT_LEVEL"] = "3"
         # --no-fail-fast: a target with accepted known failures must not stop the targets after it.
-        # Owner-approved stopgap; arismoko/horizon#2944 removes this when the legs run under 15 minutes.
-        client_half = package == "horizon-client" and count == 2 and number in (1, 2)
+        # Owner-approved stopgap; arismoko/foundry#2944 removes this when the legs run under 15 minutes.
+        client_half = package == "foundry-client" and count == 2 and number in (1, 2)
         command = ["cargo", "test", "-p", package, "--lib", *(["--bins", "--tests"] if package in INTEGRATION_TESTS else []), "--no-fail-fast"]
         workspace = "."
         if only:
@@ -755,7 +755,7 @@ def run(package, skip, number=None, count=None, only=None):
                 compile_diagnostics(built.stdout)
                 return stopped("what the tests need could not be built", started, kills_before)
         expected = set()
-        timing = os.environ.get("HORIZON_DATA_LEG_TIMING") == "1"
+        timing = os.environ.get("FOUNDRY_DATA_LEG_TIMING") == "1"
         phase = f"{package}#{number}of{count}" if number is not None else package
         if timing:
             print(f"data-leg phase={phase} compile-list-start utc={time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())}", flush=True)
@@ -962,8 +962,8 @@ def main(shards, report=None, without_data=False):
         selection
         for shard in shards
         for selection in (
-            ("horizon-client-lib#1of2", "horizon-client-lib#2of2")
-            if shard == "horizon-client-lib" else
+            ("foundry-client-lib#1of2", "foundry-client-lib#2of2")
+            if shard == "foundry-client-lib" else
             [f"{shard}:{package}:{target}" for package, target in groups
              if ignored_shards.daily_rows_leg(package) == shard]
             if shard in ignored_shards.DAILY_ROWS_LEGS.values() else (shard,)

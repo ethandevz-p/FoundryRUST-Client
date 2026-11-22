@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Headless integration contract for Horizon's native client particle helper.
+"""Headless integration contract for Foundry Client's native client particle helper.
 
-This is a Horizon-only Host API surface, not a new vanilla particle provider.
+This is a Foundry Client-only Host API surface, not a new vanilla particle provider.
 The fixture calls the generated dyn Host bridge and uses the real particle
 engine, pending/live queue, provider tick and CPU quad extraction. It supplies
 its own sprite metadata/atlas rectangles; no GPU, window or external mod source
@@ -22,11 +22,11 @@ except ImportError:
     from integration_env import run_game
 
 SOURCES = [
-    'crates/horizon-client/src/game.rs',
-    'crates/horizon-client/src/game/modding/native_client_particles.rs',
-    'crates/horizon-client/src/game/modding/native_client_particles_fixture.rs',
-    'crates/horizon-client/src/game/runtime/loading_window.rs',  # Starts the fixture in the World phase.
-    'crates/horizon-client-render/src/particles.rs',
+    'crates/foundry-client/src/game.rs',
+    'crates/foundry-client/src/game/modding/native_client_particles.rs',
+    'crates/foundry-client/src/game/modding/native_client_particles_fixture.rs',
+    'crates/foundry-client/src/game/runtime/loading_window.rs',  # Starts the fixture in the World phase.
+    'crates/foundry-client-render/src/particles.rs',
     'tools/test_native_client_particles_parity.py',
 ]
 
@@ -44,21 +44,21 @@ def main():
     binary = args.binary
     if binary is None:
         with (work / 'build.log').open('w', encoding='utf-8') as log:
-            subprocess.run(fast_bins.command('horizon-client'), cwd=lab.ROOT, stdout=log, stderr=subprocess.STDOUT,
+            subprocess.run(fast_bins.command('foundry-client'), cwd=lab.ROOT, stdout=log, stderr=subprocess.STDOUT,
                            check=True, timeout=1800)
-        binary = lab.cargo_target() / 'fast' / ('horizon-client.exe' if os.name == 'nt' else 'horizon-client')
+        binary = lab.cargo_target() / 'fast' / ('foundry-client.exe' if os.name == 'nt' else 'foundry-client')
     with tempfile.TemporaryDirectory(prefix='hz-native-particles-') as scratch:
         # Declare fixture providers before the load-owned particle registry freezes.
         import zipfile
         fixture_mod = Path(scratch) / 'fixture.hmod'
         with zipfile.ZipFile(fixture_mod, 'w') as package:
-            package.writestr('horizon-mod.toml', 'id = "fixture"\nname = "Fixture"\nversion = "0.1.0"\napi = "0.2"\nside = "both"\ncapabilities = ["registries"]\n')
+            package.writestr('foundry-mod.toml', 'id = "fixture"\nname = "Fixture"\nversion = "0.1.0"\napi = "0.2"\nside = "both"\ncapabilities = ["registries"]\n')
             for provider in ('encoded', 'spark'):
                 package.writestr(f'assets/fixture/particles/{provider}.json', '{"textures": []}')
         with (work / 'client.log').open('w', encoding='utf-8') as log:
             run_game([str(binary.resolve()), '--headless', '--resources', str(args.resources.resolve()),
                       '--game-dir', scratch, '--dev-mod', str(fixture_mod)], cwd=scratch,
-                     env=lab.game_env(HORIZON_NATIVE_CLIENT_PARTICLES_FIXTURE=str(work)),
+                     env=lab.game_env(FOUNDRY_NATIVE_CLIENT_PARTICLES_FIXTURE=str(work)),
                      stdout=log, stderr=subprocess.STDOUT, check=True, timeout=180)
     result = json.loads(report.read_text(encoding='utf-8'))
     for name in ('client_spawn', 'encoded_slots_unchanged', 'menu_and_servers_refused',
@@ -66,7 +66,7 @@ def main():
         assert result[name] is True, name
     assert result['vanilla_vertices'] == result['named_vertices'] == 4
     assert hashes == {name: lab.digest(lab.ROOT / name, 'sha256') for name in SOURCES}, 'sources changed during test'
-    result.update(source_hashes=hashes, binary_sha256=lab.digest(binary, 'sha256'), horizon_only=True)
+    result.update(source_hashes=hashes, binary_sha256=lab.digest(binary, 'sha256'), foundry_only=True)
     lab.write_json(report, result)
     print('native client particles: Host bridge, slot preservation, guards, real queues/ticks/CPU quads and normal limits pass')
 

@@ -1,33 +1,33 @@
 # Design: Source-validated guest point artifact
 
-Provisional proposal for [arismoko/horizon#2553](https://github.com/arismoko/horizon/issues/2553).
+Provisional proposal for [arismoko/foundry#2553](https://github.com/arismoko/foundry/issues/2553).
 Docs only; this is not approval to skip source validation or a speedup claim.
 The proposed answer is conditional: an SDK-produced, identity-bound artifact can
 replace repeated discovery only when it carries the complete validated point,
 private-type and site input. Keep the full-source generator as an independent
 check. A supplied `--catalog` alone never authorizes this route.
 
-Measure actual-mod cold builds after arismoko/horizon#2596's interface cache first. Do not
+Measure actual-mod cold builds after arismoko/foundry#2596's interface cache first. Do not
 build or ship an artifact on an estimate; proceed only after the measured
 post-cache baseline demonstrates worthwhile remaining work.
 
 ## What remains after the interface cache
 
-[arismoko/horizon#2552](https://github.com/arismoko/horizon/pull/2552) and
-[arismoko/horizon#2596](https://github.com/arismoko/horizon/pull/2596) are merged context.
+[arismoko/foundry#2552](https://github.com/arismoko/foundry/pull/2552) and
+[arismoko/foundry#2596](https://github.com/arismoko/foundry/pull/2596) are merged context.
 The latter already caches source interfaces locally and preserves unchanged
 output timestamps. Repeating the original uncached premise would overstate the
 remaining problem. Verified owners on the current source tree:
 
 | Route | Owner and observed behavior |
 | --- | --- |
-| Guest point build | `crates/horizon-mod-points/build.rs:1`: always calls `generate_points`; errors currently terminate the build through `expect`. |
-| Cached generator | `crates/horizon-mod-api-gen/src/build.rs:223`: enters the interface cache; `:227` tracks game, point and site sources, reads private input before selection, discovers points and sites, then parses/formats generated Rust and writes only changed output (`:258`). |
-| Cache admission | `crates/horizon-mod-api-gen/src/interface_cache.rs:17`: directory keyed by generator executable bytes; `:36` keys entries by source path and bytes. It verifies the summary digest and parses it; invalid summaries regenerate. Function bodies are stripped on cache creation. This is disposable local acceleration, not authenticated SDK evidence. |
-| Discovery and types | `crates/horizon-mod-api-gen/src/points.rs:922`: resolves Wire types, excludes private targets from public discovery and scans source. |
-| Selection and identity | `crates/horizon-mod-api-gen/src/points.rs:1166`: retains all public record shapes and IDs, limits guest codecs/exports by selection, and computes `POINT_LAYOUT` across the full public point set (`:1205`). Selection is not permission to renumber IDs or drop layout inputs. |
-| Site discovery | `crates/horizon-mod-api-gen/src/sites/stage.rs:7` and `:50`: tracked inputs and generated site IDs; these also belong in artifact validation. |
-| Wasm registration/package | `crates/cargo-horizon-mod/src/wasm.rs:248` and `wasm/group.rs:297`: catalog feeds registration preparation. `wasm/group.rs:637` passes selected names to compilation; `:569` binds the emitted points metadata digest into the package. None replaces source-derived Rust definitions. |
+| Guest point build | `crates/foundry-mod-points/build.rs:1`: always calls `generate_points`; errors currently terminate the build through `expect`. |
+| Cached generator | `crates/foundry-mod-api-gen/src/build.rs:223`: enters the interface cache; `:227` tracks game, point and site sources, reads private input before selection, discovers points and sites, then parses/formats generated Rust and writes only changed output (`:258`). |
+| Cache admission | `crates/foundry-mod-api-gen/src/interface_cache.rs:17`: directory keyed by generator executable bytes; `:36` keys entries by source path and bytes. It verifies the summary digest and parses it; invalid summaries regenerate. Function bodies are stripped on cache creation. This is disposable local acceleration, not authenticated SDK evidence. |
+| Discovery and types | `crates/foundry-mod-api-gen/src/points.rs:922`: resolves Wire types, excludes private targets from public discovery and scans source. |
+| Selection and identity | `crates/foundry-mod-api-gen/src/points.rs:1166`: retains all public record shapes and IDs, limits guest codecs/exports by selection, and computes `POINT_LAYOUT` across the full public point set (`:1205`). Selection is not permission to renumber IDs or drop layout inputs. |
+| Site discovery | `crates/foundry-mod-api-gen/src/sites/stage.rs:7` and `:50`: tracked inputs and generated site IDs; these also belong in artifact validation. |
+| Wasm registration/package | `crates/cargo-foundry-mod/src/wasm.rs:248` and `wasm/group.rs:297`: catalog feeds registration preparation. `wasm/group.rs:637` passes selected names to compilation; `:569` binds the emitted points metadata digest into the package. None replaces source-derived Rust definitions. |
 
 A target-cold build with an empty `OUT_DIR` must still create these cache entries.
 A cache hit still reads/hashes inputs, parses smaller summaries, constructs point
@@ -37,7 +37,7 @@ costs. Their current proportions have not been measured here. Cache reuse across
 build-script executables or fresh targets must be measured, not assumed.
 
 Vanilla 26.3 is the gameplay specification; this Rust SDK generation facility is
-Horizon-specific and changes no vanilla call site. No vanilla declaration is
+Foundry Client-specific and changes no vanilla call site. No vanilla declaration is
 claimed as a point-artifact contract. The [NeoForge public documentation](https://docs.neoforged.net/)
 separately documents its modding API and Gradle toolchain; no equivalent 26.3
 point/type/site artifact contract was verified. The public
@@ -112,7 +112,7 @@ including zero tick scans, allocations and no-listener dispatch changes.
 
 ## Packaging and module identity
 
-Coordinate packaging with open [arismoko/horizon#2815](https://github.com/arismoko/horizon/pull/2815).
+Coordinate packaging with open [arismoko/foundry#2815](https://github.com/arismoko/foundry/pull/2815).
 Its reviewed diff adds versioned `mod-catalog.json` to SDK/source staging, with
 `schema_version`, `api_version`, hooks and public point descriptions. It is a
 discovery surface, not proof of complete private layouts or site definitions.
@@ -122,9 +122,9 @@ trusted SDK manifest, owned by the same staging pipeline. Avoid a committed
 shared hash that every point change must edit; regenerate and compare in drift
 checks, with feature-scoped fixtures.
 
-Open [arismoko/horizon#2697](https://github.com/arismoko/horizon/pull/2697) overlaps generator
+Open [arismoko/foundry#2697](https://github.com/arismoko/foundry/pull/2697) overlaps generator
 `build.rs`, `points.rs` and `points/source.rs`; open
-[arismoko/horizon#2524](https://github.com/arismoko/horizon/pull/2524) overlaps `build.rs`.
+[arismoko/foundry#2524](https://github.com/arismoko/foundry/pull/2524) overlaps `build.rs`.
 Reconcile their final ownership before code work. The interface-cache file and
 point build script are not touched by those reviewed diffs. This note reserves
 no implementation files.
@@ -135,7 +135,7 @@ never silently accept it on an estimate of equivalence.
 Identical effective inputs must yield byte-identical generated definitions,
 point/site IDs, layout values and module identity between routes and across
 repeated runs. Preserve current path remapping and compiler metadata handling
-(`crates/cargo-horizon-mod/src/wasm/group.rs:625`). Compare generated Rust,
+(`crates/cargo-foundry-mod/src/wasm/group.rs:625`). Compare generated Rust,
 embedded identities, package points digest and module bytes separately; a matching
 `POINT_LAYOUT` alone is insufficient. Adding an artifact dependency or changing
 build-script inputs can itself change compiler/build identities. Any unavoidable
@@ -158,7 +158,7 @@ These are proposed literal fixtures, not executed results.
 | Native and wasm, API and internals | Same applicable validation/refusal behavior; no new runtime restriction or dependency model. |
 
 Measure an actual mod build with representative selected points and private type/site
-use, after arismoko/horizon#2596. Run **3 cold actual-mod builds per route**: current cached full
+use, after arismoko/foundry#2596. Run **3 cold actual-mod builds per route**: current cached full
 generator, artifact candidate, and narrowed scanner only if implemented. Hold
 engine, source, selected names, toolchain, target/features, profile, machine and
 parallelism constant. Define cold as a fresh Cargo target and generator-interface
@@ -166,7 +166,7 @@ cache for each run; report filesystem/OS cache state and reuse of downloaded
 sources separately. Report all 3 total wall times and all 3 generation times,
 not just averages. Also report artifact production time/size, admission/hash/decode,
 source discovery, emission/formatting and guest compilation time so moving work
-to SDK production is visible. A separate warm-cache series characterizes arismoko/horizon#2596;
+to SDK production is visible. A separate warm-cache series characterizes arismoko/foundry#2596;
 it must not be mixed into the cold series. Check equivalence before interpreting
 timings. There is no speed threshold until evidence supports one, and historical
 fixture timings establish no actual-mod speedup.
@@ -178,11 +178,11 @@ inventory; then agree manifest/authentication and limits with SDK staging owners
 then implement artifact production/admission using existing validation/emission;
 finally run equivalence, corruption and actual-mod measurements before deciding
 whether to enable the route. Put future logic/tests in separate modules; no
-growth of the over-limit `crates/horizon-client/src/game.rs` for instrumentation.
+growth of the over-limit `crates/foundry-client/src/game.rs` for instrumentation.
 
 - **Trust anchor and packaging:** recommend a sibling artifact authenticated by
   the engine SDK manifest; agree its manifest owner and local-source verification
-  procedure with arismoko/horizon#2815 before implementation. A payload digest alone is insufficient.
+  procedure with arismoko/foundry#2815 before implementation. A payload digest alone is insufficient.
 - **Concrete resource limits:** recommend finite byte/count/depth budgets derived
   from the complete current SDK plus measured headroom; choose literal limits
   before shipping. No vanilla capacity is reduced by this build-only proposal.

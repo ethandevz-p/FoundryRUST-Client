@@ -186,7 +186,7 @@
       "name": "DataMapError",
       "path": "crate::world::data_maps::DataMapError",
       "hash": "3c338ccd2a00316e",
-      "contract_change": "arismoko/horizon#4199 appends DataMapError::InvalidKey; ordinals 0, 1, 2 remain unchanged; the frozen hash was 38e6144ff0918aa9",
+      "contract_change": "arismoko/foundry#4199 appends DataMapError::InvalidKey; ordinals 0, 1, 2 remain unchanged; the frozen hash was 38e6144ff0918aa9",
       "canonical_path": "crate::world::data_maps::DataMapError"
     },
     {
@@ -341,7 +341,7 @@
       "path": "crate::world::types::GameRuleError",
       "hash": "b0678faa207c25fa",
       "canonical_path": "crate::world::types::GameRuleError",
-      "contract_change": "arismoko/horizon#3316 appends GameRuleError::InvalidRange; ordinals 0, 1, 2 remain unchanged; the frozen hash was e76f57d2c9f945cb"
+      "contract_change": "arismoko/foundry#3316 appends GameRuleError::InvalidRange; ordinals 0, 1, 2 remain unchanged; the frozen hash was e76f57d2c9f945cb"
     },
     {
       "name": "Hand",
@@ -624,7 +624,7 @@
       "name": "ProvidedBy",
       "path": "crate::ProvidedBy",
       "hash": "fe10e188155f9b86",
-      "contract_change": "arismoko/horizon#3519 appends ProvidedBy::Block; the frozen hash was 5d265204eef1d102",
+      "contract_change": "arismoko/foundry#3519 appends ProvidedBy::Block; the frozen hash was 5d265204eef1d102",
       "canonical_path": "crate::parts::shared::ProvidedBy",
       "alias_provenance": "rustc E0603 public re-export suggestion from generated direct-type test compilation"
     },

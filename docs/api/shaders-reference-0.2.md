@@ -1,10 +1,10 @@
 # Shader API reference (0.2)
 
-Generated from `crates/horizon-shader-api` (`HORIZON_WRITE_DOCS=1 cargo test -p horizon-shader-api --test it reference::`
+Generated from `crates/foundry-shader-api` (`FOUNDRY_WRITE_DOCS=1 cargo test -p foundry-shader-api --test it reference::`
 rewrites it; the test fails when it drifts). The API's design and pack format: [shaders.md](shaders.md).
 
-**Preview** ([stability.md](stability.md)), final: `horizon-shader check` takes 0.2 packs, the registry lists them and
-the game draws them. The game alone refuses two keys for now, which a later Horizon draws: `[frame] primaries =
+**Preview** ([stability.md](stability.md)), final: `foundry-shader check` takes 0.2 packs, the registry lists them and
+the game draws them. The game alone refuses two keys for now, which a later Foundry Client draws: `[frame] primaries =
 "bt2020"` and `[motion]`. What this page says stays; a change that breaks a 0.2 pack only comes with a new line
 (0.3), after a deprecation.
 The design: [hdr-linear-light.md](../design/hdr-linear-light.md).
@@ -13,7 +13,7 @@ The design: [hdr-linear-light.md](../design/hdr-linear-light.md).
 
 Every colour a 0.2 stage reads or returns is **linear light**: BT.709 (sRGB) primaries by default, scene-referred,
 1.0 is vanilla's white at paper white, more is brighter. A pack may ask for BT.2020 primaries, which hold colours
-outside sRGB, with `[frame] primaries` (below). Horizon decodes vanilla's values with a 2.2 power (vanilla's, not
+outside sRGB, with `[frame] primaries` (below). Foundry Client decodes vanilla's values with a 2.2 power (vanilla's, not
 the piecewise sRGB curve), replacing negatives and NaN with 0 first, and encodes a stage's result the same way where
 the frame stores gamma (`[frame] blend`, below).
 
@@ -23,7 +23,7 @@ the frame stores gamma (`[frame] blend`, below).
   the pack's targets and kept resources, `opaque_color`, `reflection`, `shadow_color`).
 - **Data:** depth, normals, `light` levels, `emission`, every channel of the LabPBR maps, and the pack's
   `[[textures]]`.
-- **`[[lights]]` and `[[particle_lights]]` colours** are written in vanilla's gamma, and Horizon decodes
+- **`[[lights]]` and `[[particle_lights]]` colours** are written in vanilla's gamma, and Foundry Client decodes
   them: `block_light_color` and `colored_light` are linear. `block_light_colors` holds them as written; read it through
   `block_light_color`.
 - **Alpha is coverage only**, never light: brightness is in rgb alone. A post pass's alpha is ignored.
@@ -33,13 +33,13 @@ the frame stores gamma (`[frame] blend`, below).
 `Frame`, the stage inputs (`SkyInput`, `VertexInput`, `MaterialInput`, `DisplacementInput`, `WeatherInput`,
 `PostInput`, `TonemapInput`, `EntityInput`), `surface_at`'s `SurfaceData`, `trace`'s `RayHit` and `trace_step`'s
 `RayCandidate` may gain fields in later releases. Read their fields and pass them along, but don't construct them:
-`horizon-shader check` refuses `PostInput(...)` and the like. `Surface` is yours to construct and keeps its one field;
+`foundry-shader check` refuses `PostInput(...)` and the like. `Surface` is yours to construct and keeps its one field;
 later material outputs come as helpers.
 
 **New names reach a stage only if the pack asked for them.** A later release puts a new name before your files (a
 helper, a struct, a resource, a constant) only under a manifest key the pack sets, or in a stage added later, whose
 prelude is its own. A stage a pack has today keeps the names it has today, so a name of your own that is free now
-stays yours: an addition doesn't break a pack that didn't ask for it. Names starting with `horizon_` are Horizon's
+stays yours: an addition doesn't break a pack that didn't ask for it. Names starting with `foundry_` are Foundry Client's
 already, and new fields can't collide, since you don't construct those structs.
 
 ## The display
@@ -48,18 +48,18 @@ already, and new fields can't collide, since you don't construct those structs.
 on, where the device keeps the HUD on a layer of its own, a 0.2 pack sees the display's: `hdr` 1, `paper_white` and
 `peak` in nits, `headroom` the peak over paper white (at least 1) and `black_level` the display's black in nits.
 Otherwise it sees SDR: `hdr` 0, `headroom` 1, `paper_white` and `peak` 80, `black_level` 0, and its picture ends on an
-8-bit frame, clipped at white, before the camera overlays and the HUD draw. Horizon lifts the shadows onto
+8-bit frame, clipped at white, before the camera overlays and the HUD draw. Foundry Client lifts the shadows onto
 `black_level` after `[tonemap]`: read it, but don't apply it.
 
 ## `[frame] blend`
 
-`blend = "gamma"` (the default) keeps the frame in vanilla's gamma, values above 1 kept: Horizon encodes the material,
+`blend = "gamma"` (the default) keeps the frame in vanilla's gamma, values above 1 kept: Foundry Client encodes the material,
 sky and weather stages' results before they are stored and blended, so glass, water, clouds and particles blend as
-vanilla's. `blend = "linear"` stores linear light, so see-through draws blend as light does: Horizon stores those
+vanilla's. `blend = "linear"` stores linear light, so see-through draws blend as light does: Foundry Client stores those
 stages' results as they are and decodes its own draws (entities, particles, clouds, weather, the stages a pack leaves
 out), so a solid surface looks as under `"gamma"`. A stage sees the same values either way. Where the device can't
 draw a float frame the pack draws on an 8-bit one, in gamma. Under `"linear"` resource packs' `core/sky`,
-`core/stars` and `core/rendertype_lines` shaders, which write gamma, give way to Horizon's own sky, stars and block
+`core/stars` and `core/rendertype_lines` shaders, which write gamma, give way to Foundry Client's own sky, stars and block
 outline.
 
 ## `[frame] primaries`
@@ -72,11 +72,11 @@ space the pack's colours are in, and `frame.luminance` holds that space's lumina
 
 ## `[frame] fog`
 
-`fog = "engine"` (the default): Horizon mixes vanilla's fog over what the material and entity stages return. With
-`fog = "pack"` the pack fogs what its stages draw: Horizon skips its fog there, and scales the enchantment glint it
-adds after `entity` by `1 - vanilla_fog(position)`, as vanilla's fog over it would. What Horizon draws itself keeps
+`fog = "engine"` (the default): Foundry Client mixes vanilla's fog over what the material and entity stages return. With
+`fog = "pack"` the pack fogs what its stages draw: Foundry Client skips its fog there, and scales the enchantment glint it
+adds after `entity` by `1 - vanilla_fog(position)`, as vanilla's fog over it would. What Foundry Client draws itself keeps
 vanilla's fog: items, particles, clouds, the sun and moon, the hand, block outlines, beams, the water mirror's terrain,
-and the fade of newly loaded terrain toward `frame.fog_color`. The sky, weather and post stages get no fog from Horizon
+and the fade of newly loaded terrain toward `frame.fog_color`. The sky, weather and post stages get no fog from Foundry Client
 either way. Every pack has `frame.fog_environment` and `frame.fog_render` (below) in every stage; a pack with the key
 also has, in every stage:
 
@@ -88,21 +88,21 @@ also has, in every stage:
 
 Vanilla mixes in its gamma, under either `[frame] blend`:
 `pow(mix(pow(c, vec3(1.0 / 2.2)), pow(frame.fog_color, vec3(1.0 / 2.2)), vanilla_fog(input.position)), vec3(2.2))` on
-the lit rgb, alpha kept. Horizon's own takes the distance at each corner and interpolates it, `vanilla_fog` at each
+the lit rgb, alpha kept. Foundry Client's own takes the distance at each corner and interpolates it, `vanilla_fog` at each
 point, so a pack's copy may round a step apart on large faces. Mixing the linear values instead is fog as light
 scatters, a little denser in the middle tones. A post pass fogs what the stages don't draw from `scene_depth`
-(`vanilla_fog(view_position(uv, depth))`), and traced hits from `hit.position`, which Horizon never fogs.
+(`vanilla_fog(view_position(uv, depth))`), and traced hits from `hit.position`, which Foundry Client never fogs.
 `[material] fog`, from before, is gone: the check refuses it and names `[frame] fog`.
 
-A stage is a function your WGSL defines, with the signature below; Horizon puts the prelude (these structs, the
+A stage is a function your WGSL defines, with the signature below; Foundry Client puts the prelude (these structs, the
 resources and helpers) before your files and calls the function from its own pass. Your files declare no
-bindings and no entry points, and no names starting with `horizon_`.
+bindings and no entry points, and no names starting with `foundry_`.
 
 ## `[material] coverage`
 
 Which points of terrain are drawn is the engine's unless the pack says otherwise. Under `coverage = "engine"` (the
-default) solid and cutout terrain keep Horizon's alpha test on the texture's own alpha (cut below 0.5, except the
-leaves Horizon draws opaque), and the alpha `material` returns is ignored there; translucent terrain is cut where the
+default) solid and cutout terrain keep Foundry Client's alpha test on the texture's own alpha (cut below 0.5, except the
+leaves Foundry Client draws opaque), and the alpha `material` returns is ignored there; translucent terrain is cut where the
 texture's alpha is below 0.01, and the returned alpha is its opacity, so water and glass still set how see-through
 they are. `material`, and every function it calls, may not `discard`: the check refuses it. A pack that cuts its own
 holes sets `coverage = "pack"`: the returned alpha then drives the alpha test (below 0.5 on solid and cutout
@@ -113,16 +113,16 @@ The stage writes no depth of its own either way.
 ## `[entity] coverage`
 
 The same rule for what the entity stage draws, without translucent terrain's exception. Under `coverage = "engine"`
-(the default) Horizon keeps its own coverage of each entity: the texture's alpha times the layer's opacity (the
+(the default) Foundry Client keeps its own coverage of each entity: the texture's alpha times the layer's opacity (the
 vertex alpha: a mob's translucent layer, a fading warden) is cut below 0.1 and is the alpha the layer blends by;
-dissolve masks, back-face culling and the rest of Horizon's cuts stay Horizon's. The alpha `entity` returns is
+dissolve masks, back-face culling and the rest of Foundry Client's cuts stay Foundry Client's. The alpha `entity` returns is
 ignored, and `entity`, and every function it calls, may not `discard`: the check refuses it. A pack that cuts or
 fades entities itself sets `coverage = "pack"`: the returned alpha is then cut below 0.1 and blends, and the stage
-may `discard`. Horizon's own cuts run under either.
+may `discard`. Foundry Client's own cuts run under either.
 
 ## Stages
 
-| Stage | In `horizon-shaders.toml` | Your function |
+| Stage | In `foundry-shaders.toml` | Your function |
 | --- | --- | --- |
 | sky | `[sky]` | `fn sky(input: SkyInput) -> vec4<f32>` |
 | vertex | `[vertex]` | `fn vertex(input: VertexInput) -> vec3<f32>` |
@@ -198,7 +198,7 @@ One point of a block's surface, for `fn material(input: MaterialInput) -> Surfac
 | `tint` | `vec4<f32>` | The colour vanilla multiplies the block's texture by: the biome's tint (grass, leaves, water), a model's own colour, else white; alpha 1. Without the face's shade and ambient occlusion (`shade`, `ao`). |
 | `shade` | `f32` | Vanilla's directional shade for this face as a factor on linear light, 0..1 (vanilla's value decoded with the 2.2 power, as `EntityInput.shade`): the shade the face was given, 1 on top, 0.8 north and south, 0.6 east and west, 0.5 below, 0.9 above and below in the Nether. A face with `shade_direction_override` is shaded as that face (a torch is 1 all round, 0.9 in the Nether), one vanilla doesn't shade (a model element with `"shade": false`) is 1, and a fluid's side has the side's shade times the top's. |
 | `ao` | `f32` | Vanilla's ambient occlusion here as a factor on linear light, 0..1 (decoded with the 2.2 power), smoothed over the face: how much the blocks around each corner darken it. 1 where vanilla applies none: Smooth Lighting off, a block that gives off light, a model without ambient occlusion, fluids, distant terrain. |
-| `light` | `vec2<f32>` | Block and sky light, 0..1, smoothed over the face: vanilla's smooth light, without ambient occlusion (`ao`), and Horizon's dynamic block light. |
+| `light` | `vec2<f32>` | Block and sky light, 0..1, smoothed over the face: vanilla's smooth light, without ambient occlusion (`ao`), and Foundry Client's dynamic block light. |
 | `lightmap` | `vec3<f32>` | Vanilla's light colour for that light this frame. |
 | `position` | `vec3<f32>` | The point, camera-relative, in blocks. |
 | `uv` | `vec2<f32>` | The texture coordinate inside the block atlas. |
@@ -213,15 +213,15 @@ One point of a block's surface, for `fn material(input: MaterialInput) -> Surfac
 | `tangent` | `vec4<f32>` | The surface's tangent: xyz the unit direction in world axes along which `uv.x` grows, w the sign (1 or -1) that makes `cross(normal, tangent.xyz) * tangent.w` the direction `uv.y` grows along (down the texture). With `normal` it turns a normal map's normals into world axes. |
 | `colored_light` | `vec3<f32>` | The frame's coloured lights at this point (`[[particle_lights]]`, held and dropped items in their `[[lights]]` colour while dynamic lights are on, and mods' visual lights), 0..1, to light the surface with as the pack likes; 0 where none reaches. |
 | `displaced` | `f32` | How much of the relief `[displacement]` gave this point as geometry, 0..1: 1 near the camera, where the surface already lies where `displacement` put it (`position` is that point; a parallax effect would count its depth twice), easing to 0 at `[displacement] distance`; always 0 without `[displacement]`. |
-| `light_source_tier` | `u32` | Only in a pack whose files name `light_source_tier`, `light_source_whole` or `light_source_threshold`: how Horizon's own HDR look ranks the surface's block as a light source: 0 none, 1 low (magma, a redstone torch, candles, froglights), 2 incandescent (torches, lanterns, fire, lava), 3 bright (glowstone, a beacon, campfires), 4 very bright (the sun and lightning; no block has it). It comes from the block, which `emission` doesn't tell (glow lichen gives light and is 0, a froglight gives 15 and is 1), the same on every face except a model face that gives its own light, which ranks at least by that light (an open eyeblossom's petals are 2); a fluid's surface has the fluid's (lava 2), and distant terrain keeps its block's (with `light_source_whole`), so far glowstone is 3. |
-| `light_source_whole` | `bool` | Only in a pack whose files name `light_source_tier`, `light_source_whole` or `light_source_threshold`: the whole sprite shines in Horizon's look (froglights, fire, lava, campfires), whatever a texel's brightness; otherwise only its texels as bright as `light_source_threshold` do (a torch's flame, not its handle). False where `light_source_tier` is 0. |
-| `light_source_threshold` | `f32` | Only in a pack whose files name `light_source_tier`, `light_source_whole` or `light_source_threshold`: the brightness a texel of the surface's sprite reaches where Horizon's look lets it shine (unless `light_source_whole`), 0..1. A texel's brightness is the mean of the luminance and the brightest channel of its colour in linear light: of `c = albedo.rgb`, `0.5 * (dot(c, vec3(0.2126, 0.7152, 0.0722)) + max(c.r, max(c.g, c.b)))`. It is measured from the sprite itself, a set share of the way from its darkest to its brightest opaque texel, when HDR output turns on: 0 for every sprite until the renderer drawing it has measured it (every texel passes), so a renderer made while HDR output is off, as turning it off makes one, reads 0; and 1 for a sprite without an opaque texel. |
-| `lit_tint` | `vec3<f32>` | Only in a pack whose files name `lit_tint`: vanilla's lit vertex colour, `shaded_tint.rgb * lightmap` multiplied at each corner and then smoothed over the face, as Horizon's own terrain draws blocks, with the frame's coloured lights added under the vertex colour at each corner (`min(shaded_tint.rgb * (lightmap + colored_light), 1)` there, wherever any reaches). Those products are taken in vanilla's gamma at each corner, on the corner's own values; the smoothed result is then decoded with the 2.2 power, as `shaded_tint` and `lightmap` are, so the formula doesn't hold for the decoded fields a stage gets. So `albedo.rgb * lit_tint` is vanilla's lit colour, where multiplying `shaded_tint` by `lightmap`, each smoothed apart, differs from it where both change across a face (an occluded corner beside a torch). `[displacement]`'s grid has it at each of its points between the face's four corners' products, as it has the vertex colour, each lit where the mesh puts the corner (before `[vertex]` moves it). |
+| `light_source_tier` | `u32` | Only in a pack whose files name `light_source_tier`, `light_source_whole` or `light_source_threshold`: how Foundry Client's own HDR look ranks the surface's block as a light source: 0 none, 1 low (magma, a redstone torch, candles, froglights), 2 incandescent (torches, lanterns, fire, lava), 3 bright (glowstone, a beacon, campfires), 4 very bright (the sun and lightning; no block has it). It comes from the block, which `emission` doesn't tell (glow lichen gives light and is 0, a froglight gives 15 and is 1), the same on every face except a model face that gives its own light, which ranks at least by that light (an open eyeblossom's petals are 2); a fluid's surface has the fluid's (lava 2), and distant terrain keeps its block's (with `light_source_whole`), so far glowstone is 3. |
+| `light_source_whole` | `bool` | Only in a pack whose files name `light_source_tier`, `light_source_whole` or `light_source_threshold`: the whole sprite shines in Foundry Client's look (froglights, fire, lava, campfires), whatever a texel's brightness; otherwise only its texels as bright as `light_source_threshold` do (a torch's flame, not its handle). False where `light_source_tier` is 0. |
+| `light_source_threshold` | `f32` | Only in a pack whose files name `light_source_tier`, `light_source_whole` or `light_source_threshold`: the brightness a texel of the surface's sprite reaches where Foundry Client's look lets it shine (unless `light_source_whole`), 0..1. A texel's brightness is the mean of the luminance and the brightest channel of its colour in linear light: of `c = albedo.rgb`, `0.5 * (dot(c, vec3(0.2126, 0.7152, 0.0722)) + max(c.r, max(c.g, c.b)))`. It is measured from the sprite itself, a set share of the way from its darkest to its brightest opaque texel, when HDR output turns on: 0 for every sprite until the renderer drawing it has measured it (every texel passes), so a renderer made while HDR output is off, as turning it off makes one, reads 0; and 1 for a sprite without an opaque texel. |
+| `lit_tint` | `vec3<f32>` | Only in a pack whose files name `lit_tint`: vanilla's lit vertex colour, `shaded_tint.rgb * lightmap` multiplied at each corner and then smoothed over the face, as Foundry Client's own terrain draws blocks, with the frame's coloured lights added under the vertex colour at each corner (`min(shaded_tint.rgb * (lightmap + colored_light), 1)` there, wherever any reaches). Those products are taken in vanilla's gamma at each corner, on the corner's own values; the smoothed result is then decoded with the 2.2 power, as `shaded_tint` and `lightmap` are, so the formula doesn't hold for the decoded fields a stage gets. So `albedo.rgb * lit_tint` is vanilla's lit colour, where multiplying `shaded_tint` by `lightmap`, each smoothed apart, differs from it where both change across a face (an occluded corner beside a torch). `[displacement]`'s grid has it at each of its points between the face's four corners' products, as it has the vertex colour, each lit where the mesh puts the corner (before `[vertex]` moves it). |
 | `shaded_tint` | `vec4<f32>` | Only in a pack whose files name `shaded_tint`: the colour vanilla multiplies the texture by with the face's shade and ambient occlusion in it, `tint.rgb * shade * ao` as vanilla's vertex carries it (vanilla multiplies them at each corner in 8-bit integers, so it is within two steps of 255 of that product); alpha 1. Draw vanilla's colour with it; `tint`, `shade` and `ao` are for lighting faces yourself, and reading them from `MaterialInput` or `VertexInput` makes the world load again when the pack starts and terrain take a third again its memory. For the cost of reading those fields on a terrain hit, see `RayHit`. On `RayHit` it is linear light. Terrain hits interpolate the baked vertex colour, entity hits use `tint.rgb * shade` and keep their `tint`'s alpha, and misses return 0. |
 
 ### `Surface`
 
-What `material` returns. Vanilla's own is `albedo * vec4(lit_tint, 1.0)`, its vertex colour lit at each corner; `albedo * vec4(shaded_tint.rgb * lightmap, 1.0)` costs nothing and is close, but smooths colour and light apart, so it differs where both change across a face (an occluded corner beside a torch). Horizon then applies the alpha test (cutout and translucent; on the texture's alpha unless `[material] coverage = "pack"`) and fog (unless `[frame] fog = "pack"`).
+What `material` returns. Vanilla's own is `albedo * vec4(lit_tint, 1.0)`, its vertex colour lit at each corner; `albedo * vec4(shaded_tint.rgb * lightmap, 1.0)` costs nothing and is close, but smooths colour and light apart, so it differs where both change across a face (an occluded corner beside a torch). Foundry Client then applies the alpha test (cutout and translucent; on the texture's alpha unless `[material] coverage = "pack"`) and fog (unless `[frame] fog = "pack"`).
 
 | Field | Type | Meaning |
 | --- | --- | --- |
@@ -374,7 +374,7 @@ name) is built as without it.
 
 The game traces for the pack picked when it starts: only then, and only for a pack with `[ray_tracing]`, does it
 ask the GPU for hardware ray queries, where the GPU and graphics API have them. In a game started without them a
-pack picked while it runs traces from the next start, and the shader pack screen says so. `HORIZON_RAY_TRACING=1`
+pack picked while it runs traces from the next start, and the shader pack screen says so. `FOUNDRY_RAY_TRACING=1`
 asks for ray queries and keeps the scene with any pack or none; any other value of it turns ray tracing off.
 
 - `fn trace(origin: vec3<f32>, direction: vec3<f32>, max_distance: f32) -> RayHit`: the nearest solid surface
@@ -407,7 +407,7 @@ asks for ray queries and keeps the scene with any pack or none; any other value 
   are free for the pack's own), and only in a stage whose files name one of them outside a comment, which alone
   binds them. `struct RayLight`: `position: vec3<f32>`, the centre of its block, camera-relative from the player's
   camera (`frame.camera_position`) in every pass, as `trace`'s `origin` and `view_position` are (the water mirror
-  is drawn by Horizon's own terrain shader, and the shadow map with the vertex stage, which can't reach the light
+  is drawn by Foundry Client's own terrain shader, and the shadow map with the vertex stage, which can't reach the light
   functions: no pass reads them from another camera); `level: f32`,
   vanilla's light level of the block, 1 to 15 (a terrain hit's `RayHit.emission` times 15); `color: vec3<f32>`,
   its `[[lights]]` colour decoded to linear as `block_light_color`'s is, white for a block the pack gives none;
@@ -445,7 +445,7 @@ asks for ray queries and keeps the scene with any pack or none; any other value 
   `RAY_STOP` (1) keeps it as the nearest hit so far, which shortens the ray to it, `RAY_END` (2) ends the query now,
   the hit being the nearest kept by then. The result is that nearest candidate, as `trace_layers` gives a hit;
   `distance` is negative where a step kept none. `struct RayCandidate`: `distance: f32`, along the ray in blocks, and `layer: u32`, `RAY_SOLID`,
-  `RAY_TRANSLUCENT` or `RAY_ENTITY`; its other fields are Horizon's. Functions read the rest, paid for only where
+  `RAY_TRANSLUCENT` or `RAY_ENTITY`; its other fields are Foundry Client's. Functions read the rest, paid for only where
   called, each the `RayHit` field of its name as if the candidate were the hit: `fn candidate_albedo(c:
   RayCandidate) -> vec4<f32>`, `candidate_tint` (a `vec4<f32>`; calling it binds the scene's looks, as reading
   `RayHit.tint` does), `candidate_material`, `candidate_tags` and `candidate_fluid` (each a `u32`). And `fn
@@ -456,7 +456,7 @@ asks for ray queries and keeps the scene with any pack or none; any other value 
   multiplies keeps none (everything out to `max_distance` counts) or records each contribution's `c.distance` and
   drops those past the result's `distance`. A stage has one `ray_step` and one `RayState`, shared by every
   `trace_step` call in it. A surface may reach the step more than once in one query: the graphics APIs allow it unless the
-  scene's geometry forbids it, which Horizon's doesn't yet. A step that only keeps, ends, or takes a minimum or a
+  scene's geometry forbids it, which Foundry Client's doesn't yet. A step that only keeps, ends, or takes a minimum or a
   maximum is unaffected; one that multiplies (light through glass) can count a pane more than once. Without the scene
   there is no candidate: every ray misses and `state` stays as passed. The check refuses a stage without `RayState` or
   with another `ray_step`, a `ray_step` that reaches a trace function (`trace_step` too), and a pack that
@@ -472,7 +472,7 @@ vanilla's mask decides), from either side of the face. A ray over several layers
 any: to go on through a translucent one, trace again from just behind the hit. No face is culled, and
 `hit.normal` is turned toward the ray's origin; `hit.back` says the ray met the face from behind (see it for faces
 drawn on both sides): a ray that starts inside a full block hits that block's drawn faces from behind. The
-scene is Horizon's: the terrain around the camera, out to `frame.ray_distance` at least, without particles, clouds or distant terrain,
+scene is Foundry Client's: the terrain around the camera, out to `frame.ray_distance` at least, without particles, clouds or distant terrain,
 and with entities only in `RAY_ENTITY`. While
 the game doesn't trace (`frame.has_ray_tracing` is 0) the pack is built and runs all the same, and every ray
 misses. Your files name no ray query of their own (`ray_query`, `acceleration_structure`, `RayDesc`,
@@ -514,7 +514,7 @@ The nearest surface along a ray, from `trace` or `trace_layers`. Its `albedo`, `
 | `back` | `bool` | The ray met the face from behind, against the way it faces (its normal before `normal` is turned toward the ray's origin): every hit from inside a full block, none from outside. A face drawn on both sides, as a cross-model plant's, is two quads in one place facing opposite ways, met at the same distance; which one a ray takes is the GPU's choice, so `back` there says nothing of the side (on the GPUs tried it takes the same quad from both sides, and one of the two directions reads back). |
 | `entity` | `bool` | Only in a pack whose files name `RAY_ENTITY`: a hit in that layer, an entity's surface. Its `albedo` is the entity texture's texel and `tint`, `light` and `uv` are its vertices' (the colour vanilla multiplies in, alpha included; the atlas position); `shade` is vanilla's entity shade for the face's normal (as `EntityInput.shade`), `ao` 1; `material`, `tags`, `emission` and `fluid` are 0, `hit_normal_map` and `hit_specular_map` give their defaults. |
 | `tangent` | `vec4<f32>` | The surface's tangent, as `MaterialInput.tangent`: xyz the unit direction in world axes along which `uv.x` grows, w the sign (1 or -1) that makes `cross(normal, tangent.xyz) * tangent.w` the direction `uv.y` grows along (down the texture). It follows `normal`, which faces the ray's origin. With `normal` it turns `hit_normal_map`'s normals into world axes. |
-| `horizon_sprite` | `u32` | Horizon's own: where the hit's sprite is kept, for `hit_normal_map` and `hit_specular_map`. Not for packs to read; it changes with the renderer. |
+| `foundry_sprite` | `u32` | Foundry Client's own: where the hit's sprite is kept, for `hit_normal_map` and `hit_specular_map`. Not for packs to read; it changes with the renderer. |
 | `shaded_tint` | `vec4<f32>` | Only in a pack whose files name `shaded_tint`: the colour vanilla multiplies the texture by with the face's shade and ambient occlusion in it, `tint.rgb * shade * ao` as vanilla's vertex carries it (vanilla multiplies them at each corner in 8-bit integers, so it is within two steps of 255 of that product); alpha 1. Draw vanilla's colour with it; `tint`, `shade` and `ao` are for lighting faces yourself, and reading them from `MaterialInput` or `VertexInput` makes the world load again when the pack starts and terrain take a third again its memory. For the cost of reading those fields on a terrain hit, see `RayHit`. On `RayHit` it is linear light. Terrain hits interpolate the baked vertex colour, entity hits use `tint.rgb * shade` and keep their `tint`'s alpha, and misses return 0. |
 
 Bindings 48 to 59 of group 3 hold the scene while the game traces (60 to
@@ -523,7 +523,7 @@ names them under `lights = true`), and in a post, compute or `[[before_world]]` 
 12 and 13 the LabPBR maps (the material and entity stages have them there already).
 Binding 81 holds terrain hit looks for a stage that reads `RayHit.tint`, `shade` or `ao` from its entry point,
 or calls `candidate_tint` from it.
-These bindings are Horizon's, as their `horizon_` names say, and change with the renderer.
+These bindings are Foundry Client's, as their `foundry_` names say, and change with the renderer.
 
 ## Kept resources and compute passes
 
@@ -546,7 +546,7 @@ it doesn't list is the file's own, and using such a resource is refused as unlis
 compute pass that writes a texture and reads it back (read `_previous`, or a buffer), and a pass that reads its
 own `output`.
 
-A compute file defines `fn compute(input: ComputeInput)`, and Horizon adds the `@compute` entry with the pass's
+A compute file defines `fn compute(input: ComputeInput)`, and Foundry Client adds the `@compute` entry with the pass's
 workgroup size. Every invocation of every workgroup runs it, so `var<workgroup>` and `workgroupBarrier()`
 reductions stay uniform: one beyond the dispatch has `in_bounds` false and touches no resource. WGSL's
 `storageBarrier()` is allowed too: it orders one workgroup's accesses to its kept buffers, as
@@ -566,7 +566,7 @@ resource the terrain reads zeros, or what a `[[before_world]]` pass wrote since.
 
 `[entity] reads` and `[sky] reads` follow the same rules: the entities and the sky draw after `[[before_world]]`
 and before `[[post]]`, as the terrain does, and read the same versions. Their declarations are in the stage's
-module, for its fragments only; the shadow map's entities are Horizon's own draw and read none.
+module, for its fragments only; the shadow map's entities are Foundry Client's own draw and read none.
 
 ### `ComputeInput`
 
@@ -584,7 +584,7 @@ A pass's prelude declares the resources it lists, the pack's resource i at bindi
 `var<storage, read>` where only read (an `atomic<u32>` buffer then reads as `array<u32>`); a texture
 `texture_storage_2d<format, write>` where written, else `texture_2d<f32>` (`texture_2d<u32>` for
 `rgba32uint` and `r32uint`, which only a compute pass writes). An `r32float`, `rgba32float`, `rgba32uint` or
-`r32uint` texture is read with `textureLoad` only: the check refuses sampling or gathering one, also through a function's argument. Data is data: Horizon doesn't decode, clamp or force the alpha of a kept resource.
+`r32uint` texture is read with `textureLoad` only: the check refuses sampling or gathering one, also through a function's argument. Data is data: Foundry Client doesn't decode, clamp or force the alpha of a kept resource.
 
 `[[before_world]]` resources (bind group 3):
 
@@ -608,7 +608,7 @@ says the world changed, not the camera's distance or `frame_index`.
 | Reason | Bit | Clears | When |
 | --- | --- | --- | --- |
 | `REASON_LOAD` | 1 | both | The pack was loaded or reloaded: its first frame. |
-| `REASON_RESET` | 2 | both | Horizon restarted the pack's history (a screenshot sequence's first shot). |
+| `REASON_RESET` | 2 | both | Foundry Client restarted the pack's history (a screenshot sequence's first shot). |
 | `REASON_WORLD` | 4 | both | Another world or dimension, or its meshes were rebuilt (a render setting). |
 | `REASON_TELEPORT` | 8 | both | The camera moved further than `[kept] reach` since last frame. |
 | `REASON_PAUSE` | 16 | view | Over half a second since last frame, as `delta_time` 0. |
@@ -627,7 +627,7 @@ compute pass, `[[before_world]]` and `[[post]]` together, counted as whole workg
 How each pixel's surface moved since last frame, for temporal passes (TAA, denoisers, light caches) that reproject a
 kept resource of their own (`<name>_previous`). With `[motion]` in the manifest (it has no keys, and needs a
 `[[post]]` pass) every post pass's prelude also has the names below; a pack without the key has none of them, and no
-other stage does. `horizon-shader check` takes it; **the game doesn't draw it yet** and refuses a pack with
+other stage does. `foundry-shader check` takes it; **the game doesn't draw it yet** and refuses a pack with
 `[motion]`.
 
 - `var scene_motion: texture_2d<f32>` (binding 14): the engine's objects (z 1 matched, xy the delta; w 1
@@ -638,7 +638,7 @@ other stage does. `horizon-shader check` takes it; **the game doesn't draw it ye
   `kind` says how far to trust it:
   - `MOTION_CAMERA` (0): everything that isn't one of the engine's objects (terrain, still block entities, the sky),
     moved by the camera alone, through `scene_depth`, `frame.previous_view_projection` and `frame.camera_motion`. The
-    sky (depth 0) is drawn without the view bob, so Horizon writes its motion into `scene_motion` itself, from the
+    sky (depth 0) is drawn without the view bob, so Foundry Client writes its motion into `scene_motion` itself, from the
     unbobbed views. It assumes still geometry: terrain a `[vertex]` stage animates, drifting clouds and
     moving water are wrong here. Mark such surfaces with `set_surface`'s `data` and treat them as reactive.
   - `MOTION_OBJECT` (1): one of the engine's objects matched to last frame's, vertex by vertex, limbs and spin
@@ -650,7 +650,7 @@ other stage does. `horizon-shader check` takes it; **the game doesn't draw it ye
     frame's camera had behind it. `delta` is 0.
 - The vectors come from the unjittered projections, so they line up with `scene_depth`.
 - Not covered: the first-person hand (drawn after the pack's tone map), translucent surfaces that write no depth
-  (translucent items, most particles, weather), and terrain moved by a `[vertex]` stage, whose last place Horizon
+  (translucent items, most particles, weather), and terrain moved by a `[vertex]` stage, whose last place Foundry Client
   doesn't know.
 
 ## tonemap
@@ -659,7 +659,7 @@ other stage does. `horizon-shader check` takes it; **the game doesn't draw it ye
 
 ### `TonemapInput`
 
-One pixel of an output (the window), for `fn tonemap(input: TonemapInput) -> vec3<f32>`, which returns its colour for the output `frame` describes: linear light, 1.0 at paper white, from 0 to `frame.headroom` (Horizon clamps it there).
+One pixel of an output (the window), for `fn tonemap(input: TonemapInput) -> vec3<f32>`, which returns its colour for the output `frame` describes: linear light, 1.0 at paper white, from 0 to `frame.headroom` (Foundry Client clamps it there).
 
 | Field | Type | Meaning |
 | --- | --- | --- |
@@ -678,12 +678,12 @@ Resources (bind group 3):
 
 It is a pure mapping from the scene's light to the output its `frame` describes, run once per pixel of
 each output, after the post chain and before the camera overlays and the HUD. Today the display is the
-only output; Horizon may add others for the same frame, such as an SDR screenshot or icon, where `frame`'s
+only output; Foundry Client may add others for the same frame, such as an SDR screenshot or icon, where `frame`'s
 display fields describe SDR (`hdr` 0, `headroom` 1, `paper_white` and `peak` 80, `black_level` 0). Its
 only output is the colour it returns, so nothing carries from one call to the next. A pack without it gets
-Horizon's: a clip at white in SDR, and in HDR the curve Horizon uses without a pack, which keeps light up
-to 60% of the peak as it is and rolls it off into the peak above. Either runs once: Horizon doesn't map a pack's
-result again. Horizon holds the result to 0 to `frame.headroom`, then lifts the shadows onto
+Foundry Client's: a clip at white in SDR, and in HDR the curve Foundry Client uses without a pack, which keeps light up
+to 60% of the peak as it is and rolls it off into the peak above. Either runs once: Foundry Client doesn't map a pack's
+result again. Foundry Client holds the result to 0 to `frame.headroom`, then lifts the shadows onto
 `frame.black_level`.
 
 ## entity
@@ -710,25 +710,25 @@ One point of the surface of an entity, a block entity, an item or a particle, fo
 | `light` | `vec2<f32>` | Block and sky light, 0..1. |
 | `uv` | `vec2<f32>` | The texture coordinate. |
 | `screen` | `vec2<f32>` | Where the point is on the screen, 0..1 from the top left (as `MaterialInput.screen`). |
-| `light_source_tier` | `u32` | Only in a pack whose files name `light_source_tier`, `light_source_whole` or `light_source_threshold`: how Horizon's own HDR look ranks the surface as a light source, 0..4 as `MaterialInput.light_source_tier` (a blaze, spider and enderman eyes 3; a magma cube, a glow squid, glowing sign text 1). Horizon's look has no threshold or whole sprite for these: every texel shines by its own brightness, `albedo * tint`. |
+| `light_source_tier` | `u32` | Only in a pack whose files name `light_source_tier`, `light_source_whole` or `light_source_threshold`: how Foundry Client's own HDR look ranks the surface as a light source, 0..4 as `MaterialInput.light_source_tier` (a blaze, spider and enderman eyes 3; a magma cube, a glow squid, glowing sign text 1). Foundry Client's look has no threshold or whole sprite for these: every texel shines by its own brightness, `albedo * tint`. |
 
 `entity` lights what is no block terrain: `input.kind` says which. It returns the same `Surface` as `material` (rgb
 linear light, 0 or more and unbounded; its alpha read only under `[entity] coverage = "pack"`), so a pack writes
-its lighting once and calls it from both stages. Around it Horizon keeps vanilla's order: the alpha test (on the
+its lighting once and calls it from both stages. Around it Foundry Client keeps vanilla's order: the alpha test (on the
 texture and the layer's opacity, or under `"pack"` on the returned alpha), then the enchantment glint added on top,
 then fog (the pack's own under `[frame] fog = "pack"`). A pack without `[entity]` is drawn as before, and sees
 none of this stage's names; the rule for new names holds for the stage as for the others.
 
 **What the game draws through the stage so far: entities and block entities** (`kind` 0 and 1). Until a later
-release brings them in, Horizon lights the rest itself, exactly as without the stage: dropped and framed items and
+release brings them in, Foundry Client lights the rest itself, exactly as without the stage: dropped and framed items and
 what a block or a display entity shows of one (`kind` 2), what flies as its item (a snowball, a potion, a fireball,
 an eye of ender), firework rockets, particles (`kind` 4), the fire on a burning entity, a guardian's beam, a lead's
-rope, name tags and text, and the first-person hand. Some draws stay Horizon's for good: beacon beams, the beams of
+rope, name tags and text, and the first-person hand. Some draws stay Foundry Client's for good: beacon beams, the beams of
 End crystals, End portals and gateways, breaking cracks, energy swirls, lightning and other additive glows.
 
 An item an entity holds or wears as its model (a sword in a hand, a block on a head) reaches the stage with the
 entity, unless its texture has see-through pixels (stained glass, ice, a slime block): that one is drawn with the
-translucent items, and stays Horizon's until items draw through the stage. A block drawn as an entity (a falling
+translucent items, and stays Foundry Client's until items draw through the stage. A block drawn as an entity (a falling
 block, primed TNT, a block display) or as a block entity (a block a piston moves) reaches the stage too. These have
 vanilla's shade already in `tint`, and `shade` 1: their vertices carry the two as one colour so far. A sign's board
 and a bed are block terrain, the material stage's.
@@ -747,7 +747,7 @@ fn entity(input: EntityInput) -> Surface {
 
 Without a flash (`overlay.a` 0) that is `albedo * tint * shade * lightmap`. In linear light alone,
 `mix(base, input.overlay.rgb, input.overlay.a) * input.lightmap` is the same flash a little brighter. The shade and
-the light act on rgb only. `lightmap` holds no coloured light: where `colored_light` is above 0, Horizon's own draw
+the light act on rgb only. `lightmap` holds no coloured light: where `colored_light` is above 0, Foundry Client's own draw
 adds it to the light colour, and the expression above leaves it out.
 
 Resources (bind group 3):
@@ -784,7 +784,7 @@ The frame, as `frame` in every stage. Positions and directions are in world axes
 | `projection_inverse` | `mat4x4<f32>` | 192 | Clip to view space. |
 | `camera_position` | `vec3<f32>` | 256 | The camera's world position, in blocks (about a millimetre of precision 10 000 blocks out). |
 | `time` | `f32` | 268 | Seconds since the pack was loaded, wrapping to 0 every hour. |
-| `sun_direction` | `vec3<f32>` | 272 | Unit vector toward the sun (below the horizon at night). |
+| `sun_direction` | `vec3<f32>` | 272 | Unit vector toward the sun (below the foundry at night). |
 | `day_time` | `f32` | 284 | The time of day, 0..1: 0 sunrise, 0.25 noon, 0.5 sunset, 0.75 midnight. |
 | `moon_direction` | `vec3<f32>` | 288 | Unit vector toward the moon. |
 | `game_time` | `f32` | 300 | Vanilla's GameTime: (game time % 24000 + partial tick) / 24000, 0..1. |
@@ -839,7 +839,7 @@ The frame, as `frame` in every stage. Positions and directions are in world axes
 | `reset_reasons` | `u32` | 804 | Why an epoch changed this frame: the prelude's `REASON_*` bits ("Kept resources"); 0 when neither did. Only a pack with `[[resource]]` has this field. |
 | `fog_environment` | `vec2<f32>` | 808 | Where the fog of where the camera is starts and where it is full (x, y), in blocks along the straight line from the camera: the dimension's and the biome's, thickened by rain, or that of water, lava, powder snow, blindness, darkness or a boss. |
 | `fog_render` | `vec2<f32>` | 816 | Where the render distance's fog starts and where it is full (x, y), in blocks along the larger of the horizontal distance and the height difference from the camera. Vanilla's fog is the larger of the two (`vanilla_fog`, under `[frame] fog = "pack"`). |
-| `moon_phase` | `u32` | 824 | The moon's phase, as Horizon draws the moon: 0 full, 1 waning gibbous, 2 third quarter, 3 waning crescent, 4 new, 5 waxing crescent, 6 first quarter, 7 waxing gibbous. It moves on by one each day. Only a pack whose files name `moon_phase` has this field. |
+| `moon_phase` | `u32` | 824 | The moon's phase, as Foundry Client draws the moon: 0 full, 1 waning gibbous, 2 third quarter, 3 waning crescent, 4 new, 5 waxing crescent, 6 first quarter, 7 waxing gibbous. It moves on by one each day. Only a pack whose files name `moon_phase` has this field. |
 | `full_lightmap` | `vec3<f32>` | 832 | Vanilla's light colour at full block and sky light (15 and 15) this frame, linear: what `MaterialInput.lightmap` and `EntityInput.lightmap` are where light is full. Its brightest channel is 1 unless something dims all light (the Darkness effect, a wither's bar). Only a pack whose files name `full_lightmap` has this field. |
 | `jitter` | `vec2<f32>` | 848 | This frame's sub-pixel offset of the world, added to clip `xy / w` (y up): the offset `projection` leaves out. Rebuilding a point from the depth subtracts it before `projection_inverse` (`vec4<f32>(ndc.xy - frame.jitter, depth, 1.0)`); projecting a point to sample what the world drew this frame adds it to `xy / w` after `projection`. `(0, 0)` while the world isn't jittered. Only a pack whose files name `jitter` or `previous_jitter` has this field. |
 | `previous_jitter` | `vec2<f32>` | 856 | Last frame's `jitter`: reprojecting a `keep = "view"` resource adds it to `xy / w` after `previous_view_projection`. `(0, 0)` where `previous_view_projection` is this frame's (the first frame, after a pause or a reset) and while the world isn't jittered. Only a pack whose files name `jitter` or `previous_jitter` has this field. |
@@ -847,8 +847,8 @@ The frame, as `frame` in every stage. Positions and directions are in world axes
 ## Anti-aliasing
 
 While a pack's `[[post]]` chain draws the frame, the player's anti-aliasing settings do not run: `taa`, `fxaa`
-and `upscaling` in `horizon-graphics.txt` have no effect, and the frame's projection is never jittered, because the
-last post pass draws the picture itself and Horizon's own resolve, which does TAA, FXAA and TAA upscaling, is the
+and `upscaling` in `foundry-graphics.txt` have no effect, and the frame's projection is never jittered, because the
+last post pass draws the picture itself and Foundry Client's own resolve, which does TAA, FXAA and TAA upscaling, is the
 step it replaces. The world is still rendered at `resolutionScale` before the pack reads it.
 
 A pack that wants smooth edges draws them itself, in a post pass: a spatial filter (FXAA, SMAA and the like) works on
@@ -857,8 +857,8 @@ A pack that wants smooth edges draws them itself, in a post pass: a spatial filt
 frame to the next, so a still camera gives it the same picture twice and there is no sub-pixel detail to gather.
 
 A pack without `[[post]]` whose frame holds gamma light (not `blend = "linear"` on the float frame) gets the
-player's FXAA or TAA: with `fxaa` or `taa` on, Horizon anti-aliases the world, FXAA at its size, in the frame's
-encoding, before the pack's `[tonemap]` (or Horizon's curve) reads it. TAA jitters the world's projection by
+player's FXAA or TAA: with `fxaa` or `taa` on, Foundry Client anti-aliases the world, FXAA at its size, in the frame's
+encoding, before the pack's `[tonemap]` (or Foundry Client's curve) reads it. TAA jitters the world's projection by
 `frame.jitter`, and its history starts over when the pack is loaded or rebuilt and when the display's values
 change. Where the pack has no `[tonemap]`, or one that never reads `previous`, TAA upscaling applies too: the world
 draws at the `upscaling` ratio's share of the scaled window, and TAA rebuilds it at the scaled window's size, then
@@ -895,7 +895,7 @@ Each `[[options]]` entry sets the WGSL `override` of the same name when the pipe
 
 ## The check
 
-A pack runs only after it passes `horizon_shader_api::check` (the game when it loads a pack, the launcher before it
+A pack runs only after it passes `foundry_shader_api::check` (the game when it loads a pack, the launcher before it
 installs one, the registry's CI): each stage is parsed and validated by naga, checked against its signature and
 the rules above, and translated for Vulkan (SPIR-V), Metal and DirectX 12 (HLSL) with its options at their
 defaults, minimums and maximums. Every option must be an `override` of its type in some stage; an `override`

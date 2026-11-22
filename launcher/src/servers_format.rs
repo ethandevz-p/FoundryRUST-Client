@@ -1,5 +1,5 @@
 //! Servers page text helpers: byte sizes, uptime and a backup's date and kind for people.
-use horizon_launcher::servers::Backup;
+use foundry_launcher::servers::Backup;
 
 pub(super) fn bytes(n: u64) -> String {
     match n {
@@ -22,7 +22,7 @@ pub(super) fn backup_label(b: &Backup) -> (String, String) {
         "auto" => "Automatic".to_string(),
         "manual" => "Made by hand".to_string(),
         "before-update" => "Before an update".to_string(),
-        // horizon-server writes the tag with dashes (before-v2026-10-19-10).
+        // foundry-server writes the tag with dashes (before-v2026-10-19-10).
         k if k.starts_with("before-v")
             && k[8..].chars().all(|c| c.is_ascii_digit() || c == '-') =>
         {

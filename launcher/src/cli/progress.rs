@@ -1,5 +1,5 @@
 //! Download progress presentation for terminal and redirected CLI output.
-use horizon_launcher::native_mods;
+use foundry_launcher::native_mods;
 use std::io::{IsTerminal, Write};
 
 /// Download progress on one terminal line, only when stderr is a terminal and the percentage moves.
@@ -72,11 +72,11 @@ mod tests {
             [
                 format!(
                     "Downloading Rust {} (once): 0%",
-                    horizon_launcher::rust_toolchain::VERSION
+                    foundry_launcher::rust_toolchain::VERSION
                 ),
                 format!(
                     "Downloading Rust {} (once): 100%",
-                    horizon_launcher::rust_toolchain::VERSION
+                    foundry_launcher::rust_toolchain::VERSION
                 ),
             ]
         );
@@ -98,7 +98,7 @@ mod tests {
                 progress(native_mods::Step::Rust(done)),
                 percent.map(|percent| format!(
                     "Downloading Rust {} (once): {percent}%",
-                    horizon_launcher::rust_toolchain::VERSION
+                    foundry_launcher::rust_toolchain::VERSION
                 ))
             );
         }
@@ -122,7 +122,7 @@ mod tests {
         let compile = || Step::Compile {
             done: 460,
             total: Some(469),
-            name: "horizon-official".into(),
+            name: "foundry-official".into(),
             profile: Default::default(),
         };
         for tty in [true, false] {
@@ -188,7 +188,7 @@ mod tests {
             progress(Step::Rust(0.97)),
             Some(format!(
                 "Downloading Rust {} (once): 97%",
-                horizon_launcher::rust_toolchain::VERSION
+                foundry_launcher::rust_toolchain::VERSION
             ))
         );
         assert_eq!(progress(Step::Rust(0.98)), None);
@@ -222,11 +222,11 @@ mod tests {
                 "Installing the build".to_owned(),
                 format!(
                     "Downloading Rust {} (once): 0%",
-                    horizon_launcher::rust_toolchain::VERSION
+                    foundry_launcher::rust_toolchain::VERSION
                 ),
                 format!(
                     "Downloading Rust {} (once): 100%",
-                    horizon_launcher::rust_toolchain::VERSION
+                    foundry_launcher::rust_toolchain::VERSION
                 ),
             ]
         );

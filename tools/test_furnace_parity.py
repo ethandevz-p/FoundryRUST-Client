@@ -128,6 +128,6 @@ if __name__ == '__main__':
         'Furnace block entity tick: burn table for every cooking_fuel item, 200/100/100 '
         'cook times, fuel stack and LIT state, RecipesUsed experience, full output and '
         'timer decay, and input changed mid-cook. --no-change leaves out the change family.',
-        sources=[lab.ROOT / 'crates/horizon-client-render/src/chunk/block_entity.rs',
-                 lab.ROOT / 'crates/horizon-client/src/furnace.rs',
-                 lab.ROOT / 'crates/horizon-client/src/crafting.rs'])
+        sources=[lab.ROOT / 'crates/foundry-client-render/src/chunk/block_entity.rs',
+                 lab.ROOT / 'crates/foundry-client/src/furnace.rs',
+                 lab.ROOT / 'crates/foundry-client/src/crafting.rs'])

@@ -16,19 +16,19 @@ calls a [support module](5-support-modules.md) of the same mod, so the example k
 ```toml
 [[native.module]]
 id = "runtime"
-file = "crates/horizon-client/src/game/world/autosave.rs"
+file = "crates/foundry-client/src/game/world/autosave.rs"
 name = "fnr_runtime"
 source = "src/runtime.rs"
 
 [[native.bridge]]
 id = "ticks"
 kind = "GET_MUT"
-target = "horizon_client::game::Game"
+target = "foundry_client::game::Game"
 member = "ticks_until_autosave"
 
 [[native.mixin]]
 id = "head"
-target = "horizon_client::game::autosave::Game<'_>::on_tick_rate_changed"
+target = "foundry_client::game::autosave::Game<'_>::on_tick_rate_changed"
 kind = "HEAD"
 helper = "src/mixins/head.rs"
 bindings = [{ name = "game", ty = "&mut Game<'_>", value = "&mut *self" }]
@@ -38,32 +38,32 @@ bindings = [{ name = "game", ty = "&mut Game<'_>", value = "&mut *self" }]
 
 ```rust,ignore
 fn head(game: &mut Game<'_>) {
-    let ticks = game.__horizon_mixins_fnr_support_ticks();
+    let ticks = game.__foundry_mixins_fnr_support_ticks();
     *ticks = crate::game::autosave::fnr_runtime::bumped(*ticks);
     fnr_support::note(&format!("module and bridge: ticks_until_autosave {}", *ticks));
 }
 ```
 
-The bridge `ticks` of the mod `fnr_support` becomes the method `__horizon_mixins_fnr_support_ticks`. It returns
+The bridge `ticks` of the mod `fnr_support` becomes the method `__foundry_mixins_fnr_support_ticks`. It returns
 `&mut i64` because the field is an `i64`. This field is also visible directly from the example's target module.
 
 ## The generated method
 
-Its name is `__horizon_mixins_<mod>_<id>`: the mod's id and the row's id, lowercased, with `-` turned into `_`.
+Its name is `__foundry_mixins_<mod>_<id>`: the mod's id and the row's id, lowercased, with `-` turned into `_`.
 So use only letters, digits, `_` and `-` in a bridge id, and keep ids distinct after that change.
 
 | `kind` | Method | `target` | `member` |
 | --- | --- | --- | --- |
-| `GET` | `fn(&self) -> &T` | The struct: `horizon_client::game::Game` | The field's name, or its index in a tuple struct as a string (`"0"`) |
+| `GET` | `fn(&self) -> &T` | The struct: `foundry_client::game::Game` | The field's name, or its index in a tuple struct as a string (`"0"`) |
 | `GET_MUT` | `fn(&mut self) -> &mut T` | The struct | The field |
 | `SET` | `fn(&mut self, value: T)` | The struct | The field |
 | `INVOKE` | The method's own signature, renamed | The method, written like a [mixin target](2-mixins.md#naming-the-target) | leave it out |
 
 `T` is the field's type: read it in the game's source, since a wrong guess is a compiler error. An `INVOKE`
-bridge is called as `value.__horizon_mixins_<mod>_<id>(…)`, or `Type::__horizon_mixins_<mod>_<id>(…)` for a
+bridge is called as `value.__foundry_mixins_<mod>_<id>(…)`, or `Type::__foundry_mixins_<mod>_<id>(…)` for a
 function without `self`.
 
-Name a field bridge's struct by the module that declares it, without lifetimes (`horizon_client::game::Game`).
+Name a field bridge's struct by the module that declares it, without lifetimes (`foundry_client::game::Game`).
 Mixin helpers on game-crate functions can call the method. Your mod's own crate cannot, so
 read the value in a helper and pass it to your crate.
 
@@ -78,7 +78,7 @@ read the value in a helper and pass it to your crate.
 
 Limits:
 
-- The struct or method is in the game crate, `horizon_client`.
+- The struct or method is in the game crate, `foundry_client`.
 - A field bridge's struct may be generic over lifetimes, not types or consts.
 - An `INVOKE` target's type and method are not generic.
 - An `INVOKE` bridge qualifies associated items such as `Self::Error` through the target's trait when it

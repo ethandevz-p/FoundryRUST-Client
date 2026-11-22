@@ -32,10 +32,10 @@ ALLOWED = {
 # as a segment of it, and has no spaces (a path has no spaces). Prose such as "vanilla 26.3" in a
 # docstring is not a path.
 PATH_LITERAL = re.compile(r"""['"][^'"]*/[^'"]*""" + re.escape(VERSION) + r"""[^'"]*['"]""")
-# The version on its own, next to a path: `'horizon-client' / '26.3'`.
+# The version on its own, next to a path: `'foundry-client' / '26.3'`.
 VERSION_ALONE = re.compile(r"""['"]""" + re.escape(VERSION) + r"""['"]""")
 # The words that make a literal a path rather than prose.
-PATH_WORDS = re.compile(r"local|minecraft|horizon-client|resources|\.jar|vanilla-")
+PATH_WORDS = re.compile(r"local|minecraft|foundry-client|resources|\.jar|vanilla-")
 
 
 def path_literal(line):

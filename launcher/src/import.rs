@@ -16,7 +16,7 @@ use crate::browser::{download, installed, FileRef};
 use crate::export::{FILES, FOLDERS};
 use crate::instances::{self, Instance};
 use crate::packs;
-use horizon_port_pack::zip_intake::{self, Archive};
+use foundry_port_pack::zip_intake::{self, Archive};
 use std::fs;
 use std::io::Read;
 use std::path::{Component, Path, PathBuf};
@@ -36,7 +36,7 @@ pub enum Dropped {
     Pack(packs::Kind),
     /// A data pack: it goes into a world.
     DataPack,
-    /// A game build: a `horizon-client` program, or a release archive or an
+    /// A game build: a `foundry-client` program, or a release archive or an
     /// Actions artifact around one. `build_import` installs it as its own
     /// version beside the releases, so a build can be played without waiting
     /// for a Nightly.
@@ -81,7 +81,7 @@ pub fn what(file: &Path) -> Result<Dropped, String> {
         // A game build: the program itself, or a release archive around it.
         // Taken on the extension alone, unread, so that `build_import` is the
         // one to say why a file with this name is not a game -- a better answer
-        // than this function's "nothing in it that Horizon reads".
+        // than this function's "nothing in it that Foundry Client reads".
         Some("exe" | "gz" | "tgz") => return Ok(Dropped::Build),
         Some("mrpack") => {
             let index = read_index(&mut open(file)?)?;
@@ -94,7 +94,7 @@ pub fn what(file: &Path) -> Result<Dropped, String> {
             });
         }
         Some("zip") => {}
-        // A build for Linux or macOS is named `horizon-client` with no
+        // A build for Linux or macOS is named `foundry-client` with no
         // extension, so a file nothing else claims is read before giving up.
         _ if is_build(file) => return Ok(Dropped::Build),
         // Native mods in the retired format (#17934), e.g. Zoom 2.0.0 downloaded by hand. Without
@@ -102,12 +102,12 @@ pub fn what(file: &Path) -> Result<Dropped, String> {
         // After the build check, which still takes a game build whatever its name.
         Some("hnmod") => {
             return Err(crate::i18n::trf(
-                "{name} is a native mod in the old .hnmod format, which this Horizon no longer loads. Install its current version from the Mods page, or ask its author to republish it as .hmod.",
+                "{name} is a native mod in the old .hnmod format, which this Foundry Client no longer loads. Install its current version from the Mods page, or ask its author to republish it as .hmod.",
                 &[("name", &name)],
             ));
         }
         _ => {
-            let kinds = "a .mrpack, a .zip, a .hshader or a Horizon game build";
+            let kinds = "a .mrpack, a .zip, a .hshader or a Foundry Client game build";
             return Err(format!("{name} can't be imported: drop {kinds}."));
         }
     }
@@ -121,7 +121,7 @@ pub fn what(file: &Path) -> Result<Dropped, String> {
     if has("manifest.json") && !has("pack.mcmeta") {
         return Ok(Dropped::Modpack);
     }
-    if !has("pack.mcmeta") && horizon_port_pack::import::prism_archive_layout(&names)?.is_some() {
+    if !has("pack.mcmeta") && foundry_port_pack::import::prism_archive_layout(&names)?.is_some() {
         return Ok(Dropped::Modpack);
     }
     if has("pack.mcmeta") {
@@ -145,7 +145,7 @@ pub fn what(file: &Path) -> Result<Dropped, String> {
         return Ok(Dropped::Build);
     }
     Err(format!(
-        "{name} is neither a pack, a shared instance nor a game build: nothing in it that Horizon reads."
+        "{name} is neither a pack, a shared instance nor a game build: nothing in it that Foundry Client reads."
     ))
 }
 

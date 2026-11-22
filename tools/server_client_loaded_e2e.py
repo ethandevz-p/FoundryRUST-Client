@@ -8,10 +8,10 @@ pass, vanilla ignores the player's moves and actions. A bot that never sends tha
 spawn (0.5 blocks a tick): after 1.5 s the server still has it where it spawned; after 6 s its moves
 are taken. A bot that sends it moves at once.
 
-horizon-bots stand in for the clients (`--no-loaded`). The server runs in a fresh folder with fresh
-HORIZON_HOME and XDG folders (lab.game_env), on a free port. Build first:
-    cargo build --profile fast -p horizon-game --bin horizon-client
-    cargo build --profile fast -p horizon-bots
+foundry-bots stand in for the clients (`--no-loaded`). The server runs in a fresh folder with fresh
+FOUNDRY_HOME and XDG folders (lab.game_env), on a free port. Build first:
+    cargo build --profile fast -p foundry-game --bin foundry-client
+    cargo build --profile fast -p foundry-bots
 """
 import argparse
 import os
@@ -31,7 +31,7 @@ EXE = '.exe' if os.name == 'nt' else ''
 
 def bot(bins, port, name, *extra):
     return subprocess.Popen(
-        [bins / f'horizon-bots{EXE}', '--server', f'127.0.0.1:{port}', '--bots', '1', '--behaviour', 'idle',
+        [bins / f'foundry-bots{EXE}', '--server', f'127.0.0.1:{port}', '--bots', '1', '--behaviour', 'idle',
          '--seconds', '10', '--name', name, *extra],
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 

@@ -11,10 +11,10 @@ from types import SimpleNamespace
 
 from tools.ci import nested_locks
 
-STALE_ERROR = ("error: cannot update the lock file /work/crates/horizon-telemetry-server/Cargo.lock because --locked "
+STALE_ERROR = ("error: cannot update the lock file /work/crates/foundry-telemetry-server/Cargo.lock because --locked "
                "was passed to prevent this\nhelp: to generate the lock file without accessing the network, remove the "
                "--locked flag and use --offline instead.\n")
-OUTAGE_ERROR = ("error: failed to get `serde` as a dependency of package `horizon-telemetry-server`\n\nCaused by:\n  "
+OUTAGE_ERROR = ("error: failed to get `serde` as a dependency of package `foundry-telemetry-server`\n\nCaused by:\n  "
                 "download of config.json failed\n\nCaused by:\n  failed to query replaced source registry `crates-io`\n")
 
 
@@ -50,12 +50,12 @@ class NestedLockTests(unittest.TestCase):
                 self.assertIn(lock, tracked)
 
     def test_resolution_inputs(self):
-        for path in ["Cargo.toml", "crates/horizon-telemetry/Cargo.toml", "launcher/Cargo.lock", ".cargo/config.toml",
-                     "crates/horizon-mod-registry/.cargo/config", "rust-toolchain.toml", "launcher/rust-toolchain",
+        for path in ["Cargo.toml", "crates/foundry-telemetry/Cargo.toml", "launcher/Cargo.lock", ".cargo/config.toml",
+                     "crates/foundry-mod-registry/.cargo/config", "rust-toolchain.toml", "launcher/rust-toolchain",
                      "tools/ci/rust-version"]:
             with self.subTest(path=path):
                 self.assertTrue(nested_locks.resolution_input(path))
-        for path in ["crates/horizon-telemetry/src/lib.rs", "docs/Cargo.toml.md", "config.toml", "tools/ci/a.py"]:
+        for path in ["crates/foundry-telemetry/src/lib.rs", "docs/Cargo.toml.md", "config.toml", "tools/ci/a.py"]:
             with self.subTest(path=path):
                 self.assertFalse(nested_locks.resolution_input(path))
 
@@ -98,7 +98,7 @@ class NestedLockTests(unittest.TestCase):
             now[0] += seconds
 
         with contextlib.redirect_stdout(out), contextlib.redirect_stderr(out):
-            verdict = nested_locks.check("crates/horizon-telemetry-server", budget, Path("/repo"), run, sleep,
+            verdict = nested_locks.check("crates/foundry-telemetry-server", budget, Path("/repo"), run, sleep,
                                          lambda: now[0])
         self.timeouts = timeouts
         return verdict, calls, sleeps, out.getvalue()
@@ -110,7 +110,7 @@ class NestedLockTests(unittest.TestCase):
                  "the --locked flag and use --offline instead.\n")
         verdict, calls, sleeps, out = self.run_check([SimpleNamespace(returncode=101, stderr=older)])
         self.assertEqual((verdict, len(calls), sleeps), ("stale", 1, []))
-        self.assertIn("::error file=crates/horizon-telemetry-server/Cargo.lock::", out)
+        self.assertIn("::error file=crates/foundry-telemetry-server/Cargo.lock::", out)
 
     def test_a_hung_cargo_is_stopped_retried_then_only_warns(self):
         hung = subprocess.TimeoutExpired(["cargo"], nested_locks.CALL_SECONDS)
@@ -143,9 +143,9 @@ class NestedLockTests(unittest.TestCase):
         self.assertEqual(verdict, "stale")
         self.assertEqual(len(calls), 1)
         self.assertEqual(calls[0], (["cargo", "update", "--workspace", "--locked", "--quiet"],
-                                    Path("/repo/crates/horizon-telemetry-server")))
-        self.assertIn("::error file=crates/horizon-telemetry-server/Cargo.lock::", out)
-        self.assertIn("cd crates/horizon-telemetry-server && cargo update --workspace", out)
+                                    Path("/repo/crates/foundry-telemetry-server")))
+        self.assertIn("::error file=crates/foundry-telemetry-server/Cargo.lock::", out)
+        self.assertIn("cd crates/foundry-telemetry-server && cargo update --workspace", out)
         self.assertEqual(sleeps, [])
 
     def test_a_registry_outage_is_retried_then_only_warns(self):
@@ -154,7 +154,7 @@ class NestedLockTests(unittest.TestCase):
         self.assertEqual(len(calls), 3)
         self.assertEqual(len(sleeps), 2)
         self.assertIn("NOT a staleness finding", out)
-        self.assertIn("::warning file=crates/horizon-telemetry-server/Cargo.lock::", out)
+        self.assertIn("::warning file=crates/foundry-telemetry-server/Cargo.lock::", out)
         self.assertNotIn("::error", out)
 
     def test_a_retry_that_resolves_is_current(self):

@@ -3,8 +3,8 @@
 use super::*;
 use crate::glass_ui::{self as ui, white};
 use home_tabs::HomeTab;
-use horizon_launcher::packs::Kind as PackKind;
-use horizon_theme::glass::ink;
+use foundry_launcher::packs::Kind as PackKind;
+use foundry_theme::glass::ink;
 
 /// The tabbed panel's body is at least this tall (`min-h-[340px]`).
 const BODY: f32 = 340.;

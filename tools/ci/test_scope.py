@@ -25,96 +25,96 @@ from tools.ci.rust_changes import changed_paths  # noqa: E402
 # own files had changed: whatever depends on it is selected too.
 # tests/test_ci_test_scope.py scans crates/ and xtask/ and fails on a read missing here. Entries outside every package
 # directory only document the read: a change there selects the whole workspace.
-HORIZON_CLIENT = [
+FOUNDRY_CLIENT = [
     # The build script and the native hook tests read the hook targets' sources.
-    "crates/horizon-client-render/src", "crates/horizon-world/src", "crates/horizon-items/src",
-    "crates/horizon-guest-stack/src/guest_stack_constants.rs", "crates/horizon-mod-wasm/tests/fixture/src",
-    "docs/api/launch-reference.md", "docs/horizon-ctl-commands.md", "docs/modding/examples/src/worldgen.rs",
+    "crates/foundry-client-render/src", "crates/foundry-world/src", "crates/foundry-items/src",
+    "crates/foundry-guest-stack/src/guest_stack_constants.rs", "crates/foundry-mod-wasm/tests/fixture/src",
+    "docs/api/launch-reference.md", "docs/foundry-ctl-commands.md", "docs/modding/examples/src/worldgen.rs",
     "docs/parity/random-chance-seeded.jsonl", "packaging/executable_link.rs", "packaging/windows/exe.rs",
     "research-lock.json", "tests/fixture_support/item_resource_properties.rs", "tests/fixtures",
     # shader_packs.rs tests load the sample pack.
-    "crates/horizon-shader-api/packs/traced_shadows",
+    "crates/foundry-shader-api/packs/traced_shadows",
     # The registered slot-source test loads its pack and program.
     "tools/fixtures/registered_slot_sources",
 ]
 # The generator scans these to write the mod API, the points and the host boundary: its own sources, the vocabulary, the
 # engine crates holding hook targets and their manifests.
 MOD_API_GEN = [
-    "Cargo.lock", "crates/horizon-assets/src", "crates/horizon-client", "crates/horizon-client-core/src",
-    "crates/horizon-client-render", "crates/horizon-core/src", "crates/horizon-engine-slots", "crates/horizon-items",
-    "crates/horizon-mod-api", "crates/horizon-mod-api-macros", "crates/horizon-mod-package/src",
-    "crates/horizon-mod-render", "crates/horizon-mod-runtime/src", "crates/horizon-mod-vocab/behaviours",
-    "crates/horizon-mod-vocab/src", "crates/horizon-world", "packaging/executable_link.rs",
+    "Cargo.lock", "crates/foundry-assets/src", "crates/foundry-client", "crates/foundry-client-core/src",
+    "crates/foundry-client-render", "crates/foundry-core/src", "crates/foundry-engine-slots", "crates/foundry-items",
+    "crates/foundry-mod-api", "crates/foundry-mod-api-macros", "crates/foundry-mod-package/src",
+    "crates/foundry-mod-render", "crates/foundry-mod-runtime/src", "crates/foundry-mod-vocab/behaviours",
+    "crates/foundry-mod-vocab/src", "crates/foundry-world", "packaging/executable_link.rs",
     "tools/layering/mod_vocab_state.json",
 ]
 READERS = {
-    "cargo-horizon-mod": [
-        "Cargo.lock", "crates/horizon-mod-api", "crates/horizon-mod-package/src/sdk/fixture.tar.xz",
-        "crates/horizon-mod-package/tests/index", "docs/modding/src/how-to/native-mods.md", "tools/ci/rust-version",
+    "cargo-foundry-mod": [
+        "Cargo.lock", "crates/foundry-mod-api", "crates/foundry-mod-package/src/sdk/fixture.tar.xz",
+        "crates/foundry-mod-package/tests/index", "docs/modding/src/how-to/native-mods.md", "tools/ci/rust-version",
     ],
-    "horizon-client": HORIZON_CLIENT,
-    # Shares horizon-client's sources, so its unit tests run the same reads.
-    "horizon-client-lib": HORIZON_CLIENT,
+    "foundry-client": FOUNDRY_CLIENT,
+    # Shares foundry-client's sources, so its unit tests run the same reads.
+    "foundry-client-lib": FOUNDRY_CLIENT,
     # lang.rs embeds the bundled language files.
-    "horizon-client-core": ["crates/horizon-client/assets/horizon/lang"],
+    "foundry-client-core": ["crates/foundry-client/assets/foundry/lang"],
     # The world's shaders include the HDR look from its pack, and the look pack's tests load the pack.
-    "horizon-client-render": [
-        "crates/horizon-client/assets/horizon/lang", "crates/horizon-client/assets/horizon/textures/gui",
-        "crates/horizon-shader-api/packs/horizon_hdr",
+    "foundry-client-render": [
+        "crates/foundry-client/assets/foundry/lang", "crates/foundry-client/assets/foundry/textures/gui",
+        "crates/foundry-shader-api/packs/foundry_hdr",
     ],
     # The daily Character comparator reads the original public-JDK API helper.
-    "horizon-core": ["tools/JavaCharacterTables.java"],
+    "foundry-core": ["tools/JavaCharacterTables.java"],
     # The build scripts hand the repository root to the generator.
-    "horizon-engine-slots": MOD_API_GEN,
-    "horizon-game": ["packaging/windows/exe.rs"],
+    "foundry-engine-slots": MOD_API_GEN,
+    "foundry-game": ["packaging/windows/exe.rs"],
     # Shared source-only module discovery reads the game's declarations and vocabulary export fragments.
-    "horizon-game-discovery": ["crates/horizon-client/src", "crates/horizon-mod-vocab/src"],
+    "foundry-game-discovery": ["crates/foundry-client/src", "crates/foundry-mod-vocab/src"],
     # The shared guest-stack tests read the sources that use its constants, and the jobs they wait on.
-    "horizon-guest-stack": ["crates/horizon-client/src", "crates/horizon-threads/src"],
-    "horizon-mod-api": MOD_API_GEN,
-    "horizon-mod-api-gen": MOD_API_GEN,
-    "horizon-mod-api-gen-tests": MOD_API_GEN,
-    "horizon-mod-package": [
+    "foundry-guest-stack": ["crates/foundry-client/src", "crates/foundry-threads/src"],
+    "foundry-mod-api": MOD_API_GEN,
+    "foundry-mod-api-gen": MOD_API_GEN,
+    "foundry-mod-api-gen-tests": MOD_API_GEN,
+    "foundry-mod-package": [
         "Cargo.lock", "docs/modding/src/how-to/native-mods/07-local-developer-builds.md",
         "tools/mixins/narrow-reference-rule.patch",
     ],
-    "horizon-mod-points": MOD_API_GEN,
-    "horizon-mod-render": MOD_API_GEN,
-    "horizon-mod-wasm": [*MOD_API_GEN, "crates/horizon-guest-stack/src/guest_stack_constants.rs"],
-    "horizon-mod-wasm-wire-loopback": [
-        *MOD_API_GEN, "crates/horizon-guest-stack/src/guest_stack_constants.rs", "crates/horizon-mod-wasm/src/prepared.rs",
-        "crates/horizon-mod-wasm/tests/fixture/src", "crates/horizon-mod-wasm/tests/support",
+    "foundry-mod-points": MOD_API_GEN,
+    "foundry-mod-render": MOD_API_GEN,
+    "foundry-mod-wasm": [*MOD_API_GEN, "crates/foundry-guest-stack/src/guest_stack_constants.rs"],
+    "foundry-mod-wasm-wire-loopback": [
+        *MOD_API_GEN, "crates/foundry-guest-stack/src/guest_stack_constants.rs", "crates/foundry-mod-wasm/src/prepared.rs",
+        "crates/foundry-mod-wasm/tests/fixture/src", "crates/foundry-mod-wasm/tests/support",
     ],
-    "horizon-official": ["packaging/windows/exe.rs"],
-    "horizon-perf": ["crates/horizon-perf-format/tests/fixtures", "tests/fixtures/pacing_slow_frames.hzperf"],
-    "horizon-port-pack": ["docs/modpacks/atm10-mods.csv"],
-    "horizon-prepare": [
-        "crates/horizon-client/src/game/runtime/launch_api.rs", "mods/horizon/src/test/java", "research-lock.json",
+    "foundry-official": ["packaging/windows/exe.rs"],
+    "foundry-perf": ["crates/foundry-perf-format/tests/fixtures", "tests/fixtures/pacing_slow_frames.hzperf"],
+    "foundry-port-pack": ["docs/modpacks/atm10-mods.csv"],
+    "foundry-prepare": [
+        "crates/foundry-client/src/game/runtime/launch_api.rs", "mods/foundry/src/test/java", "research-lock.json",
     ],
-    "horizon-release-sign": ["tools/ci/sign_native_build.sh", "tools/ci/sign_release.sh"],
-    "horizon-server": [
-        "crates/horizon-theme/fonts", "crates/horizon-theme/icons", "docs/api/server-reference.md",
+    "foundry-release-sign": ["tools/ci/sign_native_build.sh", "tools/ci/sign_release.sh"],
+    "foundry-server": [
+        "crates/foundry-theme/fonts", "crates/foundry-theme/icons", "docs/api/server-reference.md",
         "packaging/executable_link.rs",
     ],
-    "horizon-server-launch": ["docs/hosting.md"],
-    "horizon-shader-api": ["docs/api/shaders-reference-0.2.md", "tools/fixtures/shaderpacks"],
-    "horizon-world": ["crates/horizon-core", "Cargo.lock"],
+    "foundry-server-launch": ["docs/hosting.md"],
+    "foundry-shader-api": ["docs/api/shaders-reference-0.2.md", "tools/fixtures/shaderpacks"],
+    "foundry-world": ["crates/foundry-core", "Cargo.lock"],
     # Commands (tokens, icons, package), not tests: listed so the scan finds nothing unexplained.
     "xtask": [
-        "LICENSES/GPL-3.0.txt", "crates/horizon-client/src", "crates/horizon-mod-vocab/src/hooks",
-        "crates/horizon-perf/web", "crates/horizon-prepare", "crates/horizon-theme", "docs/media/brand",
-        "mods/horizon/src/test/java", "packaging", "research-lock.json", "tools",
+        "LICENSES/GPL-3.0.txt", "crates/foundry-client/src", "crates/foundry-mod-vocab/src/hooks",
+        "crates/foundry-perf/web", "crates/foundry-prepare", "crates/foundry-theme", "docs/media/brand",
+        "mods/foundry/src/test/java", "packaging", "research-lock.json", "tools",
     ],
 }
 # What a package's tests only read at run time and nothing else uses: the package is selected, its dependents are not.
-# horizon-client-core's lang.rs tests read the sources of every crate for the language keys the code names.
-SCANNED = {"horizon-client-core": ["crates"]}
+# foundry-client-core's lang.rs tests read the sources of every crate for the language keys the code names.
+SCANNED = {"foundry-client-core": ["crates"]}
 # Literals the scan takes for a walk up to crates/ that are not one (a ".." among path-traversal checks).
 # "machines/.." in a test's sample paths, "mods/" in an instance's file names: no read either.
 NOT_READS = {
-    "horizon-client": {"crates"}, "horizon-client-lib": {"crates"}, "horizon-mod-package": {"crates"},
-    "horizon-mod-vocab": {"."}, "horizon-port-pack": {"mods"}, "horizon-prepare": {"crates"},
-    "horizon-server-launch": {"crates"},
+    "foundry-client": {"crates"}, "foundry-client-lib": {"crates"}, "foundry-mod-package": {"crates"},
+    "foundry-mod-vocab": {"."}, "foundry-port-pack": {"mods"}, "foundry-prepare": {"crates"},
+    "foundry-server-launch": {"crates"},
 }
 
 
@@ -136,7 +136,7 @@ class Workspace:
         for package in metadata["packages"]:
             for target in package["targets"]:
                 source = relative(target["src_path"])
-                # horizon-client-lib builds horizon-client's files: all of that package's folder counts.
+                # foundry-client-lib builds foundry-client's files: all of that package's folder counts.
                 folder = max((d for d in home.values() if under(source, d)), key=len, default=None)
                 self.dirs[package["name"]].add(folder or posixpath.dirname(source))
         self.home = home

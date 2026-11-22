@@ -8,7 +8,7 @@ them. `minecraft:map_cloning` is a `crafting_transmute` recipe whose `material_c
 `minecraft:dyed` slot demo and a `crafting_imbue` recipe a 3×3 `with_any_potion` display; both have
 their own grant and removal steps here.
 
-A real network player (LocatorBarClient) joins a dedicated server (vanilla, then Horizon) with the
+A real network player (LocatorBarClient) joins a dedicated server (vanilla, then Foundry Client) with the
 menu recorder on: every recipe book Add and Remove packet is kept with its raw payload and its fields as
 vanilla's own codec decodes them (the client refuses a payload with bytes left over). With the recipe book
 emptied, the player is given `minecraft:crafting_table` (an ordinary shaped recipe, the positive), then

@@ -8,7 +8,7 @@ The originals remain until you verify the move and remove them yourself.
 On Windows, the selected folder may contain spaces or non-English characters.
 Build tools still need a real ASCII path without whitespace: a short name or junction
 can be resolved back to the incompatible name by the compiler. When needed, the
-worker creates a fresh `horizon-build-<unique>/build` directory under the nearest
+worker creates a fresh `foundry-build-<unique>/build` directory under the nearest
 writable compatible ancestor on the destination drive. If none is available there,
 it tries compatible ancestors of the old build folder. Settings shows the active
 build-data path; do not remove it when cleaning up the old copies.

@@ -4,7 +4,7 @@ use super::*;
 impl Launcher {
     /// After a native crash with no report (`backend::native_crash_exit`): when the game's output
     /// ends while its Vulkan or OpenGL renderer started, a crash in the graphics driver
-    /// (arismoko/horizon#746, #18291), switches the game to `backend::start_crash_fallback`
+    /// (arismoko/foundry#746, #18291), switches the game to `backend::start_crash_fallback`
     /// (DirectX 12 on Windows, OpenGL after Vulkan on Linux; only where the crashed run left the
     /// graphics API on Auto, `backend::switch_after_start_crash`). The crashed API's label and the
     /// new one's when it did.
@@ -19,7 +19,7 @@ impl Launcher {
         match backend::switch_after_start_crash(&run_home, &game_home, api) {
             Ok(switched) => switched.then_some((crashed.label(), label)),
             Err(e) => {
-                eprintln!("Horizon launcher: could not switch to {label}: {e}");
+                eprintln!("Foundry Client launcher: could not switch to {label}: {e}");
                 None
             }
         }
@@ -84,7 +84,7 @@ impl Launcher {
                 return;
             }
             // Home's Stable update: one press, even when `nightly` moved on since the offer.
-            let (done, result) = horizon_launcher::nightly::install_stable(
+            let (done, result) = foundry_launcher::nightly::install_stable(
                 release,
                 backend::releases_from_network,
                 |list, next| {
@@ -223,12 +223,12 @@ impl Launcher {
             return false;
         }
         self.prepare_tag = Some(tag.clone());
-        horizon_launcher::mojang::CANCEL.store(false, Ordering::Relaxed);
+        foundry_launcher::mojang::CANCEL.store(false, Ordering::Relaxed);
         let minecraft = self
             .settings
             .minecraft_dir
             .clone()
-            .unwrap_or_else(|| horizon_platform::prepare::artifacts::minecraft_dir(None));
+            .unwrap_or_else(|| foundry_platform::prepare::artifacts::minecraft_dir(None));
         self.prepare_log.clear();
         self.prepare_error = None;
         self.prepare_fix = None;
@@ -279,8 +279,8 @@ impl Launcher {
             .filter(|i| i.java.is_some())
             .cloned();
         if let Some(instance) = java {
-            // Mojang's game: no Horizon version or preparation, only no game already running.
-            // It joins a server; a friend's code and opening a world are Horizon's.
+            // Mojang's game: no Foundry Client version or preparation, only no game already running.
+            // It joins a server; a friend's code and opening a world are Foundry Client's.
             self.joining = None;
             let server = self
                 .quick_play
@@ -326,7 +326,7 @@ impl Launcher {
                 cmd.envs(vars.iter().map(|(k, v)| (k, v)));
                 let launch = &instance.launch;
                 Ok((
-                    horizon_launcher::launch::wrap_stoppable(cmd, launch, &stop)?,
+                    foundry_launcher::launch::wrap_stoppable(cmd, launch, &stop)?,
                     vars,
                 ))
             });
@@ -352,7 +352,7 @@ impl Launcher {
     /// ([`Self::pre_launch_stoppable`]) when Windows runs a pre-launch command.
     pub(crate) fn pre_launch_stop_for(
         &mut self,
-        launch: &horizon_launcher::launch::Launch,
+        launch: &foundry_launcher::launch::Launch,
     ) -> std::sync::Arc<std::sync::atomic::AtomicBool> {
         let stop = std::sync::Arc::default();
         self.pre_launch_stop = (cfg!(windows) && !launch.pre_launch.trim().is_empty())
@@ -368,7 +368,7 @@ impl Launcher {
     }
 
     /// Whether the selected instance's version can start now, from a shortcut (a server's Join,
-    /// a world's Play, a friend's code): Horizon's only, never a Java instance.
+    /// a world's Play, a friend's code): Foundry Client's only, never a Java instance.
     pub(crate) fn can_start_selected(&self) -> bool {
         self.selected_instance().is_none_or(|i| i.java.is_none())
             && self.selected().is_some_and(|tag| self.can_start(tag))
@@ -458,7 +458,7 @@ impl Launcher {
                 }
             }
             say("reading the sign-in", tr("Reading the sign-in…"));
-            let session = if horizon_launcher::developer_offline::enabled(&tag) {
+            let session = if foundry_launcher::developer_offline::enabled(&tag) {
                 Ok(None)
             } else {
                 account::session_for_game(&backend::game_home()).map(Some)
@@ -565,7 +565,7 @@ impl Launcher {
         self.cancel_sign_in();
         // The code page offers a private window: find the default browser meanwhile.
         std::thread::spawn(|| {
-            horizon_launcher::private_window::detected();
+            foundry_launcher::private_window::detected();
         });
         self.sign_in = Some(match &target {
             Some(account) => SignIn::start_for(account.clone()),

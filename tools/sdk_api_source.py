@@ -41,13 +41,13 @@ else:
     import prebuilt_game
 
 ROOT = Path(__file__).resolve().parent.parent
-API = "horizon-mod-api"
+API = "foundry-mod-api"
 WASM = "wasm32-unknown-unknown"
 GENERATED = "generated"
-ROOT_TOKEN = "{horizon-api-source-root}"
-TEMPLATE = ROOT / "crates/cargo-horizon-mod/template/native"
-# Where a mod finds the API source (design: the SDK fetched into the mod's `.horizon/sdk/`).
-MOD_PATH = ".horizon/sdk/api"
+ROOT_TOKEN = "{foundry-api-source-root}"
+TEMPLATE = ROOT / "crates/cargo-foundry-mod/template/native"
+# Where a mod finds the API source (design: the SDK fetched into the mod's `.foundry/sdk/`).
+MOD_PATH = ".foundry/sdk/api"
 # Marks a scratch folder `check` made, which a later check may empty.
 SCRATCH_MARK = ".sdk-api-source-check"
 # The build script of a crate whose generated files come with it. Paths become `/`-separated, valid in Rust
@@ -115,7 +115,7 @@ def closure(metadata: dict, root: str = API) -> list[Crate]:
         build = any("custom-build" in target["kind"] for target in package["targets"])
         directory = Path(package["manifest_path"]).parent.relative_to(workspace).as_posix()
         if build and not any(dependency["kind"] == "build" and dependency.get("path")
-                             and dependency["name"] == "horizon-mod-api-gen" for dependency in package["dependencies"]):
+                             and dependency["name"] == "foundry-mod-api-gen" for dependency in package["dependencies"]):
             raise Refusal("E_BUILD_SCRIPT", f"{package['name']} has a build script that is not the generator")
         if build and directory.count("/") != 1:
             # The build script names the workspace root as `../..` from the crate.
@@ -518,15 +518,15 @@ def archive_sizes(folder: Path) -> dict[str, int]:
 
 
 def starter_mod(folder: Path) -> None:
-    """The native template as `cargo horizon-mod new` writes it, with the API dependency in the path form."""
+    """The native template as `cargo foundry-mod new` writes it, with the API dependency in the path form."""
     def fill(text: str) -> str:
-        # A native mod's manifest carries no SDK metadata block (cargo-horizon-mod's `new`).
+        # A native mod's manifest carries no SDK metadata block (cargo-foundry-mod's `new`).
         return text.replace("{id}", "starter").replace("{name}", "Starter").replace("{metadata}", "")
 
-    manifest, count = re.subn(r"^horizon-mod-api = .*$", f'horizon-mod-api = {{ path = "{MOD_PATH}/crates/{API}" }}',
+    manifest, count = re.subn(r"^foundry-mod-api = .*$", f'foundry-mod-api = {{ path = "{MOD_PATH}/crates/{API}" }}',
                               fill((TEMPLATE / "api.toml").read_text()), flags=re.MULTILINE)
     if count != 1:
-        raise Refusal("E_TEMPLATE", "the template names horizon-mod-api once")
+        raise Refusal("E_TEMPLATE", "the template names foundry-mod-api once")
     # Its own workspace: cargo must not climb to a folder above it.
     (folder / "src").mkdir(parents=True)
     (folder / "Cargo.toml").write_text(manifest + "\n[workspace]\n")
@@ -606,7 +606,7 @@ def main() -> None:
         if args.command == "build":
             build(args.out.resolve())
         elif args.command == "archive":
-            # The package's own archive form: a mod's `.horizon/sdk/api` is this folder unpacked.
+            # The package's own archive form: a mod's `.foundry/sdk/api` is this folder unpacked.
             prebuilt_game.tar_xz(args.out, prebuilt_game.tree(args.out), args.archive)
         else:
             target = Path(os.environ.get("CARGO_TARGET_DIR", ROOT / "target"))

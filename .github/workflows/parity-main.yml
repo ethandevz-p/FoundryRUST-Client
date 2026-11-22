@@ -18,15 +18,15 @@ concurrency:
   cancel-in-progress: false
 env:
   # Test runs never reach the telemetry server: no live-count ping, no uploads (docs/telemetry.md).
-  HORIZON_TELEMETRY_URL: "off"
+  FOUNDRY_TELEMETRY_URL: "off"
 
 jobs:
   parity-main:
     # A Mac mini runner of its own (ludovics-mac-mini-2 holds only this label since 2026-10-26): behind PR parity jobs
     # this run waited 2 h while every merge replaced the pending one, and on the release runner a release then waited
-    # behind the next run. PR parity jobs have ludovics-mac-mini and playhorizon. Not playhorizon: its 4 CPUs
+    # behind the next run. PR parity jobs have ludovics-mac-mini and playfoundry. Not playfoundry: its 4 CPUs
     # make a core-crate run several times longer.
-    runs-on: [self-hosted, macOS, horizon-parity-main]
+    runs-on: [self-hosted, macOS, foundry-parity-main]
     # A batch reruns up to ~670 harnesses: 89-234 min in the nine runs logged up to 2026-11-20 (then with the merge
     # search), the longest on a loaded Mac (an 85 min probe prebuild). After the oracle shim's key changes, its
     # records are rebuilt once, which adds up to ~23 min to the first full run.
@@ -40,7 +40,7 @@ jobs:
       # it. This run waits at most 20 min in all, and its prebuild has 240 min (tools/parity.py PREBUILD_LIMIT): a
       # prebuild that builds everything takes over 2 hours even alone. Of the job's 360 min, 120 remain beyond the
       # prebuild's limit; after a full 20 min wait, 100 remain for setup and the harnesses.
-      HORIZON_COMPILE_LOCK_ROLE: main
+      FOUNDRY_COMPILE_LOCK_ROLE: main
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -70,7 +70,7 @@ jobs:
           BASE_SHA: ${{ steps.base.outputs.sha }}
           # Cargo's timing report of each prebuild run, for the step after this one (tools/parity.py
           # PrebuildTimings). This step only: the verdict's reruns build again without it.
-          HORIZON_PARITY_PREBUILD_TIMINGS: '1'
+          FOUNDRY_PARITY_PREBUILD_TIMINGS: '1'
         # exec: a cancelled job's signals reach tools/parity.py, which stops its builds' process groups.
         run: |
           echo "Merges since ${BASE_SHA}:"
@@ -113,7 +113,7 @@ jobs:
           PARITY_HOSTS: ''
           BASE_SHA: ${{ steps.base.outputs.sha }}
           # The failed harnesses' probes were built in the step before: no wait for a turn inside this step's 50 min.
-          HORIZON_COMPILE_LOCK_ROLE: 'off'
+          FOUNDRY_COMPILE_LOCK_ROLE: 'off'
         run: python3 tools/parity_main.py verdict "$BASE_SHA"
       - name: Upload the verdict
         if: ${{ !cancelled() && steps.harnesses.outcome == 'failure' }}

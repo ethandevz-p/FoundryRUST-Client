@@ -2,7 +2,7 @@
 use serde::{Deserialize, Serialize};
 use std::{collections::BTreeMap, ffi::OsString, path::PathBuf, process::Command};
 
-const PLAN: &str = "HORIZON_NATIVE_REGISTRY_RUSTC_PLAN";
+const PLAN: &str = "FOUNDRY_NATIVE_REGISTRY_RUSTC_PLAN";
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]

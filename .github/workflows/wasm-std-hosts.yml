@@ -1,12 +1,12 @@
 name: wasm std hosts
-# The game ships one horizon-wasm-std.wasm, built on Linux (game-build.yml), and every wasm mod links against it by
+# The game ships one foundry-wasm-std.wasm, built on Linux (game-build.yml), and every wasm mod links against it by
 # symbol name, wherever its author built the mod (#18261). This builds the std member with the pull request's tool on
 # Linux and on Windows, as game-build.yml does, and fails when their imported or exported names differ.
 on:
   pull_request:
     paths:
-      - 'crates/cargo-horizon-mod/**'
-      - 'crates/horizon-mod-wasm/**'
+      - 'crates/cargo-foundry-mod/**'
+      - 'crates/foundry-mod-wasm/**'
       - 'tools/ci/rust-version'
       - 'tools/ci/wasm_names.py'
       - 'Cargo.toml'
@@ -41,12 +41,12 @@ jobs:
         shell: bash
         run: |
           mkdir -p wasm-std
-          cargo run --locked -p cargo-horizon-mod -- wasm-std wasm-std/horizon-wasm-std.wasm
-          sha256sum wasm-std/horizon-wasm-std.wasm
+          cargo run --locked -p cargo-foundry-mod -- wasm-std wasm-std/foundry-wasm-std.wasm
+          sha256sum wasm-std/foundry-wasm-std.wasm
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: wasm-std-${{ matrix.os }}
-          path: wasm-std/horizon-wasm-std.wasm
+          path: wasm-std/foundry-wasm-std.wasm
           if-no-files-found: error
           retention-days: 3
   compare:
@@ -62,4 +62,4 @@ jobs:
           pattern: wasm-std-*
           path: wasm-std
       - name: Both hosts name the std member's symbols the same
-        run: python3 -I tools/ci/wasm_names.py wasm-std/wasm-std-ubuntu-22.04/horizon-wasm-std.wasm wasm-std/wasm-std-windows-latest/horizon-wasm-std.wasm
+        run: python3 -I tools/ci/wasm_names.py wasm-std/wasm-std-ubuntu-22.04/foundry-wasm-std.wasm wasm-std/wasm-std-windows-latest/foundry-wasm-std.wasm

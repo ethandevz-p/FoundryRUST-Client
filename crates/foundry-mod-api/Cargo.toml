@@ -1,0 +1,38 @@
+[package]
+name = "foundry-mod-api"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+publish = false
+description = "The mod API: hooks, hosts, handles and parts, for native and WebAssembly mods"
+
+[lib]
+name = "mod_api"
+
+[dependencies]
+foundry-mod-vocab = { path = "../foundry-mod-vocab" }
+foundry-mod-runtime = { path = "../foundry-mod-runtime" }
+foundry-core = { path = "../foundry-core" }
+foundry-mod-api-macros = { path = "../foundry-mod-api-macros" }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1.0.151", features = ["raw_value"] }
+log = "0.4"
+bytemuck = { version = "1.24", features = ["derive"] }
+glam = "0.30"
+
+[build-dependencies]
+foundry-mod-api-gen = { path = "../foundry-mod-api-gen" }
+
+[dev-dependencies]
+foundry-mod-vocab = { path = "../foundry-mod-vocab", features = ["testing"] }
+
+[features]
+# Scoped mod installation for other crates' tests (`mod_api::testing`).
+testing = ["foundry-mod-vocab/testing"]
+# The mod side of the wasm boundary on a native build, for the boundary's tests.
+wasm-guest = []
+# Test-only mixed hook, absent from normal API and wire layouts.
+mixed-output-fixture = ["foundry-mod-api-gen/mixed-output-fixture", "foundry-mod-vocab/mixed-output-fixture"]
+
+[lints]
+workspace = true

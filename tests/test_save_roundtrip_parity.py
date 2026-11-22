@@ -38,10 +38,10 @@ class WindowsPath(type(Path())):
 class SaveRoundtripPathsTests(unittest.TestCase):
     def test_windows_paths_accept_expected_changes_but_retain_real_differences(self):
         with tempfile.TemporaryDirectory() as folder:
-            vanilla, horizon = WindowsPath(folder) / 'vanilla', WindowsPath(folder) / 'horizon'
+            vanilla, foundry = WindowsPath(folder) / 'vanilla', WindowsPath(folder) / 'foundry'
             for world, rule, health, slot, score in (
                 (vanilla, 24, 20.0, 0, 1),
-                (horizon, 30, 18.0, 1, 2),
+                (foundry, 30, 18.0, 1, 2),
             ):
                 files = {
                     'level.dat': compound(),
@@ -60,7 +60,7 @@ class SaveRoundtripPathsTests(unittest.TestCase):
                     path.write_bytes(gzip.compress(tag(10, '', payload)))
             # This fixture has no region entities or leash holders.
             with patch.object(roundtrip.scene, 'LEADS', 0):
-                report = roundtrip.compare_worlds(vanilla, horizon)
+                report = roundtrip.compare_worlds(vanilla, foundry)
             self.assertCountEqual(report, [
                 ('data/minecraft/custom.dat.score', 1, 2),
                 ('players/data/player.dat.Health', ('f', 20.0), ('f', 18.0)),
@@ -84,12 +84,12 @@ class SaveRoundtripTimersTests(unittest.TestCase):
 class SaveRoundtripDatFileSetTests(unittest.TestCase):
     """compare_worlds() must enumerate .dat files from both worlds, not just vanilla's."""
 
-    def make_worlds(self, vanilla_files, horizon_files):
+    def make_worlds(self, vanilla_files, foundry_files):
         tmp = tempfile.TemporaryDirectory(prefix='save-roundtrip-')
         self.addCleanup(tmp.cleanup)
         root = Path(tmp.name)
         worlds = []
-        for name, files in (('v', vanilla_files), ('h', horizon_files)):
+        for name, files in (('v', vanilla_files), ('h', foundry_files)):
             world = root / name
             for rel, payload in files.items():
                 path = world / rel
@@ -98,24 +98,24 @@ class SaveRoundtripDatFileSetTests(unittest.TestCase):
             worlds.append(world)
         return worlds
 
-    def compare(self, vanilla, horizon):
+    def compare(self, vanilla, foundry):
         # These fixtures have no region entities or leash holders.
         with patch.object(roundtrip.scene, 'LEADS', 0):
-            return roundtrip.compare_worlds(vanilla, horizon)
+            return roundtrip.compare_worlds(vanilla, foundry)
 
     def rows(self, report, rel):
         return [row for row in report if row[0] == rel or str(row[0]).startswith(rel + '.')]
 
     def test_horizon_only_dat_file_is_reported_as_missing_from_vanilla(self):
         shared = {'level.dat': compound(), 'data/shared.dat': compound(integer('x', 1))}
-        horizon = dict(shared)
-        horizon['data/horizon_only.dat'] = compound(integer('x', 1))
-        vanilla, h = self.make_worlds(shared, horizon)
+        foundry = dict(shared)
+        foundry['data/foundry_only.dat'] = compound(integer('x', 1))
+        vanilla, h = self.make_worlds(shared, foundry)
 
         report = self.compare(vanilla, h)
 
-        self.assertEqual(self.rows(report, 'data/horizon_only.dat'),
-                         [('data/horizon_only.dat', 'missing from vanilla', 'present')])
+        self.assertEqual(self.rows(report, 'data/foundry_only.dat'),
+                         [('data/foundry_only.dat', 'missing from vanilla', 'present')])
         self.assertEqual(self.rows(report, 'data/shared.dat'), [])
 
     def test_vanilla_only_dat_file_is_still_reported_as_missing_from_horizon(self):
@@ -126,7 +126,7 @@ class SaveRoundtripDatFileSetTests(unittest.TestCase):
         report = self.compare(vanilla, h)
 
         self.assertEqual(self.rows(report, 'data/vanilla_only.dat'),
-                         [('data/vanilla_only.dat', 'present', 'missing from Horizon')])
+                         [('data/vanilla_only.dat', 'present', 'missing from Foundry Client')])
 
     def test_matched_dat_files_still_have_their_nbt_compared(self):
         vanilla, h = self.make_worlds(

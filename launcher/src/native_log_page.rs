@@ -8,8 +8,8 @@
 use super::*;
 use crate::glass_ui::{self as ui, white};
 use gpui::{ClipboardItem, ScrollHandle, SharedString};
-use horizon_launcher::native_mods;
-use horizon_theme::glass::{ink, radius};
+use foundry_launcher::native_mods;
+use foundry_theme::glass::{ink, radius};
 
 /// How much of the log the panel shows: its last lines. Copy log still copies all of it.
 const SHOWN: usize = LOG_LINES;
@@ -141,7 +141,7 @@ impl Launcher {
         self.native_log.stale = true;
     }
 
-    /// Records a failure from before the build itself started (no Horizon to build on, no mods
+    /// Records a failure from before the build itself started (no Foundry Client to build on, no mods
     /// to build), where the build's own output would have gone.
     pub(super) fn native_log_preflight(&mut self, error: &str) {
         if self.native_log.reset.is_none() && !self.native_log.held {
@@ -255,7 +255,7 @@ impl Launcher {
                     .gap(px(4.))
                     .child(
                         div()
-                            .font_family(horizon_theme::glass::DISPLAY_FONT)
+                            .font_family(foundry_theme::glass::DISPLAY_FONT)
                             .font_weight(FontWeight::SEMIBOLD)
                             .text_size(px(18.))
                             .text_color(white(ink::FULL))
@@ -396,7 +396,7 @@ mod tests {
 
     #[test]
     fn snapshot_keeps_complete_diagnostics_and_only_renders_the_tail() {
-        let dir = std::env::temp_dir().join(format!("horizon-log-preview-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("foundry-log-preview-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let path = dir.join("build.log");
         let full = "first build context\n".repeat(SHOWN + 5)

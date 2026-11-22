@@ -3,7 +3,7 @@ name: checks
 # requires, so it runs in every run of this workflow, even a cancelled one: a skipped job counts as passed, and every
 # run must report a real verify (a pull request that changes no Rust skips its Rust parts or finishes them in seconds).
 # parity: the vanilla harnesses a pull request's changes can affect, on the Mac mini's runner, which holds the
-# maintainer's own Minecraft files (Horizon never downloads the game); .github/workflows/parity.yml. Only for a pull
+# maintainer's own Minecraft files (Foundry Client never downloads the game); .github/workflows/parity.yml. Only for a pull
 # request that changes a harness, oracle, probe or the runner: the rest are checked on main by parity-main. A fork's pull
 # request runs it only when a maintainer adds the run-parity label (.github/workflows/run-parity.yml), so labels
 # never start this workflow. See docs/release-flow.md.
@@ -45,7 +45,7 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 env:
   # Test runs never reach the telemetry server: no live-count ping, no uploads (docs/telemetry.md).
-  HORIZON_TELEMETRY_URL: "off"
+  FOUNDRY_TELEMETRY_URL: "off"
   # Whether a job saves its build folder's sticky disk (see verify below). Only main's pushes and the merge queue do;
   # every pull request, a fork's too, and every hand-started run (any branch's) starts from what they built and its
   # changes are discarded, so nothing a branch builds reaches main's disk. Forks once had a disk of their own, but
@@ -69,7 +69,7 @@ jobs:
   # for every pull request (a fork's once a maintainer approves it), the merge queue and main's pushes. They are
   # GitHub's own image on faster machines, but report themselves as self-hosted, so the steps tell them apart by
   # runner.name. The repository variable SELF_HOSTED_CI=all sends the Linux parts to our checks runners (label
-  # horizon-checks), whose build folder persists (CARGO_TARGET_DIR, outside the checkout).
+  # foundry-checks), whose build folder persists (CARGO_TARGET_DIR, outside the checkout).
   # On Blacksmith each Linux Rust part keeps its build folder on a sticky disk instead (tools/ci/build_folder.sh), one disk per
   # part: parts that ran side by side on one disk would each replace the other's build. A cold disk builds everything
   # once; after that a pull request rebuilds what it changed.
@@ -80,7 +80,7 @@ jobs:
   # tree whatever the sparse checkout leaves out, and fetches the blobs it needs.
   verify-scope:
     name: verify (which parts run)
-    runs-on: ${{ vars.SELF_HOSTED_CI == 'all' && fromJSON('["self-hosted", "linux", "horizon-checks"]') || 'blacksmith-2vcpu-ubuntu-2404' }}
+    runs-on: ${{ vars.SELF_HOSTED_CI == 'all' && fromJSON('["self-hosted", "linux", "foundry-checks"]') || 'blacksmith-2vcpu-ubuntu-2404' }}
     timeout-minutes: 10
     outputs:
       rust: ${{ steps.answers.outputs.rust }}
@@ -137,7 +137,7 @@ jobs:
           done
   verify-tree:
     name: verify (tree and Python tests)
-    runs-on: ${{ vars.SELF_HOSTED_CI == 'all' && fromJSON('["self-hosted", "linux", "horizon-checks"]') || 'blacksmith-8vcpu-ubuntu-2404' }}
+    runs-on: ${{ vars.SELF_HOSTED_CI == 'all' && fromJSON('["self-hosted", "linux", "foundry-checks"]') || 'blacksmith-8vcpu-ubuntu-2404' }}
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -203,7 +203,7 @@ jobs:
         env:
           BASE: ${{ github.event_name == 'pull_request' && 'HEAD^1' || '' }}
         run: python3 tools/check_layers.py ${BASE:+--base "$BASE"}
-      # docs/layers.md#built-in-addresses: every built-in outside address in the Horizon layer's home; the rest only shrinks.
+      # docs/layers.md#built-in-addresses: every built-in outside address in the Foundry Client layer's home; the rest only shrinks.
       - name: Built-in addresses stay in their home
         if: steps.queued.outputs.tested != 'true'
         env:
@@ -234,7 +234,7 @@ jobs:
     name: verify (format and lint)
     needs: verify-scope
     if: github.event_name != 'merge_group' && needs.verify-scope.outputs.rust != 'false'
-    runs-on: ${{ vars.SELF_HOSTED_CI == 'all' && fromJSON('["self-hosted", "linux", "horizon-checks"]') || 'blacksmith-16vcpu-ubuntu-2404' }}
+    runs-on: ${{ vars.SELF_HOSTED_CI == 'all' && fromJSON('["self-hosted", "linux", "foundry-checks"]') || 'blacksmith-16vcpu-ubuntu-2404' }}
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -263,11 +263,11 @@ jobs:
         uses: useblacksmith/stickydisk@3f6be1451e3cad893b778bc93495c80452a5da26 # v1.7.2
         with:
           key: ${{ github.repository }}-verify-lint-own
-          path: ~/horizon-target
+          path: ~/foundry-target
           commit: ${{ env.SAVE_BUILD_DISK }}
       - name: Build in it, rebuilding only what changed
         if: startsWith(runner.name, 'blacksmith-')
-        run: tools/ci/build_folder.sh ~/horizon-target
+        run: tools/ci/build_folder.sh ~/foundry-target
       - name: Check formatting and lint
         env:
           TESTED: ${{ steps.queued.outputs.tested }}
@@ -278,7 +278,7 @@ jobs:
         if: always()
         continue-on-error: true
         run: timeout -k 5 10 tools/ci/load_probe.sh || echo "The load probe did not run"
-  # The server build (released as horizon-engine): the game without sound or controllers. Its libraries and binaries,
+  # The server build (released as foundry-engine): the game without sound or controllers. Its libraries and binaries,
   # not the tests and examples verify-lint checks. Every pull request that changes Rust runs it, whatever crate the
   # change is in (tools/ci/rust_changes.py's server_build answer goes unread on purpose): the merge queue doesn't, so a
   # change that breaks only the server build must stop on its own pull request (a crate below the client can break it
@@ -290,7 +290,7 @@ jobs:
     name: verify (server build lint)
     needs: verify-scope
     if: github.event_name != 'merge_group' && needs.verify-scope.outputs.rust != 'false'
-    runs-on: ${{ vars.SELF_HOSTED_CI == 'all' && fromJSON('["self-hosted", "linux", "horizon-checks"]') || 'blacksmith-4vcpu-ubuntu-2404' }}
+    runs-on: ${{ vars.SELF_HOSTED_CI == 'all' && fromJSON('["self-hosted", "linux", "foundry-checks"]') || 'blacksmith-4vcpu-ubuntu-2404' }}
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -306,13 +306,13 @@ jobs:
         uses: useblacksmith/stickydisk@3f6be1451e3cad893b778bc93495c80452a5da26 # v1.7.2
         with:
           key: ${{ github.repository }}-verify-server-own
-          path: ~/horizon-target
+          path: ~/foundry-target
           commit: ${{ env.SAVE_BUILD_DISK }}
       - name: Build in it, rebuilding only what changed
         if: startsWith(runner.name, 'blacksmith-')
-        run: tools/ci/build_folder.sh ~/horizon-target
+        run: tools/ci/build_folder.sh ~/foundry-target
       - name: Lint the server build
-        run: cargo +stable clippy -p horizon-client --lib --bins --locked --no-default-features -- -D warnings
+        run: cargo +stable clippy -p foundry-client --lib --bins --locked --no-default-features -- -D warnings
       - name: Load probe
         if: always()
         continue-on-error: true
@@ -327,7 +327,7 @@ jobs:
     name: verify (launcher)
     needs: verify-scope
     if: github.event_name != 'merge_group' && needs.verify-scope.outputs.launcher != 'false'
-    runs-on: ${{ vars.SELF_HOSTED_CI == 'all' && fromJSON('["self-hosted", "linux", "horizon-checks"]') || 'blacksmith-8vcpu-ubuntu-2404' }}
+    runs-on: ${{ vars.SELF_HOSTED_CI == 'all' && fromJSON('["self-hosted", "linux", "foundry-checks"]') || 'blacksmith-8vcpu-ubuntu-2404' }}
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -358,11 +358,11 @@ jobs:
         uses: useblacksmith/stickydisk@3f6be1451e3cad893b778bc93495c80452a5da26 # v1.7.2
         with:
           key: ${{ github.repository }}-verify-launcher-own
-          path: ~/horizon-target
+          path: ~/foundry-target
           commit: ${{ env.SAVE_BUILD_DISK }}
       - name: Build in it, rebuilding only what changed
         if: startsWith(runner.name, 'blacksmith-')
-        run: tools/ci/build_folder.sh ~/horizon-target
+        run: tools/ci/build_folder.sh ~/foundry-target
       - name: Check the launcher's formatting, lint and tests
         working-directory: launcher
         env:
@@ -384,7 +384,7 @@ jobs:
     name: verify (Rust tests)
     needs: verify-scope
     if: needs.verify-scope.outputs.rust != 'false'
-    runs-on: ${{ vars.SELF_HOSTED_CI == 'all' && fromJSON('["self-hosted", "linux", "horizon-checks"]') || 'blacksmith-16vcpu-ubuntu-2404' }}
+    runs-on: ${{ vars.SELF_HOSTED_CI == 'all' && fromJSON('["self-hosted", "linux", "foundry-checks"]') || 'blacksmith-16vcpu-ubuntu-2404' }}
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -420,11 +420,11 @@ jobs:
         uses: useblacksmith/stickydisk@3f6be1451e3cad893b778bc93495c80452a5da26 # v1.7.2
         with:
           key: ${{ github.repository }}-verify-test-own
-          path: ~/horizon-target
+          path: ~/foundry-target
           commit: ${{ env.SAVE_BUILD_DISK }}
       - name: Build in it, rebuilding only what changed
         if: startsWith(runner.name, 'blacksmith-')
-        run: tools/ci/build_folder.sh ~/horizon-target
+        run: tools/ci/build_folder.sh ~/foundry-target
       # The mold linker, Blacksmith's runners only (installed above): linking the test binaries was a large part of this
       # job. Rust uses its own lld on x86_64 Linux by default; -linker-features=-lld turns that off so mold's
       # -fuse-ld applies. The same on every event, so the build folder's artifacts match between main and pull requests.
@@ -438,7 +438,7 @@ jobs:
       # these 4-core runners it was no faster (#4978).
       # Every event tests the whole workspace, pull requests included. A pull request used to test only its crates and
       # their dependents (`-p`, tools/ci/test_scope.py), but Cargo resolves features for the packages selected: `-p
-      # horizon-core` builds libc, serde, syn and proc-macro2 with other features than `--workspace`, so a scoped run
+      # foundry-core` builds libc, serde, syn and proc-macro2 with other features than `--workspace`, so a scoped run
       # rebuilt its whole selection from the bottom and never reused main's build in the build folder. With the folder
       # warm, the workspace build costs only what changed; running every test costs ~35 s (#18025's cold run: unit
       # tests 17 s, content-root 4 s, doc tests 13 s).
@@ -475,13 +475,13 @@ jobs:
   # docs/layers.md#the-mod-api-stays-put: a change to the game or to the generator must leave the generated mod API as
   # it was: the published loops, the game internals a native mod may declare (an internal goes only when
   # tools/mod_api_removed_internals.txt lists it), the hook catalog and the guest's dispatch. A new hook or internal
-  # passes (--allow-added). It builds horizon-mod-api-gen's hook_snapshot example
+  # passes (--allow-added). It builds foundry-mod-api-gen's hook_snapshot example
   # for the pull request's tree (the merge commit) and for HEAD^1 (main, as in verify-tree): the generator's few
   # crates and their dependencies, not the game. A pull request runs it when tools/ci/rust_changes.py says its change
   # can reach the mod API (`mod_api`: the game module, the generator's crates, the check, manifests, or a Rust file
   # that mentions `replaceable` before or after; verify-scope asks); the rest never start it.
   # 4 vCPU: the generator and the comparison run on one core (2-10 min of a run), and only the compiles use more (a
-  # missing base snapshot's ~55 s, the surface report's horizon-stage and layouts). 8 vCPU ran at ~13%, and the wire
+  # missing base snapshot's ~55 s, the surface report's foundry-stage and layouts). 8 vCPU ran at ~13%, and the wire
   # loopback, its longest many-core compile, left with the injection points (#19576).
   # It is its own job beside verify-test, with a build folder of its own, so it adds no time to the slowest job (as a
   # step of verify-test it came after the tests and added ~2.5 min to every pull request that touches game/). Like
@@ -492,7 +492,7 @@ jobs:
     name: verify (mod API)
     needs: verify-scope
     if: needs.verify-scope.outputs.mod_api != 'false'
-    runs-on: ${{ vars.SELF_HOSTED_CI == 'all' && fromJSON('["self-hosted", "linux", "horizon-checks"]') || 'blacksmith-4vcpu-ubuntu-2404' }}
+    runs-on: ${{ vars.SELF_HOSTED_CI == 'all' && fromJSON('["self-hosted", "linux", "foundry-checks"]') || 'blacksmith-4vcpu-ubuntu-2404' }}
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -515,11 +515,11 @@ jobs:
         uses: useblacksmith/stickydisk@3f6be1451e3cad893b778bc93495c80452a5da26 # v1.7.2
         with:
           key: ${{ github.repository }}-verify-mod-points-own
-          path: ~/horizon-target
+          path: ~/foundry-target
           commit: ${{ env.SAVE_BUILD_DISK }}
       - name: Build in it, rebuilding only what changed
         if: startsWith(runner.name, 'blacksmith-')
-        run: tools/ci/build_folder.sh ~/horizon-target
+        run: tools/ci/build_folder.sh ~/foundry-target
       # The same mold flags as verify-test's.
       - name: Link with mold
         if: startsWith(runner.name, 'blacksmith-')
@@ -544,11 +544,11 @@ jobs:
             if [ "$GITHUB_EVENT_NAME" = push ] && [ "$GITHUB_REF" = refs/heads/main ]; then
               python3 tools/ci/surface_report.py --store-layouts "$CARGO_TARGET_DIR/wire-layouts"
             else
-              cargo build --locked -p horizon-mod-api --example wire_layouts
+              cargo build --locked -p foundry-mod-api --example wire_layouts
             fi
           else
-            cargo build --locked -p horizon-mod-api-gen --example hook_snapshot
-            cargo build --locked -p horizon-mod-api --example wire_layouts
+            cargo build --locked -p foundry-mod-api-gen --example hook_snapshot
+            cargo build --locked -p foundry-mod-api --example wire_layouts
           fi
       - name: The generated mod API stays as it was
         if: github.event_name == 'pull_request'
@@ -561,10 +561,10 @@ jobs:
             python3 tools/check_mod_api_unchanged.py --base HEAD^1 --allow-added
           fi
       # The mod API surface of the merge base and of this tree, diffed (tools/ci/surface_report.py). With
-      # tools/ci/surface.toml's gate on, a breaking change that no new note in crates/horizon-mod-vocab/changes/ names
+      # tools/ci/surface.toml's gate on, a breaking change that no new note in crates/foundry-mod-vocab/changes/ names
       # fails, and so does a change that makes the game refuse wasm mods built before it: a changed wire layout of a
       # type that crosses, or an argument added to a hook (the check above compares the generated text, which
-      # shows neither). horizon-stage is built from the package and profile the check built hook_snapshot from. The
+      # shows neither). foundry-stage is built from the package and profile the check built hook_snapshot from. The
       # compiled layouts of HEAD^1 come from the store main's pushes fill, or are built by checking it out here, with its
       # own wire_layouts example, and then this commit again. A base without the example is compared by source alone,
       # with a warning.
@@ -573,8 +573,8 @@ jobs:
         env:
           EVENT: ${{ github.event_name }}
         run: |
-          cargo build --locked --quiet -p horizon-mod-api-gen --bin horizon-stage
-          HORIZON_STAGE_TOOL="${CARGO_TARGET_DIR:-$PWD/target}/debug/horizon-stage" \
+          cargo build --locked --quiet -p foundry-mod-api-gen --bin foundry-stage
+          FOUNDRY_STAGE_TOOL="${CARGO_TARGET_DIR:-$PWD/target}/debug/foundry-stage" \
             WIRE_LAYOUTS_STORE="${CARGO_TARGET_DIR:-$PWD/target}/wire-layouts" python3 tools/ci/surface_report.py
       - name: Load probe
         if: always()
@@ -602,7 +602,7 @@ jobs:
         with:
           toolchain: ${{ steps.rust.outputs.version }}-x86_64-pc-windows-msvc
       - name: Test the Windows Wasm module cache
-        run: cargo test --locked --target x86_64-pc-windows-msvc -p horizon-mod-wasm --lib module_cache
+        run: cargo test --locked --target x86_64-pc-windows-msvc -p foundry-mod-wasm --lib module_cache
   verify:
     needs: [verify-scope, verify-tree, verify-lint, verify-server, verify-launcher, verify-test, verify-mod-api, verify-windows-wasm-cache]
     if: always()
@@ -684,24 +684,24 @@ jobs:
           Write-Output "Using $($clang.Source)"
           & $clang.Source --version
       - name: Build the game for native Windows ARM64 (the official game, as game-build.yml ships it)
-        run: cargo build --release --locked --target aarch64-pc-windows-msvc -p horizon-official --bin horizon-official -p horizon-client-lib --bin horizon-ctl -p horizon-prepare --bin horizon-prepare -p horizon-server --bin horizon-server
+        run: cargo build --release --locked --target aarch64-pc-windows-msvc -p foundry-official --bin foundry-official -p foundry-client-lib --bin foundry-ctl -p foundry-prepare --bin foundry-prepare -p foundry-server --bin foundry-server
       - name: Check the game's PE machine
-        run: python tools/check_pe_arch.py arm64 target/aarch64-pc-windows-msvc/release/horizon-official.exe target/aarch64-pc-windows-msvc/release/horizon-ctl.exe target/aarch64-pc-windows-msvc/release/horizon-prepare.exe target/aarch64-pc-windows-msvc/release/horizon-server.exe
+        run: python tools/check_pe_arch.py arm64 target/aarch64-pc-windows-msvc/release/foundry-official.exe target/aarch64-pc-windows-msvc/release/foundry-ctl.exe target/aarch64-pc-windows-msvc/release/foundry-prepare.exe target/aarch64-pc-windows-msvc/release/foundry-server.exe
       - name: Check game DLL imports
-        run: python tools/check_imports.py target/aarch64-pc-windows-msvc/release/horizon-official.exe target/aarch64-pc-windows-msvc/release/horizon-ctl.exe target/aarch64-pc-windows-msvc/release/horizon-prepare.exe target/aarch64-pc-windows-msvc/release/horizon-server.exe
+        run: python tools/check_imports.py target/aarch64-pc-windows-msvc/release/foundry-official.exe target/aarch64-pc-windows-msvc/release/foundry-ctl.exe target/aarch64-pc-windows-msvc/release/foundry-prepare.exe target/aarch64-pc-windows-msvc/release/foundry-server.exe
       - name: Start every game executable
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $client = 'target/aarch64-pc-windows-msvc/release/horizon-official.exe'
+          $client = 'target/aarch64-pc-windows-msvc/release/foundry-official.exe'
           $output = & $client --help 2>&1
-          if ($LASTEXITCODE -ne 0 -or ($output -join "`n") -notmatch '--resources') { throw 'horizon-client --help failed' }
-          foreach ($binary in @('horizon-ctl.exe', 'horizon-prepare.exe', 'horizon-server.exe')) {
+          if ($LASTEXITCODE -ne 0 -or ($output -join "`n") -notmatch '--resources') { throw 'foundry-client --help failed' }
+          foreach ($binary in @('foundry-ctl.exe', 'foundry-prepare.exe', 'foundry-server.exe')) {
             $path = "target/aarch64-pc-windows-msvc/release/$binary"
             $output = & $path --help 2>&1
             if ($LASTEXITCODE -ne 0 -or -not $output) { throw "$binary --help failed" }
           }
-          foreach ($binary in @('horizon-prepare.exe', 'horizon-server.exe')) {
+          foreach ($binary in @('foundry-prepare.exe', 'foundry-server.exe')) {
             $path = "target/aarch64-pc-windows-msvc/release/$binary"
             $output = & $path --version 2>&1
             if ($LASTEXITCODE -ne 0 -or -not $output) { throw "$binary --version failed" }
@@ -714,28 +714,28 @@ jobs:
           cargo build --release --locked --target aarch64-pc-windows-msvc
       - name: Check the launcher's PE machine
         working-directory: launcher
-        run: python ../tools/check_pe_arch.py arm64 target/aarch64-pc-windows-msvc/release/horizon-launcher.exe
+        run: python ../tools/check_pe_arch.py arm64 target/aarch64-pc-windows-msvc/release/foundry-launcher.exe
       - name: Check launcher DLL imports and command-line startup
         working-directory: launcher
         # bash, as launcher.yml's check on the same runner: the launcher is a GUI-subsystem program, and a pwsh
         # `$output = & launcher --version` read no output from it (run 42217014588).
         shell: bash
         run: |
-          launcher=target/aarch64-pc-windows-msvc/release/horizon-launcher.exe
+          launcher=target/aarch64-pc-windows-msvc/release/foundry-launcher.exe
           python ../tools/check_imports.py "$launcher"
           out=$("$launcher" --version)
           echo "$out"
-          [[ "$out" == "horizon-launcher "* ]] || { echo "::error::horizon-launcher --version printed '$out'"; exit 1; }
+          [[ "$out" == "foundry-launcher "* ]] || { echo "::error::foundry-launcher --version printed '$out'"; exit 1; }
       - name: Build a native-mod game with the launcher's managed toolchain
         working-directory: launcher
         shell: pwsh
         env:
-          HORIZON_LAUNCHER_HOME: ${{ runner.temp }}\horizon-native-arm64-toolchain
-          HORIZON_NATIVE_TARGET_DIR: ${{ runner.temp }}\horizon-native-arm64-toolchain\target
+          FOUNDRY_LAUNCHER_HOME: ${{ runner.temp }}\foundry-native-arm64-toolchain
+          FOUNDRY_NATIVE_TARGET_DIR: ${{ runner.temp }}\foundry-native-arm64-toolchain\target
         run: |
           $ErrorActionPreference = 'Stop'
           cargo test --release --locked --target aarch64-pc-windows-msvc --lib rust_toolchain::tests::managed_arm64_toolchain_builds_the_game -- --ignored --exact --nocapture
-          $client = Join-Path $env:HORIZON_NATIVE_TARGET_DIR 'fast/horizon-client.exe'
+          $client = Join-Path $env:FOUNDRY_NATIVE_TARGET_DIR 'fast/foundry-client.exe'
           python ../tools/check_pe_arch.py arm64 $client
           python ../tools/check_imports.py $client
   # A try run's Windows part (`gh workflow run checks --ref <branch> -f windows=true`): the game for Windows x64 as
@@ -764,57 +764,57 @@ jobs:
           toolchain: ${{ steps.rust.outputs.version }}
           components: rust-src
           targets: wasm32-unknown-unknown
-      - name: Build the official game, horizon-ctl, horizon-prepare and horizon-server
+      - name: Build the official game, foundry-ctl, foundry-prepare and foundry-server
         env:
           # The C runtime linked in, as the release's.
           RUSTFLAGS: -C target-feature=+crt-static
-        run: cargo build --release --locked -p horizon-official --bin horizon-official -p horizon-client-lib --bin horizon-ctl -p horizon-prepare --bin horizon-prepare -p horizon-server --bin horizon-server
+        run: cargo build --release --locked -p foundry-official --bin foundry-official -p foundry-client-lib --bin foundry-ctl -p foundry-prepare --bin foundry-prepare -p foundry-server --bin foundry-server
       - name: The release's program folder, without the exporters
         run: |
           set -euo pipefail
-          out=dist/horizon-windows-x64
+          out=dist/foundry-windows-x64
           mkdir -p "$out"
-          cp target/release/horizon-official.exe "$out/horizon-client.exe"
-          cp target/release/horizon-ctl.exe target/release/horizon-prepare.exe target/release/horizon-server.exe "$out/"
-          cargo run --locked -p cargo-horizon-mod -- wasm-std "$out/horizon-wasm-std.wasm"
+          cp target/release/foundry-official.exe "$out/foundry-client.exe"
+          cp target/release/foundry-ctl.exe target/release/foundry-prepare.exe target/release/foundry-server.exe "$out/"
+          cargo run --locked -p cargo-foundry-mod -- wasm-std "$out/foundry-wasm-std.wasm"
           python tools/ci/fetch_dxc.py "$out"
-          python tools/check_pe_arch.py x64 "$out"/horizon-{client,ctl,prepare,server}.exe
-          for binary in horizon-client horizon-ctl horizon-prepare horizon-server; do
+          python tools/check_pe_arch.py x64 "$out"/foundry-{client,ctl,prepare,server}.exe
+          for binary in foundry-client foundry-ctl foundry-prepare foundry-server; do
             python tools/check_imports.py "$out/$binary.exe"
           done
-          "$out/horizon-client.exe" --help | grep -q -- '--resources'
-          "$out/horizon-prepare.exe" --help | grep -q -- '--minecraft-dir'
+          "$out/foundry-client.exe" --help | grep -q -- '--resources'
+          "$out/foundry-prepare.exe" --help | grep -q -- '--minecraft-dir'
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: horizon-windows-x64
-          path: dist/horizon-windows-x64
+          name: foundry-windows-x64
+          path: dist/foundry-windows-x64
           if-no-files-found: error
           retention-days: 3
       - name: Test the Windows Wasm module cache
-        run: cargo test --locked -p horizon-mod-wasm --lib module_cache
+        run: cargo test --locked -p foundry-mod-wasm --lib module_cache
       - name: Test the launcher in a scratch home
         working-directory: launcher
         env:
           RUSTFLAGS: -C target-feature=+crt-static
-          HORIZON_LAUNCHER_NO_SELF_UPDATE: '1'
-          HORIZON_NO_AUDIO: '1'
+          FOUNDRY_LAUNCHER_NO_SELF_UPDATE: '1'
+          FOUNDRY_NO_AUDIO: '1'
         run: |
           set -euo pipefail
           rustup toolchain install stable --profile minimal
-          scratch=$(mktemp -d "${RUNNER_TEMP//\\//}/horizon-launcher-tests-XXXXXX")
-          export HORIZON_LAUNCHER_HOME="$scratch/launcher" HORIZON_HOME="$scratch/game"
-          export HORIZON_LAUNCHER_LOCATION_FILE="$scratch/location.json"
+          scratch=$(mktemp -d "${RUNNER_TEMP//\\//}/foundry-launcher-tests-XXXXXX")
+          export FOUNDRY_LAUNCHER_HOME="$scratch/launcher" FOUNDRY_HOME="$scratch/game"
+          export FOUNDRY_LAUNCHER_LOCATION_FILE="$scratch/location.json"
           export XDG_DATA_HOME="$scratch/data" XDG_CONFIG_HOME="$scratch/config"
-          export HORIZON_LAUNCHER_TRASH="$scratch/trash" HORIZON_LAUNCHER_CLIPBOARD="$scratch/clipboard"
-          export HORIZON_LAUNCHER_DESKTOP="$scratch/desktop"
+          export FOUNDRY_LAUNCHER_TRASH="$scratch/trash" FOUNDRY_LAUNCHER_CLIPBOARD="$scratch/clipboard"
+          export FOUNDRY_LAUNCHER_DESKTOP="$scratch/desktop"
           cargo +stable test --release --locked
   # Most pull requests leave the harnesses to parity-main, which runs them on main a batch of merges at a time
   # (.github/workflows/parity-main.yml; releases wait for it). A pull request still runs them itself when it changes
   # a harness, an oracle, a probe or the runner, or carries the run-parity label (run-parity.yml, when it is added).
   parity-scope:
     if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
-    # A git diff of this repository's own branch: one of our small runners (horizon-light, docs/ci-runners.md).
-    runs-on: ${{ vars.SELF_HOSTED_CI != 'off' && fromJSON('["self-hosted", "linux", "horizon-light"]') || 'blacksmith-2vcpu-ubuntu-2404' }}
+    # A git diff of this repository's own branch: one of our small runners (foundry-light, docs/ci-runners.md).
+    runs-on: ${{ vars.SELF_HOSTED_CI != 'off' && fromJSON('["self-hosted", "linux", "foundry-light"]') || 'blacksmith-2vcpu-ubuntu-2404' }}
     outputs:
       run: ${{ steps.scope.outputs.run }}
     steps:
@@ -829,7 +829,7 @@ jobs:
           LABELS: ${{ join(github.event.pull_request.labels.*.name, ' ') }}
         run: |
           changed=$(git diff --name-only "$(git merge-base "$BASE_SHA" HEAD)" HEAD)
-          harness=$(grep -E '^(tools/test_[a-z0-9_]+_parity\.py|tools/(parity[a-z_]*|lab)\.py|tools/parity_hosts\.json|mods/horizon/src/test/|crates/[^/]+/examples/|crates/horizon-client/src/game/[a-z_]*(fixture|harness)\.rs|\.github/workflows/parity[a-z-]*\.yml)' <<< "$changed" || true)
+          harness=$(grep -E '^(tools/test_[a-z0-9_]+_parity\.py|tools/(parity[a-z_]*|lab)\.py|tools/parity_hosts\.json|mods/foundry/src/test/|crates/[^/]+/examples/|crates/foundry-client/src/game/[a-z_]*(fixture|harness)\.rs|\.github/workflows/parity[a-z-]*\.yml)' <<< "$changed" || true)
           if [ -n "$harness" ] || [[ " $LABELS " == *" run-parity "* ]] || [[ " $LABELS " == *" frame-identity "* ]]; then
             echo "run=true" >> "$GITHUB_OUTPUT"
             echo "The pull request runs its harnesses: ${harness:-label run-parity}"
@@ -850,7 +850,7 @@ jobs:
   # Start a manual checks dispatch with: gh workflow run checks --ref <branch> -f jfr=true.
   jfr-analysis:
     if: github.event_name == 'workflow_dispatch' && inputs.jfr
-    runs-on: [self-hosted, linux, horizon-game]
+    runs-on: [self-hosted, linux, foundry-game]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0

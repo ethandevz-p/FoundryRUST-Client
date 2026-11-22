@@ -28,10 +28,10 @@ fn command(root: &Path, role: &str, case: &str, number: i32) -> Command {
             "process::supervisor::tests::actor",
             "--nocapture",
         ])
-        .env("HORIZON_SIGNAL_ROOT", root)
-        .env("HORIZON_SIGNAL_ROLE", role)
-        .env("HORIZON_SIGNAL_CASE", case)
-        .env("HORIZON_SIGNAL_NUMBER", number.to_string())
+        .env("FOUNDRY_SIGNAL_ROOT", root)
+        .env("FOUNDRY_SIGNAL_ROLE", role)
+        .env("FOUNDRY_SIGNAL_CASE", case)
+        .env("FOUNDRY_SIGNAL_NUMBER", number.to_string())
         .stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(Stdio::inherit());
@@ -73,12 +73,12 @@ fn owned_children_forward_exact_signals_preserve_codes_and_restore_actions() {
 }
 #[test]
 fn actor() {
-    let Ok(role) = std::env::var("HORIZON_SIGNAL_ROLE") else {
+    let Ok(role) = std::env::var("FOUNDRY_SIGNAL_ROLE") else {
         return;
     };
-    let root = std::path::PathBuf::from(std::env::var_os("HORIZON_SIGNAL_ROOT").unwrap());
-    let case = std::env::var("HORIZON_SIGNAL_CASE").unwrap();
-    let number: i32 = std::env::var("HORIZON_SIGNAL_NUMBER")
+    let root = std::path::PathBuf::from(std::env::var_os("FOUNDRY_SIGNAL_ROOT").unwrap());
+    let case = std::env::var("FOUNDRY_SIGNAL_CASE").unwrap();
+    let number: i32 = std::env::var("FOUNDRY_SIGNAL_NUMBER")
         .unwrap()
         .parse()
         .unwrap();

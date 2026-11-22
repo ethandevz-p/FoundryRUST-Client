@@ -1,0 +1,67 @@
+{
+  "routes": {
+    "package": {
+      "program": [
+        "foundry-ctl",
+        "foundry-prepare",
+        "foundry-server",
+        "foundry-wasm-std.wasm"
+      ],
+      "checkout": [
+        "exporters/manifest.json"
+      ]
+    },
+    "package-server": {
+      "program": [
+        "foundry-prepare",
+        "foundry-server",
+        "foundry-wasm-std.wasm"
+      ],
+      "checkout": [
+        "exporters/manifest.json"
+      ]
+    },
+    "api": {
+      "sdk": [
+        "runtime",
+        "api"
+      ]
+    },
+    "engine": {
+      "sdk": [
+        "runtime",
+        "api",
+        "engine"
+      ]
+    }
+  },
+  "how": {
+    "foundry-ctl": "cargo build PROFILE -p foundry-client-lib --bin foundry-ctl",
+    "foundry-prepare": "cargo build PROFILE -p foundry-prepare",
+    "foundry-server": "cargo build PROFILE -p foundry-server",
+    "foundry-wasm-std.wasm": "cargo run --locked -p cargo-foundry-mod -- wasm-std PROGRAM_FOLDER/foundry-wasm-std.wasm",
+    "exporters/manifest.json": "foundry-prepare compile-exporters --root CHECKOUT, then copy its server, client and manifest.json into CHECKOUT/exporters/",
+    "runtime": "the SDK release of the game's exact commit",
+    "api": "the SDK release of the game's exact commit",
+    "engine": "the SDK release of the game's exact commit"
+  },
+  "members": {
+    "runtime": [
+      "foundry-prebuilt.json",
+      "bin/@program:foundry-client",
+      "deps/@dylib:foundry_mod_host",
+      "deps/@dylib:foundry_mod_wasm",
+      "deps/@dylib:mod_api",
+      "deps/@dylib:mod_vocab",
+      "deps/@dylib:mod_points"
+    ],
+    "api": [
+      "native_mod_entry.rs.template",
+      "points.json",
+      "internals.json",
+      "loops.json",
+      "deps/@rmeta:mod_api",
+      "deps/@rmeta:mod_points"
+    ]
+  }
+}

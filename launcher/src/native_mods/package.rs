@@ -1,7 +1,7 @@
-//! Validated flat packages and launcher-owned horizon-mixins input.
+//! Validated flat packages and launcher-owned foundry-mixins input.
 use super::{Bundle, MANIFEST};
-use horizon_platform::mod_package::mod_surface::uses::USES_FILE;
-use horizon_platform::mod_package::{manifest, Package};
+use foundry_platform::mod_package::mod_surface::uses::USES_FILE;
+use foundry_platform::mod_package::{manifest, Package};
 use std::{fs, path::Path};
 
 pub(super) fn read(dir: &Path) -> Result<Option<Bundle>, String> {
@@ -48,8 +48,8 @@ pub(super) fn tool_manifest(bundle: &Bundle) -> Result<(), String> {
     manifest.insert(
         "compatibility".into(),
         toml::Value::Table(toml::Table::from_iter([(
-            "horizon_revision".into(),
-            bundle.native().horizon.clone().into(),
+            "foundry_revision".into(),
+            bundle.native().foundry.clone().into(),
         )])),
     );
     for (name, rows) in [
@@ -129,34 +129,34 @@ fn copy_files(to: &Path, files: impl IntoIterator<Item = (String, Vec<u8>)>) -> 
 /// an installed `.hmod` in the format from before the SDK, which [`super::stage_installed`] leaves
 /// out with a warning in the build log: it can never build.
 pub(super) fn checked_bundles(folder: &Path) -> Result<Vec<Bundle>, String> {
-    let paths = horizon_platform::mod_package::find(folder)
+    let paths = foundry_platform::mod_package::find(folder)
         .into_iter()
-        .chain(horizon_platform::mod_package::find(
+        .chain(foundry_platform::mod_package::find(
             &folder
                 .parent()
                 .unwrap_or(folder)
-                .join(horizon_platform::mod_package::mod_list::DIR),
+                .join(foundry_platform::mod_package::mod_list::DIR),
         ));
-    if let Some((id, error)) = horizon_platform::mod_package::selection::package_errors(paths)
+    if let Some((id, error)) = foundry_platform::mod_package::selection::package_errors(paths)
         .into_iter()
         .next()
     {
         return Err(format!("{id}: {error}"));
     }
     let found = super::scan_bundles(folder)?;
-    let wasm: Vec<_> = horizon_platform::mod_package::find(folder)
+    let wasm: Vec<_> = foundry_platform::mod_package::find(folder)
         .into_iter()
-        .chain(horizon_platform::mod_package::find(
+        .chain(foundry_platform::mod_package::find(
             &folder
                 .parent()
                 .unwrap_or(folder)
-                .join(horizon_platform::mod_package::mod_list::DIR),
+                .join(foundry_platform::mod_package::mod_list::DIR),
         ))
-        .filter_map(|path| horizon_platform::mod_package::Package::read(&path).ok())
+        .filter_map(|path| foundry_platform::mod_package::Package::read(&path).ok())
         .filter(|package| package.manifest.wasm.is_some())
         .collect();
     for bundle in &found {
-        let dependent = horizon_platform::mod_package::Package::read(&bundle.dir)?;
+        let dependent = foundry_platform::mod_package::Package::read(&bundle.dir)?;
         for library in &wasm {
             if !dependent
                 .manifest
@@ -217,7 +217,7 @@ mod mixed_tests {
         fs::write(
             addon.join(manifest::MANIFEST),
             format!(
-                "{}[dependencies]\nlib='*'\n[native]\ngame='26.3'\nhorizon='{}'\nmixins='{}'\n",
+                "{}[dependencies]\nlib='*'\n[native]\ngame='26.3'\nfoundry='{}'\nmixins='{}'\n",
                 header("addon"),
                 "a".repeat(40),
                 "b".repeat(40)
@@ -231,7 +231,7 @@ mod mixed_tests {
             format!(
                 "{}[wasm]\nsha512='{}'\ntoolchain='t'\nbuilt_with='t'\n",
                 header("lib"),
-                horizon_platform::mod_package::manifest::sha512_of(module),
+                foundry_platform::mod_package::manifest::sha512_of(module),
             ),
         )
         .unwrap();
@@ -272,7 +272,7 @@ mod state_tests {
     fn native_state_is_refused_before_staging() {
         let dir = super::super::tests::dir("state-refusal");
         super::super::tests::write_bundle(&dir, "stateful", "");
-        let path = dir.join(horizon_platform::mod_package::manifest::MANIFEST);
+        let path = dir.join(foundry_platform::mod_package::manifest::MANIFEST);
         let mut text = std::fs::read_to_string(&path).unwrap();
         text.push_str("\n[[native.state]]\nid='autosave'\ntarget='game::Game'\nty='u32'\ninitial='0'\nconstructor=[]\n");
         std::fs::write(path, text).unwrap();

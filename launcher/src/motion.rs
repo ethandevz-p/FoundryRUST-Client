@@ -1,4 +1,4 @@
-//! The launcher's motion, as the website's launcher plays it (horizon-site's `launcher.css` and
+//! The launcher's motion, as the website's launcher plays it (foundry-site's `launcher.css` and
 //! Tailwind's defaults): hovers ease over the design's quick curve (150 ms,
 //! `cubic-bezier(0.4, 0, 0.2, 1)`); toasts and a new page arrive as `hzl-pop` does (a fade and a
 //! 6 px rise over 200 ms); a switch's knob slides for 200 ms; a mouse wheel's notch glides over
@@ -6,7 +6,7 @@
 //! ([`crate::sky::motion`]) nothing moves: everything is drawn where it ends. Menus open at once:
 //! an animation inside a `deferred` menu kept its first frame (invisible) under GPUI Fast.
 use gpui::{px, Animation, AnimationExt, AnyElement, Div, ElementId, IntoElement, Styled};
-use horizon_theme as tokens;
+use foundry_theme as tokens;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::time::Instant;
@@ -50,7 +50,7 @@ pub const SPRING: tokens::Motion = tokens::Motion {
 pub const LIFT: f32 = 3.;
 pub const PRESS: f32 = 1.;
 
-/// Whether the player's system asks for reduced motion (or `HORIZON_LAUNCHER_MOTION=off`).
+/// Whether the player's system asks for reduced motion (or `FOUNDRY_LAUNCHER_MOTION=off`).
 pub fn still() -> bool {
     crate::sky::motion() == crate::sky::Motion::Still
 }

@@ -48,7 +48,7 @@ impl Activity {
 /// What the window knows when it decides.
 #[derive(Clone, Copy, Debug)]
 pub struct Now {
-    /// Not a development build or `HORIZON_LAUNCHER_NO_SELF_UPDATE`.
+    /// Not a development build or `FOUNDRY_LAUNCHER_NO_SELF_UPDATE`.
     pub self_update_allowed: bool,
     /// A package manager owns this copy (`backend::package_managed_launcher`).
     pub package_managed: bool,
@@ -122,7 +122,7 @@ mod tests {
         // At or above the minimum, or no minimum: Update or closing the window, as always.
         assert!(!installs_now("0.2.80", min, READY));
         assert!(!installs_now("0.2.79", None, READY));
-        // A development build or HORIZON_LAUNCHER_NO_SELF_UPDATE never replaces itself.
+        // A development build or FOUNDRY_LAUNCHER_NO_SELF_UPDATE never replaces itself.
         let not_allowed = Now {
             self_update_allowed: false,
             ..READY
@@ -145,7 +145,7 @@ mod tests {
         assert!(!installs_now("0.2.79", min, game));
     }
 
-    /// A distribution's package (`/usr/bin/horizon-launcher`) is updated by its package manager.
+    /// A distribution's package (`/usr/bin/foundry-launcher`) is updated by its package manager.
     #[test]
     fn a_package_owned_launcher_does_not_restart_for_the_minimum() {
         let package = Now {

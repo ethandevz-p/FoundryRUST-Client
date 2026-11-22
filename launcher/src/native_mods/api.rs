@@ -13,15 +13,15 @@ fn write(path: &Path, value: &toml::Table) -> Result<(), String> {
     fs::write(path, text).map_err(|e| format!("{}: {e}", path.display()))
 }
 
-pub(super) const PACKAGE: &str = "horizon-native-game";
-/// The official game's package and executable (docs/layers.md, "How a Horizon crate plugs in"):
-/// horizon-client's game with Horizon's own parts, the one the release ships as `horizon-client`.
-pub(super) const OFFICIAL: &str = "horizon-official";
+pub(super) const PACKAGE: &str = "foundry-native-game";
+/// The official game's package and executable (docs/layers.md, "How a Foundry Client crate plugs in"):
+/// foundry-client's game with Foundry Client's own parts, the one the release ships as `foundry-client`.
+pub(super) const OFFICIAL: &str = "foundry-official";
 
-/// Whether the staged revision has the official game. One from before it ships horizon-client's
+/// Whether the staged revision has the official game. One from before it ships foundry-client's
 /// executable, as the release did then.
 pub(super) fn has_official(stage: &Path) -> bool {
-    stage.join("crates/horizon-official/Cargo.toml").is_file()
+    stage.join("crates/foundry-official/Cargo.toml").is_file()
 }
 
 /// The official game, once built into `out`, under the game's name, as the release ships it.
@@ -32,20 +32,20 @@ fn path_dep(path: &str) -> toml::Table {
     toml::Table::from_iter([("path".into(), path.into())])
 }
 
-const MAIN_TEMPLATE: &str = "crates/horizon-client/src/native_main.rs.template";
+const MAIN_TEMPLATE: &str = "crates/foundry-client/src/native_main.rs.template";
 
 pub(super) fn template(path: &Path) -> Result<String, String> {
     fs::read_to_string(path).ok()
         .filter(|template| ["/* MOD_ENTRIES */", "/* MOD_SLOTS */", "/* BUILT_MODS */"].iter()
             .all(|marker| template.matches(marker).count() == 1))
-        .ok_or_else(|| crate::i18n::tr("This game source has no native inventory entry template. Update Horizon and rebuild the mods against this game.").to_string())
+        .ok_or_else(|| crate::i18n::tr("This game source has no native inventory entry template. Update Foundry Client and rebuild the mods against this game.").to_string())
 }
 
-pub(super) fn main_rs(template: &str, mods: &[&horizon_platform::mod_package::Manifest]) -> String {
+pub(super) fn main_rs(template: &str, mods: &[&foundry_platform::mod_package::Manifest]) -> String {
     // Own the bytes even when the staged SDK template references a static in a dylib.
     let template = template.replace(
-        "std::hint::black_box(&horizon_mod_package::holder::CAPABILITY);",
-        "#[used] static HOLDER_CAPABILITY: [u8; horizon_mod_package::holder::CAPABILITY.len()] = horizon_mod_package::holder::CAPABILITY; std::hint::black_box(&HOLDER_CAPABILITY);",
+        "std::hint::black_box(&foundry_mod_package::holder::CAPABILITY);",
+        "#[used] static HOLDER_CAPABILITY: [u8; foundry_mod_package::holder::CAPABILITY.len()] = foundry_mod_package::holder::CAPABILITY; std::hint::black_box(&HOLDER_CAPABILITY);",
     );
     let entries = mods
         .iter()
@@ -85,11 +85,11 @@ pub(super) struct Project<'a> {
 }
 
 /// The mod API's package, the one crate every mod depends on.
-pub(super) const POINTS_PACKAGE: &str = "horizon-mod-points";
-pub(super) const API_PACKAGE: &str = "horizon-mod-api";
+pub(super) const POINTS_PACKAGE: &str = "foundry-mod-points";
+pub(super) const API_PACKAGE: &str = "foundry-mod-api";
 
 /// The per-mod facade's package, rewritten to its generated crate.
-pub(super) const INTERNALS_PACKAGE: &str = "horizon-internals";
+pub(super) const INTERNALS_PACKAGE: &str = "foundry-internals";
 /// Each game package a mod may depend on, with its library's name.
 pub(super) const PACKAGES: [(&str, &str); 3] = [
     (API_PACKAGE, "mod_api"),
@@ -98,9 +98,9 @@ pub(super) const PACKAGES: [(&str, &str); 3] = [
 ];
 
 /// Where a mod's `Cargo.toml` names the SDK package `package`: the copy of its pinned build that
-/// `cargo horizon-mod` fetches into the project (`.horizon/sdk/`).
+/// `cargo foundry-mod` fetches into the project (`.foundry/sdk/`).
 pub(super) fn sdk_path(package: &str) -> String {
-    format!(".horizon/sdk/api/crates/{package}")
+    format!(".foundry/sdk/api/crates/{package}")
 }
 
 /// Whether `value`, a mod's dependency `key` on the SDK package `package`, names the SDK the one
@@ -136,7 +136,7 @@ pub(super) fn sdk_source(key: &str, package: &str, value: &toml::Value) -> Resul
         }
     };
     Err(format!(
-        "E_SDK_SOURCE: {key}: {why}; write {key} = {{ path = \"{path}\" }}, then any cargo horizon-mod command fetches the pinned SDK there"
+        "E_SDK_SOURCE: {key}: {why}; write {key} = {{ path = \"{path}\" }}, then any cargo foundry-mod command fetches the pinned SDK there"
     ))
 }
 
@@ -187,11 +187,11 @@ impl std::fmt::Display for ProjectError {
                 trf("{mod}: Cargo.toml has no package name.", &[("mod", mod_id)])
             }
             Self::ApiDependency { mod_id } => trf(
-                "{mod}: Cargo.toml has no horizon-mod-api dependency.",
+                "{mod}: Cargo.toml has no foundry-mod-api dependency.",
                 &[("mod", mod_id)],
             ),
             Self::GameDependency { mod_id, key } => trf(
-                "E_GAME_DEPENDENCY: {mod}: Cargo.toml depends on the game ({key}). Declare game internals through horizon-internals instead.",
+                "E_GAME_DEPENDENCY: {mod}: Cargo.toml depends on the game ({key}). Declare game internals through foundry-internals instead.",
                 &[("mod", mod_id), ("key", key)],
             ),
         };
@@ -289,7 +289,7 @@ impl<'a> Project<'a> {
                         .get("package")
                         .and_then(toml::Value::as_str)
                         .unwrap_or(key)
-                        == "horizon-client"
+                        == "foundry-client"
                     {
                         return Err(ProjectError::GameDependency {
                             mod_id: mod_id(),
@@ -397,16 +397,16 @@ pub(super) fn stage(
     let mut deps = toml::Table::new();
     // The generated game's features own sound/controllers, including the server's
     // `--no-default-features`; its client dependency never enables them independently.
-    // `horizon-threads` stays for games pinned before the allocator moved into
-    // `horizon-client`'s library: their template still names `horizon_threads::ALLOCATOR`.
+    // `foundry-threads` stays for games pinned before the allocator moved into
+    // `foundry-client`'s library: their template still names `foundry_threads::ALLOCATOR`.
     for name in [
-        "horizon-client",
-        "horizon-mod-api",
-        "horizon-threads",
-        "horizon-mod-package",
+        "foundry-client",
+        "foundry-mod-api",
+        "foundry-threads",
+        "foundry-mod-package",
     ] {
         let mut dependency = path_dep(&format!("../{name}"));
-        if name == "horizon-client" {
+        if name == "foundry-client" {
             dependency.insert("default-features".into(), false.into());
         }
         deps.insert(name.into(), toml::Value::Table(dependency));
@@ -489,8 +489,8 @@ pub(super) fn stage(
         }
         members.push(relative);
     }
-    // Beside horizon-client, so its build script (the Windows stack size and icon, for the
-    // `horizon-client` binary this package owns now) finds `packaging/` where it looks.
+    // Beside foundry-client, so its build script (the Windows stack size and icon, for the
+    // `foundry-client` binary this package owns now) finds `packaging/` where it looks.
     let game = stage.join(GAME);
     fs::create_dir_all(game.join("src")).map_err(|e| e.to_string())?;
     let mut manifest = toml::Table::new();
@@ -501,12 +501,12 @@ pub(super) fn stage(
             ("version".into(), "0.1.0".into()),
             ("edition".into(), "2024".into()),
             ("publish".into(), false.into()),
-            ("build".into(), "../horizon-client/build.rs".into()),
+            ("build".into(), "../foundry-client/build.rs".into()),
         ])),
     );
     // This sibling package uses the client's build.rs, so its build dependencies apply too;
     // relative paths still point to the same crates from crates/native-game.
-    let client = read(&stage.join("crates/horizon-client/Cargo.toml"))?;
+    let client = read(&stage.join("crates/foundry-client/Cargo.toml"))?;
     if let Some(dependencies) = client.get("build-dependencies") {
         manifest.insert("build-dependencies".into(), dependencies.clone());
     }
@@ -527,22 +527,22 @@ pub(super) fn stage(
     manifest.insert(
         "bin".into(),
         toml::Value::Array(vec![toml::Value::Table(toml::Table::from_iter([
-            ("name".into(), "horizon-client".into()),
+            ("name".into(), "foundry-client".into()),
             ("path".into(), "src/main.rs".into()),
         ]))]),
     );
     let official = has_official(stage);
     if official {
         let mut dep = toml::Table::new();
-        dep.insert("path".into(), "../horizon-official".into());
+        dep.insert("path".into(), "../foundry-official".into());
         dep.insert("optional".into(), true.into());
         deps.insert(OFFICIAL.into(), toml::Value::Table(dep));
     }
-    if stage.join("crates/horizon-mod-host/Cargo.toml").is_file() {
+    if stage.join("crates/foundry-mod-host/Cargo.toml").is_file() {
         deps.insert(
-            "horizon-mod-host".into(),
+            "foundry-mod-host".into(),
             toml::Value::Table(toml::Table::from_iter([
-                ("path".into(), "../horizon-mod-host".into()),
+                ("path".into(), "../foundry-mod-host".into()),
                 ("default-features".into(), false.into()),
             ])),
         );
@@ -552,7 +552,7 @@ pub(super) fn stage(
         "features".into(),
         toml::Value::Table(toml::Table::from_iter([(
             "default".into(),
-            toml::Value::Array(vec!["horizon-client/default".into()]),
+            toml::Value::Array(vec!["foundry-client/default".into()]),
         )])),
     );
     if official {
@@ -569,7 +569,7 @@ pub(super) fn stage(
             .push("official".into());
         features.insert(
             "official".into(),
-            toml::Value::Array(vec!["dep:horizon-official".into()]),
+            toml::Value::Array(vec!["dep:foundry-official".into()]),
         );
     }
     write(&game.join("Cargo.toml"), &manifest)?;
@@ -581,7 +581,7 @@ pub(super) fn stage(
     if official {
         main = main.replace(
             "fn main() {",
-            "fn main() {\n    #[cfg(feature = \"official\")]\n    horizon_official::register();",
+            "fn main() {\n    #[cfg(feature = \"official\")]\n    foundry_official::register();",
         );
     }
     fs::write(game.join("src/main.rs"), main).map_err(|e| e.to_string())?;
@@ -606,7 +606,7 @@ mod tests {
         let name = std::thread::current().name().unwrap().replace(':', "-");
         let dir = super::super::tests::dir(&name);
         super::super::tests::write_bundle(&dir, "example", "");
-        fs::write(dir.join("Cargo.toml"), "[package]\nname='example-mod'\nversion='9.0.0'\nedition='2024'\n[dependencies]\nhorizon-mod-api={path='.horizon/sdk/api/crates/horizon-mod-api'}\n").unwrap();
+        fs::write(dir.join("Cargo.toml"), "[package]\nname='example-mod'\nversion='9.0.0'\nedition='2024'\n[dependencies]\nfoundry-mod-api={path='.foundry/sdk/api/crates/foundry-mod-api'}\n").unwrap();
         dir
     }
 
@@ -617,16 +617,16 @@ mod tests {
         let source = dir.join("main.rs");
         let output = dir.join(std::env::consts::EXE_SUFFIX.to_owned() + "wrapper");
         let library_source = dir.join("library.rs");
-        fs::write(&library_source, "pub mod holder { pub static CAPABILITY: [u8; 26] = *b\"horizon-private-holder-v2;\"; }").unwrap();
+        fs::write(&library_source, "pub mod holder { pub static CAPABILITY: [u8; 26] = *b\"foundry-private-holder-v2;\"; }").unwrap();
         let library = dir.join(format!(
-            "{}horizon_mod_package{}",
+            "{}foundry_mod_package{}",
             std::env::consts::DLL_PREFIX,
             std::env::consts::DLL_SUFFIX
         ));
         assert!(std::process::Command::new("rustc")
             .args([
                 "--crate-type=dylib",
-                "--crate-name=horizon_mod_package",
+                "--crate-name=foundry_mod_package",
                 "-Cprefer-dynamic"
             ])
             .arg(&library_source)
@@ -636,11 +636,11 @@ mod tests {
             .unwrap()
             .success());
         let template =
-            "fn main() { std::hint::black_box(&horizon_mod_package::holder::CAPABILITY); }";
+            "fn main() { std::hint::black_box(&foundry_mod_package::holder::CAPABILITY); }";
         fs::write(&source, main_rs(template, &[])).unwrap();
         assert!(std::process::Command::new("rustc")
             .args(["--edition=2021", "-O", "-Cprefer-dynamic", "--extern"])
-            .arg(format!("horizon_mod_package={}", library.display()))
+            .arg(format!("foundry_mod_package={}", library.display()))
             .arg(&source)
             .arg("-o")
             .arg(&output)
@@ -650,7 +650,7 @@ mod tests {
         assert!(fs::read(&output)
             .unwrap()
             .windows(26)
-            .any(|w| w == b"horizon-private-holder-v2;"));
+            .any(|w| w == b"foundry-private-holder-v2;"));
         fs::remove_dir_all(dir).unwrap();
     }
 
@@ -659,16 +659,16 @@ mod tests {
         let dir = fixture();
         for (dependencies, game) in [
             (
-                "[dependencies]\nhorizon-mod-api={path='.horizon/sdk/api/crates/horizon-mod-api'}\nhorizon-client='0.1'",
-                Some("horizon-client"),
+                "[dependencies]\nfoundry-mod-api={path='.foundry/sdk/api/crates/foundry-mod-api'}\nfoundry-client='0.1'",
+                Some("foundry-client"),
             ),
             (
-                "[dependencies.api]\npackage='horizon-mod-api'\npath='.horizon/sdk/api/crates/horizon-mod-api'\n[target.'cfg(unix)'.dependencies.game]\npackage='horizon-client'\nversion='0.1'",
+                "[dependencies.api]\npackage='foundry-mod-api'\npath='.foundry/sdk/api/crates/foundry-mod-api'\n[target.'cfg(unix)'.dependencies.game]\npackage='foundry-client'\nversion='0.1'",
                 Some("game"),
             ),
             ("[dependencies]\nserde='1'", None),
             (
-                "[target.'cfg(unix)'.dependencies]\nhorizon-mod-api={path='.horizon/sdk/api/crates/horizon-mod-api'}",
+                "[target.'cfg(unix)'.dependencies]\nfoundry-mod-api={path='.foundry/sdk/api/crates/foundry-mod-api'}",
                 None,
             ),
         ] {
@@ -694,34 +694,34 @@ mod tests {
     fn the_sdk_is_taken_only_by_its_path_form_and_every_other_form_is_refused_by_name() {
         let dir = fixture();
         for (form, refusal) in [
-            ("{ path = '.horizon/sdk/api/crates/horizon-mod-api' }", None),
+            ("{ path = '.foundry/sdk/api/crates/foundry-mod-api' }", None),
             (
-                "{ path = '.horizon/sdk/api/crates/horizon-mod-api', features = ['testing'] }",
+                "{ path = '.foundry/sdk/api/crates/foundry-mod-api', features = ['testing'] }",
                 None,
             ),
             (
-                "{ git = 'https://github.com/horizon-rust/horizon', rev = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' }",
-                Some("example: E_SDK_SOURCE: horizon-mod-api: the SDK is no longer named by git; write horizon-mod-api = { path = \".horizon/sdk/api/crates/horizon-mod-api\" }"),
+                "{ git = 'https://github.com/foundry-rust/foundry', rev = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' }",
+                Some("example: E_SDK_SOURCE: foundry-mod-api: the SDK is no longer named by git; write foundry-mod-api = { path = \".foundry/sdk/api/crates/foundry-mod-api\" }"),
             ),
             (
                 "'0.1'",
-                Some("example: E_SDK_SOURCE: horizon-mod-api: a version names no source, so Cargo would take horizon-mod-api from crates.io"),
+                Some("example: E_SDK_SOURCE: foundry-mod-api: a version names no source, so Cargo would take foundry-mod-api from crates.io"),
             ),
             (
                 "{ version = '0.1', features = ['testing'] }",
-                Some("example: E_SDK_SOURCE: horizon-mod-api: a version names no source"),
+                Some("example: E_SDK_SOURCE: foundry-mod-api: a version names no source"),
             ),
             (
                 "{ workspace = true }",
-                Some("example: E_SDK_SOURCE: horizon-mod-api: workspace does not name the SDK"),
+                Some("example: E_SDK_SOURCE: foundry-mod-api: workspace does not name the SDK"),
             ),
             (
-                "{ path = '../horizon/crates/horizon-mod-api' }",
-                Some("example: E_SDK_SOURCE: horizon-mod-api: the path must be \".horizon/sdk/api/crates/horizon-mod-api\""),
+                "{ path = '../foundry/crates/foundry-mod-api' }",
+                Some("example: E_SDK_SOURCE: foundry-mod-api: the path must be \".foundry/sdk/api/crates/foundry-mod-api\""),
             ),
         ] {
             let text = format!(
-                "[package]\nname='example-mod'\nversion='1.0.0'\n[dependencies]\nhorizon-mod-api = {form}\n"
+                "[package]\nname='example-mod'\nversion='1.0.0'\n[dependencies]\nfoundry-mod-api = {form}\n"
             );
             fs::write(dir.join("Cargo.toml"), text).unwrap();
             let bundle = super::super::bundle_in(&dir).unwrap().unwrap();
@@ -739,9 +739,9 @@ mod tests {
     #[test]
     fn generates_only_tool_contract_tables_without_mutating_package() {
         let dir = fixture();
-        let path = dir.join(horizon_platform::mod_package::manifest::MANIFEST);
+        let path = dir.join(foundry_platform::mod_package::manifest::MANIFEST);
         let text = fs::read_to_string(&path).unwrap()
-            + "[[native.module]]\nid='test'\nfile='crates/horizon-client/src/game.rs'\nname='support'\nsource='src/lib.rs'\n";
+            + "[[native.module]]\nid='test'\nfile='crates/foundry-client/src/game.rs'\nname='support'\nsource='src/lib.rs'\n";
         fs::write(&path, &text).unwrap();
         let bundle = super::super::bundle_in(&dir).unwrap().unwrap();
         assert!(bundle.needs_mixins());
@@ -759,9 +759,9 @@ mod tests {
     #[test]
     fn generated_main_keeps_mod_order() {
         let template =
-            include_str!("../../../crates/horizon-client/src/native_mod_entry.rs.template");
+            include_str!("../../../crates/foundry-client/src/native_mod_entry.rs.template");
         let dir = fixture();
-        let mut base = horizon_platform::mod_package::Package::read(&dir)
+        let mut base = foundry_platform::mod_package::Package::read(&dir)
             .unwrap()
             .manifest;
         base.id = "base".into();
@@ -811,7 +811,7 @@ mod tests {
         let dir = fixture();
         let stage_dir = dir.with_extension("workspace");
         let _ = fs::remove_dir_all(&stage_dir);
-        let source = stage_dir.join("crates/horizon-client/src");
+        let source = stage_dir.join("crates/foundry-client/src");
         fs::create_dir_all(&source).unwrap();
         let resolution = super::super::dependencies::Resolution {
             order: vec![0],
@@ -829,7 +829,7 @@ mod tests {
                 &internals::Catalog::default(),
             )
             .unwrap_err();
-            assert!(error.contains("Update Horizon and rebuild"), "{error}");
+            assert!(error.contains("Update Foundry Client and rebuild"), "{error}");
             assert!(!stage_dir.join(GAME).exists());
             assert!(!stage_dir.join("native-api").exists());
         }

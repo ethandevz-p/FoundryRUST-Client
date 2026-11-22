@@ -10,7 +10,7 @@ import unittest
 
 # datafix_worlds resolves its writable root at import time; keep it off any real
 # player data by pointing it at a scratch directory before importing the module.
-os.environ.setdefault('HORIZON_DATAFIX_ROOT', tempfile.mkdtemp(prefix='horizon-u02-'))
+os.environ.setdefault('FOUNDRY_DATAFIX_ROOT', tempfile.mkdtemp(prefix='foundry-u02-'))
 
 from tools import datafix_worlds  # noqa: E402
 

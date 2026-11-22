@@ -14,7 +14,7 @@ import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
 GOLDENS = ROOT / "tools/fixtures/wire_enum_layouts.json"
-OUTPUT = ROOT / "crates/horizon-mod-vocab/src/wire/fieldless_enum_goldens.rs"
+OUTPUT = ROOT / "crates/foundry-mod-vocab/src/wire/fieldless_enum_goldens.rs"
 # Rust literals whose contents are not syntax: raw strings, strings (an escape may be a
 # line continuation) and char literals, so a quote or brace inside one ('"', '{') stays inside.
 LITERAL = (r'r(?P<hashes>#*)"[\s\S]*?"(?P=hashes)|"(?:\\[\s\S]|[^"\\])*"'

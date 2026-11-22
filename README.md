@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/media/readme/title-dark.png">
-    <img src="docs/media/readme/title-light.png" alt="Horizon" width="320">
+    <img src="docs/media/readme/title-light.png" alt="Foundry Client" width="320">
   </picture>
 </p>
 
@@ -11,19 +11,19 @@
 </p>
 
 <p align="center">
-  <a href="https://playhorizon.dev/download"><img src="docs/media/readme/download-button.png" alt="Download the Horizon launcher for Windows, macOS and Linux" width="400"></a><br>
+  <a href="https://playfoundry.dev/download"><img src="docs/media/readme/download-button.png" alt="Download the Foundry Client launcher for Windows, macOS and Linux" width="400"></a><br>
   <sub>You need your own copy of Minecraft: Java Edition.</sub>
 </p>
 
 <p align="center">
-  <a href="https://playhorizon.dev/docs/install"><b>Install guide</b></a> ·
-  <a href="https://playhorizon.dev/docs/"><b>Docs</b></a> ·
-  <a href="https://playhorizon.dev/mods"><b>Mods</b></a> ·
-  <a href="https://discord.gg/playhorizon"><b>Discord</b></a>
+  <a href="https://playfoundry.dev/docs/install"><b>Install guide</b></a> ·
+  <a href="https://playfoundry.dev/docs/"><b>Docs</b></a> ·
+  <a href="https://playfoundry.dev/mods"><b>Mods</b></a> ·
+  <a href="https://discord.gg/playfoundry"><b>Discord</b></a>
 </p>
 
 <p align="center">
-  <img src="docs/media/readme/hero-lookout.webp" alt="A player's view from a wooden lookout over a village: a friend in diamond armour sneaks at the edge while a creeper flashes white behind her, another friend rides a horse between the houses below, and forest, snowy peaks and the sea run to the horizon" width="100%">
+  <img src="docs/media/readme/hero-lookout.webp" alt="A player's view from a wooden lookout over a village: a friend in diamond armour sneaks at the edge while a creeper flashes white behind her, another friend rides a horse between the houses below, and forest, snowy peaks and the sea run to the foundry" width="100%">
 </p>
 
 <p align="center">
@@ -31,23 +31,23 @@
 </p>
 
 <p align="center">
-  <sub>*Against Java Edition with Sodium, Lithium, FerriteCore and ImmediatelyFast on a Ryzen 7 9800X3D with an RTX 5080. More computers on the <a href="https://playhorizon.dev/benchmarks">benchmarks page</a>.</sub>
+  <sub>*Against Java Edition with Sodium, Lithium, FerriteCore and ImmediatelyFast on a Ryzen 7 9800X3D with an RTX 5080. More computers on the <a href="https://playfoundry.dev/benchmarks">benchmarks page</a>.</sub>
 </p>
 
 <h2 align="center">What you get</h2>
 
 - **Vanilla Minecraft:** survival, creative and hardcore in every dimension, with the same terrain, mobs, villagers and redstone. Your saves open as they are.
-- **Multiplayer:** vanilla and Horizon servers, LAN, and invite codes for playing your world with friends. You can [host a server](https://playhorizon.dev/docs/hosting) too.
-- **Mods:** Horizon's own mod system, with mods like zoom and a minimap, and shader packs. Browse the [catalogue](https://playhorizon.dev/mods) or [make a mod](https://playhorizon.dev/docs/make-a-mod).
+- **Multiplayer:** vanilla and Foundry Client servers, LAN, and invite codes for playing your world with friends. You can [host a server](https://playfoundry.dev/docs/hosting) too.
+- **Mods:** Foundry Client's own mod system, with mods like zoom and a minimap, and shader packs. Browse the [catalogue](https://playfoundry.dev/mods) or [make a mod](https://playfoundry.dev/docs/make-a-mod).
 - **Beyond vanilla:** terrain up to 1,024 chunks away, HDR, controller support, graphics presets and dynamic lights.
 - **Dedicated server:** Server software for high performance, low memory usage, and near instant startup. See [the server benchmark](docs/performance/server-vs-vanilla.md).
 
 <h2 align="center">What you need</h2>
 
-- **Your own copy of Minecraft: Java Edition.** Horizon ships no Minecraft files. It builds them from the game you bought, so install version 26.3 and start it once.
+- **Your own copy of Minecraft: Java Edition.** Foundry Client ships no Minecraft files. It builds them from the game you bought, so install version 26.3 and start it once.
 - **Windows, macOS or Linux:** Windows on x64 or ARM64, macOS 12 or later, Linux on x86-64.
 
-<h2 align="center">Made by the Horizon Team</h2>
+<h2 align="center">Made by the Foundry Client Team</h2>
 
 <table align="center">
   <tr>
@@ -63,7 +63,7 @@
 
 <p align="center">
   <sub>and everyone who has contributed</sub><br><br>
-  <a href="https://github.com/horizon-rust/horizon/graphs/contributors"><img src="https://contrib.rocks/image?repo=horizon-rust/horizon&max=72&columns=12" alt="Everyone who has contributed to Horizon"></a>
+  <a href="https://github.com/foundry-rust/foundry/graphs/contributors"><img src="https://contrib.rocks/image?repo=foundry-rust/foundry&max=72&columns=12" alt="Everyone who has contributed to Foundry Client"></a>
 </p>
 
 <p align="center">
@@ -77,6 +77,6 @@
   <a href="https://github.com/sponsors/ludovic111"><b>Sponsor</b></a>
 </p>
 
-<sub>Horizon is released under the [GNU LGPL, version 3 or later](LICENSE), for the project's original work. Code merged before the move from MIT stays available under the [MIT licence](LICENSES/MIT.txt). Dependencies keep their own licences, see the [notices](THIRD_PARTY_NOTICES.md). Founded by [Ludovic Marie](https://lu4ovic.com) and built by the Horizon Team and [its contributors](https://github.com/horizon-rust/horizon/graphs/contributors). You can support it on [GitHub Sponsors](https://github.com/sponsors/ludovic111).</sub>
+<sub>Foundry Client is released under the [GNU LGPL, version 3 or later](LICENSE), for the project's original work. Code merged before the move from MIT stays available under the [MIT licence](LICENSES/MIT.txt). Dependencies keep their own licences, see the [notices](THIRD_PARTY_NOTICES.md). Founded by [Ludovic Marie](https://lu4ovic.com) and built by the Foundry Client Team and [its contributors](https://github.com/foundry-rust/foundry/graphs/contributors). You can support it on [GitHub Sponsors](https://github.com/sponsors/ludovic111).</sub>
 
 <sub>NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT. Minecraft is a trademark of Mojang Synergies AB; its code and assets belong to Mojang and Microsoft under the [Minecraft EULA](https://www.minecraft.net/en-us/eula).</sub>

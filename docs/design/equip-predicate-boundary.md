@@ -1,28 +1,28 @@
 # Read-only equipment predicates inside menu loops
 
-Implemented boundary for arismoko/horizon#2669 and arismoko/horizon#3549. The historical conversion analysis below
+Implemented boundary for arismoko/foundry#2669 and arismoko/foundry#3549. The historical conversion analysis below
 explains why the engine stack and API stack remain distinct owned types.
 
 ## Can we just borrow the existing stack?
 
 **Not through the existing boundary.** The menus already borrow an engine stack,
-not an API stack: `crates/horizon-client/src/menu.rs:615–636` and
-`crates/horizon-client/src/lan/menu.rs:460–501`. Both belong to client-lib (whose
+not an API stack: `crates/foundry-client/src/menu.rs:615–636` and
+`crates/foundry-client/src/lan/menu.rs:460–501`. Both belong to client-lib (whose
 manifest uses these source paths). `Game::menu_ops` delegates through `menu_session`
-(`crates/horizon-client/src/game.rs:9506–9585`); its `Env` lends only loop context
+(`crates/foundry-client/src/game.rs:9506–9585`); its `Env` lends only loop context
 and player identities (`menu.rs:88–97`). `LoopContext` contains registry/settings
-snapshots, not entity storage (`crates/horizon-world/src/native_load_context.rs:193–215`).
+snapshots, not entity storage (`crates/foundry-world/src/native_load_context.rs:193–215`).
 
 The engine stack owns `Arc<str>` and boxed extra data
-(`crates/horizon-items/src/items.rs:417`); the API stack owns keys and an optional
-`Arc<Components>` (`crates/horizon-mod-vocab/src/item/item_stack.rs:62`). They cannot
+(`crates/foundry-items/src/items.rs:417`); the API stack owns keys and an optional
+`Arc<Components>` (`crates/foundry-mod-vocab/src/item/item_stack.rs:62`). They cannot
 be reborrowed as the same type. The existing slot adapter converts before borrowing
 (`game/modding/api_values.rs:1192–1208`, under the client source root). Even ordinary
 Host-backed borrowed-stack hooks are not a zero-copy precedent: `native_use_item`
 (`game/native_hooks/base.rs:3477`) calls generated dispatch whose crossing creates
-an API value (`crates/horizon-mod-api-gen/src/dispatch.rs:909–942`). The generator
+an API value (`crates/foundry-mod-api-gen/src/dispatch.rs:909–942`). The generator
 passes Game itself as Host, not a newly allocated Host
-(`crates/horizon-mod-api-gen/src/host_param.rs:109–115`).
+(`crates/foundry-mod-api-gen/src/host_param.rs:109–115`).
 
 | Option | Engine/bridge allocations per candidate slot |
 | --- | --- |
@@ -32,7 +32,7 @@ passes Game itself as Host, not a newly allocated Host
 | Prepare one API stack before slot traversal, then borrow it | 0 during traversal; preparation is payload-dependent and still needs a real Host/entity boundary |
 
 Conversion evidence: `api_values.rs:711–728`,
-`crates/horizon-items/src/item_data.rs:1110`, and API `set_components` at
+`crates/foundry-items/src/item_data.rs:1110`, and API `set_components` at
 `item/item_stack.rs:337`. Thus **hoisting conversion makes borrowing sufficient for
 the stack cost**, without a new public stack representation, but does not remove
 the need for the following small Host boundary.
@@ -70,7 +70,7 @@ applied under one immutable borrow, through a Host adapter that offers observati
 (no commands, storage writes, scheduling or random draws), so nothing can change in
 between and a revision token would compare a value with itself. The recheck stays required
 wherever deciding and applying are separated in time or state: (1) the prepared wasm
-crossing (arismoko/horizon#3549), where a payload prepared once is reused across candidates: a stack
+crossing (arismoko/foundry#3549), where a payload prepared once is reused across candidates: a stack
 mutation invalidates it and a stale preparation refuses; (2) any path that keeps an answer
 beyond the call (a cache, a predicted answer applied later). A stale or missing entity
 handle refuses on every path.
@@ -81,7 +81,7 @@ handles, slot and scalar answer per candidate. No engine pointers cross; release
 handles at decision end. This requires a reusable prepared Wire call path, not the
 ordinary owned-stack encode/decode on every slot. Unsupported capabilities refuse at
 registration/load with a named reason on both targets; no silent wasm skip.
-The generator layer of arismoko/horizon#3549 implements prepared ownership per participating guest instance,
+The generator layer of arismoko/foundry#3549 implements prepared ownership per participating guest instance,
 borrowed token-based asks, generation/release checks and load/registration refusal for missing
 prepared exports. Slot and entity-kind names are prepared outside traversal and asks carry IDs.
 Gameplay hoists preparation across candidates for one dispense, menu input scope and

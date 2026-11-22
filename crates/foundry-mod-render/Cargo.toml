@@ -1,0 +1,27 @@
+[package]
+name = "foundry-mod-render"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+publish = false
+description = "Unstable native-only raw rendering places for mods"
+
+[lib]
+name = "mod_render"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+foundry-client-render = { path = "../foundry-client-render", default-features = false }
+foundry-mod-api = { path = "../foundry-mod-api" }
+wgpu = { version = "30.0.1", default-features = false, features = ["std"] }
+glam = "0.30"
+bytemuck = { version = "1.24", features = ["derive"] }
+
+[build-dependencies]
+foundry-mod-api-gen = { path = "../foundry-mod-api-gen" }
+
+[lints]
+workspace = true
+
+[dependencies]
+foundry-mod-api-macros = { path = "../foundry-mod-api-macros" }
+foundry-engine-slots = { path = "../foundry-engine-slots" }

@@ -83,8 +83,8 @@ selectors, its navigation and its controls, for brain mobs (allays, piglins, vil
 `LivingEntity.aiStep` runs with every move input and the jump flag zeroed, so it still falls, swims, is pushed,
 knocked back, hurt and killed, which `NoAI` does not allow. Its path, move target, target, running goals and brain
 memories are kept and resume on the next AI step, and the navigation timeout does not count the pause. `NoAI` is
-neither read nor written. The pause is saved with the mob as an attachment-style value (`horizon:attachments`,
-`horizon` / `ai_paused`, never a vanilla key) and read back on load. A refusal is a `MobAiPauseRefusal`: `Stale`
+neither read nor written. The pause is saved with the mob as an attachment-style value (`foundry:attachments`,
+`foundry` / `ai_paused`, never a vanilla key) and read back on load. A refusal is a `MobAiPauseRefusal`: `Stale`
 (another epoch's handle or no such entity), `Client`, `HeldOut` (a mob held out of the level for its own tick),
 `NoAiStep` (the dragon and its parts) or `NotAMob` (a player, an armor stand). None changes anything.
 

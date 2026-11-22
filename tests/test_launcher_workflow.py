@@ -20,9 +20,9 @@ WORKFLOW = ROOT / ".github/workflows/launcher.yml"
 HOSTED = re.compile(r"^(ubuntu-(latest|\d+\.\d+)|windows-(latest|\d+|11-vs\d+-arm)|macos-(latest|\d+))$")
 # Repository variables as a configured repository has them: with them empty, signing would never be reached anyway.
 VARS = {"MAC_RUNNER": "own-mac-runner", "MACOS_SIGN_IDENTITY": "Developer ID Application: Test (TEAM)",
-        "RELEASES_PAUSED": "", "HORIZON_MSA_CLIENT_ID": "client"}
+        "RELEASES_PAUSED": "", "FOUNDRY_MSA_CLIENT_ID": "client"}
 # The only secret a branch build reads: the mod browser's API key, built into every launcher.
-BRANCH_SECRETS = {"HORIZON_CURSEFORGE_API_KEY"}
+BRANCH_SECRETS = {"FOUNDRY_CURSEFORGE_API_KEY"}
 SIGNING_SECRETS = {"RELEASE_SIGNING_KEY", "RELEASE_SIGNING_KEY_NEXT"}
 TOKEN = re.compile(r"\s*('(?:[^']|'')*'|-?\d+(?:\.\d+)?|==|!=|&&|\|\||!|\(|\)|,|[A-Za-z_][A-Za-z0-9_-]*"
                    r"(?:\.[A-Za-z_][A-Za-z0-9_-]*)*)")
@@ -201,7 +201,7 @@ def run(event, ref, inputs=None, variables=VARS, blank=(), edit=None):
     workflow = yaml.safe_load(WORKFLOW.read_text(encoding="utf-8"))
     if edit:
         edit(workflow)
-    github = {"event_name": event, "ref": ref, "sha": "c0ffee", "token": "token", "repository": "horizon-rust/horizon"}
+    github = {"event_name": event, "ref": ref, "sha": "c0ffee", "token": "token", "repository": "foundry-rust/foundry"}
     secrets = {name: f"<{name}>" for name in BRANCH_SECRETS | SIGNING_SECRETS}
     base = {"github": github, "inputs": inputs or {}, "vars": variables, "secrets": secrets}
     reached = []

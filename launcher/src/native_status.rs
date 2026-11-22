@@ -62,7 +62,7 @@ pub fn state(enabled: &[Mod], built: Option<&[Mod]>) -> State {
 /// mod tool packs beside the source but the build's own digest of the copied source never holds
 /// (else every mod packed with a uses table read Needs rebuild after each build).
 fn archive_digest<'a>(files: impl Iterator<Item = (&'a str, &'a [u8])>) -> String {
-    use horizon_platform::mod_package::mod_surface::uses::USES_FILE;
+    use foundry_platform::mod_package::mod_surface::uses::USES_FILE;
     native_mods::digest(files.filter(|(name, _)| *name != USES_FILE))
 }
 
@@ -85,9 +85,9 @@ pub fn unbuilt(enabled: &[Mod], built: Option<&[Mod]>) -> Vec<String> {
 pub struct Build {
     /// The release or Nightly it was built on (`native_mods::About::base`).
     pub base: String,
-    /// The Horizon commit it compiled.
-    pub horizon: String,
-    /// The mods whose pin made it compile `horizon` rather than `base`'s own commit.
+    /// The Foundry Client commit it compiled.
+    pub foundry: String,
+    /// The mods whose pin made it compile `foundry` rather than `base`'s own commit.
     pub pinned_by: Vec<String>,
     /// It compiled another commit than its Nightly's, with no record of why: built before the
     /// launcher kept which mods pinned it ([`pinning`] reads them from the instance's mods).
@@ -104,24 +104,24 @@ impl Build {
 
     /// What build record `about` says.
     fn of(about: native_mods::About) -> Build {
-        // The fork's manifest pins the exact Horizon commit, so a build is never on a commit
+        // The fork's manifest pins the exact Foundry Client commit, so a build is never on a commit
         // its mods did not name: nothing is unknown and no pin list is recorded.
         Build {
             pinned_unknown: false,
             base: about.base,
-            horizon: about.horizon,
+            foundry: about.foundry,
             pinned_by: Vec::new(),
             left_out: about.left_out,
         }
     }
 
-    /// The Horizon it was built on, as a player reads it (`horizon_label`).
-    pub fn horizon(&self) -> String {
-        horizon_label(&self.base)
+    /// The Foundry Client it was built on, as a player reads it (`foundry_label`).
+    pub fn foundry(&self) -> String {
+        foundry_label(&self.base)
     }
 
     /// The same, short enough for the instance list: `Nightly 10-28`.
-    pub fn horizon_short(&self) -> String {
+    pub fn foundry_short(&self) -> String {
         match crate::nightly::date_of(&self.base) {
             Some(date) => format!("Nightly {}", &date[5..]),
             None => crate::nightly::short_commit(&self.base),
@@ -129,9 +129,9 @@ impl Build {
     }
 }
 
-/// A release or Nightly as a player reads it beside "Horizon": `v0.2.93` as it is,
+/// A release or Nightly as a player reads it beside "Foundry Client": `v0.2.93` as it is,
 /// `nightly-2026-10-29-4baa571` as `Nightly 2026-10-29`.
-pub fn horizon_label(version: &str) -> String {
+pub fn foundry_label(version: &str) -> String {
     match crate::nightly::date_of(version) {
         Some(date) => format!("Nightly {date}"),
         None => crate::nightly::short_commit(version),
@@ -147,7 +147,7 @@ pub fn horizon_label(version: &str) -> String {
 pub fn enabled(home: &Path) -> Vec<Mod> {
     let mut out = Vec::new();
     for path in hmods(home) {
-        match horizon_platform::mod_package::index::native::Bundle::read(&path) {
+        match foundry_platform::mod_package::index::native::Bundle::read(&path) {
             Ok(b) => {
                 if java::is_enabled(home, &b.manifest.id) {
                     let digest =
@@ -166,26 +166,26 @@ pub fn enabled(home: &Path) -> Vec<Mod> {
     out
 }
 
-/// The native mods turned on in game folder `home` that pin Horizon commit `revision`.
+/// The native mods turned on in game folder `home` that pin Foundry Client commit `revision`.
 pub fn pinning(home: &Path, revision: &str) -> Vec<String> {
     bundles_on(home)
         .into_iter()
-        .filter(|b| b.manifest.native.as_ref().expect("native bundle").horizon == revision)
+        .filter(|b| b.manifest.native.as_ref().expect("native bundle").foundry == revision)
         .map(|b| b.manifest.id)
         .collect()
 }
 
 /// The readable native mods turned on in game folder `home`.
-pub fn bundles_on(home: &Path) -> Vec<horizon_platform::mod_package::index::native::Bundle> {
+pub fn bundles_on(home: &Path) -> Vec<foundry_platform::mod_package::index::native::Bundle> {
     hmods(home)
         .into_iter()
-        .filter_map(|path| horizon_platform::mod_package::index::native::Bundle::read(&path).ok())
+        .filter_map(|path| foundry_platform::mod_package::index::native::Bundle::read(&path).ok())
         .filter(|b| java::is_enabled(home, &b.manifest.id))
         .collect()
 }
 
 /// Paths declared by a code package, in manifest order.
-pub fn declared_internals(manifest: &horizon_platform::mod_package::Manifest) -> Vec<String> {
+pub fn declared_internals(manifest: &foundry_platform::mod_package::Manifest) -> Vec<String> {
     manifest
         .internals
         .iter()
@@ -202,9 +202,9 @@ pub struct Installed {
     pub internals: Vec<String>,
     pub origin: Option<crate::github_mods::Origin>,
     /// The validated package icon, or the package error (the file remains removable).
-    pub icon: Result<Option<Arc<horizon_platform::mod_package::icon::Icon>>, String>,
+    pub icon: Result<Option<Arc<foundry_platform::mod_package::icon::Icon>>, String>,
     /// Whether its row may switch `mod.<id>`. Not when the manifest can't be read (the id is
-    /// only the file name), nor for a `horizon-mods/` copy whose id another mod has: either
+    /// only the file name), nor for a `foundry-mods/` copy whose id another mod has: either
     /// would switch that other mod. The file stays removable.
     pub switch: bool,
     /// Whether it is a native mod in the format from before the `.hmod` SDK
@@ -243,7 +243,7 @@ impl Installed {
         self.legacy.then(legacy_note)
     }
 
-    /// Whether the file is in `horizon-native-mods/`; one in `horizon-mods/` is a wasm or
+    /// Whether the file is in `foundry-native-mods/`; one in `foundry-mods/` is a wasm or
     /// content mod, which needs no build and no native permission.
     pub fn native(&self) -> bool {
         self.file
@@ -261,12 +261,12 @@ pub fn asks_for_build<'a>(files: impl IntoIterator<Item = &'a Installed>) -> boo
 
 /// Whether the native `.hmod` at `path` is in the format from before the `.hmod` SDK.
 pub fn legacy_format(path: &Path) -> bool {
-    horizon_platform::mod_package::index::native::legacy_format(path)
+    foundry_platform::mod_package::index::native::legacy_format(path)
 }
 
 /// The manifest id of the `.hmod` at `path` when it declares the removed `[[inject]]`.
 pub fn retired_inject(path: &Path) -> Option<String> {
-    horizon_platform::mod_package::index::native::retired_inject(path)
+    foundry_platform::mod_package::index::native::retired_inject(path)
 }
 
 /// Whether the browser-tracked `file` (relative to the game folder `home`) is a native mod that
@@ -283,7 +283,7 @@ pub fn legacy_note() -> &'static str {
 }
 
 /// Discover the actual files, not just GitHub sidecars. Registry files already have a row.
-/// Besides native files, an `.hmod` copied by hand into `horizon-mods/` is listed too (#18301).
+/// Besides native files, an `.hmod` copied by hand into `foundry-mods/` is listed too (#18301).
 pub fn untracked(home: &Path) -> Vec<Installed> {
     let tracked = crate::browser::installed::Installed::load(home);
     let native = listed(home)
@@ -291,7 +291,7 @@ pub fn untracked(home: &Path) -> Vec<Installed> {
         .map(|path| (native_mods::INSTALLED, path));
     let wasm = wasm_hmods(home)
         .into_iter()
-        .map(|path| (horizon_platform::mod_package::mod_list::DIR, path));
+        .map(|path| (foundry_platform::mod_package::mod_list::DIR, path));
     // A tracked `ruby.hmod` renamed `Ruby.hmod` on a folder that ignores case is still that file:
     // both names resolve to the same entry. On a case-sensitive one they stay two files.
     let tracked_paths: Vec<_> = tracked
@@ -310,7 +310,7 @@ pub fn untracked(home: &Path) -> Vec<Installed> {
             if !path.is_file() || is_tracked {
                 return None;
             }
-            let package = horizon_platform::mod_package::manifest::Package::read(&path);
+            let package = foundry_platform::mod_package::manifest::Package::read(&path);
             // A package refused for the removed `[[inject]]` still names its id, so its row can
             // switch it off, as the build's refusal says to.
             let retired = package.is_err().then(|| retired_inject(&path)).flatten();
@@ -351,7 +351,7 @@ pub fn untracked(home: &Path) -> Vec<Installed> {
     let tracked_ids: Vec<&str> = tracked
         .entries
         .iter()
-        .filter_map(crate::browser::horizon::mod_id)
+        .filter_map(crate::browser::foundry::mod_id)
         .collect();
     // Only ids read from a manifest: an unreadable file's name says nothing about its id.
     let ids: Vec<Option<String>> = rows
@@ -430,7 +430,7 @@ fn parse_built(about: &serde_json::Value) -> Vec<Mod> {
 pub fn fingerprint(home: &Path, version: Option<&str>) -> String {
     let mut out = format!("{}\n{version:?}\n", home.display());
     // The on/off list (`browser::java::is_enabled`).
-    out += &fs::read_to_string(home.join("horizon-mods.txt")).unwrap_or_default();
+    out += &fs::read_to_string(home.join("foundry-mods.txt")).unwrap_or_default();
     for path in listed(home)
         .into_iter()
         .chain(wasm_hmods(home))
@@ -445,7 +445,7 @@ pub fn fingerprint(home: &Path, version: Option<&str>) -> String {
 }
 
 fn wasm_hmods(home: &Path) -> Vec<std::path::PathBuf> {
-    let mut paths: Vec<_> = fs::read_dir(home.join(horizon_platform::mod_package::mod_list::DIR))
+    let mut paths: Vec<_> = fs::read_dir(home.join(foundry_platform::mod_package::mod_list::DIR))
         .into_iter()
         .flatten()
         .flatten()
@@ -540,14 +540,14 @@ mod tests {
         let header = "id='owner'\nname='Owner'\nversion='1.0.0'\napi='0.2'\ncapabilities=['registries']\ninternals=[{path='Game',hash='game'},{path='Game::world',kind='field',hash='world'}]\n";
         for target in [
             format!(
-                "[native]\ngame='26.3'\nhorizon='{}'\nmixins='{}'\n",
+                "[native]\ngame='26.3'\nfoundry='{}'\nmixins='{}'\n",
                 "a".repeat(40),
                 "b".repeat(40)
             ),
             format!("[wasm]\nsha512='{}'\ntoolchain='1.99.1'\n", "0".repeat(128)),
         ] {
             let manifest =
-                horizon_platform::mod_package::Manifest::parse(&format!("{header}{target}"))
+                foundry_platform::mod_package::Manifest::parse(&format!("{header}{target}"))
                     .unwrap();
             assert_eq!(declared_internals(&manifest), ["Game", "Game::world"]);
         }
@@ -556,9 +556,9 @@ mod tests {
     #[test]
     fn wasm_package_changes_invalidate_the_build_view_cache() {
         let home = std::env::temp_dir().join(format!("wasm-build-view-{}", std::process::id()));
-        fs::create_dir_all(home.join(horizon_platform::mod_package::mod_list::DIR)).unwrap();
+        fs::create_dir_all(home.join(foundry_platform::mod_package::mod_list::DIR)).unwrap();
         let package = home
-            .join(horizon_platform::mod_package::mod_list::DIR)
+            .join(foundry_platform::mod_package::mod_list::DIR)
             .join("example.hmod");
         fs::write(&package, b"a").unwrap();
         let before = fingerprint(&home, None);
@@ -585,7 +585,7 @@ mod tests {
         let home = tempfile::tempdir().unwrap();
         let folder = home
             .path()
-            .join(horizon_platform::mod_package::mod_list::DIR);
+            .join(foundry_platform::mod_package::mod_list::DIR);
         fs::create_dir_all(&folder).unwrap();
         // A shared wasm member with the required three exports.
         let mut module = b"\0asm\x01\0\0\0".to_vec();
@@ -597,15 +597,15 @@ mod tests {
         section(1, &[1, 0x60, 0, 0]);
         section(3, &[1, 0]);
         let mut exports = vec![3];
-        for name in ["horizon_layout", "horizon_in", "horizon_hook"] {
+        for name in ["foundry_layout", "foundry_in", "foundry_hook"] {
             exports.push(name.len() as u8);
             exports.extend(name.as_bytes());
             exports.extend([0, 0]);
         }
         section(7, &exports);
         section(10, &[1, 2, 0, 0x0b]);
-        let manifest = format!("id='wasm_test'\nname='Wasm test'\nversion='1.0.0'\napi='0.2'\ncapabilities=['registries']\n[wasm]\nsha512='{}'\ntoolchain='1.99.1'\nbuilt_with='selection fixture'\n", horizon_platform::mod_package::manifest::sha512_of(&module));
-        let bytes = horizon_platform::mod_package::Package::write_files(
+        let manifest = format!("id='wasm_test'\nname='Wasm test'\nversion='1.0.0'\napi='0.2'\ncapabilities=['registries']\n[wasm]\nsha512='{}'\ntoolchain='1.99.1'\nbuilt_with='selection fixture'\n", foundry_platform::mod_package::manifest::sha512_of(&module));
+        let bytes = foundry_platform::mod_package::Package::write_files(
             &manifest,
             &[("mod.wasm", &module)],
         )
@@ -633,10 +633,10 @@ mod tests {
                 .join(format!("{file}.hmod"));
             let mut zip = zip::ZipWriter::new(fs::File::create(path).unwrap());
             let manifest = format!(
-                "id = '{id}'\nname = '{id}'\nversion = '1.2'\napi = '0.2'\ncapabilities = ['registries']\n[native]\ngame = '26.3'\nhorizon = '{pin}'\nmixins = '{pin}'\n"
+                "id = '{id}'\nname = '{id}'\nversion = '1.2'\napi = '0.2'\ncapabilities = ['registries']\n[native]\ngame = '26.3'\nfoundry = '{pin}'\nmixins = '{pin}'\n"
             );
             for (name, bytes) in [
-                ("horizon-mod.toml", manifest.as_str()),
+                ("foundry-mod.toml", manifest.as_str()),
                 (
                     "Cargo.toml",
                     "[package]\nname = 'unrelated'\nversion = '9'\n",
@@ -666,7 +666,7 @@ mod tests {
         .unwrap();
         installed::Installed {
             entries: vec![installed::Entry {
-                source: SourceId::Horizon,
+                source: SourceId::Foundry Client,
                 project: "registry".into(),
                 slug: "registry".into(),
                 title: "Registry mod".into(),
@@ -745,14 +745,14 @@ mod tests {
         let home = tempfile::tempdir().unwrap();
         let folder = home
             .path()
-            .join(horizon_platform::mod_package::mod_list::DIR);
+            .join(foundry_platform::mod_package::mod_list::DIR);
         fs::create_dir_all(&folder).unwrap();
         // Its id would be only its file name, which could be another mod's.
         fs::write(folder.join("ruby.hmod"), b"corrupt").unwrap();
         fs::write(folder.join("Gem.hmod"), b"corrupt").unwrap();
         // A valid copy whose id is the corrupt file's name keeps its switch.
         let mut zip = zip::ZipWriter::new(fs::File::create(folder.join("my-build.hmod")).unwrap());
-        zip.start_file("horizon-mod.toml", zip::write::SimpleFileOptions::default())
+        zip.start_file("foundry-mod.toml", zip::write::SimpleFileOptions::default())
             .unwrap();
         zip.write_all(
             b"id = 'ruby'
@@ -764,7 +764,7 @@ capabilities = ['registries']
         )
         .unwrap();
         zip.finish().unwrap();
-        let entry: installed::Entry = serde_json::from_value(serde_json::json!({"source":"horizon","project":"gem","slug":"gem","title":"Gem","kind":"mod","version":"1","number":"1","file":"horizon-mods/gem.hmod","checksum":"","page":""})).unwrap();
+        let entry: installed::Entry = serde_json::from_value(serde_json::json!({"source":"foundry","project":"gem","slug":"gem","title":"Gem","kind":"mod","version":"1","number":"1","file":"foundry-mods/gem.hmod","checksum":"","page":""})).unwrap();
         installed::Installed {
             entries: vec![entry],
         }
@@ -776,11 +776,11 @@ capabilities = ['registries']
         // mod. A case-sensitive one holds two files.
         let renamed = folder.join("gem.hmod").exists();
         let mut expected = vec![
-            ("horizon-mods/my-build.hmod", true),
-            ("horizon-mods/ruby.hmod", false),
+            ("foundry-mods/my-build.hmod", true),
+            ("foundry-mods/ruby.hmod", false),
         ];
         if !renamed {
-            expected.insert(0, ("horizon-mods/Gem.hmod", false));
+            expected.insert(0, ("foundry-mods/Gem.hmod", false));
         }
         assert_eq!(seen, expected);
     }
@@ -792,12 +792,12 @@ capabilities = ['registries']
         let folder = home.path().join(native_mods::INSTALLED);
         fs::create_dir_all(&folder).unwrap();
         let before = fingerprint(home.path(), None);
-        // As launchers before 0.2.70 installed them (#17934): `horizon-native.json` and
+        // As launchers before 0.2.70 installed them (#17934): `foundry-native.json` and
         // `mixins/<id>/`, which today's package reader refuses.
         for name in ["teem_client-0.1.0.hnmod", "zoom.hnmod"] {
             let mut zip = zip::ZipWriter::new(fs::File::create(folder.join(name)).unwrap());
             zip.start_file(
-                "horizon-native.json",
+                "foundry-native.json",
                 zip::write::SimpleFileOptions::default(),
             )
             .unwrap();
@@ -829,8 +829,8 @@ capabilities = ['registries']
         assert_eq!(
             seen,
             [
-                "horizon-native-mods/teem_client-0.1.0.hnmod",
-                "horizon-native-mods/zoom.hnmod"
+                "foundry-native-mods/teem_client-0.1.0.hnmod",
+                "foundry-native-mods/zoom.hnmod"
             ]
         );
         assert!(
@@ -856,7 +856,7 @@ capabilities = ['registries']
         let mut zip =
             zip::ZipWriter::new(fs::File::create(folder.join("fullbright.hmod")).unwrap());
         zip.start_file(
-            "horizon-native.json",
+            "foundry-native.json",
             zip::write::SimpleFileOptions::default(),
         )
         .unwrap();
@@ -877,7 +877,7 @@ capabilities = ['registries']
         fs::create_dir_all(&folder).unwrap();
         let pin = "a".repeat(40);
         let mut manifest = format!(
-            "id = {id}\nname = 'Tick'\nversion = '1.0'\napi = '0.2'\ncapabilities = ['registries']\n[native]\ngame = '26.3'\nhorizon = '{pin}'\nmixins = '{pin}'\n"
+            "id = {id}\nname = 'Tick'\nversion = '1.0'\napi = '0.2'\ncapabilities = ['registries']\n[native]\ngame = '26.3'\nfoundry = '{pin}'\nmixins = '{pin}'\n"
         );
         if inject {
             manifest +=
@@ -886,7 +886,7 @@ capabilities = ['registries']
         let mut zip =
             zip::ZipWriter::new(fs::File::create(folder.join(format!("{file}.hmod"))).unwrap());
         for (name, bytes) in [
-            ("horizon-mod.toml", manifest.as_str()),
+            ("foundry-mod.toml", manifest.as_str()),
             (
                 "Cargo.toml",
                 "[package]\nname = 'tick'\nversion = '1.0.0'\n",
@@ -1000,7 +1000,7 @@ capabilities = ['registries']
         fs::create_dir_all(&folder).unwrap();
         let mut zip = zip::ZipWriter::new(fs::File::create(folder.join("zoom.hnmod")).unwrap());
         zip.start_file(
-            "horizon-native.json",
+            "foundry-native.json",
             zip::write::SimpleFileOptions::default(),
         )
         .unwrap();
@@ -1020,10 +1020,10 @@ capabilities = ['registries']
         let pin = "a".repeat(40);
         let mut zip = zip::ZipWriter::new(fs::File::create(folder.join("zoom.hmod")).unwrap());
         let manifest = format!(
-            "id = 'zoom'\nname = 'zoom'\nversion = '1.0'\napi = '0.2'\ncapabilities = ['registries']\n[native]\ngame = '26.3'\nhorizon = '{pin}'\nmixins = '{pin}'\n"
+            "id = 'zoom'\nname = 'zoom'\nversion = '1.0'\napi = '0.2'\ncapabilities = ['registries']\n[native]\ngame = '26.3'\nfoundry = '{pin}'\nmixins = '{pin}'\n"
         );
         for (name, bytes) in [
-            ("horizon-mod.toml", manifest.as_str()),
+            ("foundry-mod.toml", manifest.as_str()),
             (
                 "Cargo.toml",
                 "[package]\nname = 'zoom'\nversion = '1.0.0'\n",
@@ -1050,8 +1050,8 @@ capabilities = ['registries']
         assert_eq!(
             rows,
             [
-                ("horizon-native-mods/zoom.hmod", "zoom", false, false),
-                ("horizon-native-mods/zoom.hnmod", "zoom", true, true)
+                ("foundry-native-mods/zoom.hmod", "zoom", false, false),
+                ("foundry-native-mods/zoom.hnmod", "zoom", true, true)
             ]
         );
         assert!(asks_for_build(&files));
@@ -1065,8 +1065,8 @@ capabilities = ['registries']
         assert_eq!(
             switches,
             [
-                ("horizon-native-mods/zoom.hmod".to_owned(), true),
-                ("horizon-native-mods/zoom.hnmod".to_owned(), false)
+                ("foundry-native-mods/zoom.hmod".to_owned(), true),
+                ("foundry-native-mods/zoom.hnmod".to_owned(), false)
             ]
         );
     }
@@ -1130,7 +1130,7 @@ capabilities = ['registries']
     #[test]
     fn native_mods_json_gives_the_built_mods() {
         let about = serde_json::json!({
-            "base": "v0.1.0", "horizon": "abc", "rust": "1.99.1",
+            "base": "v0.1.0", "foundry": "abc", "rust": "1.99.1",
             "mods": [{"id": "zoom", "version": "2.1"}, {"id": "x"}, {"id": "y", "version": "1", "sha256": "ab"}],
         });
         assert_eq!(parse_built(&about), [m("zoom", "2.1"), d("y", "1", "ab")]);
@@ -1151,32 +1151,32 @@ capabilities = ['registries']
 
     #[test]
     fn builds_name_the_horizon_they_were_built_on() {
-        assert_eq!(horizon_label("v0.2.93"), "v0.2.93");
+        assert_eq!(foundry_label("v0.2.93"), "v0.2.93");
         assert_eq!(
-            horizon_label("nightly-2026-10-29-4baa571"),
+            foundry_label("nightly-2026-10-29-4baa571"),
             "Nightly 2026-10-29"
         );
-        assert_eq!(horizon_label("nightly-2026-10-29"), "Nightly 2026-10-29");
+        assert_eq!(foundry_label("nightly-2026-10-29"), "Nightly 2026-10-29");
         let build = Build {
             base: "nightly-2026-10-28-0c02067".into(),
             ..Build::default()
         };
-        assert_eq!(build.horizon(), "Nightly 2026-10-28");
-        assert_eq!(build.horizon_short(), "Nightly 10-28");
+        assert_eq!(build.foundry(), "Nightly 2026-10-28");
+        assert_eq!(build.foundry_short(), "Nightly 10-28");
         let release = Build {
             base: "v0.2.93".into(),
             ..Build::default()
         };
-        assert_eq!(release.horizon_short(), "v0.2.93");
+        assert_eq!(release.foundry_short(), "v0.2.93");
         assert_eq!(Build::read("v0.1.0"), None, "not a native build");
     }
 
     /// A build from before pins were recorded that compiled another commit than its Nightly's
     #[test]
     fn only_hmods_in_the_native_folder_are_native() {
-        assert!(is_native_file("horizon-native-mods/veinminer.hmod"));
-        assert!(!is_native_file("horizon-native-mods-old/x.hmod"));
-        assert!(!is_native_file("horizon-mods/zoom.hmod"));
+        assert!(is_native_file("foundry-native-mods/veinminer.hmod"));
+        assert!(!is_native_file("foundry-native-mods-old/x.hmod"));
+        assert!(!is_native_file("foundry-mods/zoom.hmod"));
         assert!(!is_native_file("resourcepacks/x.zip"));
     }
 

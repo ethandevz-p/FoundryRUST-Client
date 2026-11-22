@@ -1,4 +1,4 @@
-"""A client profiles the server it joined over horizon:perf (docs/perf-platform.md section 4.2): a dedicated Horizon server and a vanilla one."""
+"""A client profiles the server it joined over foundry:perf (docs/perf-platform.md section 4.2): a dedicated Foundry Client server and a vanilla one."""
 import argparse
 import gzip
 import json
@@ -34,7 +34,7 @@ def ctl_for(bins, work, env):
     socket = work / 'c.sock'
 
     def ctl(*words, expect_error=False):
-        result = subprocess.run([str(bins / f'horizon-ctl{EXE}'), '--socket', str(socket), *map(str, words)],
+        result = subprocess.run([str(bins / f'foundry-ctl{EXE}'), '--socket', str(socket), *map(str, words)],
                                 cwd=work, env=env, capture_output=True, text=True, timeout=600)
         lines = result.stdout.strip().splitlines()
         reply = json.loads(lines[-1]) if lines else {'error': result.stderr.strip()}
@@ -60,13 +60,13 @@ def client_capture(bins, ctl, work, seconds):
     file = work / started['path']
     if not file.exists():
         file = next(iter(sorted(work.rglob(Path(started['path']).name))), file)
-    perf = lambda op: json.loads(subprocess.run([str(bins / f'horizon-perf{EXE}'), 'query', op, str(file)], capture_output=True,
+    perf = lambda op: json.loads(subprocess.run([str(bins / f'foundry-perf{EXE}'), 'query', op, str(file)], capture_output=True,
                                                 text=True, timeout=60).stdout)['rows']
     return [row['code'] for row in perf('warnings') if row['side'] == 'client'], [row['name'] for row in perf('marks')]
 
 
 def perf_rows(bins, file, op):
-    out = subprocess.run([str(bins / f'horizon-perf{EXE}'), 'query', op, str(file)], capture_output=True, text=True, timeout=60)
+    out = subprocess.run([str(bins / f'foundry-perf{EXE}'), 'query', op, str(file)], capture_output=True, text=True, timeout=60)
     return json.loads(out.stdout)['rows']
 
 
@@ -91,9 +91,9 @@ def join(bins, resources, port):
 def check_horizon(bins, resources, scratch, out):
     """Operator level 4 gets a capture in the server's reports/, a deopped player is refused, the log names the player."""
     port = lab.free_port()
-    folder = scratch / 'horizon'
-    command = [bins / f'horizon-client{EXE}', '--resources', lab.RESOURCES, '--dedicated', '--nogui']
-    server = start_server(command, folder, dict(PROPERTIES, **{'server-port': str(port)}), out / 'horizon-server.log')
+    folder = scratch / 'foundry'
+    command = [bins / f'foundry-client{EXE}', '--resources', lab.RESOURCES, '--dedicated', '--nogui']
+    server = start_server(command, folder, dict(PROPERTIES, **{'server-port': str(port)}), out / 'foundry-server.log')
     work = ctl = None
     try:
         work, ctl = join(bins, resources, port)
@@ -113,7 +113,7 @@ def check_horizon(bins, resources, scratch, out):
         started = ctl('profile', 'server', 'start', '--seconds', 30, '--no-samples')
         if started['sides'] != ['server'] or not started['path'].startswith('reports/profile-'):
             raise Failed(f'start: {started}')
-        server.console('horizon-report 5')
+        server.console('foundry-report 5')
         if not any('already being recorded' in l for l in server.since(0)):
             time.sleep(1)
         if not any('already being recorded' in l for l in server.since(0)):
@@ -177,7 +177,7 @@ def check_horizon(bins, resources, scratch, out):
         files = sorted(p.name for p in reports.glob('profile-*.hzperf'))
         if len(files) != 5:
             raise Failed(f'the server holds {files}')
-        print(f'horizon: the server kept {files}')
+        print(f'foundry: the server kept {files}')
     finally:
         if ctl:
             try:
@@ -190,7 +190,7 @@ def check_horizon(bins, resources, scratch, out):
 
 
 def check_vanilla(bins, resources, scratch, out):
-    """A server that is not Horizon: the request is refused before it is sent, and a bare capture holds the client side."""
+    """A server that is not Foundry Client: the request is refused before it is sent, and a bare capture holds the client side."""
     jar = lab.LOCAL / 'minecraft' / lab.VERSION / 'jars' / 'server.jar'
     if not jar.exists():
         print('vanilla: skipped, no server jar')
@@ -203,7 +203,7 @@ def check_vanilla(bins, resources, scratch, out):
     try:
         work, ctl = join(bins, resources, port)
         why = ctl('profile', 'server', 'start', expect_error=True)['error']
-        if "isn't running Horizon" not in why:
+        if "isn't running Foundry Client" not in why:
             raise Failed(f'a vanilla server: {why}')
         codes, marks = client_capture(bins, ctl, work, 2)
         if codes != ['WARNING_CODE_SERVER_NOT_HORIZON'] or marks:

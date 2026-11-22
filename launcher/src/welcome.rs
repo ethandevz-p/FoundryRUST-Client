@@ -4,7 +4,7 @@
 //! so a choice made here is the same one Settings shows later.
 use super::*;
 use crate::glass_ui::{self as ui, white};
-use horizon_theme::glass::{ink, radius};
+use foundry_theme::glass::{ink, radius};
 
 impl Launcher {
     /// Whether the welcome covers the window: a first run (the data question not answered yet),
@@ -35,7 +35,7 @@ impl Launcher {
                 .flex_col()
                 .gap(px(6.))
                 .child(tr(
-                    "While you play, the game tells Horizon you're playing, so the launcher can show how many people play right now. It's anonymous, it's on now, and you can turn it off here or in Settings.",
+                    "While you play, the game tells Foundry Client you're playing, so the launcher can show how many people play right now. It's anonymous, it's on now, and you can turn it off here or in Settings.",
                 ))
                 .child(
                     div()
@@ -77,12 +77,12 @@ impl Launcher {
             .pb(px(14.))
             .child(
                 div()
-                    .font_family(horizon_theme::glass::DISPLAY_FONT)
+                    .font_family(foundry_theme::glass::DISPLAY_FONT)
                     .font_weight(FontWeight::SEMIBOLD)
                     .text_size(px(28.))
                     .line_height(px(34.))
                     .text_color(white(ink::FULL))
-                    .child(tr("Make Horizon yours")),
+                    .child(tr("Make Foundry Client yours")),
             )
             .child(ui::text(14., FontWeight::NORMAL, ink::BODY).child(tr(
                 "Pick a look to start with. The \"I'm playing\" ping is already on; you can turn it off below. You can change all of this later in Settings.",
@@ -149,7 +149,7 @@ impl Launcher {
                     .gap(px(2.))
                     .children(self.installing.as_ref().map(|(_, p)| {
                         ui::text(13., FontWeight::NORMAL, ink::BODY).child(trf(
-                            "Installing Horizon… {percent}%",
+                            "Installing Foundry Client… {percent}%",
                             &[(
                                 "percent",
                                 &((p.clamp(0., 1.) * 100.).round() as u32).to_string(),
@@ -165,7 +165,7 @@ impl Launcher {
                 button("welcome-calm", "Fewer effects", Kind::Secondary, &t)
                     .tooltip(ui::tip(tr("Turns off glow, gradients and shine")))
                     .on_click(cx.listener(|this, _: &ClickEvent, _, cx| {
-                        this.settings.effects = horizon_launcher::effects::Effects::CALM;
+                        this.settings.effects = foundry_launcher::effects::Effects::CALM;
                         this.save_settings();
                         cx.notify();
                     })),

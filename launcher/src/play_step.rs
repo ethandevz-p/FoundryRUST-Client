@@ -1,7 +1,7 @@
 //! The step Play is on before the game's process exists, as the start's threads say it. Checking
 //! the assets, updating registry mods, reading the sign-in, a pack's carried mods and the Java
 //! jars can take minutes on a modded instance, and the window said only "Starting".
-use horizon_launcher::backend::{self, Msg};
+use foundry_launcher::backend::{self, Msg};
 use std::sync::mpsc::Sender;
 
 /// Says the start's step: a line on stderr, so a terminal run shows where Play stops (#12179),

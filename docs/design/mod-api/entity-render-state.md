@@ -1,17 +1,17 @@
 # Design: entity render state
 
-Provisional answer to [arismoko/horizon#897](https://github.com/arismoko/horizon/issues/897):
+Provisional answer to [arismoko/foundry#897](https://github.com/arismoko/foundry/issues/897):
 introduce one owner-thread entity preparation operation, after complete base and
 specialized extraction and before model posing or geometry emission. All entity
 routes call it. Extend the frame-owned store accepted in
-[PR arismoko/horizon#2357](https://github.com/arismoko/horizon/pull/2357), rather than adding an
+[PR arismoko/foundry#2357](https://github.com/arismoko/foundry/pull/2357), rather than adding an
 entity cache, callback bus or second lifetime system. This is a proposal, not an
 implemented API. That page/store is absent at this checkout (`5166fe4588`);
 its implementation is a prerequisite, not presumed landed.
 
 ## Vanilla and NeoForge 26.3
 
-Verified using `/workspace/horizon`: `python3 tools/rea_vanilla.py method
+Verified using `/workspace/foundry`: `python3 tools/rea_vanilla.py method
 net.minecraft.client.renderer.entity.EntityRenderer extractRenderState`.
 Vanilla copies type, interpolated position, invisibility, age, dimensions,
 name/leash data, fire, outline and packed light into state. The corresponding
@@ -26,7 +26,7 @@ The issue requests `RegisterRenderStateModifiersEvent`. The public
 was inaccessible. Exact registration types, callback order, threading, field
 coverage and limits are **unverified**. Obtain public documentation before
 adopting the final counterpart contract. No NeoForge source, patches or other
-project renderer source was read. The limits below are Horizon proposals.
+project renderer source was read. The limits below are Foundry Client proposals.
 
 ## Verified routes and preparation boundary
 
@@ -35,12 +35,12 @@ points, not existing extracted-state implementations.
 
 | Route | File:line owner | Required treatment |
 | --- | --- | --- |
-| Mob library rendering | `crates/horizon-client/src/mobs/render.rs:1487`, `:1503` | Split extraction from render/render_with; consume prepared values only |
-| Gameplay mob and remote-player geometry | `crates/horizon-client/src/game/mobs/creatures/mod.rs:8016`, `:8134`, `:8215` | Prepare before replacement hooks, body, layers and outlines; never fire separately per layer |
-| Own-player geometry | `crates/horizon-client/src/game/interface/perspective.rs:786` | Use the same operation before player replacement and built-in posing |
-| Existing replacement adapters | `crates/horizon-client/src/game/modding/native_mob_draw.rs:53`, `:71` | Read the prepared snapshot; do not redispatch modifiers |
-| Frame preparation and consumer | `crates/horizon-client/src/game.rs:15048`, `:15720`, `:15040` | Collect prepared records into the existing frame packet before freeze and consumption |
-| Frame owner | `crates/horizon-client-render/src/gfx.rs:1104` | Extend arismoko/horizon#2357 ownership and leases, not a parallel store |
+| Mob library rendering | `crates/foundry-client/src/mobs/render.rs:1487`, `:1503` | Split extraction from render/render_with; consume prepared values only |
+| Gameplay mob and remote-player geometry | `crates/foundry-client/src/game/mobs/creatures/mod.rs:8016`, `:8134`, `:8215` | Prepare before replacement hooks, body, layers and outlines; never fire separately per layer |
+| Own-player geometry | `crates/foundry-client/src/game/interface/perspective.rs:786` | Use the same operation before player replacement and built-in posing |
+| Existing replacement adapters | `crates/foundry-client/src/game/modding/native_mob_draw.rs:53`, `:71` | Read the prepared snapshot; do not redispatch modifiers |
+| Frame preparation and consumer | `crates/foundry-client/src/game.rs:15048`, `:15720`, `:15040` | Collect prepared records into the existing frame packet before freeze and consumption |
+| Frame owner | `crates/foundry-client-render/src/gfx.rs:1104` | Extend arismoko/foundry#2357 ownership and leases, not a parallel store |
 
 First decide the view and candidate using existing visibility policy. Capture a
 complete API-owned base plus supported specialized record; fire the matching
@@ -70,7 +70,7 @@ supported state capability, not renderer implementation classes. Return named
 refusal only for this registrar's explicit type declarations.
 
 Use API-owned EntityRenderStateWire records: fixed-width scalars, enums, vectors,
-resolved resource keys and bounded custom fields using arismoko/horizon#2357's Wire schema.
+resolved resource keys and bounded custom fields using arismoko/foundry#2357's Wire schema.
 No engine Mob, pointers, Any, GPU handles or mutable live references cross the
 adapter. Start with presentation fields such as tint, scale, outline and supported
 pose inputs. Identity, type and lifetime are immutable. A dependent listener sees
@@ -78,11 +78,11 @@ the previous listener's validated result. Existing replacement hooks remain
 separate drawing moments and consume that same result without another modifier
 call. DrawContext exposes immutable snapshot reads; workers never call mods.
 
-Add entity records as a namespace inside arismoko/horizon#2357's frame-owned store, keyed by
+Add entity records as a namespace inside arismoko/foundry#2357's frame-owned store, keyed by
 view and the existing entity lifecycle holder. Never create a second entity
 generation. Preview records use frame-local occurrence identity, not fabricated
 persistent entity handles. Reuse frame/world/resource/target/mod epoch checks,
-freeze, deferred-consumer leases, backpressure and teardown from arismoko/horizon#2357. Values
+freeze, deferred-consumer leases, backpressure and teardown from arismoko/foundry#2357. Values
 reset each frame. One entity in two views has two records; body, armor, outline
 and shadow consumers in the same prepared view share one record. Reload or
 lifetime change before apply refuses publication rather than recomputing.
@@ -95,7 +95,7 @@ No additional transaction or identity mechanism belongs in this feature.
 
 ## Untrusted input, bounds and cost
 
-Inherit arismoko/horizon#2357's slot, byte, nesting and in-flight ceilings, charged to the same
+Inherit arismoko/foundry#2357's slot, byte, nesting and in-flight ceilings, charged to the same
 frame budget. Proposed additional custom data ceiling: 4 KiB/entity/mod and
 256 custom fields, counted in the shared per-mod/frame budget. Do not cap the
 number of vanilla entities or truncate vanilla extracted fields to meet a mod
@@ -144,8 +144,8 @@ Future implementation expectations, not results of runtime tests in this note.
 
 ## Proposed stages (file none)
 
-1. Approve this boundary and verify public counterpart semantics; finish the vanilla and Horizon world/UI caller census.
-2. Implement arismoko/horizon#2357's shared frame store and snapshot-only draw boundary; add entity records within it and split all accepted routes into extraction and consumption.
+1. Approve this boundary and verify public counterpart semantics; finish the vanilla and Foundry Client world/UI caller census.
+2. Implement arismoko/foundry#2357's shared frame store and snapshot-only draw boundary; add entity records within it and split all accepted routes into extraction and consumption.
 3. Add the registrar, catalog and generated native/wasm adapters together, then demonstrate a type-specific visible modification and run the matrix plus unused-path allocation measurements.
 
 ## Open questions

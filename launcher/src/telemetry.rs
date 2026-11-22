@@ -1,14 +1,14 @@
-//! Opt-in data collection from the launcher (`horizon_telemetry`): the player's answer, what
+//! Opt-in data collection from the launcher (`foundry_telemetry`): the player's answer, what
 //! would be sent, deleting it, bug reports and benchmark uploads, and sending the outbox when
 //! the launcher starts and closes. The window, the CLI and the MCP server all go through here.
 //! Also the live count's side here: what the "I'm playing" ping holds, in words, and reading
-//! how many play now (`horizon_telemetry::live`).
+//! how many play now (`foundry_telemetry::live`).
 use std::path::{Path, PathBuf};
 
-use horizon_telemetry::payload::{Bug, Crash, Perf, System, Timings};
-use horizon_telemetry::scrub::Scrubber;
-use horizon_telemetry::upload::{self, Flush};
-use horizon_telemetry::{outbox, Choices, Consent, Item, Kind, Payload, Source};
+use foundry_telemetry::payload::{Bug, Crash, Perf, System, Timings};
+use foundry_telemetry::scrub::Scrubber;
+use foundry_telemetry::upload::{self, Flush};
+use foundry_telemetry::{outbox, Choices, Consent, Item, Kind, Payload, Source};
 
 use crate::{account::Accounts, backend};
 
@@ -20,14 +20,14 @@ pub const SWITCHES: [(Kind, &str, &str, &str); 4] = [
     (
         Kind::Perf,
         "Performance statistics",
-        "How smoothly Horizon runs on your computer, so slowdowns can be found and fixed.",
+        "How smoothly Foundry Client runs on your computer, so slowdowns can be found and fixed.",
         "After each session: frame-time percentiles and a 14-bucket histogram, tick times, peak memory and startup times, with your machine (OS, CPU and its cores and clocks, memory size, GPU, its memory and driver, drive type, screen size and refresh rate, laptop or desktop, on battery or not) and the settings that change performance.",
     ),
     (
         Kind::Crash,
         "Crash reports",
         "A short report when the game crashes, so the crash can be fixed.",
-        "When the game crashes: the error, where in Horizon's code it happened, your graphics adapter and settings. No log, no world or server, no user name in paths.",
+        "When the game crashes: the error, where in Foundry Client's code it happened, your graphics adapter and settings. No log, no world or server, no user name in paths.",
     ),
     (
         Kind::Bug,
@@ -39,7 +39,7 @@ pub const SWITCHES: [(Kind, &str, &str, &str); 4] = [
         Kind::Benchmark,
         "Benchmark uploads",
         "Your benchmark results, for the community results page.",
-        "The results of benchmarks you run, for the community results on playhorizon.dev.",
+        "The results of benchmarks you run, for the community results on playfoundry.dev.",
     ),
 ];
 
@@ -48,24 +48,24 @@ pub const NEVER: &str = "Never sent: your account name or UUID, world names, ser
 
 /// The anonymous "I'm playing" ping the game sends (Ludovic's decision, 2026-10-22: count
 /// everyone, and tell them). On by default as upstream; this launcher also lets the player turn
-/// it off (`Settings::ping_off`), then starts the game with `HORIZON_NO_HEARTBEAT`. Shown on the
+/// it off (`Settings::ping_off`), then starts the game with `FOUNDRY_NO_HEARTBEAT`. Shown on the
 /// first-run welcome and question, in Settings, and once on the Play page to players who
 /// answered before it existed.
 pub const PING_NAME: &str = "\"I'm playing\" ping";
-pub const PING_SUMMARY: &str = "Tells Horizon, anonymously, that you're playing, so the launcher can show how many people play right now.";
-pub const PING: &str = "While you play, the game sends an anonymous \"I'm playing\" ping once a minute, so the launcher can show how many people play Horizon right now. It holds: a random number made when the game starts and forgotten when it closes, the Horizon version, your OS (Linux, macOS or Windows), and whether you have a world open to LAN or friends. It doesn't hold: your account, your install ID, world or server names, or anything you do in the game, and the server doesn't keep your IP address. It is on unless you turn it off.";
+pub const PING_SUMMARY: &str = "Tells Foundry Client, anonymously, that you're playing, so the launcher can show how many people play right now.";
+pub const PING: &str = "While you play, the game sends an anonymous \"I'm playing\" ping once a minute, so the launcher can show how many people play Foundry Client right now. It holds: a random number made when the game starts and forgotten when it closes, the Foundry Client version, your OS (Linux, macOS or Windows), and whether you have a world open to LAN or friends. It doesn't hold: your account, your install ID, world or server names, or anything you do in the game, and the server doesn't keep your IP address. It is on unless you turn it off.";
 
 /// The game sends the [`PING`] unless the player turned it off (`Settings::ping_off`).
 pub fn ping_only_if_allowed(cmd: &mut std::process::Command, allowed: bool) {
     if !allowed {
-        cmd.env("HORIZON_NO_HEARTBEAT", "1");
+        cmd.env("FOUNDRY_NO_HEARTBEAT", "1");
     }
 }
 
-/// How many play Horizon now (exact), if the server says.
+/// How many play Foundry Client now (exact), if the server says.
 pub fn playing_now() -> Option<u64> {
-    let endpoint = horizon_telemetry::endpoint()?;
-    horizon_telemetry::live::fetch(&endpoint)
+    let endpoint = foundry_telemetry::endpoint()?;
+    foundry_telemetry::live::fetch(&endpoint)
         .ok()
         .map(|count| count.playing)
 }
@@ -81,12 +81,12 @@ pub fn stats_url(website: &str) -> Option<String> {
 /// Sends [`playing_now`] to the window as `Msg::Playing` now and every minute, on its own
 /// thread. Nothing at all when sending is turned off.
 pub fn watch_playing(tx: std::sync::mpsc::Sender<backend::Msg>) {
-    if horizon_telemetry::endpoint().is_none() {
+    if foundry_telemetry::endpoint().is_none() {
         return;
     }
     std::thread::spawn(move || {
         while tx.send(backend::Msg::Playing(playing_now())).is_ok() {
-            std::thread::sleep(horizon_telemetry::live::INTERVAL);
+            std::thread::sleep(foundry_telemetry::live::INTERVAL);
         }
     });
 }
@@ -110,10 +110,10 @@ fn official_server() -> String {
 
 /// A server's players by its server-list status ping, as the game's Multiplayer list sends it
 /// (through the address's SRV record), with a 3-second timeout. None when it doesn't answer.
-pub fn server_players(address: &str) -> Option<horizon_telemetry::server_status::Players> {
-    let (host, port) = horizon_telemetry::server_status::split_address(address)?;
-    let (host, port) = horizon_platform::protocol::server_redirect(&host, port);
-    horizon_telemetry::server_status::players_at(
+pub fn server_players(address: &str) -> Option<foundry_telemetry::server_status::Players> {
+    let (host, port) = foundry_telemetry::server_status::split_address(address)?;
+    let (host, port) = foundry_platform::protocol::server_redirect(&host, port);
+    foundry_telemetry::server_status::players_at(
         address,
         (&host, port),
         std::time::Duration::from_secs(3),
@@ -128,10 +128,10 @@ pub fn official_players(address: &str) -> Option<u64> {
 }
 
 /// Sends [`official_players`] to the window as `Msg::OfficialPlayers` now and every minute, on
-/// its own thread. Nothing when `HORIZON_TELEMETRY_URL=off` (tests and automated runs) turns the
+/// its own thread. Nothing when `FOUNDRY_TELEMETRY_URL=off` (tests and automated runs) turns the
 /// live count off too.
 pub fn watch_official(tx: std::sync::mpsc::Sender<backend::Msg>) {
-    if horizon_telemetry::endpoint().is_none() {
+    if foundry_telemetry::endpoint().is_none() {
         return;
     }
     std::thread::spawn(move || {
@@ -141,7 +141,7 @@ pub fn watch_official(tx: std::sync::mpsc::Sender<backend::Msg>) {
             )))
             .is_ok()
         {
-            std::thread::sleep(horizon_telemetry::live::INTERVAL);
+            std::thread::sleep(foundry_telemetry::live::INTERVAL);
         }
     });
 }
@@ -193,8 +193,8 @@ pub fn preview() -> (String, String) {
             "v2026.10.15",
             Payload::Crash(Crash {
                 system: system.clone(),
-                error: "panicked at crates/horizon-client/src/game.rs:120:9: …".into(),
-                stack: "horizon_client::game::Game::tick (crates/horizon-client/src/game.rs:120:9)"
+                error: "panicked at crates/foundry-client/src/game.rs:120:9: …".into(),
+                stack: "foundry_client::game::Game::tick (crates/foundry-client/src/game.rs:120:9)"
                     .into(),
                 thread: "Render thread".into(),
                 details: vec![("Graphics".into(), "Apple M4 Pro (Metal)".into())],
@@ -211,7 +211,7 @@ pub fn preview() -> (String, String) {
         ),
     ];
     let json = serde_json::to_string_pretty(&serde_json::json!({
-        "schema": horizon_telemetry::SCHEMA,
+        "schema": foundry_telemetry::SCHEMA,
         "install_id": consent().install_id,
         "items": examples,
     }))
@@ -231,7 +231,7 @@ pub fn with_example_gpu(mut system: System) -> System {
     system.vram_mb = 8192;
     system.driver = "example: 570.86".into();
     system.backend = "Vulkan".into();
-    system.display = Some(horizon_telemetry::payload::Display {
+    system.display = Some(foundry_telemetry::payload::Display {
         width: 1920,
         height: 1080,
         refresh_hz: 60,
@@ -247,10 +247,10 @@ pub fn delete_my_data() -> Result<String, String> {
     let home = home();
     let mut consent = Consent::load(&home);
     outbox::clear(&home).map_err(|e| e.to_string())?;
-    let remote = match horizon_telemetry::endpoint() {
+    let remote = match foundry_telemetry::endpoint() {
         _ if consent.install_id.is_empty() => "Nothing was ever sent from here.",
         None => {
-            "Sending is turned off here (HORIZON_TELEMETRY_URL=off), so the server was not asked."
+            "Sending is turned off here (FOUNDRY_TELEMETRY_URL=off), so the server was not asked."
         }
         Some(url) => {
             upload::delete_remote(&url, &consent.install_id)
@@ -329,8 +329,8 @@ pub fn submit(item: &Item) -> Result<String, String> {
     }
     Ok(match send() {
         Flush::Sent { .. } => "Sent. Thank you.".into(),
-        Flush::Nothing if horizon_telemetry::endpoint().is_none() => {
-            "Kept; sending is turned off here (HORIZON_TELEMETRY_URL=off).".into()
+        Flush::Nothing if foundry_telemetry::endpoint().is_none() => {
+            "Kept; sending is turned off here (FOUNDRY_TELEMETRY_URL=off).".into()
         }
         _ => "Kept; it will be sent the next time the launcher starts.".into(),
     })
@@ -356,7 +356,7 @@ pub fn label(kind: Kind) -> &'static str {
 
 /// Sends what is waiting, if there is a server and the player allows it.
 pub fn send() -> Flush {
-    match horizon_telemetry::endpoint() {
+    match foundry_telemetry::endpoint() {
         Some(url) => upload::flush(&home(), &url),
         None => Flush::Nothing,
     }
@@ -377,7 +377,7 @@ pub fn status_json() -> serde_json::Value {
         "choices": consent.choices,
         "install_id": consent.install_id,
         "waiting": outbox::pending(&home()).len(),
-        "server": horizon_telemetry::endpoint(),
+        "server": foundry_telemetry::endpoint(),
         "ping": PING,
     })
 }
@@ -434,13 +434,13 @@ mod tests {
     #[test]
     #[ignore = "asks the live official server"]
     fn official_count_follows_the_srv_record() {
-        let (host, port) = horizon_platform::protocol::server_redirect(
+        let (host, port) = foundry_platform::protocol::server_redirect(
             crate::server_list::OFFICIAL_ADDRESS,
             25565,
         );
         assert_eq!(
             (host.trim_end_matches('.'), port),
-            ("play.playhorizon.dev", 24454)
+            ("play.playfoundry.dev", 24454)
         );
         assert!(official_players(crate::server_list::OFFICIAL_ADDRESS).is_some());
         assert_eq!(official_players(""), None);
@@ -449,12 +449,12 @@ mod tests {
     #[test]
     fn the_stats_page_is_on_the_website() {
         assert_eq!(
-            stats_url("https://playhorizon.dev").as_deref(),
-            Some("https://playhorizon.dev/stats")
+            stats_url("https://playfoundry.dev").as_deref(),
+            Some("https://playfoundry.dev/stats")
         );
         assert_eq!(
-            stats_url("https://example.org/horizon/").as_deref(),
-            Some("https://example.org/horizon/stats")
+            stats_url("https://example.org/foundry/").as_deref(),
+            Some("https://example.org/foundry/stats")
         );
         assert_eq!(stats_url(""), None);
         assert_eq!(stats_url("javascript:alert(1)"), None);

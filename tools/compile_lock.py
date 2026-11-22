@@ -45,7 +45,7 @@ decided from it. Its reader caps it at INFO_MAX bytes and passes it through an a
 If a lock file is replaced while held, two compiles can overlap, as before this change.
 
 Active only where RUNNER_ENVIRONMENT is self-hosted on macOS (the runner sets it for every job), or where
-HORIZON_COMPILE_LOCK_DIR names a folder (tests). The role `off` leaves a job out.
+FOUNDRY_COMPILE_LOCK_DIR names a folder (tests). The role `off` leaves a job out.
 
 Usage as a wrapper (game-build.yml and tools/ci/vanilla-data.sh, through tools/ci/compile-lock.sh): this process
 holds the turn and runs the command as a child in its own process group, which never inherits the lock's
@@ -62,14 +62,14 @@ import sys
 import threading
 import time
 
-LOCK_DIR = "/Users/Shared/horizon-compile-lock"
+LOCK_DIR = "/Users/Shared/foundry-compile-lock"
 # Each role's longest wait, in seconds: for a priority role, all of a job's waits together (BUDGET_FILE); for a pull
 # request, all waits of one Turn (a prebuild's first and those after giving the turn back). parity-main 20 min of its
 # job's 360; a Mac build job 60 (Mac build legs 180, exporters 150, the launcher's Mac leg on main 90); a pull
 # request's parity job 60 per prebuild of its 240 (the frame_identity step is a second prebuild).
 WAIT = {"main": 20 * 60, "build": 60 * 60, "pr": 60 * 60}
 PRIORITY = {"main", "build"}
-BUDGET_FILE = "horizon-compile-lock-waited"  # under RUNNER_TEMP: the seconds this job's priority waits took
+BUDGET_FILE = "foundry-compile-lock-waited"  # under RUNNER_TEMP: the seconds this job's priority waits took
 BUDGET_MAX = 16  # bytes a budget record may have
 PROBE_TIMEOUT = 5.0  # seconds a ps listing of a process group may take
 HURRIED_KILL_WAIT = 2.0  # seconds a hurried group stop waits after SIGKILL, its probes included
@@ -160,7 +160,7 @@ class Turn:
         self.role = role
         temp = environ.get("RUNNER_TEMP")
         self.budget_file = os.path.join(temp, BUDGET_FILE) if temp and role in PRIORITY else None
-        folder = folder or environ.get("HORIZON_COMPILE_LOCK_DIR")
+        folder = folder or environ.get("FOUNDRY_COMPILE_LOCK_DIR")
         self.on = role != "off" and bool(folder or active(environ, platform or sys.platform))
         self.path = folder or LOCK_DIR
         self.clock, self.sleep = clock, sleep

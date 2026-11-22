@@ -8,7 +8,7 @@ keep the results of two runs to compare them (below).
 ## What is measured
 
 Each workload is fixed and seeded, built by the benchmark itself on a server `Game`
-(`crates/horizon-client/src/game/runtime/hot_paths/`), in the release profile players get (ThinLTO). Every number
+(`crates/foundry-client/src/game/runtime/hot_paths/`), in the release profile players get (ThinLTO). Every number
 is divided by the workload's operations.
 
 | Workload | What runs | One operation |
@@ -58,9 +58,9 @@ already produce, so that a run costs only the measuring and can follow every mer
 It needs the prepared resources ([docs/parity-workflow.md](parity-workflow.md)) and, for the counts, Valgrind.
 
 ```sh
-cargo build --release -p horizon-hot-paths-game
-python3 tools/hot_paths.py measure --game target/release/horizon-hot-paths-game \
-    --resources .local/horizon-client/26.3 --out hot-paths.json
+cargo build --release -p foundry-hot-paths-game
+python3 tools/hot_paths.py measure --game target/release/foundry-hot-paths-game \
+    --resources .local/foundry-client/26.3 --out hot-paths.json
 python3 tools/hot_paths.py measure ... --only server.tick.mobs      # some workloads only
 ```
 

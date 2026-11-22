@@ -1,4 +1,4 @@
-//! The horizon-mixins tool for `[[native.mixin]]` builds (`horizon_platform::mod_package::mixins_tool`):
+//! The foundry-mixins tool for `[[native.mixin]]` builds (`foundry_platform::mod_package::mixins_tool`):
 //! once per pin and patch the launcher downloads the prebuilt tool from its release, and where
 //! that release has none for this computer it downloads the tool's source at the pin, applies the
 //! carried patch only to the exact text it was written against, and builds it.
@@ -8,7 +8,7 @@ use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use horizon_platform::mod_package::mixins_tool::{self, PATCH, PATCH_NAME};
+use foundry_platform::mod_package::mixins_tool::{self, PATCH, PATCH_NAME};
 use sha2::{Digest, Sha256};
 
 use super::{root, run, Step, MIXINS_REV};
@@ -31,7 +31,7 @@ type Get<'a> = &'a dyn Fn(&str) -> Result<Option<Box<dyn Read>>, String>;
 /// The tool's executable inside its folder.
 fn executable(dir: &Path) -> PathBuf {
     dir.join("bin")
-        .join(format!("horizon-mixins{}", std::env::consts::EXE_SUFFIX))
+        .join(format!("foundry-mixins{}", std::env::consts::EXE_SUFFIX))
 }
 
 /// The patched tool at [`MIXINS_REV`], fetched once per pin and patch.
@@ -51,7 +51,7 @@ pub(super) fn tool(rust: &Toolchain, progress: &impl Fn(Step)) -> Result<PathBuf
     let target = rust.host.target;
     let release = format!(
         "{}/{}",
-        horizon_addresses::MIXINS_TOOL_RELEASES,
+        foundry_addresses::MIXINS_TOOL_RELEASES,
         mixins_tool::release_tag()
     );
     let get = |name: &str| {
@@ -65,7 +65,7 @@ pub(super) fn tool(rust: &Toolchain, progress: &impl Fn(Step)) -> Result<PathBuf
     let got = install(&dir, target, (!from_source).then_some(get), &|| {
         if !from_source {
             super::append_log(&trf(
-                "horizon-mixins tool: no prebuilt for {target}; building from source (once per pin)",
+                "foundry-mixins tool: no prebuilt for {target}; building from source (once per pin)",
                 &[("target", target)],
             ))?;
         }
@@ -74,11 +74,11 @@ pub(super) fn tool(rust: &Toolchain, progress: &impl Fn(Step)) -> Result<PathBuf
     match got {
         Got::Cached => {}
         Got::Downloaded => super::append_log(&trf(
-            "horizon-mixins tool: downloaded in {seconds} s (once per pin)",
+            "foundry-mixins tool: downloaded in {seconds} s (once per pin)",
             &[("seconds", &seconds())],
         ))?,
         Got::Built => super::append_log(&trf(
-            "horizon-mixins tool: fetched and built in {seconds} s (once per pin)",
+            "foundry-mixins tool: fetched and built in {seconds} s (once per pin)",
             &[("seconds", &seconds())],
         ))?,
     }
@@ -129,22 +129,22 @@ fn build(rust: &Toolchain, dir: &Path) -> Result<(), String> {
     let partial = dir.join(".source");
     // Built only during a native build: a stop ends its source download too.
     let top = super::unpack_archive_until(
-        &format!("{}/{MIXINS_REV}", horizon_addresses::HORIZON_MIXINS_SOURCE),
+        &format!("{}/{MIXINS_REV}", foundry_addresses::FOUNDRY_MIXINS_SOURCE),
         &partial,
         256 << 20,
         &super::check_cancelled,
     )?;
     mixins_tool::apply(&top, PATCH).map_err(|why| {
-        format!("E_MIXINS_PATCH: {PATCH_NAME} does not apply to horizon-mixins {MIXINS_REV}: {why}")
+        format!("E_MIXINS_PATCH: {PATCH_NAME} does not apply to foundry-mixins {MIXINS_REV}: {why}")
     })?;
     let mut cmd = rust.command(&rust.cargo());
     rust_toolchain::low_priority(&mut cmd);
     rust.configure_cargo(&mut cmd);
     cmd.args(["install", "--locked", "--path"])
-        .arg(top.join("crates/horizon-mixins-cli"))
+        .arg(top.join("crates/foundry-mixins-cli"))
         .arg("--root")
         .arg(dir);
-    let built = run(cmd, "Building horizon-mixins", |_| {});
+    let built = run(cmd, "Building foundry-mixins", |_| {});
     let _ = fs::remove_dir_all(&partial);
     built
 }
@@ -158,13 +158,13 @@ fn prebuilt(dir: &Path, target: &str, get: Get) -> Result<bool, String> {
     let name = mixins_tool::archive(target);
     let download = |why: String| {
         trf(
-            "The horizon-mixins tool couldn't be downloaded ({why}). Try again.",
+            "The foundry-mixins tool couldn't be downloaded ({why}). Try again.",
             &[("why", &why)],
         )
     };
     let invalid = |why: &str| {
         trf(
-            "The horizon-mixins tool {name} can't be used: {why}. Its release is invalid; report it on the game.",
+            "The foundry-mixins tool {name} can't be used: {why}. Its release is invalid; report it on the game.",
             &[("name", &name), ("why", why)],
         )
     };
@@ -190,7 +190,7 @@ fn prebuilt(dir: &Path, target: &str, get: Get) -> Result<bool, String> {
         .map_err(|e| download(e.to_string()))?;
     if format!("{:x}", Sha256::digest(&bytes)) != expected {
         return Err(trf(
-            "The horizon-mixins tool {name} doesn't match its release's checksum. Try again.",
+            "The foundry-mixins tool {name} doesn't match its release's checksum. Try again.",
             &[("name", &name)],
         ));
     }
@@ -206,7 +206,7 @@ fn prebuilt(dir: &Path, target: &str, get: Get) -> Result<bool, String> {
         if kind.is_file() || kind.is_dir() {
             entry.unpack_in(staging.path()).map_err(|e| {
                 trf(
-                    "Could not unpack the horizon-mixins tool: {why}",
+                    "Could not unpack the foundry-mixins tool: {why}",
                     &[("why", &e.to_string())],
                 )
             })?;
@@ -243,7 +243,7 @@ mod tests {
             Vec::new(),
             flate2::Compression::fast(),
         ));
-        let exe = format!("bin/horizon-mixins{}", std::env::consts::EXE_SUFFIX);
+        let exe = format!("bin/foundry-mixins{}", std::env::consts::EXE_SUFFIX);
         let name = if tool { exe.as_str() } else { "bin/README" };
         for (path, text) in [(name, "the tool"), (mixins_tool::IDENTITY, identity)] {
             let mut header = tar::Header::new_gnu();

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Knockback on a dedicated server, against vanilla's, seen by vanilla clients.
 
-A vanilla dedicated server and Horizon's (`horizon-client --dedicated --nogui`) each serve a copy of one flat
+A vanilla dedicated server and Foundry Client's (`foundry-client --dedicated --nogui`) each serve a copy of one flat
 world vanilla generated first, in survival on Normal, with Alice and Bob as operators. KnockbackClient, two
 players made of vanilla's protocol code, joins them both and runs one script on each:
 
@@ -26,7 +26,7 @@ a frozen game that has stopped, `hit` a hit that has landed (a frozen server sti
 lands in Alice's next tick), and `blast` a right click whose blast has moved a given entity (test_bed_explosion_parity).
 A server that stalls under load gets the same ticks as an idle one.
 
-Each case is compared on its own. KNOWN lists the cases Horizon still gets wrong and why; one that matches
+Each case is compared on its own. KNOWN lists the cases Foundry Client still gets wrong and why; one that matches
 again is reported, and should leave the list.
 """
 import os
@@ -65,7 +65,7 @@ PROPERTIES = {
     'max-players': '5',
     'pause-when-empty-seconds': '-1',
 }
-# Cases Horizon still gets wrong, and why.
+# Cases Foundry Client still gets wrong, and why.
 KNOWN = {
 }
 
@@ -474,33 +474,33 @@ def main():
     build.mkdir(parents=True, exist_ok=True)
     report = build / 'report.json'
     report.unlink(missing_ok=True)
-    oracle = lab.ROOT / 'mods/horizon/src/test/java/dev/horizonlab/parity/KnockbackClient.java'
+    oracle = lab.ROOT / 'mods/foundry/src/test/java/dev/foundrylab/parity/KnockbackClient.java'
     classes = build / 'classes'
     shutil.rmtree(classes, ignore_errors=True)
     classes.mkdir()
     dependencies = os.pathsep.join(map(str, [jars['server'], *libraries]))
     subprocess.run(['javac', '--release', str(lock['minecraft']['java_major']), '-proc:none', '-nowarn', '-sourcepath',
-                    lab.ROOT / 'mods/horizon/src/test/java', '-cp', dependencies, '-d', classes, oracle],
+                    lab.ROOT / 'mods/foundry/src/test/java', '-cp', dependencies, '-d', classes, oracle],
                    cwd=lab.ROOT, check=True, capture_output=True)
-    subprocess.run(fast_bins.command('horizon-client'), cwd=lab.ROOT,
+    subprocess.run(fast_bins.command('foundry-client'), cwd=lab.ROOT,
                    check=True, capture_output=True)
     import json
     metadata = json.loads(subprocess.check_output(['cargo', 'metadata', '--no-deps', '--format-version', '1'],
                                                   cwd=lab.ROOT, text=True))
-    binary = Path(metadata['target_directory']) / 'fast' / ('horizon-client.exe' if os.name == 'nt' else 'horizon-client')
+    binary = Path(metadata['target_directory']) / 'fast' / ('foundry-client.exe' if os.name == 'nt' else 'foundry-client')
     vanilla_server = ['java', '-Xmx2g', '-Duser.timezone=UTC', '-cp', dependencies, 'net.minecraft.server.Main', 'nogui']
-    horizon_server = [binary, '--resources', lab.RESOURCES, '--dedicated', '--nogui']
-    client = ['java', '-Xmx1g', '-cp', str(classes) + os.pathsep + dependencies, 'dev.horizonlab.parity.KnockbackClient']
+    foundry_server = [binary, '--resources', lab.RESOURCES, '--dedicated', '--nogui']
+    client = ['java', '-Xmx1g', '-cp', str(classes) + os.pathsep + dependencies, 'dev.foundrylab.parity.KnockbackClient']
 
     world = generate_world(vanilla_server, build)
     vanilla = compared(run_side('vanilla', vanilla_server, client, build, world))
     takeoff = [line for line in vanilla.get('pvp-takeoff', []) if line.startswith('Alice motion self ')]
     if len(takeoff) != 1 or not 0.4 < float(takeoff[0].split()[4]) < 0.43:
         raise AssertionError(f'pvp-takeoff: vanilla did not hit after the jump and before travel: {takeoff}')
-    horizon = compared(run_side('horizon', horizon_server, client, build, world))
+    foundry = compared(run_side('foundry', foundry_server, client, build, world))
     differ, fixed = [], []
     for case in CASES:
-        want, got = vanilla.get(case, []), horizon.get(case, [])
+        want, got = vanilla.get(case, []), foundry.get(case, [])
         if case not in vanilla or any(' error ' in f' {l} ' or 'disconnected' in l for l in want):
             raise AssertionError(f'{case}: vanilla recorded nothing or failed: {want}')
         if want == got:
@@ -510,16 +510,16 @@ def main():
         if case in KNOWN:
             continue
         import difflib
-        differ.append(f'{case}:\n' + '\n'.join(difflib.unified_diff(want, got, 'vanilla', 'horizon', n=1, lineterm='')))
+        differ.append(f'{case}:\n' + '\n'.join(difflib.unified_diff(want, got, 'vanilla', 'foundry', n=1, lineterm='')))
     if fixed:
         print('matching vanilla now, take them out of KNOWN: ' + ', '.join(fixed))
     if differ:
-        raise AssertionError(f'{len(differ)} cases differ (see {build}/vanilla.txt and horizon.txt):\n'
+        raise AssertionError(f'{len(differ)} cases differ (see {build}/vanilla.txt and foundry.txt):\n'
                              + '\n'.join(differ)[:8000])
     lab.write_json(report, dict(
         schema=1, minecraft=lock['minecraft']['version'], platform=platform.platform(),
         java=subprocess.check_output(['java', '--version'], text=True).splitlines()[0],
-        cases=len(CASES), known=sorted(KNOWN), output_sha256=lab.digest(build / 'horizon.txt', 'sha256'),
+        cases=len(CASES), known=sorted(KNOWN), output_sha256=lab.digest(build / 'foundry.txt', 'sha256'),
         scope='Knockback on a dedicated server, as two vanilla-codec players get it: a player hitting a cow and '
               'a zombie (plain, sprinting, Knockback II, critical, in the air; the mob\'s motion and path over 20 '
               'ticks), a player hitting a player (the same, a raised shield, netherite, two hits, a mace smash; '

@@ -1,0 +1,11 @@
+[package]
+name = "alpha"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+foundry-mod-api = { path = "../../../../foundry-mod-api" }
+counter-lib = { path = "../counter_lib" }
+
+[workspace]

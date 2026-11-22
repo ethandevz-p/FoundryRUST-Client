@@ -78,11 +78,11 @@ class RealWorkspaceTests(unittest.TestCase):
     def setUpClass(cls):
         cls.workspace = Workspace(cargo_metadata())
 
-    def test_horizon_client_lib_is_built_from_horizon_clients_files(self):
-        chosen = self.workspace.scope(["crates/horizon-client/src/game/x.rs"])
-        self.assertLessEqual({"horizon-client", "horizon-client-lib", "horizon-client-core"}, chosen)
-        self.assertNotIn("horizon-release-sign", chosen)
-        self.assertIn("horizon-client-lib", self.workspace.scope(["crates/horizon-client/tests/lan_bot.rs"]))
+    def test_foundry_client_lib_is_built_from_foundry_clients_files(self):
+        chosen = self.workspace.scope(["crates/foundry-client/src/game/x.rs"])
+        self.assertLessEqual({"foundry-client", "foundry-client-lib", "foundry-client-core"}, chosen)
+        self.assertNotIn("foundry-release-sign", chosen)
+        self.assertIn("foundry-client-lib", self.workspace.scope(["crates/foundry-client/tests/lan_bot.rs"]))
 
     def test_every_reader_names_a_package_and_a_path_in_the_tree(self):
         tracked = subprocess.check_output(["git", "ls-files"]).decode().split("\n")
@@ -105,10 +105,10 @@ class RealWorkspaceTests(unittest.TestCase):
 
     def test_the_scan_finds_the_reads_the_table_was_built_from(self):
         found = reads(self.workspace)
-        self.assertIn("crates/horizon-client/assets/horizon/lang", found["horizon-client-core"])
-        self.assertIn("docs/api/server-reference.md", found["horizon-server"])
-        self.assertIn("crates/horizon-core", found["horizon-world"])
-        self.assertIn("crates", found["horizon-client-core"])
+        self.assertIn("crates/foundry-client/assets/foundry/lang", found["foundry-client-core"])
+        self.assertIn("docs/api/server-reference.md", found["foundry-server"])
+        self.assertIn("crates/foundry-core", found["foundry-world"])
+        self.assertIn("crates", found["foundry-client-core"])
 
 
 if __name__ == "__main__":

@@ -47,11 +47,11 @@ def main():
     report.unlink(missing_ok=True)
     paths = ['tools/test_entity_sound_packet_parity.py', 'tools/oracle_harness.py', 'tools/lab.py',
              'tools/test_rust_parity.py', 'tools/integration_env.py', 'Cargo.toml', 'Cargo.lock',
-             'crates/horizon-client-render/src/audio.rs', 'crates/horizon-client/src/lan/containers.rs',
-             'crates/horizon-protocol/src/packets/play.rs', 'crates/horizon-protocol/src/packets/mod.rs',
-             'crates/horizon-client/examples/probe/main.rs',
-             'crates/horizon-client/examples/probe/entity_sound_packet_fixture.rs',
-             'mods/horizon/src/test/java/dev/horizonlab/parity/VanillaEntitySoundPacketOracle.java']
+             'crates/foundry-client-render/src/audio.rs', 'crates/foundry-client/src/lan/containers.rs',
+             'crates/foundry-protocol/src/packets/play.rs', 'crates/foundry-protocol/src/packets/mod.rs',
+             'crates/foundry-client/examples/probe/main.rs',
+             'crates/foundry-client/examples/probe/entity_sound_packet_fixture.rs',
+             'mods/foundry/src/test/java/dev/foundrylab/parity/VanillaEntitySoundPacketOracle.java']
     sources = [lab.ROOT / p for p in paths]
     hashes = h.base.source_hashes(sources)
     inputs = build / 'inputs.jsonl'
@@ -66,7 +66,7 @@ def main():
     with tempfile.TemporaryDirectory(prefix='entity-packet-', dir=build) as scratch:
         env = integration_env.game_environment(os.environ, scratch)
         h.run_logged(['java', '-Xmx1G', '-cp', str(classes) + os.pathsep + dependencies,
-                      'dev.horizonlab.parity.VanillaEntitySoundPacketOracle', inputs, build / 'client.txt'],
+                      'dev.foundrylab.parity.VanillaEntitySoundPacketOracle', inputs, build / 'client.txt'],
                      build, 'client', env=env)
         h.run_logged([*probe, inputs, build / 'rust.txt'], build, 'rust', env=env)
     matched = h.compare(build / 'client.txt', build / 'rust.txt', len(cases))

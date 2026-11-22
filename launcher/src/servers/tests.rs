@@ -2,7 +2,7 @@ use super::*;
 use std::io::{BufRead, BufReader, Write};
 
 fn scratch(name: &str) -> PathBuf {
-    let dir = std::env::temp_dir().join(format!("horizon-servers-{name}-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("foundry-servers-{name}-{}", std::process::id()));
     let _ = fs::remove_dir_all(&dir);
     fs::create_dir_all(&dir).unwrap();
     dir
@@ -54,13 +54,13 @@ fn create_asks_init_and_config_set() {
 fn programs_are_laid_out_as_install_sh_does() {
     let root = scratch("runtime");
     let version = root.join("versions/v1");
-    fs::create_dir_all(version.join(".local/horizon-client/26.3")).unwrap();
+    fs::create_dir_all(version.join(".local/foundry-client/26.3")).unwrap();
     fs::write(version.join(PROGRAM), "server").unwrap();
-    fs::write(version.join("horizon-client"), "game").unwrap();
+    fs::write(version.join("foundry-client"), "game").unwrap();
     fs::write(version.join(".installed"), "").unwrap();
     crate::game_app::ensure(&version).unwrap();
     fs::write(
-        version.join(".local/horizon-client/26.3/horizon-resources.json"),
+        version.join(".local/foundry-client/26.3/foundry-resources.json"),
         "{}",
     )
     .unwrap();
@@ -75,20 +75,20 @@ fn programs_are_laid_out_as_install_sh_does() {
     assert!(marker.is_file());
     assert_eq!(fs::metadata(&marker).unwrap().len(), 0);
     // The game's macOS bundle is the launcher's, not the server's.
-    assert!(!rt.join("releases/v1/Horizon.app").exists());
-    // The release finds the game files where horizon-server looks: .local beside it.
+    assert!(!rt.join("releases/v1/Foundry Client.app").exists());
+    // The release finds the game files where foundry-server looks: .local beside it.
     assert!(rt
-        .join("current/.local/horizon-client/26.3/horizon-resources.json")
+        .join("current/.local/foundry-client/26.3/foundry-resources.json")
         .is_file());
     // Again with newer game files: only they change, swapped in whole.
     fs::write(
-        version.join(".local/horizon-client/26.3/horizon-resources.json"),
+        version.join(".local/foundry-client/26.3/foundry-resources.json"),
         "{\"new\":1}",
     )
     .unwrap();
     set_up_in(&rt, &version, "v1", "26.3").unwrap();
     assert_eq!(
-        fs::read_to_string(game_files(&rt, "26.3").join("horizon-resources.json")).unwrap(),
+        fs::read_to_string(game_files(&rt, "26.3").join("foundry-resources.json")).unwrap(),
         "{\"new\":1}"
     );
     assert!(!game_files(&rt, "26.3").with_extension("old").exists());
@@ -99,12 +99,12 @@ fn programs_are_laid_out_as_install_sh_does() {
 fn a_release_carries_the_completion_marker_the_game_opens() {
     let root = scratch("runtime-marker");
     let version = root.join("versions/v1");
-    fs::create_dir_all(version.join(".local/horizon-client/26.3")).unwrap();
+    fs::create_dir_all(version.join(".local/foundry-client/26.3")).unwrap();
     fs::write(version.join(PROGRAM), "server").unwrap();
     fs::write(version.join(crate::backend::CLIENT), "game").unwrap();
     fs::write(version.join(".installed"), "").unwrap();
     fs::write(
-        version.join(".local/horizon-client/26.3/horizon-resources.json"),
+        version.join(".local/foundry-client/26.3/foundry-resources.json"),
         "{}",
     )
     .unwrap();
@@ -128,12 +128,12 @@ fn a_release_carries_the_completion_marker_the_game_opens() {
 #[cfg(windows)]
 #[test]
 fn the_engine_finds_every_unit_it_leases_registered() {
-    use horizon_platform::mod_package::{
+    use foundry_platform::mod_package::{
         holder, locks::LockMode, runtime_leases::open_directory, runtime_leases::Registry,
         selection::LaunchArguments,
     };
     // The launcher home and the runtime the launcher publishes there: a child process's own.
-    const ACTOR: &str = "HORIZON_SERVER_LEASES_TEST_ACTOR";
+    const ACTOR: &str = "FOUNDRY_SERVER_LEASES_TEST_ACTOR";
     if std::env::var_os(ACTOR).is_none() {
         let launcher_home = tempfile::tempdir().unwrap();
         let output = Command::new(std::env::current_exe().unwrap())
@@ -144,7 +144,7 @@ fn the_engine_finds_every_unit_it_leases_registered() {
                 "--nocapture",
             ])
             .env(ACTOR, "1")
-            .env("HORIZON_LAUNCHER_HOME", launcher_home.path())
+            .env("FOUNDRY_LAUNCHER_HOME", launcher_home.path())
             .output()
             .unwrap();
         let stdout = String::from_utf8_lossy(&output.stdout);
@@ -159,12 +159,12 @@ fn the_engine_finds_every_unit_it_leases_registered() {
     // A prepared version, the runtime `set_up` lays down from it, and a server folder.
     let data = backend::data_dir();
     let version = data.join("versions/v1");
-    let prepared = version.join(".local/horizon-client/26.3");
+    let prepared = version.join(".local/foundry-client/26.3");
     fs::create_dir_all(&prepared).unwrap();
     fs::write(version.join(PROGRAM), "server").unwrap();
     fs::write(version.join(crate::backend::CLIENT), "game").unwrap();
     fs::write(version.join(".installed"), "").unwrap();
-    fs::write(prepared.join("horizon-resources.json"), "{}").unwrap();
+    fs::write(prepared.join("foundry-resources.json"), "{}").unwrap();
     let rt = runtime_root();
     set_up_in(&rt, &version, "v1", "26.3").unwrap();
     let server = data.join("servers/survival");
@@ -251,7 +251,7 @@ fn problems_say_what_to_do() {
     assert!(port.message.contains("already used"), "{}", port.message);
     assert!(matches!(port.fix, Some(Fix::UsePort(p)) if p > 25565));
     let files = Problem::explain_with(
-        "horizon-server: no prepared game files. Horizon reads them from",
+        "foundry-server: no prepared game files. Foundry Client reads them from",
         "",
         &dir,
     );
@@ -262,7 +262,7 @@ fn problems_say_what_to_do() {
         &dir,
     );
     assert_eq!(reports.fix, Some(Fix::Prepare));
-    let other = Problem::explain_with("horizon-server: a server is already running in x", "", &dir);
+    let other = Problem::explain_with("foundry-server: a server is already running in x", "", &dir);
     assert_eq!(other, Problem::plain("A server is already running in x"));
     fs::remove_dir_all(&dir).unwrap();
 }
@@ -348,9 +348,9 @@ fn the_api_sends_the_token() {
         seen
     });
     let dir = scratch("api");
-    fs::create_dir_all(dir.join(".horizon")).unwrap();
+    fs::create_dir_all(dir.join(".foundry")).unwrap();
     fs::write(
-        dir.join(".horizon/api.json"),
+        dir.join(".foundry/api.json"),
         json!({ "address": address, "token": "t0k", "pid": 1 }).to_string(),
     )
     .unwrap();
@@ -401,9 +401,9 @@ fn deleting_a_stopped_server_moves_its_world_and_backups_to_trash() {
 #[test]
 fn deleting_refuses_a_live_supervisor_even_when_its_api_is_unavailable() {
     let root = scratch("delete-running");
-    fs::create_dir_all(root.join(".horizon")).unwrap();
+    fs::create_dir_all(root.join(".foundry")).unwrap();
     fs::write(root.join("server.toml"), "[server]\n").unwrap();
-    let lock = fs::File::create(root.join(".horizon/lock")).unwrap();
+    let lock = fs::File::create(root.join(".foundry/lock")).unwrap();
     lock.try_lock().unwrap();
     let result = trash_stopped_server(&root, |_| panic!("must not move a running server"));
     assert!(result.unwrap_err().contains("Stop the server"));
@@ -444,13 +444,13 @@ fn the_game_mode_comes_from_server_toml() {
 #[test]
 fn only_horizon_server_tasks_are_background_servers() {
     let tasks = [
-        "horizon-server-survival",
+        "foundry-server-survival",
         "OneDrive Update",
-        "horizon-serverless",
-        "Horizon-Server-x",
+        "foundry-serverless",
+        "Foundry Client-Server-x",
     ];
     assert_eq!(
-        horizon_tasks(tasks.map(String::from).to_vec()),
-        ["horizon-server-survival"]
+        foundry_tasks(tasks.map(String::from).to_vec()),
+        ["foundry-server-survival"]
     );
 }

@@ -1,9 +1,9 @@
-//! The selected instance's resource packs and shader packs on Home (`horizon_launcher::packs`):
+//! The selected instance's resource packs and shader packs on Home (`foundry_launcher::packs`):
 //! each turned on or off with one click, Remove (to the trash, after a confirmation), and
 //! Add (a file picker) or a .zip or .hshader dropped anywhere on the section.
 use super::*;
 use gpui::{ExternalPaths, Image, ImageFormat};
-use horizon_launcher::packs::{self, Kind as PackKind, Pack};
+use foundry_launcher::packs::{self, Kind as PackKind, Pack};
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -300,7 +300,7 @@ impl Launcher {
         };
         let facts = match &pack.unsupported {
             Some(why) => {
-                let label = horizon_launcher::browser::Support::No(String::new()).label();
+                let label = foundry_launcher::browser::Support::No(String::new()).label();
                 format!("{label} · {why} · {facts}")
             }
             None => facts,

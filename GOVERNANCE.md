@@ -1,4 +1,4 @@
-# Horizon governance
+# Foundry Client governance
 
 > Adopted 2026-11-09 by the founder as his last decision as head of the project. It takes effect when he
 > announces that he is stepping down. From then on only the council changes it, by a 2/3 poll (section 15).
@@ -6,8 +6,8 @@
 > Amended 2026-11-10 by the founder (three kinds of action, elections by tier, who may do what, and council poll P41:
 > the mods decide moderation matters). The council can overturn this amendment by poll.
 
-Horizon has no boss. A **council of equals** decides by polls. **Theme groups** do the work in their areas, each
-with a **lead**. The **Horizon Team** reviews and merges code. **Moderators** keep the Discord server and the
+Foundry Client has no boss. A **council of equals** decides by polls. **Theme groups** do the work in their areas, each
+with a **lead**. The **Foundry Client Team** reviews and merges code. **Moderators** keep the Discord server and the
 official server safe. Every role of trust is earned with work the project can measure, and it ends when that work
 stops.
 
@@ -33,7 +33,7 @@ stops.
 
 - **Equals.** Every council member has one vote. Nobody, the founder included, stands above the others.
 - **The founder.** Ludovic keeps the title of **Founder**: his role stays at the top of the member list and he is
-  credited as Horizon's founder everywhere. The title is symbolic. It carries no extra vote or power: on the council
+  credited as Foundry Client's founder everywhere. The title is symbolic. It carries no extra vote or power: on the council
   he counts exactly like every other member.
 - **Evidence, not popularity.** You get a role by doing the work first. Kira measures that work: merged pull
   requests, reviews, triage, support answers and days active. A vote then confirms it.
@@ -48,18 +48,18 @@ stops.
 ## 2. The levels at a glance
 
 From the most open level to the most trusted. A person can hold several levels at once: a group lead can also be on
-the Horizon Team, for example.
+the Foundry Client Team, for example.
 
 | Level | What it can do | How you get in | How you leave | 18+ |
 | --- | --- | --- | --- | --- |
 | **Member** | Play, chat, report bugs, suggest ideas, open issues and pull requests, pick group roles | Join the Discord server or the GitHub repo | Leave, or get banned | No |
-| **Contributor** (⛏️ Iron, 🥇 Gold, 💎 Diamond, 🟪 Netherite ranks) | Write in #contributors; `/claim` issues; vote in their group's elections (if active in that group) | One merged pull request in a public horizon-rust repo, linked with `/link-github` and `/verify-github`. Ranks come from merged pull requests: 10, 40, 100 and 200 | Contributor status and ranks stay | No |
+| **Contributor** (⛏️ Iron, 🥇 Gold, 💎 Diamond, 🟪 Netherite ranks) | Write in #contributors; `/claim` issues; vote in their group's elections (if active in that group) | One merged pull request in a public foundry-rust repo, linked with `/link-github` and `/verify-github`. Ranks come from merged pull requests: 10, 40, 100 and 200 | Contributor status and ranks stay | No |
 | **Group member** | Read and write in the group's channel; get the group's pings; vote in the group's elections and votes when active | Pick the group's role in Channels & Roles, or with `/groups` | Remove the role | No |
-| **🤝 Support** | Answer and close posts in #horizon-support | Given by any moderator (a free action, section 2.1) | Resign, 30 days inactive, or removed by a moderator, the Chief of Mods or the council | No |
+| **🤝 Support** | Answer and close posts in #foundry-support | Given by any moderator (a free action, section 2.1) | Resign, 30 days inactive, or removed by a moderator, the Chief of Mods or the council | No |
 | **🛡️ Moderator** | Time out, delete messages, manage threads, quarantine. No bans | Elected by the mods (section 5.3); council veto within 24 h | Resign, 30 days inactive, suspended by the Chief of Mods, recalled by the mods, removed by a council poll (simple majority) | **Yes** |
 | **🛡️ Chief of Mods** | A moderator's powers, plus bans; leads the mods; suspends a mod at once pending the council | Elected by the mods, from the mods with at least 30 days (section 5.3); council veto within 24 h | Resign, 30 days inactive, recalled by the mods, council poll (simple majority) | **Yes** |
 | **🧭 Group lead** | Decides inside the group's topic (section 6); manages the group's channel; triage on the group's GitHub issues | Elected by the group's active members and the Team (section 5.3); council veto within 24 h; 30 days probation | Resign, 30 days inactive (automatic), recalled by the same electorate, council poll (simple majority); confirmed again every 6 months | **Yes** |
-| **🌌 Horizon Team** | Review and merge pull requests (GitHub `horizon-team`, write access); `/nightly` and triage commands (trusted reviewers); #horizon-team | Elected by the Team, 2/3 (section 5.3); council veto within 24 h; 30 days probation | Resign, 60 days without a merge or review (automatic), recalled by the Team (2/3), council poll (2/3, without the person) | **Yes** |
+| **🌌 Foundry Client Team** | Review and merge pull requests (GitHub `foundry-team`, write access); `/nightly` and triage commands (trusted reviewers); #foundry-team | Elected by the Team, 2/3 (section 5.3); council veto within 24 h; 30 days probation | Resign, 60 days without a merge or review (automatic), recalled by the Team (2/3), council poll (2/3, without the person) | **Yes** |
 | **🏛️ Council** | Decides everything else by poll (section 4); bans; emergency actions by any 2 members | Nominated by a council member, the filter, a 24 h public discussion, then a council poll (2/3); 30 days probation | Resign, inactivity (section 5.5), council poll (2/3, without the person) | **Yes** |
 
 **The account holder** isn't a level. The founder (Ludovic) still holds the project's accounts (GitHub organisation
@@ -79,7 +79,7 @@ Most things need no vote at all. A vote is for power over other people, and for 
 
 Free actions, for example:
 
-- a lead gives or removes their group's helper role (🧩 Horizon Modding Team), through Kira;
+- a lead gives or removes their group's helper role (🧩 Foundry Client Modding Team), through Kira;
 - a moderator gives or removes 🤝 Support, through Kira;
 - a moderator times out, deletes, quarantines, or changes a channel's slowmode or topic; the Chief of Mods bans and
   unbans;
@@ -100,14 +100,14 @@ council matter.
 | Post | Decides | Discord | Official server | GitHub |
 | --- | --- | --- | --- | --- |
 | **Member** | — | Chat, threads, picks group roles | Play | Issues, pull requests, `/claim` |
-| **Group helper** (🧩 Horizon Modding Team) | — | Writes in the group's team channel | — | — |
-| **🤝 Support** | Closes support posts | Manages threads in #horizon-support | — | — |
+| **Group helper** (🧩 Foundry Client Modding Team) | — | Writes in the group's team channel | — | — |
+| **🤝 Support** | Closes support posts | Manages threads in #foundry-support | — | — |
 | **🛡️ Moderator** | Moderation matters, by the mods' vote (section 7) | Time out, delete messages, manage threads and nicknames, audit log, voice mute and move; quarantine through Kira; the staff channels | In-game op if also elected operator | — |
 | **🛡️ Chief of Mods** | A moderator's, plus bans and unbans; suspends a mod at once; breaks ties in the mods' votes | Plus Ban | As a moderator | — |
 | **Server operator** | In-game moderation by the server rules | — | Op (the server's ops list); no panel, no `server.toml` | — |
 | **🧭 Server & SMP lead** | The server's settings, by the written rules (backup first, warning in game) | As every lead | A panel sub-user once a council accounts poll gives one | As every lead |
 | **🧭 Group lead** | The group's free actions; gives and removes its helper role | In the group's channels: delete messages, manage and pin threads, ping the group; the helper role through Kira | — | Triage on the group's labels through Kira (no repository role) |
-| **🌌 Horizon Team** | Merges; elects Team members | #horizon-team and the staff channels. The role still carries timeout and delete; whether it keeps them is a mod matter | — | `horizon-team`: write on horizon, horizon-mods, horizon-mixins, horizon-native-mod-template and horizon-server; also kira and horizon-site if P37 passes |
+| **🌌 Foundry Client Team** | Merges; elects Team members | #foundry-team and the staff channels. The role still carries timeout and delete; whether it keeps them is a mod matter | — | `foundry-team`: write on foundry, foundry-mods, foundry-mixins, foundry-native-mod-template and foundry-server; also kira and foundry-site if P37 passes |
 | **🔧 Server Manager** | — | Manage Channels and Manage Roles (the server's layout); given by council poll | — | — |
 | **🏛️ Council** | Council polls, vetoes, emergencies (any 2) | A moderator's permissions plus Ban, mention @everyone and pin; #council | Panel sub-users for two members if P38 passes | The `council` team: code-owner reviews and the release tools' owner powers if P35 passes, security managers if P36 passes; a second organisation owner if P28 passes |
 | **Account holder** (the founder) | Carries out decisions on his accounts (section 11) | Server owner | The panel's owner account | Organisation owner |
@@ -120,15 +120,15 @@ posts as a list of clicks for a named person.
 
 ### Member
 
-Anyone in the Discord server or on GitHub. Members follow the server rules and Horizon's
-[contributing guide](CONTRIBUTING.md). They can propose anything: an idea in #horizon-ideas, a bug in #horizon-bugs,
+Anyone in the Discord server or on GitHub. Members follow the server rules and Foundry Client's
+[contributing guide](CONTRIBUTING.md). They can propose anything: an idea in #foundry-ideas, a bug in #foundry-bugs,
 an issue or a pull request on GitHub, or a request for a council poll (any council member can pick it up).
 
 ### Contributor
 
 - **Discord:** the 🛠️ Contributor role writes in #contributors and in the threads of #polls-and-decisions. A rank
   role (⛏️ Iron at 10 merged pull requests, 🥇 Gold at 40, 💎 Diamond at 100, 🟪 Netherite at 200, counted over every
-  public horizon-rust repo) shows how much has been merged. Ranks only go up.
+  public foundry-rust repo) shows how much has been merged. Ranks only go up.
 - **GitHub:** no repository role. Anyone can `/claim` and `/unclaim` their own issues.
 - **Alone:** their own work.
 
@@ -141,7 +141,7 @@ group's elections and decisions (section 5.3).
 
 ### 🤝 Support
 
-Unchanged: Support members help players in #horizon-support. They answer every post there and mark posts solved.
+Unchanged: Support members help players in #foundry-support. They answer every post there and mark posts solved.
 The role carries no permission, so it has no age rule. A moderator gives it, and takes it back, through Kira.
 
 ### 🛡️ Moderators and the Chief of Mods
@@ -163,16 +163,16 @@ Section 6 says what a lead decides alone and what goes to the council.
   🧭 lead role carries no server-wide permission.
 - **GitHub:** triage on the issues and pull requests that carry their group's label (`/label`, `/unlabel`, `/close`,
   `/reopen`, `/unclaim`), from a list of group leads that grants no repository role. Leads merge only if they are on
-  the Horizon Team too.
+  the Foundry Client Team too.
 
-### 🌌 Horizon Team
+### 🌌 Foundry Client Team
 
-The Horizon Team **merges pull requests**. Its rules are in [the release flow](docs/release-flow.md): read the whole
+The Foundry Client Team **merges pull requests**. Its rules are in [the release flow](docs/release-flow.md): read the whole
 diff, never merge your own pull request, and use `needs-proof` for anything risky.
 
-- **GitHub:** member of the `horizon-team` team (write access to the Horizon repos), on the trusted reviewers list
+- **GitHub:** member of the `foundry-team` team (write access to the Foundry Client repos), on the trusted reviewers list
   (`/nightly` and triage commands).
-- **Discord:** the 🌌 Horizon Team role, #horizon-team, and writing in #contributors and the read-only channels.
+- **Discord:** the 🌌 Foundry Client Team role, #foundry-team, and writing in #contributors and the read-only channels.
   Moderation permissions belong to the moderators and the council: a Team member moderates only if they also hold
   one of those roles.
 - **During the 30-day probation:** they merge only ordinary pull requests. They don't merge `needs-proof` pull
@@ -264,7 +264,7 @@ false age declaration (section 9).
 
 - **Fewer than 5 members:** Kira opens nominations for the council at once. The council fills seats within 30 days.
 - **Fewer than 3 members, or fewer than 3 who voted in the last 30 days:** an **interim council** forms. It counts the
-  remaining council members, the Horizon Team and the group leads past probation. Its only task is adding council
+  remaining council members, the Foundry Client Team and the group leads past probation. Its only task is adding council
   members, by its own 2/3 poll with a quorum of half. Any two of its members can take emergency actions. All other
   decisions wait. The Team keeps merging and the leads keep leading.
 - **Nobody left:** the Team and the group leads form the interim council in the same way.
@@ -278,10 +278,10 @@ measures the work, and only people above a floor can be nominated. Their body th
 
 | Signal | What counts | Source |
 | --- | --- | --- |
-| **Merged pull requests** | Pull requests merged in a public horizon-rust repo. Counted overall, and per group by label or by files touched | GitHub search, as the ranks are counted today |
+| **Merged pull requests** | Pull requests merged in a public foundry-rust repo. Counted overall, and per group by label or by files touched | GitHub search, as the ranks are counted today |
 | **Reviews** | Others' pull requests you reviewed: approved, asked for changes, or left a review with comments. One per pull request | GitHub search `reviewed-by:` and Kira's GitHub webhook |
 | **Triage** | Triage commands run (`/label`, `/close`, duplicates), issues labelled or closed, bug posts routed on Discord | The triage workflow's comments and Kira's webhook |
-| **Support answers** | #horizon-support posts you answered that ended solved | Kira's support feature |
+| **Support answers** | #foundry-support posts you answered that ended solved | Kira's support feature |
 | **Active days** | Distinct days with any of the above, or with messages in #contributors or a group's channel. Chat elsewhere doesn't count | Kira |
 | **Tenure** | Days since your first counted contribution (since you joined the server, for moderators) | GitHub, Discord |
 | **Clean record** | No timeout, quarantine or ban in the last 90 days | Kira's mod cases |
@@ -300,11 +300,11 @@ A nomination is refused below these floors.
 | **Group lead** | Verified GitHub; tenure of 30 days or more; **in the group's area: 8 or more merged pull requests, or 20 or more reviews** (Translations: 5 or more merged translation pull requests; Server and SMP: 8 pull requests, or 30 days as an official server operator with activity); 15 or more active days in the last 60; clean record; 18+ |
 | **Moderator** | In the server for 30 days or more; Kira level 10 or more; 15 or more active days in the last 60; clean record; 18+ |
 | **Chief of Mods** | Moderator for 30 days or more, past probation; 18+ |
-| **Horizon Team** | 🥇 Gold rank (40 merged pull requests); 20 or more reviews of others' pull requests; tenure of 30 days or more; 20 or more active days in the last 60; clean record; verified GitHub; 18+ |
-| **Council** | Horizon Team member, group lead or Chief of Mods for 60 days or more, past probation; 20 or more active days in the last 60; clean record; 18+ |
+| **Foundry Client Team** | 🥇 Gold rank (40 merged pull requests); 20 or more reviews of others' pull requests; tenure of 30 days or more; 20 or more active days in the last 60; clean record; verified GitHub; 18+ |
+| **Council** | Foundry Client Team member, group lead or Chief of Mods for 60 days or more, past probation; 20 or more active days in the last 60; clean record; 18+ |
 
 The numbers are checked again once a year (section 15). They should stay reachable for people who really work on
-Horizon and out of reach for people who don't.
+Foundry Client and out of reach for people who don't.
 
 ### 5.3 Elections
 
@@ -317,7 +317,7 @@ for a recall.
 | **🛡️ Chief of Mods** | The mods; candidates are mods for 30 days or more | Simple majority | Any mod, a council member |
 | **Server operator** | The mods and the 🧭 Server lead | Simple majority | The Server lead, the Chief of Mods, a council member |
 | **🧭 Group lead** (a co-lead once the group has 8 active members) | The group's active members, and the Team | Simple majority | The current lead, a Team member, a council member |
-| **🌌 Horizon Team** | The Team | Two thirds, and at least 3 Yes | A Team member, a council member |
+| **🌌 Foundry Client Team** | The Team | Two thirds, and at least 3 Yes | A Team member, a council member |
 | **🏛️ Council** | The council, by poll after a 24-hour discussion (section 4) | Two thirds, and at least 3 Yes | A council member |
 | 🤝 Support, a group's helper role | Nobody: a free action (section 2.1) | — | A moderator; the group's lead |
 
@@ -378,9 +378,9 @@ holder or an org owner removes GitHub access when the Team role ends.
 | Role | What counts as activity | Warning | Steps down |
 | --- | --- | --- | --- |
 | Group lead | A counted action in the group's area, or messages in the group's channel | Day 21 | Day 30 |
-| Horizon Team | A merge or a review | Day 45 | Day 60 |
+| Foundry Client Team | A merge or a review | Day 45 | Day 60 |
 | Moderator, Chief of Mods | A moderation action, or messages in the staff channels | Day 21 | Day 30 |
-| Support | An answer in #horizon-support | Day 21 | Day 30 |
+| Support | An answer in #foundry-support | Day 21 | Day 30 |
 | Council | A vote in a poll. At 30 days with no vote, while at least 2 polls were held | Day 23 | Day 30, or 45 days with no counted activity at all |
 
 - **Away.** Anyone can announce an absence with `/away` for up to 45 days, once every 6 months. Away days don't
@@ -400,15 +400,15 @@ holder or an org owner removes GitHub access when the Team role ends.
 
 | Group | Covers | GitHub | Discord |
 | --- | --- | --- | --- |
-| **Modding** | The mod API, native and content mods, mixins, the mod registry, `cargo horizon-mod` | The mod API lives in horizon-rust/horizon, beside horizon-rust/horizon-mods, horizon-mixins, horizon-native-mod-template and the registry. Label `mods` | The 🧩 MODDING category (#modding, #horizon-modding-team); roles 🧩 Modder (picked) and 🧩 Horizon Modding Team (the lead gives it) |
-| **Shaders and rendering** | The renderer, shaders, shader packs, OptiFine and Polytone pack formats | Label `rendering`; `crates/horizon-client-render` (gfx), `*.wgsl`, `horizon-shaders`, `horizon-shader-api`, `horizon-optifine`, `horizon-polytone` | #shaders-rendering |
-| **Performance** | Frame rate, memory, server tick, benchmarks | Label `perf`; `horizon-bench`, the benchmark tools | #performance |
+| **Modding** | The mod API, native and content mods, mixins, the mod registry, `cargo foundry-mod` | The mod API lives in foundry-rust/foundry, beside foundry-rust/foundry-mods, foundry-mixins, foundry-native-mod-template and the registry. Label `mods` | The 🧩 MODDING category (#modding, #foundry-modding-team); roles 🧩 Modder (picked) and 🧩 Foundry Client Modding Team (the lead gives it) |
+| **Shaders and rendering** | The renderer, shaders, shader packs, OptiFine and Polytone pack formats | Label `rendering`; `crates/foundry-client-render` (gfx), `*.wgsl`, `foundry-shaders`, `foundry-shader-api`, `foundry-optifine`, `foundry-polytone` | #shaders-rendering |
+| **Performance** | Frame rate, memory, server tick, benchmarks | Label `perf`; `foundry-bench`, the benchmark tools | #performance |
 | **Launcher** | The launcher: installs, updates, instances, its pages | Label `launcher`; `launcher/` | #launcher |
-| **Server and SMP** | Dedicated server, hosting, the anticheat, multiplayer, and the official SMP | Labels `server`, `multiplayer`; `horizon-server*`, `horizon-anticheat`, `lan/`, `dedicated*`; horizon-rust/horizon-server | #server-smp (plus #join-server, #server-chat) |
-| **Translations** | The game's and the launcher's languages | Label `roadmap:languages`; `launcher/lang/`, `crates/horizon-client/assets/horizon/lang/` | #translations and the 🌍 language channels |
-| **Website** | playhorizon.dev | horizon-rust/horizon-site; label `website`. The site's design stays as it is unless the council decides otherwise | #website |
+| **Server and SMP** | Dedicated server, hosting, the anticheat, multiplayer, and the official SMP | Labels `server`, `multiplayer`; `foundry-server*`, `foundry-anticheat`, `lan/`, `dedicated*`; foundry-rust/foundry-server | #server-smp (plus #join-server, #server-chat) |
+| **Translations** | The game's and the launcher's languages | Label `roadmap:languages`; `launcher/lang/`, `crates/foundry-client/assets/foundry/lang/` | #translations and the 🌍 language channels |
+| **Website** | playfoundry.dev | foundry-rust/foundry-site; label `website`. The site's design stays as it is unless the council decides otherwise | #website |
 | **Vanilla accuracy** | Parity with vanilla 26.3: harnesses, oracles, the port ledger | Labels `parity`, `parity-regression`, `full-parity`; `tools/test_*_parity.py`, the Java oracles | #vanilla-accuracy |
-| **UI** | The game's menus, HUD, settings, controller navigation, the design system | Labels `ui`, `accessibility`; `title/`, `settings_shell.rs`, `hud*`, `ui.rs`, `docs/design-system.md`, `horizon-theme`. The launcher's look is shared with Launcher | #ui |
+| **UI** | The game's menus, HUD, settings, controller navigation, the design system | Labels `ui`, `accessibility`; `title/`, `settings_shell.rs`, `hud*`, `ui.rs`, `docs/design-system.md`, `foundry-theme`. The launcher's look is shared with Launcher | #ui |
 
 A pull request can belong to two groups. Both leads can comment, and the Team merges as usual. If the leads disagree,
 the council decides.
@@ -437,7 +437,7 @@ the design system:
 
 - the rules, money, accounts and secrets;
 - who is on the council, the Team or the mods;
-- anything that changes vanilla behaviour or turns a Horizon-only feature on by default;
+- anything that changes vanilla behaviour or turns a Foundry Client-only feature on by default;
 - breaking a public promise: the mod API, server compatibility, save and file formats;
 - disputes between groups;
 - anything involving Mojang, Microsoft or the law;
@@ -485,7 +485,7 @@ nobody is appointed just to fill the seat.
 
 ## 9. The age rule (18+)
 
-**Who must be 18 or older:** members of the council and the Horizon Team, trusted reviewers, group leads and
+**Who must be 18 or older:** members of the council and the Foundry Client Team, trusted reviewers, group leads and
 co-leads, the Chief of Mods and the moderators, official server operators, and anyone with admin rights anywhere in
 the project: Discord (Administrator, Manage Roles, Manage Channels, ban), GitHub (write, admin, organisation),
 server panels, Railway, or Kira's admin side. The same goes for anyone who holds a project secret.
@@ -510,7 +510,7 @@ server panels, Railway, or Kira's admin side. The same goes for anyone who holds
 
 ## 10. The agents
 
-Horizon uses AI agents: the founder's orchestrator, which runs coding agents, and Kira, the Discord bot.
+Foundry Client uses AI agents: the founder's orchestrator, which runs coding agents, and Kira, the Discord bot.
 
 - **They obey council decisions only:** a passed poll recorded by Kira, a recorded emergency action of two council
   members, and the standing rules in this document and the project's docs.
@@ -530,11 +530,11 @@ unable to act, and never puts an account that is tied to a person into anyone el
 
 | Account | Today | Can it be shared? | Plan |
 | --- | --- | --- | --- |
-| **GitHub organisation** (horizon-rust) | Two owners since 2026-11-11: the founder and rdbtCVS (P28); a `council` team holds CODEOWNERS (P35) and is the security managers (P36) | Yes: an organisation can have several owners | **Step 1:** a second owner from the council, chosen by a 2/3 poll in the council's first week, with two-factor authentication on. **Step 2:** a `council` team; CODEOWNERS reviews and the release tools' owner powers (`paused`, `/nightly remove`) move from the founder to that team |
+| **GitHub organisation** (foundry-rust) | Two owners since 2026-11-11: the founder and rdbtCVS (P28); a `council` team holds CODEOWNERS (P35) and is the security managers (P36) | Yes: an organisation can have several owners | **Step 1:** a second owner from the council, chosen by a 2/3 poll in the council's first week, with two-factor authentication on. **Step 2:** a `council` team; CODEOWNERS reviews and the release tools' owner powers (`paused`, `/nightly remove`) move from the founder to that team |
 | **Discord server** | Owned by the founder | Partly: a server has exactly one owner; powers can be given through roles | **Step 1:** the 🏛️ Council role gets moderation and ban permissions; Kira applies the outcomes of passed polls, so nobody needs Manage Roles; two-factor authentication becomes required for moderation. Ownership itself stays with the founder until a legal entity exists |
 | **Kira** (bot application, Railway service) | The founder's Discord developer account and Railway | The bot: yes (a Discord developer team). Railway: adding members may need a paid plan | **Step 1:** a Discord developer team with two council members. Railway members once the council decides on money |
 | **Official server** (hosting panel) | The founder's account | Yes: panel sub-users | **Step 1:** sub-users for the Server and SMP lead and for one council member |
-| **Domains** (playhorizon.dev and the others) | The founder's registrar account | Not without moving it | Auto-renewal on, registered for several years ahead. They move only to a legal entity, if one is created |
+| **Domains** (playfoundry.dev and the others) | The founder's registrar account | Not without moving it | Auto-renewal on, registered for several years ahead. They move only to a legal entity, if one is created |
 | **The Microsoft app approved by Mojang** (sign-in) | The founder's Azure app registration; Mojang approved it after his application | **No.** The approval was given on his application. Moving the app or adding owners would change who Mojang deals with, and we have found no documented way to transfer an approval | **Never moves** without Mojang's written agreement. The only change considered: a legal entity, if one is created, and only if Mojang agrees |
 | **Signing** (Apple developer certificate, release signing keys) | The founder's | The Apple certificate is in his legal name: no | The Apple certificate never moves. Release keys stay in GitHub's protected environments, and the council team approves their use from step 2 |
 | **Money** (sponsorship, donations) | Personal accounts of the founder | Through a fiscal host | Section 12 |
@@ -561,20 +561,20 @@ and the founder carries it out.
 - **#staff-log:** the free actions Kira sees (roles given or taken, bans, unbans), so the tier above can check them.
 - **The decisions log:** Kira keeps an append-only record of every poll, emergency action, appointment and
   step-down, with its date and result. It is public and machine-readable, so the agents can check a decision there.
-- **This document** lives in horizon-rust/horizon as `GOVERNANCE.md`. A short summary is pinned in #rules and in
+- **This document** lives in foundry-rust/foundry as `GOVERNANCE.md`. A short summary is pinned in #rules and in
   #polls-and-decisions.
-- **Who holds which role:** the people page of playhorizon.dev's hub shows the council, the Team, the group leads,
+- **Who holds which role:** the people page of playfoundry.dev's hub shows the council, the Team, the group leads,
   the Chief of Mods, the moderators and Support.
 - **#council** is private for discussion and for polls about people. Everything the council decides is published.
 
 ## 14. Rules that are never voted on
 
-These are Horizon's conditions for existing, not choices. No poll can change them:
+These are Foundry Client's conditions for existing, not choices. No poll can change them:
 
 - Playing needs a **Microsoft account that owns Minecraft: Java Edition**. There is no play without one.
-- **No Mojang files** in Horizon's repos or downloads. Players' own copies stay on their own machines.
+- **No Mojang files** in Foundry Client's repos or downloads. Players' own copies stay on their own machines.
 - **No gambling**, in any form, including with in-game currency.
-- **Mojang's and Microsoft's terms and Usage Guidelines** apply to everything Horizon does.
+- **Mojang's and Microsoft's terms and Usage Guidelines** apply to everything Foundry Client does.
 - **The law**, and the terms of service of Discord and GitHub.
 
 ## 15. Changing this document

@@ -1,4 +1,4 @@
-//! The Create a server dialog in the glass look (the mockup's `ServerModal`, horizon-site
+//! The Create a server dialog in the glass look (the mockup's `ServerModal`, foundry-site
 //! `components/launcher/server-modal.tsx`): one plate round at 28 over the dimmed page. On the
 //! left, what the server will be (a picture, its name and its rules); on the right, its name,
 //! world, game mode, difficulty, how many players, who may join and whether accounts are
@@ -7,10 +7,10 @@ use super::*;
 use crate::glass_instance::{choice, choice_text, list_box, list_choice, section, tick};
 use crate::glass_ui::{self as ui, white};
 use gpui::{img, ImageFormat};
-use horizon_theme::glass::{fill, ink, radius};
+use foundry_theme::glass::{fill, ink, radius};
 use std::sync::{Arc, LazyLock};
 
-/// The mockup's pictures for each game mode (`COVERS`): Horizon screenshots from `docs/media`.
+/// The mockup's pictures for each game mode (`COVERS`): Foundry Client screenshots from `docs/media`.
 static COVERS: LazyLock<[Arc<gpui::Image>; 3]> = LazyLock::new(|| {
     let webp = |bytes: &[u8]| Arc::new(gpui::Image::from_bytes(ImageFormat::Webp, bytes.to_vec()));
     [
@@ -186,7 +186,7 @@ impl Launcher {
                 div()
                     .mt(px(20.))
                     .truncate()
-                    .font_family(horizon_theme::glass::DISPLAY_FONT)
+                    .font_family(foundry_theme::glass::DISPLAY_FONT)
                     .font_weight(FontWeight::SEMIBOLD)
                     .text_size(px(30.))
                     .line_height(px(32.))
@@ -242,7 +242,7 @@ impl Launcher {
                     .min_w_0()
                     .child(
                         div()
-                            .font_family(horizon_theme::glass::DISPLAY_FONT)
+                            .font_family(foundry_theme::glass::DISPLAY_FONT)
                             .font_weight(FontWeight::SEMIBOLD)
                             .text_size(px(size))
                             .line_height(px(size * 1.25))
@@ -412,7 +412,7 @@ impl Launcher {
                     .px(px(16.))
                     .rounded(px(radius::CONTROL))
                     .cursor_pointer()
-                    .font_family(horizon_theme::glass::FONT)
+                    .font_family(foundry_theme::glass::FONT)
                     .text_size(px(14.))
                     .when(on, |d| {
                         d.bg(white(fill::BUTTON_HOVER))
@@ -517,7 +517,7 @@ impl Launcher {
             );
         }
 
-        // Account checks (not in the mockup's words: Horizon players sign in with Microsoft now).
+        // Account checks (not in the mockup's words: Foundry Client players sign in with Microsoft now).
         let accounts = div()
             .flex()
             .items_start()
@@ -657,7 +657,7 @@ impl Launcher {
                 .bg(white(fill::BUTTON))
                 .cursor_pointer()
                 .hover(|s| s.bg(white(fill::BUTTON_HOVER)))
-                .font_family(horizon_theme::glass::FONT)
+                .font_family(foundry_theme::glass::FONT)
                 .text_size(px(13.))
                 .font_weight(FontWeight::MEDIUM)
                 .text_color(white(ink::FULL))
@@ -748,7 +748,7 @@ impl Launcher {
         }));
         let read = div()
             .id("create-eula-read")
-            .font_family(horizon_theme::glass::FONT)
+            .font_family(foundry_theme::glass::FONT)
             .text_size(px(14.))
             .font_weight(FontWeight::MEDIUM)
             .text_color(ui::color(look.accent_soft))
@@ -783,7 +783,7 @@ impl Launcher {
                 .px(px(20.))
                 .rounded(px(radius::ROW))
                 .cursor_pointer()
-                .font_family(horizon_theme::glass::FONT)
+                .font_family(foundry_theme::glass::FONT)
                 .text_size(px(15.))
                 .font_weight(FontWeight::MEDIUM)
                 .text_color(white(ink::BODY))
@@ -805,7 +805,7 @@ impl Launcher {
                 .bg(accent)
                 .cursor_pointer()
                 .hover(move |s| s.bg(lit))
-                .font_family(horizon_theme::glass::FONT)
+                .font_family(foundry_theme::glass::FONT)
                 .text_size(px(15.))
                 .font_weight(FontWeight::SEMIBOLD)
                 .text_color(ui::color(look.on_accent))
@@ -950,7 +950,7 @@ mod foot_layout {
     #[gpui::test]
     async fn a_long_message_wraps_in_two_lines_on_its_own_foot_row(cx: &mut TestAppContext) {
         // The reporter's message: a nightly's tag alone is a word longer than the foot's room.
-        let message: SharedString = "Horizon nightly-2026-11-13-9f42064 isn't prepared yet: press Prepare on the Play page (it uses your own Minecraft 26.3)".into();
+        let message: SharedString = "Foundry Client nightly-2026-11-13-9f42064 isn't prepared yet: press Prepare on the Play page (it uses your own Minecraft 26.3)".into();
         let (view, cx) = cx.add_window_view(|_, _| Foot { message });
         cx.run_until_parked();
         let status = cx.debug_bounds("create-foot-status").unwrap();
