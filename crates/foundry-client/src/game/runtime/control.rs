@@ -1207,7 +1207,7 @@ impl Game<'_> {
                     "extras" => Page::Extras,
                     "pvp" => Page::Pvp,
                     "credits" => Page::Credits,
-                    "foundry" => Page::Foundry Client,
+                    "foundry" => Page::FoundryClient,
                     "agent" => Page::Agent,
                     other => return Err(format!("unknown options page {other}").into()),
                 };

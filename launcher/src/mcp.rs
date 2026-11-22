@@ -13,7 +13,7 @@ use std::path::PathBuf;
 use std::time::Duration;
 
 /// What an agent reads before its first call.
-const INSTRUCTIONS: &str = "Manage Foundry Client, a Rust reimplementation of Minecraft Java Edition: install versions, prepare them from the player's own Minecraft, start the client or a dedicated server. Every tool is a foundry-launcher CLI command of the same name (mods_search is foundry-launcher mods search). Once play started the game, or the player turned on Agent Control in a game they started, the game_* tools play it: game_state, game_ui (every widget of the open screen), game_click, game_goto, game_screenshot...";
+const INSTRUCTIONS: &str = "Manage FoundryClient, a Rust reimplementation of Minecraft Java Edition: install versions, prepare them from the player's own Minecraft, start the client or a dedicated server. Every tool is a foundry-launcher CLI command of the same name (mods_search is foundry-launcher mods search). Once play started the game, or the player turned on Agent Control in a game they started, the game_* tools play it: game_state, game_ui (every widget of the open screen), game_click, game_goto, game_screenshot...";
 
 /// The revisions this server advertises: `foundry_mcp` serves them (`2026-07-28` stateless,
 /// `2025-06-18` for the clients that still open with `initialize`).

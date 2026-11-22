@@ -677,8 +677,8 @@ enum SourceArg {
     Modrinth,
     /// CurseForge support is coming soon
     Curseforge,
-    /// Foundry Client's own registry: mods, modpacks and resource packs made for Foundry Client, reviewed
-    Foundry Client,
+    /// Foundry Client's own registry: mods, modpacks and resource packs made for FoundryClient, reviewed
+    FoundryClient,
 }
 
 impl SourceArg {
@@ -687,7 +687,7 @@ impl SourceArg {
         let id = match self {
             SourceArg::Modrinth => SourceId::Modrinth,
             SourceArg::Curseforge => SourceId::CurseForge,
-            SourceArg::Foundry Client => SourceId::Foundry Client,
+            SourceArg::FoundryClient => SourceId::FoundryClient,
         };
         browser::source(id).ok_or_else(|| browser::CURSEFORGE_SOON.into())
     }
@@ -2340,7 +2340,7 @@ fn mods(action: ModsCmd, as_json: bool) -> Result<(), String> {
     let from_registry = installed::Installed::load(&home)
         .entries
         .iter()
-        .any(|e| e.source == SourceId::Foundry Client);
+        .any(|e| e.source == SourceId::FoundryClient);
     if from_registry {
         if let Ok(index) = foundry::index() {
             for said in foundry::turn_off_revoked(&index, &home) {
@@ -2429,7 +2429,7 @@ fn mods(action: ModsCmd, as_json: bool) -> Result<(), String> {
                         "id": p.id, "slug": p.slug, "title": p.title, "summary": p.summary,
                         "author": p.author, "downloads": p.downloads, "page": p.page,
                         "license": p.license, "support": support.label(), "reason": support.reason(),
-                        "about": if p.source == SourceId::Foundry Client { foundry::trust_and_capabilities(&p.id, instance.as_ref()) } else { Vec::new() },
+                        "about": if p.source == SourceId::FoundryClient { foundry::trust_and_capabilities(&p.id, instance.as_ref()) } else { Vec::new() },
                     })
                 }).collect());
             } else {
@@ -2438,7 +2438,7 @@ fn mods(action: ModsCmd, as_json: bool) -> Result<(), String> {
                 }
                 for p in &found {
                     let support = p.support();
-                    if p.source == SourceId::Foundry Client {
+                    if p.source == SourceId::FoundryClient {
                         println!("{}  ({})  {}\n  {}", p.title, p.slug, p.author, p.summary);
                         for line in foundry::trust_and_capabilities(&p.id, instance.as_ref()) {
                             println!("  {line}");
@@ -2553,7 +2553,7 @@ fn mods(action: ModsCmd, as_json: bool) -> Result<(), String> {
                     p.title
                 ));
             }
-            if p.kind == Kind::Modpack && p.source == SourceId::Foundry Client {
+            if p.kind == Kind::Modpack && p.source == SourceId::FoundryClient {
                 let pack = foundry::pack::install(&p.id, &line)?;
                 if as_json {
                     json(
@@ -2727,7 +2727,7 @@ fn mods(action: ModsCmd, as_json: bool) -> Result<(), String> {
             if on {
                 if let Some(r) = foundry::index()
                     .ok()
-                    .filter(|_| e.source == SourceId::Foundry Client)
+                    .filter(|_| e.source == SourceId::FoundryClient)
                     .and_then(|i| {
                         i.revoked(&e.project, e.checksum.trim_start_matches("SHA-256:"))
                             .cloned()

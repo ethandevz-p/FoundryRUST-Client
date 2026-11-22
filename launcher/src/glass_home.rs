@@ -224,7 +224,7 @@ impl Launcher {
                 let kind = if java {
                     new_instance::NewKind::Vanilla
                 } else {
-                    new_instance::NewKind::Foundry Client
+                    new_instance::NewKind::FoundryClient
                 };
                 self.pick_kind(kind, cx);
             }

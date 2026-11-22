@@ -341,7 +341,7 @@ impl Launcher {
         // (`new-instance-foundry`, `new-instance-vanilla`: on those).
         let kind = match std::env::var("FOUNDRY_LAUNCHER_PAGE").as_deref() {
             Ok("new-instance") => Some(new_instance::NewKind::Modded),
-            Ok("new-instance-foundry") => Some(new_instance::NewKind::Foundry Client),
+            Ok("new-instance-foundry") => Some(new_instance::NewKind::FoundryClient),
             Ok("new-instance-vanilla") => Some(new_instance::NewKind::Vanilla),
             _ => None,
         };

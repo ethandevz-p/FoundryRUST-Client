@@ -25,7 +25,7 @@ impl Launcher {
     /// The search's placeholder: the registry's count when it is listed whole.
     pub(super) fn mods_placeholder(&self) -> SharedString {
         let m = &self.mods;
-        let registry = m.source() == SourceId::Foundry Client;
+        let registry = m.source() == SourceId::FoundryClient;
         if registry
             && m.kind == PackKind::Mod
             && m.searched
@@ -312,7 +312,7 @@ impl Launcher {
     /// use yet (made for the earlier mod system), with how many.
     fn mods_left_out_note(&self) -> Option<Div> {
         let m = &self.mods;
-        if m.source() != SourceId::Foundry Client || m.kind != PackKind::Mod {
+        if m.source() != SourceId::FoundryClient || m.kind != PackKind::Mod {
             return None;
         }
         let count = browser::foundry::projects_left_out().filter(|n| *n > 0)?;
@@ -338,7 +338,7 @@ impl Launcher {
             // A failed search stays as an amber card: what happened in plain words, Try again,
             // and the error's own words on request.
             let details = m.error_details;
-            let foundry = m.source() == SourceId::Foundry Client;
+            let foundry = m.source() == SourceId::FoundryClient;
             let what = if foundry {
                 tr("Couldn't load Foundry Client's mod list.")
             } else {
@@ -408,7 +408,7 @@ impl Launcher {
                     "Nothing matches “{query}”.",
                     &[("query", m.text.text().trim())],
                 )
-            } else if m.source() == SourceId::Foundry Client {
+            } else if m.source() == SourceId::FoundryClient {
                 tr("Nothing in Foundry Client's registry matches yet.").to_string()
             } else if m.everything || !m.can_show_everything() {
                 tr("Nothing found.").to_string()
@@ -485,7 +485,7 @@ impl Launcher {
                 div().flex_none().w(px(20.)).into_any_element()
             };
             // The registry's rows end with downloads, the others' with how they run (`compat`).
-            let right = if p.source == SourceId::Foundry Client {
+            let right = if p.source == SourceId::FoundryClient {
                 ui::text(13., FontWeight::NORMAL, 0.5)
                     .flex()
                     .items_center()
@@ -615,7 +615,7 @@ impl Launcher {
         let about = m
             .about
             .get(&p.id)
-            .filter(|_| p.source == SourceId::Foundry Client)
+            .filter(|_| p.source == SourceId::FoundryClient)
             .map(|lines| lines.join(" · "));
         let registry = about.is_some();
 
@@ -712,7 +712,7 @@ impl Launcher {
                         .child(by.join(" · ")),
                 )
                 .children(
-                    (p.source == SourceId::Foundry Client)
+                    (p.source == SourceId::FoundryClient)
                         .then(|| stars(&p.id, &t))
                         .flatten()
                         .map(|s| s.mt(px(8.))),

@@ -144,7 +144,7 @@ impl OptionsUi {
                     // Vanilla's Telemetry Data and Credits slots: Foundry Client's
                     // settings and its mods, as a mod adds its button here.
                     // Credits & Attribution (WinScreen's credits) follows them.
-                    ("foundry.pages.open.foundry_settings", Some(Page::Foundry Client)),
+                    ("foundry.pages.open.foundry_settings", Some(Page::FoundryClient)),
                     ("foundry.pages.open.mods", Some(Page::Mods)),
                     ("options.credits_and_attribution", Some(Page::Credits)),
                 ];

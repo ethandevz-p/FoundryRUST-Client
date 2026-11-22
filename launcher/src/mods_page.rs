@@ -1,5 +1,5 @@
 //! The Mods page: its tabs are the kinds (mods, modpacks, resource packs, shader packs, data
-//! packs). Search Foundry Client's own registry for what was made for Foundry Client, or Modrinth for
+//! packs). Search Foundry Client's own registry for what was made for FoundryClient, or Modrinth for
 //! resource packs, shader packs and data packs (a Java instance's supported files
 //! always come from Modrinth, for its version), see where each comes
 //! from and how well it runs (a Java mod's jar is checked first; a Foundry Client mod says whether it is
@@ -31,7 +31,7 @@ const KINDS: [(PackKind, &str, &str); 5] = [
 const CHECKING: usize = 2;
 const PAGE: usize = 20;
 const SOURCES: [(SourceId, &str); 2] = [
-    (SourceId::Foundry Client, "Foundry Client"),
+    (SourceId::FoundryClient, "Foundry Client"),
     (SourceId::Modrinth, "Modrinth"),
 ];
 
@@ -323,7 +323,7 @@ impl Mods {
                 Some(p.kind)
             }
             InstallRequest::Palette(p)
-                if p.kind == PackKind::Mod && p.source == SourceId::Foundry Client =>
+                if p.kind == PackKind::Mod && p.source == SourceId::FoundryClient =>
             {
                 Some(p.kind)
             }
@@ -413,7 +413,7 @@ impl Mods {
     pub(super) fn checking(&self, p: &Project) -> bool {
         self.java_for(p.kind).is_none()
             && p.kind == PackKind::Mod
-            && p.source != SourceId::Foundry Client
+            && p.source != SourceId::FoundryClient
             && matches!(
                 self.checks.get(&(p.source, p.id.clone())),
                 None | Some(Checking::Running)
@@ -447,7 +447,7 @@ impl Mods {
             return Support::Works;
         }
         let metadata = p.support();
-        if p.kind != PackKind::Mod || p.source == SourceId::Foundry Client || !metadata.installable() {
+        if p.kind != PackKind::Mod || p.source == SourceId::FoundryClient || !metadata.installable() {
             return metadata;
         }
         match self.checks.get(&(p.source, p.id.clone())) {
@@ -732,7 +732,7 @@ impl Launcher {
     pub(super) fn mods_search_keeping(&mut self, offset: usize, keep: bool) {
         let m = &mut self.mods;
         let source = m.source();
-        let everything = m.everything && source != SourceId::Foundry Client;
+        let everything = m.everything && source != SourceId::FoundryClient;
         m.asked = true;
         m.search += 1;
         m.searching = true;
@@ -764,7 +764,7 @@ impl Launcher {
                 .ok_or_else(|| trf("{source} isn't set up.", &[("source", source.label())]))
                 .and_then(|s| s.search(&query));
             let about: HashMap<String, Vec<String>> = match (&result, source) {
-                (Ok(found), SourceId::Foundry Client) => {
+                (Ok(found), SourceId::FoundryClient) => {
                     let instance = foundry_launcher::instances::selected();
                     found
                         .iter()
@@ -790,7 +790,7 @@ impl Launcher {
             .mods
             .installed
             .iter()
-            .any(|e| e.source == SourceId::Foundry Client)
+            .any(|e| e.source == SourceId::FoundryClient)
         {
             return;
         }
@@ -884,7 +884,7 @@ impl Launcher {
         }
         let todo: Vec<Project> = found
             .into_iter()
-            .filter(|p| p.kind == PackKind::Mod && p.source != SourceId::Foundry Client)
+            .filter(|p| p.kind == PackKind::Mod && p.source != SourceId::FoundryClient)
             .filter(|p| p.support().installable())
             .filter(|p| !m.checks.contains_key(&(p.source, p.id.clone())))
             .collect();
@@ -1166,7 +1166,7 @@ impl Launcher {
             }
         }
         // The first native mod: the trust notice, before anything is installed.
-        let first_native = source == SourceId::Foundry Client
+        let first_native = source == SourceId::FoundryClient
             && self.settings.native_mods_allowed_at.is_none()
             && foundry::is_native_mod(id);
         if first_native {
@@ -1252,7 +1252,7 @@ impl Launcher {
                         ));
                     }
                     modpack = p.kind == PackKind::Modpack;
-                    if modpack && p.source == SourceId::Foundry Client {
+                    if modpack && p.source == SourceId::FoundryClient {
                         let pack = foundry::pack::install(&p.id, &progress)?;
                         if let Some(url) = &p.icon {
                             foundry_launcher::instances::adopt_icon(
@@ -1321,7 +1321,7 @@ impl Launcher {
                             &[("mods", &mods), ("instance", &instance)],
                         ));
                     }
-                    if p.source == SourceId::Foundry Client && p.kind == PackKind::Mod {
+                    if p.source == SourceId::FoundryClient && p.kind == PackKind::Mod {
                         return Ok(trf(
                             "Installed {mods} into foundry-mods and turned it on, checksum \
                              checked (Options > Mods in the game).",
@@ -1533,7 +1533,7 @@ impl Launcher {
             ..Query::new(text, PackKind::Mod)
         };
         std::thread::spawn(move || {
-            let found = browser::source(SourceId::Foundry Client)
+            let found = browser::source(SourceId::FoundryClient)
                 .ok_or_else(|| "not set up".to_string())
                 .and_then(|s| s.search(&query))
                 .unwrap_or_default();
@@ -1591,7 +1591,7 @@ impl Launcher {
             }));
         // The registry lists only what was made for Foundry Client: no "everything", and of the filters
         // only its categories.
-        let registry = self.mods.source() == SourceId::Foundry Client;
+        let registry = self.mods.source() == SourceId::FoundryClient;
         let filters = self.mods_filters(cx);
         // The registry's sort sits below the GitHub row, above the list it orders.
         let registry_sort = registry.then(|| self.mods_sort_bar(cx));
@@ -1862,7 +1862,7 @@ impl Launcher {
                 .mods
                 .chosen
                 .get(&e.project)
-                .filter(|_| e.source == SourceId::Foundry Client)
+                .filter(|_| e.source == SourceId::FoundryClient)
             {
                 let mut recommended = button(
                     SharedString::from(format!("mods-recommended-{}", e.project)),
@@ -1877,7 +1877,7 @@ impl Launcher {
                     recommended =
                         recommended.on_click(cx.listener(move |this, _: &ClickEvent, _, cx| {
                             this.mods_install(InstallRequest::Installed(
-                                SourceId::Foundry Client,
+                                SourceId::FoundryClient,
                                 id.clone(),
                             ));
                             cx.notify();
@@ -1909,7 +1909,7 @@ impl Launcher {
             let on = match &self.mods.java {
                 _ if e.kind != PackKind::Mod => None,
                 Some(_) => Some(java_instance::is_on(&self.mods.home(), e)),
-                None if e.source == SourceId::Foundry Client => Some(
+                None if e.source == SourceId::FoundryClient => Some(
                     foundry::mod_id(e).is_some_and(|id| java::is_enabled(&self.mods.home(), id)),
                 ),
                 None => None,
@@ -2096,7 +2096,7 @@ impl Launcher {
                     ),
                     &t,
                 );
-            } else if m.source() == SourceId::Foundry Client {
+            } else if m.source() == SourceId::FoundryClient {
                 tr("Nothing in Foundry Client's registry matches yet.")
             } else if m.everything || !m.can_show_everything() {
                 tr("Nothing found.")
@@ -2185,7 +2185,7 @@ impl Launcher {
                 .child(div().truncate().child(p.summary.clone()))
                 .child(by.join(" · "))
                 .children(
-                    (p.source == SourceId::Foundry Client)
+                    (p.source == SourceId::FoundryClient)
                         .then(|| stars(&p.id, &t))
                         .flatten(),
                 )
@@ -2197,7 +2197,7 @@ impl Launcher {
                 .children(
                     m.about
                         .get(&p.id)
-                        .filter(|_| p.source == SourceId::Foundry Client)
+                        .filter(|_| p.source == SourceId::FoundryClient)
                         .map(|lines| div().text_color(t.ink_soft).child(lines.join(" · "))),
                 );
             let open = p.clone();
@@ -2294,7 +2294,7 @@ pub(super) fn auto_update(
 fn source_for(kind: PackKind) -> SourceId {
     match kind {
         PackKind::ResourcePack | PackKind::DataPack => SourceId::Modrinth,
-        PackKind::Mod | PackKind::Modpack | PackKind::Shader => SourceId::Foundry Client,
+        PackKind::Mod | PackKind::Modpack | PackKind::Shader => SourceId::FoundryClient,
     }
 }
 
@@ -2309,7 +2309,7 @@ fn switches(kind: PackKind, java: bool) -> bool {
 fn browse_source(kind: PackKind, picked: SourceId, java: Option<&Target>) -> SourceId {
     match java {
         Some(target) if target.takes(kind) => SourceId::Modrinth,
-        Some(_) => SourceId::Foundry Client,
+        Some(_) => SourceId::FoundryClient,
         None if switches(kind, false) => picked,
         None => source_for(kind),
     }
@@ -2318,8 +2318,8 @@ fn browse_source(kind: PackKind, picked: SourceId, java: Option<&Target>) -> Sou
 fn can_install_in(kind: PackKind, source: SourceId, java: Option<&Target>) -> bool {
     match (java, kind) {
         (Some(_), PackKind::Shader) => false,
-        (Some(_), PackKind::Mod | PackKind::ResourcePack) => source != SourceId::Foundry Client,
-        (Some(_), PackKind::Modpack | PackKind::DataPack) => source == SourceId::Foundry Client,
+        (Some(_), PackKind::Mod | PackKind::ResourcePack) => source != SourceId::FoundryClient,
+        (Some(_), PackKind::Modpack | PackKind::DataPack) => source == SourceId::FoundryClient,
         (None, _) => true,
     }
 }
@@ -2391,7 +2391,7 @@ mod tests {
         cx.update(|cx| {
             let mut mods = Mods::new(cx);
             mods.set_kind(PackKind::ResourcePack);
-            let registry_mod = Box::new(project(PackKind::Mod, SourceId::Foundry Client));
+            let registry_mod = Box::new(project(PackKind::Mod, SourceId::FoundryClient));
             let browse = InstallRequest::Browse(registry_mod.clone());
             let palette = InstallRequest::Palette(registry_mod);
             assert_eq!(mods.source(), SourceId::Modrinth);
@@ -2456,12 +2456,12 @@ mod tests {
             loader: Some("fabric".into()),
         };
         for (kind, default, switch, java_source) in [
-            (PackKind::Mod, SourceId::Foundry Client, false, SourceId::Modrinth),
+            (PackKind::Mod, SourceId::FoundryClient, false, SourceId::Modrinth),
             (
                 PackKind::Modpack,
-                SourceId::Foundry Client,
+                SourceId::FoundryClient,
                 false,
-                SourceId::Foundry Client,
+                SourceId::FoundryClient,
             ),
             (
                 PackKind::ResourcePack,
@@ -2469,18 +2469,18 @@ mod tests {
                 true,
                 SourceId::Modrinth,
             ),
-            (PackKind::Shader, SourceId::Foundry Client, true, SourceId::Foundry Client),
+            (PackKind::Shader, SourceId::FoundryClient, true, SourceId::FoundryClient),
             (
                 PackKind::DataPack,
                 SourceId::Modrinth,
                 true,
-                SourceId::Foundry Client,
+                SourceId::FoundryClient,
             ),
         ] {
             assert_eq!(source_for(kind), default);
             assert_eq!(switches(kind, false), switch);
             assert!(!switches(kind, true));
-            for picked in [SourceId::Foundry Client, SourceId::Modrinth] {
+            for picked in [SourceId::FoundryClient, SourceId::Modrinth] {
                 assert_eq!(
                     browse_source(kind, picked, None),
                     if switch { picked } else { default }

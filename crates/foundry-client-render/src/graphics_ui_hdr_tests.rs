@@ -19,11 +19,11 @@ fn hdr_waits_for_a_device_that_draws_its_frame() {
         caps.hud_layer = false;
         let out = tests::snapshot(&s.foundry, Default::default(), caps, reading);
         assert!(out.hdr_offered() && !out.requests_hdr(mode) && !out.hdr_on());
-        let hdr = Item::Foundry Client(H::Hdr);
+        let hdr = Item::FoundryClient(H::Hdr);
         assert_eq!(hdr.blocked(&s, &out), Some(unsupported));
         assert_eq!(hdr.label(&s, &out).plain(), "HDR: Off");
         for h in [H::HdrCalibrate, H::HdrPeak, H::HdrLook] {
-            assert_eq!(Item::Foundry Client(h).blocked(&s, &out), Some(unsupported));
+            assert_eq!(Item::FoundryClient(h).blocked(&s, &out), Some(unsupported));
         }
         let mut ui = ui();
         ui.screen.output = out;
@@ -40,7 +40,7 @@ fn look_is_the_packs_and_greyed_while_a_pack_runs() {
     let mut s = Settings::default();
     s.foundry.hdr = HdrMode::On;
     s.foundry.shader_pack = "Sunny.zip".into();
-    let item = Item::Foundry Client(H::HdrLook);
+    let item = Item::FoundryClient(H::HdrLook);
     let lights = Some("The shader pack lights the world. Pick it under Shaders.");
     let out = offering(true, None);
     // No pack running, as with one picked but refused, missing or its mod off: live.
@@ -104,11 +104,11 @@ fn ui_brightness_is_greyed_under_a_shaders_pack() {
     };
     let (layered, flat) = (shown(false), shown(true));
     assert!(layered.hdr_on() && flat.hdr_on());
-    let ui_brightness = Item::Foundry Client(H::HdrUiBrightness);
+    let ui_brightness = Item::FoundryClient(H::HdrUiBrightness);
     assert_eq!(ui_brightness.blocked(&s, &layered), None);
     let paper_white = Some("The shader pack's picture is shown at Paper White.");
     assert_eq!(ui_brightness.blocked(&s, &flat), paper_white);
-    assert_eq!(Item::Foundry Client(H::HdrLook).blocked(&s, &flat), paper_white);
+    assert_eq!(Item::FoundryClient(H::HdrLook).blocked(&s, &flat), paper_white);
     for h in [
         H::Hdr,
         H::HdrCalibrate,
@@ -116,7 +116,7 @@ fn ui_brightness_is_greyed_under_a_shaders_pack() {
         H::HdrPeak,
         H::HdrPaperWhite,
     ] {
-        assert_eq!(Item::Foundry Client(h).blocked(&s, &flat), None, "{h:?}");
+        assert_eq!(Item::FoundryClient(h).blocked(&s, &flat), None, "{h:?}");
     }
     // The greyed slider takes no press, and its saved value waits; Peak Brightness's drags.
     let saved = s.foundry.hdr_ui_nits;
@@ -126,7 +126,7 @@ fn ui_brightness_is_greyed_under_a_shaders_pack() {
     let greyed = row(&mut ui, &s, ui_brightness);
     assert!(press(&mut ui, &mut s, (tx + 2.0, greyed[1] + 4.0)).is_empty());
     assert_eq!(s.foundry.hdr_ui_nits, saved);
-    let peak = row(&mut ui, &s, Item::Foundry Client(H::HdrPeak));
+    let peak = row(&mut ui, &s, Item::FoundryClient(H::HdrPeak));
     assert_eq!(press(&mut ui, &mut s, (tx + 2.0, peak[1] + 4.0)), [DRAGGED]);
 }
 
@@ -137,7 +137,7 @@ fn color_boost_is_greyed_for_scrgb_on_wayland() {
     use crate::gfx::{HdrOutput, output::tests};
     let mut s = Settings::default();
     s.foundry.hdr = HdrMode::On;
-    let boost = Item::Foundry Client(H::HdrColorBoost);
+    let boost = Item::FoundryClient(H::HdrColorBoost);
     for (hdr, why) in [
         (HdrOutput::Pq, None),
         (
@@ -163,8 +163,8 @@ fn hdr_auto_can_be_selected_before_querying_and_brightness_waits_for_output() {
     let mut at_hdr = Ui::default();
     at_hdr.show(Page::Hdr);
     at_hdr.key(&mut s, K::ArrowDown, None, false, short);
-    assert_eq!(at_hdr.focused_row(), Some(Item::Foundry Client(H::Hdr)));
-    let hdr = row(&mut ui, &s, Item::Foundry Client(H::Hdr));
+    assert_eq!(at_hdr.focused_row(), Some(Item::FoundryClient(H::Hdr)));
+    let hdr = row(&mut ui, &s, Item::FoundryClient(H::Hdr));
     assert_eq!(press(&mut ui, &mut s, at(hdr)), [CLICK, CHANGED]);
     assert_eq!(s.foundry.hdr, HdrMode::Auto);
     assert_eq!(press(&mut ui, &mut s, at(hdr)), [CLICK, CHANGED]);
@@ -172,22 +172,22 @@ fn hdr_auto_can_be_selected_before_querying_and_brightness_waits_for_output() {
     // Brightness still needs an output, even with On saved from another computer.
     s.foundry.hdr = HdrMode::On;
     for h in [H::HdrCalibrate, H::HdrPeak, H::HdrPaperWhite] {
-        assert!(Item::Foundry Client(h).blocked(&s, &NONE).is_some(), "{h:?}");
+        assert!(Item::FoundryClient(h).blocked(&s, &NONE).is_some(), "{h:?}");
     }
     s.foundry.hdr = HdrMode::Off;
     ui.screen.output = offering(true, None);
     let (tx, _) = Columns::of(SIZE.0, SIZE.1).track();
-    let peak = row(&mut ui, &s, Item::Foundry Client(H::HdrPeak));
+    let peak = row(&mut ui, &s, Item::FoundryClient(H::HdrPeak));
     assert!(press(&mut ui, &mut s, (tx + 2.0, peak[1] + 4.0)).is_empty());
     // The choice turns it on, and the sliders below it work.
-    let hdr = row(&mut ui, &s, Item::Foundry Client(H::Hdr));
+    let hdr = row(&mut ui, &s, Item::FoundryClient(H::Hdr));
     assert_eq!(press(&mut ui, &mut s, at(hdr)), [CLICK, CHANGED]);
     assert!(ui.screen.output.requests_hdr(s.foundry.hdr));
-    let peak = row(&mut ui, &s, Item::Foundry Client(H::HdrPeak));
+    let peak = row(&mut ui, &s, Item::FoundryClient(H::HdrPeak));
     assert_eq!(press(&mut ui, &mut s, (tx + 2.0, peak[1] + 4.0)), [DRAGGED]);
     ui.release();
     // Calibrate starts the calibration.
-    let calibrate = row(&mut ui, &s, Item::Foundry Client(H::HdrCalibrate));
+    let calibrate = row(&mut ui, &s, Item::FoundryClient(H::HdrCalibrate));
     assert_eq!(
         press(&mut ui, &mut s, at(calibrate)),
         [CLICK, Output::Push(OptionsPage::HdrCalibration)]
@@ -199,13 +199,13 @@ fn hdr_auto_can_be_selected_before_querying_and_brightness_waits_for_output() {
 fn hdr_auto_is_a_choice_on_a_reporting_sdr_display() {
     let out = offering(false, Some(false));
     let mut s = Settings::default();
-    let item = Item::Foundry Client(H::Hdr);
+    let item = Item::FoundryClient(H::Hdr);
     assert_eq!(item.switch(&s), None);
     assert_eq!(item.blocked(&s, &out), None);
     item.cycle(&mut s, false, FB, &out);
     assert_eq!(s.foundry.hdr, HdrMode::Auto); // On requires an offered output.
     assert!(!out.requests_hdr(s.foundry.hdr));
-    assert!(Item::Foundry Client(H::HdrPeak).blocked(&s, &out).is_some());
+    assert!(Item::FoundryClient(H::HdrPeak).blocked(&s, &out).is_some());
     item.cycle(&mut s, true, FB, &out);
     assert_eq!(s.foundry.hdr, HdrMode::Off);
     let out = offering(true, Some(false));
@@ -216,7 +216,7 @@ fn hdr_auto_is_a_choice_on_a_reporting_sdr_display() {
     s.foundry.hdr = HdrMode::Auto;
     let out = offering(true, Some(true));
     assert!(out.requests_hdr(s.foundry.hdr));
-    assert_eq!(Item::Foundry Client(H::HdrPeak).blocked(&s, &out), None);
+    assert_eq!(Item::FoundryClient(H::HdrPeak).blocked(&s, &out), None);
 }
 
 /// The labels and the calibration row read the report of the renderer they are shown
@@ -228,7 +228,7 @@ fn auto_levels_and_setup_read_their_own_renderers_report() {
     s.foundry.hdr = HdrMode::Auto;
     let reporting = offering(true, Some(true));
     let silent = NONE;
-    let label = |h, out| Item::Foundry Client(h).label(&s, out).plain();
+    let label = |h, out| Item::FoundryClient(h).label(&s, out).plain();
     assert_eq!(
         label(H::HdrPaperWhite, &reporting),
         "Paper White: Auto (400 nits)"
@@ -251,7 +251,7 @@ fn auto_levels_and_setup_read_their_own_renderers_report() {
 fn brightness_rows_read_in_nits() {
     let mut s = Settings::default();
     s.foundry.hdr = HdrMode::On;
-    let label = |s: &Settings, h| Item::Foundry Client(h).label(s, &NONE).plain();
+    let label = |s: &Settings, h| Item::FoundryClient(h).label(s, &NONE).plain();
     assert_eq!(label(&s, H::HdrPaperWhite), "Paper White: Auto (203 nits)");
     assert_eq!(label(&s, H::HdrPeak), "Peak Brightness: Auto (1000 nits)");
     assert_eq!(
@@ -281,7 +281,7 @@ fn the_setup_rows_ask_to_calibrate_unless_the_system_set_the_display_up() {
     });
     let rows = |s: &Settings, out: &EffectiveOutput| {
         [H::HdrCalibrate, H::HdrPeak, H::HdrPaperWhite].map(|h| {
-            let item = Item::Foundry Client(h);
+            let item = Item::FoundryClient(h);
             (item.label(s, out).plain(), description(item, s, out, "-"))
         })
     };
@@ -342,7 +342,7 @@ fn the_setup_rows_ask_to_calibrate_unless_the_system_set_the_display_up() {
     let mut ui = ui();
     ui.screen.output = guessed;
     let at = |[x, y, ..]: [f32; 4]| (x + 8.0, y + 4.0);
-    let calibrate = row(&mut ui, &s, Item::Foundry Client(H::HdrCalibrate));
+    let calibrate = row(&mut ui, &s, Item::FoundryClient(H::HdrCalibrate));
     assert_eq!(press(&mut ui, &mut s, at(calibrate)), [CLICK, CHANGED]);
     assert_eq!((s.foundry.hdr_peak, s.foundry.hdr_paper_white), (0, 0));
     assert_eq!(
@@ -359,7 +359,7 @@ fn ui_brightness_reads_in_nits_on_paper_whites_steps() {
     let mut s = Settings::default();
     s.foundry.hdr = HdrMode::On;
     let reporting = offering(true, Some(true));
-    let label = |s: &Settings, out| Item::Foundry Client(H::HdrUiBrightness).label(s, out).plain();
+    let label = |s: &Settings, out| Item::FoundryClient(H::HdrUiBrightness).label(s, out).plain();
     assert_eq!(label(&s, &reporting), "UI Brightness: Auto (400 nits)");
     assert_eq!(label(&s, &NONE), "UI Brightness: Auto (203 nits)");
     s.foundry.hdr_paper_white = 250;
@@ -369,7 +369,7 @@ fn ui_brightness_reads_in_nits_on_paper_whites_steps() {
         s.foundry.hdr_paper_white = paper_white;
         assert_eq!(label(&s, &reporting), "UI Brightness: 160 nits");
     }
-    let item = Item::Foundry Client(H::HdrUiBrightness);
+    let item = Item::FoundryClient(H::HdrUiBrightness);
     assert_eq!(
         H::HdrUiBrightness.slider_steps(),
         H::HdrPaperWhite.slider_steps()
@@ -386,7 +386,7 @@ fn ui_brightness_reads_in_nits_on_paper_whites_steps() {
     for nits in paper {
         s.foundry.hdr_ui_nits = nits;
         s.foundry.hdr_paper_white = nits;
-        assert_eq!(item.slider(&s), Item::Foundry Client(H::HdrPaperWhite).slider(&s));
+        assert_eq!(item.slider(&s), Item::FoundryClient(H::HdrPaperWhite).slider(&s));
     }
 }
 
@@ -401,7 +401,7 @@ fn a_held_hdr_start_is_said_on_the_page_and_a_mode_change_tries_again() {
     let (mut caps, reading) = tests::window(Some(HdrOutput::Pq), Some(true));
     caps.held = true;
     let out = tests::snapshot(&s.foundry, Default::default(), caps, reading);
-    let hdr = Item::Foundry Client(H::Hdr);
+    let hdr = Item::FoundryClient(H::Hdr);
     let setting = h(
         H::Hdr,
         Cost::None,
@@ -411,7 +411,7 @@ fn a_held_hdr_start_is_said_on_the_page_and_a_mode_change_tries_again() {
     assert_eq!(held.chosen.as_deref(), Some(HDR_HELD));
     assert_eq!(held.why, None);
     assert_eq!(hdr.label(&s, &out).plain(), "HDR: Auto");
-    assert_eq!(Item::Foundry Client(H::HdrPeak).blocked(&s, &out), Some(HDR_HELD));
+    assert_eq!(Item::FoundryClient(H::HdrPeak).blocked(&s, &out), Some(HDR_HELD));
     // Not held, the row says what HDR does.
     caps.held = false;
     let free = tests::snapshot(&s.foundry, Default::default(), caps, reading);
@@ -443,7 +443,7 @@ fn a_device_loss_hold_is_said_on_the_page_and_a_mode_change_drops_it() {
     );
     let said = super::row(setting, &s, &out).chosen;
     assert!(said.is_some_and(|t| t.contains("lost the graphics device")));
-    Item::Foundry Client(H::Hdr).cycle(&mut s, false, FB, &out);
+    Item::FoundryClient(H::Hdr).cycle(&mut s, false, FB, &out);
     assert_eq!(s.foundry.safe_start, None);
 }
 
@@ -460,7 +460,7 @@ fn undo_never_restores_a_held_hdr_start() {
     opened.foundry.hdr_failed_start = Some("Vulkan 10de:2684 GPU; driver; 1.0; os".into());
     let mut s = opened.clone();
     let out = offering(true, Some(true));
-    Item::Foundry Client(H::Hdr).cycle(&mut s, true, FB, &out);
+    Item::FoundryClient(H::Hdr).cycle(&mut s, true, FB, &out);
     assert_eq!(
         (s.foundry.hdr, &s.foundry.hdr_failed_start),
         (HdrMode::On, &None)
@@ -492,7 +492,7 @@ fn the_calibrate_descriptions_fit_the_strip() {
     });
     let mut changed = Settings::default();
     changed.foundry.hdr_peak = 800;
-    let item = Item::Foundry Client(H::HdrCalibrate);
+    let item = Item::FoundryClient(H::HdrCalibrate);
     let width = Columns::of(427.0, 240.0).dock[2] - 24.0;
     for (s, out) in [
         (Settings::default(), NONE),

@@ -136,7 +136,7 @@ fn choice_description(opt: Opt, pad: &PadSettings) -> Option<&'static str> {
             gamepad::TextKeyboard::Auto => {
                 "Opens Steam's keyboard on a Steam Deck under Steam, and Foundry Client's otherwise."
             }
-            gamepad::TextKeyboard::Foundry Client => "Always opens Foundry Client's keyboard.",
+            gamepad::TextKeyboard::FoundryClient => "Always opens Foundry Client's keyboard.",
             gamepad::TextKeyboard::Steam => "Always opens Steam's keyboard.",
         },
         Opt::PadLightbar => match pad.lightbar {

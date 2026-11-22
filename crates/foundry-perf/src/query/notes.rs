@@ -21,7 +21,7 @@ pub fn warning_text(w: &Warning) -> String {
     let arg = |i: usize| w.args.get(i).copied().unwrap_or(0.0);
     match w.code() {
         WarningCode::ServerNotHorizon => {
-            "the connected server does not run Foundry Client, so only the client side was captured".into()
+            "the connected server does not run FoundryClient, so only the client side was captured".into()
         }
         WarningCode::ServerDenied => {
             "the server refused the capture: operator level 4 is required".into()

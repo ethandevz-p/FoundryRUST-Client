@@ -355,7 +355,7 @@ impl Launcher {
     /// loader's logo.
     fn auto_mark(&mut self, kind: NewKind, loader: Loader, size: f32) -> AnyElement {
         let mark = match kind {
-            NewKind::Foundry Client => return self.foundry_mark(size),
+            NewKind::FoundryClient => return self.foundry_mark(size),
             NewKind::Vanilla => self.grass_mark(size),
             NewKind::Modded => self.loader_logo(loader.id(), size),
         };
@@ -450,7 +450,7 @@ impl Launcher {
             )],
         );
         let mut summary = match kind {
-            NewKind::Foundry Client => match self.draft_horizon() {
+            NewKind::FoundryClient => match self.draft_horizon() {
                 Some(tag) => format!("Foundry Client · {}", self.version_label(&tag)),
                 None => "Foundry Client".into(),
             },
@@ -463,7 +463,7 @@ impl Launcher {
         }
         let icon = self.draft_icon(editing, kind, &name, 88.);
         let note = match kind {
-            NewKind::Foundry Client => {
+            NewKind::FoundryClient => {
                 tr("Its own worlds and packs. Your options and player name come along.")
             }
             _ => tr("Play downloads the game from Mojang the first time, with the Java it needs."),
@@ -471,7 +471,7 @@ impl Launcher {
         // One made in the launcher can switch what it plays; the game's home and modpacks
         // play what they were made with.
         let switches = editing.is_none_or(|i| i.kind == instances::Kind::Own);
-        let kinds = [NewKind::Foundry Client, NewKind::Vanilla, NewKind::Modded];
+        let kinds = [NewKind::FoundryClient, NewKind::Vanilla, NewKind::Modded];
         let names: Vec<&str> = loaders().iter().map(|l| l.name()).collect();
         let modded = match names.split_last() {
             Some((last, [])) => last.to_string(),
@@ -484,7 +484,7 @@ impl Launcher {
         let mut cards = Vec::new();
         for k in kinds {
             let (id, title, note) = match k {
-                NewKind::Foundry Client => (
+                NewKind::FoundryClient => (
                     "foundry",
                     tr("Foundry Client"),
                     tr("Minecraft rebuilt in Rust, with Foundry Client mods").to_string(),
@@ -806,7 +806,7 @@ impl Launcher {
         let (busy, copy, error) = (d.busy, d.copy, d.error.clone());
         let title = match (editing, kind) {
             (Some(i), _) => trf("Edit {name}", &[("name", &i.name)]),
-            (None, NewKind::Foundry Client) => tr("A new Foundry Client instance").into(),
+            (None, NewKind::FoundryClient) => tr("A new Foundry Client instance").into(),
             (None, NewKind::Vanilla) => tr("A new vanilla instance").into(),
             (None, NewKind::Modded) => tr("A new modded instance").into(),
         };
@@ -893,7 +893,7 @@ impl Launcher {
             None,
             div().flex().gap(px(10.)).child(name).child(group),
         ));
-        if kind == NewKind::Foundry Client {
+        if kind == NewKind::FoundryClient {
             body = body.child(self.foundry_versions(cx));
             if editing.is_none() {
                 body = body.child(self.start_from(copy, cx));

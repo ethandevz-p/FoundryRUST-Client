@@ -126,7 +126,7 @@ pub enum H {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Item {
     Vanilla(Opt),
-    Foundry Client(H),
+    FoundryClient(H),
     /// A Foundry Client extra that changes the picture (`extras::Item`, kept in `foundry-extras.txt`).
     Extra(crate::extras::Item),
 }
@@ -146,7 +146,7 @@ fn v(opt: Opt, cost: Cost, text: &'static str) -> Setting {
 }
 fn h(opt: H, cost: Cost, text: &'static str) -> Setting {
     Setting {
-        item: Item::Foundry Client(opt),
+        item: Item::FoundryClient(opt),
         cost,
         text,
     }
@@ -639,7 +639,7 @@ pub fn rows() -> Vec<(Page, Vec<(&'static str, Vec<Setting>)>)> {
     // The fork forces ticking serial, so Parallel Tick would be a no-op setting.
     for (_, groups) in &mut pages {
         for (_, rows) in groups {
-            rows.retain(|r| !matches!(r.item, Item::Foundry Client(H::ParallelTick)));
+            rows.retain(|r| !matches!(r.item, Item::FoundryClient(H::ParallelTick)));
         }
     }
     // Only Windows and Linux have more than one graphics API, translucent batching (Metal
@@ -650,7 +650,7 @@ pub fn rows() -> Vec<(Page, Vec<(&'static str, Vec<Setting>)>)> {
                 rows.retain(|r| {
                     !matches!(
                         r.item,
-                        Item::Foundry Client(H::GraphicsApi | H::TranslucentBatching | H::GpuCulling)
+                        Item::FoundryClient(H::GraphicsApi | H::TranslucentBatching | H::GpuCulling)
                     )
                 });
             }
@@ -716,34 +716,34 @@ fn description(
     text: &'static str,
 ) -> &'static str {
     match (item, setup(s, out)) {
-        (Item::Foundry Client(H::Hdr), _) if out.held => hdr_held(s),
-        (Item::Foundry Client(H::HdrCalibrate), Setup::Unknown) => {
+        (Item::FoundryClient(H::Hdr), _) if out.held => hdr_held(s),
+        (Item::FoundryClient(H::HdrCalibrate), Setup::Unknown) => {
             "Your display didn't say how bright it gets: calibrate to set it up."
         }
-        (Item::Foundry Client(H::HdrCalibrate), Setup::Guessed) => {
+        (Item::FoundryClient(H::HdrCalibrate), Setup::Guessed) => {
             "Auto uses the peak Windows reports. Calibrate if highlights look clipped."
         }
-        (Item::Foundry Client(H::HdrCalibrate), Setup::Automatic) => {
+        (Item::FoundryClient(H::HdrCalibrate), Setup::Automatic) => {
             "Already set up for your display. Only calibrate if HDR looks wrong."
         }
-        (Item::Foundry Client(H::HdrCalibrate), Setup::Changed) => {
+        (Item::FoundryClient(H::HdrCalibrate), Setup::Changed) => {
             "Puts Peak Brightness and Paper White back to your display's setup."
         }
         // A peak of unknown source isn't said to be set up; paper white is the player's own.
-        (Item::Foundry Client(h @ (H::HdrPeak | H::HdrPaperWhite)), Setup::Automatic | Setup::Changed)
+        (Item::FoundryClient(h @ (H::HdrPeak | H::HdrPaperWhite)), Setup::Automatic | Setup::Changed)
             if h == H::HdrPaperWhite || out.reported.is_some_and(|r| !r.peak_guessed) =>
         {
             "Set up for your display. Leave on Auto unless it looks wrong."
         }
-        (Item::Foundry Client(H::GpuCulling), _) if s.foundry.gpu_culling == GpuCullingMode::Auto => {
+        (Item::FoundryClient(H::GpuCulling), _) if s.foundry.gpu_culling == GpuCullingMode::Auto => {
             "Auto: tries it where your CPU limits the frame, keeps it if frames get faster."
         }
-        (Item::Foundry Client(H::EntityCulling), _) => match s.foundry.entity_culling {
+        (Item::FoundryClient(H::EntityCulling), _) => match s.foundry.entity_culling {
             EntityCullingMode::Off => "No entity occlusion culling.",
             EntityCullingMode::Synchronous => "CPU occlusion test runs this frame.",
             EntityCullingMode::Asynchronous => "Occlusion checks run on a worker thread.",
         },
-        (Item::Foundry Client(H::LeafCulling), _) => match s.foundry.leaf_culling {
+        (Item::FoundryClient(H::LeafCulling), _) => match s.foundry.leaf_culling {
             LeafCullingMode::Off => "Every leaf face. Vanilla's fancy leaves.",
             LeafCullingMode::Hidden => {
                 "Drops leaf faces behind two leaf layers: faster, same crowns."
@@ -756,7 +756,7 @@ fn description(
             }
             LeafCullingMode::Hollow => "Drops faces between leaves: faster, but gaps look through.",
         },
-        (Item::Foundry Client(H::ParticleCulling), _) => match s.foundry.particle_culling {
+        (Item::FoundryClient(H::ParticleCulling), _) => match s.foundry.particle_culling {
             ParticleCullingMode::Off => "Draws every particle.",
             ParticleCullingMode::Synchronous => {
                 "Skips offscreen, subpixel and terrain-hidden particles."
@@ -980,7 +980,7 @@ impl H {
                     _ if out.pack_lights => (s.running_pack.as_deref())
                         .unwrap_or_else(|| crate::shader_ui::pack_name(s))
                         .to_owned(),
-                    HdrLook::Foundry Client => lang::get_or("foundry.hdr.look.foundry", "Foundry Client"),
+                    HdrLook::FoundryClient => lang::get_or("foundry.hdr.look.foundry", "Foundry Client"),
                     HdrLook::Vanilla => lang::get_or("foundry.hdr.look.vanilla", "Vanilla"),
                 }),
             ),
@@ -1174,7 +1174,7 @@ impl Item {
             return Some("This feature is not yet available in Foundry Client.");
         }
         match self {
-            Item::Foundry Client(
+            Item::FoundryClient(
                 H::Hdr
                 | H::HdrCalibrate
                 | H::HdrBlackLevel
@@ -1184,7 +1184,7 @@ impl Item {
                 | H::HdrColorBoost
                 | H::HdrLook,
             ) if !out.hdr_frame_supported => Some("Your GPU or graphics API doesn't support it."),
-            Item::Foundry Client(
+            Item::FoundryClient(
                 H::HdrCalibrate
                 | H::HdrBlackLevel
                 | H::HdrPeak
@@ -1193,7 +1193,7 @@ impl Item {
                 | H::HdrColorBoost
                 | H::HdrLook,
             ) if !out.hdr_offered() => Some("Your display or system doesn't offer HDR output."),
-            Item::Foundry Client(
+            Item::FoundryClient(
                 H::HdrCalibrate
                 | H::HdrBlackLevel
                 | H::HdrPeak
@@ -1207,35 +1207,35 @@ impl Item {
                 "Turn HDR on to use it."
             }),
             // HDR output without the HUD's layer: a `shaders/` pack's frame (`FrameRequest`).
-            Item::Foundry Client(H::HdrUiBrightness) if out.hdr_on() && !out.frame.hud_layer => {
+            Item::FoundryClient(H::HdrUiBrightness) if out.hdr_on() && !out.frame.hud_layer => {
                 Some("The shader pack's picture is shown at Paper White.")
             }
-            Item::Foundry Client(H::HdrColorBoost) if out.compositor_stretches() => {
+            Item::FoundryClient(H::HdrColorBoost) if out.compositor_stretches() => {
                 Some("In scRGB, your desktop's own color setting applies.")
             }
-            Item::Foundry Client(H::HdrLook) if out.pack_lights => {
+            Item::FoundryClient(H::HdrLook) if out.pack_lights => {
                 Some(if out.hdr_on() && !out.frame.hud_layer {
                     "The shader pack's picture is shown at Paper White."
                 } else {
                     "The shader pack lights the world. Pick it under Shaders."
                 })
             }
-            Item::Foundry Client(H::TranslucentBatching)
+            Item::FoundryClient(H::TranslucentBatching)
                 if !crate::graphics::translucent_batching_offered() =>
             {
                 Some("Your GPU or graphics API doesn't support it.")
             }
-            Item::Foundry Client(H::EntityCullingPrecheck)
+            Item::FoundryClient(H::EntityCullingPrecheck)
                 if s.foundry.entity_culling != EntityCullingMode::Asynchronous =>
             {
                 Some("Only applies to asynchronous entity culling.")
             }
-            Item::Foundry Client(H::GpuCulling) => crate::graphics::gpu_culling_offer().reason(),
+            Item::FoundryClient(H::GpuCulling) => crate::graphics::gpu_culling_offer().reason(),
             // VideoSettingsScreen.tick: Max Anisotropy only works with Anisotropic filtering.
             Item::Vanilla(Opt::MaxAnisotropy) if s.file.int("textureFiltering") != 2 => {
                 Some("Only with Anisotropic texture filtering.")
             }
-            Item::Foundry Client(H::LeafCulling) if !s.foundry.vanilla_models(&s.resource_packs) => {
+            Item::FoundryClient(H::LeafCulling) if !s.foundry.vanilla_models(&s.resource_packs) => {
                 Some("Only with the default resource pack.")
             }
             _ => None,
@@ -1245,30 +1245,30 @@ impl Item {
     fn steps(self, s: &Settings) -> bool {
         self.switch(s).is_none()
             && self.slider(s).is_none()
-            && !matches!(self, Item::Foundry Client(H::HdrCalibrate | H::ShaderPacks))
+            && !matches!(self, Item::FoundryClient(H::HdrCalibrate | H::ShaderPacks))
     }
     /// On/off settings and their value.
     pub fn switch(self, s: &Settings) -> Option<bool> {
         let g = &s.foundry;
         Some(match self {
-            Item::Foundry Client(H::CaveCulling) => g.cave_culling,
-            Item::Foundry Client(H::OpaqueIce) => g.opaque_ice,
-            Item::Foundry Client(H::CacheShulkerBoxes) => g.cache_shulker_boxes,
-            Item::Foundry Client(H::CacheSigns) => g.cache_signs,
-            Item::Foundry Client(H::CacheDecoratedPots) => g.cache_decorated_pots,
-            Item::Foundry Client(H::CacheBells) => g.cache_bells,
-            Item::Foundry Client(H::CacheChests) => g.cache_chests,
-            Item::Foundry Client(H::CacheBanners) => g.cache_banners,
-            Item::Foundry Client(H::CacheCopperGolemStatues) => g.cache_copper_golem_statues,
-            Item::Foundry Client(H::Sky) => g.sky,
-            Item::Foundry Client(H::Fog) => g.fog,
-            Item::Foundry Client(H::Weather) => g.weather,
-            Item::Foundry Client(H::AnimatedTextures) => g.animated_textures,
-            Item::Foundry Client(H::DynamicResolution) => g.dynamic_resolution,
-            Item::Foundry Client(H::DitherCutoutMips) => g.dither_cutout_mips,
-            Item::Foundry Client(H::BatteryMode) => g.battery,
-            Item::Foundry Client(H::ShadowCache) => g.shadow_cache,
-            Item::Foundry Client(H::TranslucentBatching) => {
+            Item::FoundryClient(H::CaveCulling) => g.cave_culling,
+            Item::FoundryClient(H::OpaqueIce) => g.opaque_ice,
+            Item::FoundryClient(H::CacheShulkerBoxes) => g.cache_shulker_boxes,
+            Item::FoundryClient(H::CacheSigns) => g.cache_signs,
+            Item::FoundryClient(H::CacheDecoratedPots) => g.cache_decorated_pots,
+            Item::FoundryClient(H::CacheBells) => g.cache_bells,
+            Item::FoundryClient(H::CacheChests) => g.cache_chests,
+            Item::FoundryClient(H::CacheBanners) => g.cache_banners,
+            Item::FoundryClient(H::CacheCopperGolemStatues) => g.cache_copper_golem_statues,
+            Item::FoundryClient(H::Sky) => g.sky,
+            Item::FoundryClient(H::Fog) => g.fog,
+            Item::FoundryClient(H::Weather) => g.weather,
+            Item::FoundryClient(H::AnimatedTextures) => g.animated_textures,
+            Item::FoundryClient(H::DynamicResolution) => g.dynamic_resolution,
+            Item::FoundryClient(H::DitherCutoutMips) => g.dither_cutout_mips,
+            Item::FoundryClient(H::BatteryMode) => g.battery,
+            Item::FoundryClient(H::ShadowCache) => g.shadow_cache,
+            Item::FoundryClient(H::TranslucentBatching) => {
                 g.translucent_batching && crate::graphics::translucent_batching_offered()
             }
             Item::Vanilla(Opt::Vsync) => s.vsync,
@@ -1287,7 +1287,7 @@ impl Item {
     pub fn slider(self, s: &Settings) -> Option<f32> {
         match self {
             Item::Vanilla(o) => o.slider_position(s),
-            Item::Foundry Client(h) => h.slider(s),
+            Item::FoundryClient(h) => h.slider(s),
             Item::Extra(_) => None,
         }
     }
@@ -1301,7 +1301,7 @@ impl Item {
                 )
             }
             Item::Vanilla(o) => o.label(s),
-            Item::Foundry Client(h) => h.label(s, out),
+            Item::FoundryClient(h) => h.label(s, out),
             Item::Extra(e) => Text::option_name_value(
                 Text::literal(e.caption_text()),
                 Text::literal(e.value(&s.extras)),
@@ -1315,7 +1315,7 @@ impl Item {
         match self {
             // Options.applyGraphicsPreset, as Video Settings' slider does it.
             Item::Vanilla(o) => crate::options_ui::set_slider(o, s, v),
-            Item::Foundry Client(h) => h.set_slider(s, v),
+            Item::FoundryClient(h) => h.set_slider(s, v),
             Item::Extra(_) => {}
         }
         self.touched(s);
@@ -1326,7 +1326,7 @@ impl Item {
         }
         match self {
             Item::Vanilla(o) => o.cycle(s, back, framebuffer),
-            Item::Foundry Client(h) => h.cycle(s, back, out),
+            Item::FoundryClient(h) => h.cycle(s, back, out),
             Item::Extra(e) => e.cycle(&mut s.extras, back),
         }
         self.touched(s);
@@ -1336,7 +1336,7 @@ impl Item {
         let presetless = matches!(
             self,
             Item::Extra(_)
-                | Item::Foundry Client(
+                | Item::FoundryClient(
                     H::Preset
                         | H::Overlay
                         | H::ScreenshotQuality
@@ -1374,7 +1374,7 @@ impl Item {
     pub fn slider_steps(self) -> Option<u32> {
         match self {
             Item::Vanilla(o) => o.slider_steps(),
-            Item::Foundry Client(h) => h.slider_steps(),
+            Item::FoundryClient(h) => h.slider_steps(),
             Item::Extra(_) => None,
         }
     }
@@ -1394,7 +1394,7 @@ impl Item {
 /// Whether a setting is on the screen now: Upscaling only while TAA is, which does it.
 fn shown(item: Item, s: &Settings) -> bool {
     match item {
-        Item::Foundry Client(H::Upscaling) => s.foundry.taa,
+        Item::FoundryClient(H::Upscaling) => s.foundry.taa,
         Item::Extra(crate::extras::Item::Fullbright) => !s.fullbright_held,
         _ => true,
     }
@@ -1536,14 +1536,14 @@ impl Screen for GraphicsScreen {
     }
     fn press(&mut self, s: &mut Settings, item: Item, back: bool) -> Vec<Output> {
         match item {
-            Item::Foundry Client(H::HdrCalibrate) if setup(s, &self.output) == Setup::Changed => {
+            Item::FoundryClient(H::HdrCalibrate) if setup(s, &self.output) == Setup::Changed => {
                 s.foundry.hdr_peak = 0;
                 s.foundry.hdr_paper_white = 0;
                 vec![Output::Event(Event::Changed)]
             }
-            Item::Foundry Client(H::HdrCalibrate) => vec![Output::Push(OptionsPage::HdrCalibration)],
+            Item::FoundryClient(H::HdrCalibrate) => vec![Output::Push(OptionsPage::HdrCalibration)],
             // The list of either kind, as the Shaders page opens it from anywhere.
-            Item::Foundry Client(H::ShaderPacks) => {
+            Item::FoundryClient(H::ShaderPacks) => {
                 s.shader_options = None;
                 vec![
                     Output::Event(Event::ListShaderPacks),
@@ -1732,7 +1732,7 @@ mod tests {
         let on = |page| -> Vec<(Page, Item)> {
             items()
                 .into_iter()
-                .filter(|(p, i)| *p == page && *i != Item::Foundry Client(H::Upscaling))
+                .filter(|(p, i)| *p == page && *i != Item::FoundryClient(H::Upscaling))
                 .collect()
         };
         assert_eq!(settings(&mut ui, &s), on(Page::General));
@@ -1812,10 +1812,10 @@ mod tests {
         ui.set_search("preset");
         let found = ui.listed(&s, SIZE);
         let general = |item| (Page::General, item);
-        assert!(found.contains(&general(Item::Foundry Client(H::Preset))));
+        assert!(found.contains(&general(Item::FoundryClient(H::Preset))));
         assert!(found.contains(&general(Item::Vanilla(Opt::Preset))));
         ui.set_search("foundry preset");
-        assert_eq!(ui.listed(&s, SIZE), [general(Item::Foundry Client(H::Preset))]);
+        assert_eq!(ui.listed(&s, SIZE), [general(Item::FoundryClient(H::Preset))]);
         ui.set_search("fov");
         assert_eq!(
             ui.listed(&s, SIZE),
@@ -1842,9 +1842,9 @@ mod tests {
         let at = |[x, y, ..]: [f32; 4]| (x + 2.0, y + 2.0);
         // Nothing changed: Undo does nothing.
         assert!(press(&mut ui, &mut s, at(undo)).is_empty());
-        let fog = row(&mut ui, &s, Item::Foundry Client(H::Fog));
+        let fog = row(&mut ui, &s, Item::FoundryClient(H::Fog));
         assert_eq!(press(&mut ui, &mut s, at(fog)), [CLICK, CHANGED]);
-        let sky = row(&mut ui, &s, Item::Foundry Client(H::Sky));
+        let sky = row(&mut ui, &s, Item::FoundryClient(H::Sky));
         press(&mut ui, &mut s, at(sky));
         assert!(!s.foundry.fog && !s.foundry.sky && ui.changed());
         // F11 and another option meanwhile: Undo leaves them as they are.
@@ -1857,7 +1857,7 @@ mod tests {
         // Calibration counts as a change too.
         ui.screen.output = offering(true, None);
         s.foundry.hdr = HdrMode::On;
-        let calibrate = row(&mut ui, &s, Item::Foundry Client(H::HdrCalibrate));
+        let calibrate = row(&mut ui, &s, Item::FoundryClient(H::HdrCalibrate));
         press(&mut ui, &mut s, at(calibrate));
         assert!(ui.changed());
         // From the keyboard: Undo puts it back and goes away.
@@ -1872,7 +1872,7 @@ mod tests {
         let mut s = Settings::default();
         let mut ui = ui();
         s.foundry.chunk_updates = 16;
-        let r = row(&mut ui, &s, Item::Foundry Client(H::ChunkUpdates));
+        let r = row(&mut ui, &s, Item::FoundryClient(H::ChunkUpdates));
         let (tx, tw) = Columns::of(SIZE.0, SIZE.1).track();
         // On its name: focused, unchanged.
         assert!(press(&mut ui, &mut s, (r[0] + 4.0, r[1] + 4.0)).is_empty());
@@ -2039,7 +2039,7 @@ mod tests {
         key(&mut ui, &mut s, K::ArrowUp);
         assert_eq!(ui.focused(), Some(Target::Page(Page::Hdr)));
         // Its row wheeled far out of view: Down takes the first row in view, as it is.
-        focus_on(&mut ui, Item::Foundry Client(H::Preset));
+        focus_on(&mut ui, Item::FoundryClient(H::Preset));
         ui.scroll(&s, SIZE, -1000.0);
         let before = ui.scroll_amount();
         assert!(before > 0.0);
@@ -2063,7 +2063,7 @@ mod tests {
         // Tab reaches the page list; Enter opens Performance and Tab goes on into it.
         assert!(tab_to(&mut ui, &mut s, Target::Page(Page::Performance)));
         assert_eq!(key(&mut ui, &mut s, K::Enter), [CLICK]);
-        let chunk_updates = Item::Foundry Client(H::ChunkUpdates);
+        let chunk_updates = Item::FoundryClient(H::ChunkUpdates);
         assert!(tab_to(&mut ui, &mut s, Target::Row(chunk_updates)) && ui.changes_value());
         // Tab scrolled its row into view.
         assert!(ui.in_view(&s, SIZE, chunk_updates));
@@ -2075,10 +2075,10 @@ mod tests {
         key(&mut ui, &mut s, K::Space);
         assert!(!ui.changes_value());
         key(&mut ui, &mut s, K::ArrowDown);
-        assert_eq!(ui.focused_row(), Some(Item::Foundry Client(H::UploadBudget)));
+        assert_eq!(ui.focused_row(), Some(Item::FoundryClient(H::UploadBudget)));
         // Enter presses a switch; Escape leaves.
-        row(&mut ui, &s, Item::Foundry Client(H::Fog));
-        focus_on(&mut ui, Item::Foundry Client(H::Fog));
+        row(&mut ui, &s, Item::FoundryClient(H::Fog));
+        focus_on(&mut ui, Item::FoundryClient(H::Fog));
         assert_eq!(key(&mut ui, &mut s, K::Enter), [CLICK, CHANGED]);
         assert!(!s.foundry.fog);
         assert_eq!(key(&mut ui, &mut s, K::Escape), [Output::Done]);
@@ -2120,20 +2120,20 @@ mod tests {
             groups.flat_map(|group| group.rows).collect()
         };
         let find = |s: &Settings, item| rows_of(s).into_iter().find(|r| r.id == item).unwrap();
-        let culling = find(&s, Item::Foundry Client(H::EntityCulling));
+        let culling = find(&s, Item::FoundryClient(H::EntityCulling));
         assert_eq!(
             culling.chosen.as_deref(),
             Some("No entity occlusion culling.")
         );
         assert!(culling.cost.is_some() && culling.live);
         s.foundry.entity_culling = EntityCullingMode::Off;
-        let precheck = find(&s, Item::Foundry Client(H::EntityCullingPrecheck));
+        let precheck = find(&s, Item::FoundryClient(H::EntityCullingPrecheck));
         assert!(!precheck.live);
         assert_eq!(
             precheck.why.as_deref(),
             Some("Only applies to asynchronous entity culling.")
         );
-        let calibrate = find(&s, Item::Foundry Client(H::HdrCalibrate));
+        let calibrate = find(&s, Item::FoundryClient(H::HdrCalibrate));
         assert_eq!(calibrate.value, Value::Press);
     }
 
@@ -2175,19 +2175,19 @@ mod tests {
     #[test]
     fn rows_split_vanilla_labels_into_name_and_value() {
         let s = Settings::default();
-        let (name, value) = parts(Item::Foundry Client(H::LodDistance), &s, &NONE);
+        let (name, value) = parts(Item::FoundryClient(H::LodDistance), &s, &NONE);
         assert_eq!(
             (name.as_str(), value.as_deref()),
             ("LOD Distance", Some("Off"))
         );
-        let (name, value) = parts(Item::Foundry Client(H::HdrCalibrate), &s, &NONE);
+        let (name, value) = parts(Item::FoundryClient(H::HdrCalibrate), &s, &NONE);
         assert!(!name.is_empty() && value.is_none());
     }
 
     #[test]
     fn lod_distance_slides_after_render_distance_without_changing_it() {
         let mut s = Settings::default();
-        let item = Item::Foundry Client(H::LodDistance);
+        let item = Item::FoundryClient(H::LodDistance);
         let near = s.render_distance;
         assert_eq!(item.label(&s, &NONE).plain(), "LOD Distance: Off");
         assert_eq!(item.slider(&s), Some(0.0));
@@ -2264,7 +2264,7 @@ mod tests {
     #[test]
     fn presets_set_vanilla_and_horizon_options() {
         let mut s = Settings::default();
-        Item::Foundry Client(H::Preset).cycle(&mut s, false, [854, 480], &NONE);
+        Item::FoundryClient(H::Preset).cycle(&mut s, false, [854, 480], &NONE);
         assert_eq!(s.foundry.preset, Preset::FullPerformance);
         assert_eq!(s.render_distance, 6);
         assert_eq!(s.clouds, "false");
@@ -2272,7 +2272,7 @@ mod tests {
         assert_eq!(s.foundry.entity_culling, EntityCullingMode::Asynchronous);
         assert!(s.foundry.opaque_ice && s.foundry.cache_chests);
         // The next one puts back what only Full Performance lowers.
-        Item::Foundry Client(H::Preset).cycle(&mut s, false, [854, 480], &NONE);
+        Item::FoundryClient(H::Preset).cycle(&mut s, false, [854, 480], &NONE);
         assert_eq!(s.foundry.preset, Preset::Performance);
         assert_eq!(s.render_distance, 8);
         assert_eq!(s.foundry.resolution_scale, 100);
@@ -2281,7 +2281,7 @@ mod tests {
         Item::Vanilla(Opt::Clouds).cycle(&mut s, false, [854, 480], &NONE);
         assert_eq!(s.foundry.preset, Preset::Custom);
         // Display preferences keep it.
-        Item::Foundry Client(H::Preset).cycle(&mut s, true, [854, 480], &NONE);
+        Item::FoundryClient(H::Preset).cycle(&mut s, true, [854, 480], &NONE);
         Item::Vanilla(Opt::Vsync).cycle(&mut s, false, [854, 480], &NONE);
         assert_eq!(s.foundry.preset, Preset::Ultra);
         // Ultra keeps the optimizations that leave the picture as it is, and no others.
@@ -2297,14 +2297,14 @@ mod tests {
     #[test]
     fn screenshot_quality_cycles_1_2_4_8_and_keeps_the_preset() {
         let mut s = Settings::default();
-        Item::Foundry Client(H::Preset).cycle(&mut s, false, [854, 480], &NONE);
+        Item::FoundryClient(H::Preset).cycle(&mut s, false, [854, 480], &NONE);
         let mut seen = Vec::new();
         for _ in 0..4 {
-            Item::Foundry Client(H::ScreenshotQuality).cycle(&mut s, false, [854, 480], &NONE);
+            Item::FoundryClient(H::ScreenshotQuality).cycle(&mut s, false, [854, 480], &NONE);
             seen.push(s.foundry.screenshot_quality);
         }
         assert_eq!(seen, [2, 4, 8, 1]);
-        Item::Foundry Client(H::ScreenshotQuality).cycle(&mut s, true, [854, 480], &NONE);
+        Item::FoundryClient(H::ScreenshotQuality).cycle(&mut s, true, [854, 480], &NONE);
         assert_eq!(s.foundry.screenshot_quality, 8);
         assert_eq!(s.foundry.preset, Preset::FullPerformance);
     }
@@ -2322,7 +2322,7 @@ mod tests {
     #[test]
     fn antialiasing_cycles_spatial_temporal_and_multisampled_modes() {
         let mut s = Settings::default();
-        let item = Item::Foundry Client(H::Antialiasing);
+        let item = Item::FoundryClient(H::Antialiasing);
         let msaa = EffectiveOutput { msaa: true, ..NONE };
         for label in ["FXAA", "TAA", "4x MSAA", "Off"] {
             item.cycle(&mut s, false, [854, 480], &msaa);
@@ -2340,7 +2340,7 @@ mod tests {
         // Upscaling needs TAA: a ratio turns it on, leaving TAA goes back to Native.
         s.foundry.taa = false;
         s.foundry.msaa4x = false;
-        let upscaling = Item::Foundry Client(H::Upscaling);
+        let upscaling = Item::FoundryClient(H::Upscaling);
         upscaling.cycle(&mut s, false, [854, 480], &NONE);
         assert_eq!(upscaling.label(&s, &NONE).plain(), "Upscaling: Quality");
         assert!(s.foundry.taa);
@@ -2358,7 +2358,7 @@ mod tests {
     #[test]
     fn entity_culling_modes_are_opt_in_and_cycle_from_its_row() {
         let mut s = Settings::default();
-        let item = Item::Foundry Client(H::EntityCulling);
+        let item = Item::FoundryClient(H::EntityCulling);
         assert_eq!(s.foundry.entity_culling, EntityCullingMode::Off);
         assert_eq!(item.label(&s, &NONE).plain(), "Entity Culling: Off");
         let mut ui = ui();
@@ -2384,7 +2384,7 @@ mod tests {
     #[test]
     fn particle_culling_modes_are_opt_in_and_cycle_from_its_row() {
         let mut s = Settings::default();
-        let item = Item::Foundry Client(H::ParticleCulling);
+        let item = Item::FoundryClient(H::ParticleCulling);
         assert_eq!(s.foundry.particle_culling, ParticleCullingMode::Off);
         assert_eq!(item.label(&s, &NONE).plain(), "Particle Culling: Off");
         for mode in ParticleCullingMode::ALL {
@@ -2419,7 +2419,7 @@ mod tests {
     #[test]
     fn graphics_cycle_button_cycles_forward_and_shift_click_cycles_backward_with_wrapping() {
         let mut s = Settings::default();
-        let item = Item::Foundry Client(H::EntityCulling);
+        let item = Item::FoundryClient(H::EntityCulling);
         let mut ui = ui();
         let r = row(&mut ui, &s, item);
         let at = (r[0] + 4.0, r[1] + 4.0);
@@ -2452,18 +2452,18 @@ mod tests {
     fn left_and_right_step_a_focused_choice_back_and_on() {
         let mut s = Settings::default();
         let mut ui = ui();
-        row(&mut ui, &s, Item::Foundry Client(H::EntityCulling));
-        focus_on(&mut ui, Item::Foundry Client(H::EntityCulling));
+        row(&mut ui, &s, Item::FoundryClient(H::EntityCulling));
+        focus_on(&mut ui, Item::FoundryClient(H::EntityCulling));
         assert_eq!(key(&mut ui, &mut s, K::ArrowLeft), [CLICK, CHANGED]);
         assert_eq!(s.foundry.entity_culling, EntityCullingMode::Asynchronous);
         assert_eq!(key(&mut ui, &mut s, K::ArrowRight), [CLICK, CHANGED]);
         assert_eq!(s.foundry.entity_culling, EntityCullingMode::Off);
-        assert_eq!(ui.focused_row(), Some(Item::Foundry Client(H::EntityCulling)));
+        assert_eq!(ui.focused_row(), Some(Item::FoundryClient(H::EntityCulling)));
     }
 
     #[test]
     fn entity_culling_precheck_slider_is_only_live_for_async() {
-        let item = Item::Foundry Client(H::EntityCullingPrecheck);
+        let item = Item::FoundryClient(H::EntityCullingPrecheck);
         let mut s = Settings::default();
         let initial = s.foundry.entity_culling_precheck;
 
@@ -2538,7 +2538,7 @@ mod tests {
     /// preset, and greyed out, reading Off, where the device can't batch.
     #[test]
     fn translucent_batching_is_an_advanced_switch_where_the_device_can() {
-        let item = Item::Foundry Client(H::TranslucentBatching);
+        let item = Item::FoundryClient(H::TranslucentBatching);
         let page = items()
             .into_iter()
             .find(|(_, i)| *i == item)
@@ -2587,7 +2587,7 @@ mod tests {
     #[test]
     fn gpu_culling_steps_off_on_auto_where_it_is_offered() {
         use crate::graphics::GpuCullingOffer;
-        let item = Item::Foundry Client(H::GpuCulling);
+        let item = Item::FoundryClient(H::GpuCulling);
         let at = |item| items().into_iter().position(|(_, i)| i == item);
         if cfg!(target_os = "macos") {
             // Metal draws no count the GPU wrote: never offered, so not shown.
@@ -2596,7 +2596,7 @@ mod tests {
         }
         let i = at(item).unwrap();
         assert_eq!(items()[i].0, Page::Performance);
-        assert_eq!(at(Item::Foundry Client(H::CaveCulling)), Some(i - 1));
+        assert_eq!(at(Item::FoundryClient(H::CaveCulling)), Some(i - 1));
         let mut s = Settings::default();
         assert_eq!(item.switch(&s), None);
         assert_eq!(s.foundry.gpu_culling, GpuCullingMode::Off);
@@ -2647,7 +2647,7 @@ mod tests {
     #[test]
     fn opaque_ice_toggles_and_round_trips() {
         let mut s = Settings::default();
-        let item = Item::Foundry Client(H::OpaqueIce);
+        let item = Item::FoundryClient(H::OpaqueIce);
         assert_eq!(item.switch(&s), Some(false));
         assert_eq!(item.label(&s, &NONE).plain(), "Opaque Ice: Off");
         item.cycle(&mut s, false, FB, &NONE);
@@ -2673,7 +2673,7 @@ mod tests {
     #[test]
     fn leaf_culling_cycles_modes_beside_the_other_culling() {
         let mut s = Settings::default();
-        let item = Item::Foundry Client(H::LeafCulling);
+        let item = Item::FoundryClient(H::LeafCulling);
         assert_eq!(item.switch(&s), None);
         assert_eq!(item.label(&s, &NONE).plain(), "Leaf Culling: Off");
         for label in ["Hidden Faces", "Solid", "Solid Aggressive", "Hollow", "Off"] {
@@ -2704,7 +2704,7 @@ mod tests {
             H::ParticleCulling,
             H::LeafCulling,
         ] {
-            assert!(block.contains(&Item::Foundry Client(h)), "{h:?}");
+            assert!(block.contains(&Item::FoundryClient(h)), "{h:?}");
         }
         // The block-entity caches are the group after it, in this order.
         let groups: Vec<(&str, Vec<Item>)> = rows()
@@ -2732,7 +2732,7 @@ mod tests {
                     H::CacheBanners,
                     H::CacheCopperGolemStatues,
                 ]
-                .map(Item::Foundry Client)
+                .map(Item::FoundryClient)
                 .to_vec()
             )
         );
@@ -2801,7 +2801,7 @@ mod tests {
             H::HdrColorBoost,
         ];
         for h in options {
-            let item = Item::Foundry Client(h);
+            let item = Item::FoundryClient(h);
             let steps = h.slider_steps().expect("steps defined");
             for i in 0..steps {
                 let pos = i as f32 / steps as f32;
@@ -2877,7 +2877,7 @@ mod tests {
             h.set_slider(&mut s, 0.0);
             let mut stepped = std::collections::BTreeSet::from([value(h, &s)]);
             for _ in 0..h.slider_steps().unwrap() {
-                Item::Foundry Client(h).step_slider(&mut s, true, 200.0, &out);
+                Item::FoundryClient(h).step_slider(&mut s, true, 200.0, &out);
                 stepped.insert(value(h, &s));
             }
             assert_eq!(stepped, set, "{h:?}");
@@ -2889,7 +2889,7 @@ mod tests {
             h.set_slider(s, 0.0);
             let mut all = vec![value(h, s)];
             for _ in 0..h.slider_steps().unwrap() {
-                Item::Foundry Client(h).step_slider(s, true, 200.0, &out);
+                Item::FoundryClient(h).step_slider(s, true, 200.0, &out);
                 all.push(value(h, s));
             }
             all
@@ -2925,7 +2925,7 @@ mod tests {
                             lang::get(group);
                             for row in rows {
                                 // Vanilla's captions are vanilla's keys, not loaded here.
-                                if let Item::Foundry Client(_) = row.item {
+                                if let Item::FoundryClient(_) = row.item {
                                     row.item.label(&s, &NONE);
                                 }
                                 let text = description(row.item, &s, &NONE, row.text);
@@ -2934,7 +2934,7 @@ mod tests {
                                 if let Some(why) = row.item.blocked(&s, &NONE) {
                                     lang::get(why);
                                 }
-                                if let Item::Foundry Client(h) = row.item {
+                                if let Item::FoundryClient(h) = row.item {
                                     h.cycle(&mut s, false, &NONE);
                                 }
                             }
@@ -3012,8 +3012,8 @@ mod tests {
         ] {
             let (shown, _) = lang::scoped(lang::Language::load(&[&Vanilla], code), || {
                 (
-                    Item::Foundry Client(H::LeafCulling).label(&s, &NONE).plain(),
-                    Item::Foundry Client(H::ResolutionScale).label(&s, &NONE).plain(),
+                    Item::FoundryClient(H::LeafCulling).label(&s, &NONE).plain(),
+                    Item::FoundryClient(H::ResolutionScale).label(&s, &NONE).plain(),
                 )
             });
             assert_eq!(shown, (leaf.into(), scale.into()), "{code}");
@@ -3069,7 +3069,7 @@ mod tests {
             ),
         ] {
             let (shown, _) = lang::scoped(lang::Language::load(&[], code), || {
-                let item = |h| Item::Foundry Client(h);
+                let item = |h| Item::FoundryClient(h);
                 (
                     item(H::LeafCulling).label(&s, &NONE).plain(),
                     item(H::EntityCulling).label(&s, &NONE).plain(),

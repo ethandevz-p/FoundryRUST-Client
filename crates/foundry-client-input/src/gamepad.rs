@@ -601,25 +601,25 @@ pub enum TextKeyboard {
     /// Steam's on a Steam Deck under Steam, else Foundry Client's.
     #[default]
     Auto,
-    Foundry Client,
+    FoundryClient,
     Steam,
 }
 impl TextKeyboard {
     pub const ALL: [TextKeyboard; 3] = [
         TextKeyboard::Auto,
-        TextKeyboard::Foundry Client,
+        TextKeyboard::FoundryClient,
         TextKeyboard::Steam,
     ];
     pub fn name(self) -> &'static str {
         match self {
             TextKeyboard::Auto => "auto",
-            TextKeyboard::Foundry Client => "foundry",
+            TextKeyboard::FoundryClient => "foundry",
             TextKeyboard::Steam => "steam",
         }
     }
     pub fn parse(name: &str) -> Self {
         match name {
-            "foundry" => TextKeyboard::Foundry Client,
+            "foundry" => TextKeyboard::FoundryClient,
             "steam" => TextKeyboard::Steam,
             _ => TextKeyboard::Auto,
         }
@@ -632,7 +632,7 @@ impl TextKeyboard {
 pub fn steam_keyboard(choice: TextKeyboard) -> bool {
     match choice {
         TextKeyboard::Steam => true,
-        TextKeyboard::Foundry Client => false,
+        TextKeyboard::FoundryClient => false,
         TextKeyboard::Auto => std::env::var("SteamDeck").is_ok_and(|v| v == "1"),
     }
 }
@@ -2498,14 +2498,14 @@ bind_key.hotbar.2:north
         assert_eq!(stick_direction([-0.2, -0.8], 0.5), Some(Button::DPadDown));
         assert_eq!(stick_direction([0.3, 0.3], 0.5), None);
         let s = PadSettings {
-            keyboard: TextKeyboard::Foundry Client,
+            keyboard: TextKeyboard::FoundryClient,
             ..PadSettings::default()
         };
         assert_eq!(
             PadSettings::parse(&s.serialize()).keyboard,
-            TextKeyboard::Foundry Client
+            TextKeyboard::FoundryClient
         );
-        assert!(steam_keyboard(TextKeyboard::Steam) && !steam_keyboard(TextKeyboard::Foundry Client));
+        assert!(steam_keyboard(TextKeyboard::Steam) && !steam_keyboard(TextKeyboard::FoundryClient));
     }
 
     #[test]

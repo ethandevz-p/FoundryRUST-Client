@@ -926,7 +926,7 @@ impl Opt {
             }),
             Opt::PadKeyboard => tr(match s.controller.keyboard {
                 gamepad::TextKeyboard::Auto => "foundry.options.keyboard.auto",
-                gamepad::TextKeyboard::Foundry Client => "foundry.options.keyboard.foundry",
+                gamepad::TextKeyboard::FoundryClient => "foundry.options.keyboard.foundry",
                 gamepad::TextKeyboard::Steam => "foundry.options.keyboard.steam",
             }),
             Opt::PadRadialMode | Opt::PadRadialStick => self.radial_text(s),
@@ -1529,7 +1529,7 @@ pub enum Page {
     Credits,
     /// Foundry Client Settings: every page Foundry Client adds, as a mod's settings
     /// screen hangs off vanilla's Options.
-    Foundry Client,
+    FoundryClient,
     /// Replay Studio: saved recordings browser and 3D video editor launcher.
     Studio,
     /// AI Agent: agent control on or off, whether an agent is connected, the connection details.
@@ -2506,7 +2506,7 @@ impl OptionsUi {
             Page::Extras => "foundry.pages.extras",
             Page::Pvp => "foundry.pages.pvp",
             Page::Credits => "credits_and_attribution.screen.title",
-            Page::Foundry Client => "foundry.pages.settings",
+            Page::FoundryClient => "foundry.pages.settings",
             Page::Studio => "foundry.pages.studio",
             Page::Agent => "foundry.pages.agent",
             Page::SplitProfiles => "foundry.pages.split_profiles",
@@ -2791,7 +2791,7 @@ impl OptionsUi {
                 flush(&mut rows, &mut section);
                 rows
             }
-            Page::Foundry Client => self.foundry_rows(s),
+            Page::FoundryClient => self.foundry_rows(s),
             Page::Agent => {
                 let mut rows = vec![Row::Buttons(
                     self.extra_button(s, crate::extras::Item::AgentControl),
@@ -5322,7 +5322,7 @@ mod tests {
     /// "Hotbar: Previous Slot" in every language (#1927).
     #[test]
     fn foundry_option_pages_follow_the_language() {
-        let (texts, missed) = page_texts("de_de", &[Page::Foundry Client, Page::Extras, Page::PadBinds]);
+        let (texts, missed) = page_texts("de_de", &[Page::FoundryClient, Page::Extras, Page::PadBinds]);
         for want in [
             "Splitscreen …",
             "Weicher Chat: Aus",
@@ -5393,7 +5393,7 @@ mod tests {
             vec![Event::ButtonClick, Event::OpenModFolder]
         );
         // Config does nothing until a native mod with settings is picked from the list
-        // (Foundry Client, Minecraft, then Native).
+        // (FoundryClient, Minecraft, then Native).
         assert!(click(&mut ui, &mut s, 397.0, 192.0).is_empty());
         assert!(click(&mut ui, &mut s, 61.0, 104.0).is_empty());
         let events = click(&mut ui, &mut s, 397.0, 192.0);
@@ -6632,7 +6632,7 @@ mod tests {
                 false,
             )
         };
-        for page in [Page::Foundry Client, Page::Extras] {
+        for page in [Page::FoundryClient, Page::Extras] {
             assert_eq!(
                 click(&mut ui, &mut s, Act::Push(page)),
                 vec![Event::ButtonClick]
@@ -6676,7 +6676,7 @@ mod tests {
             ui.key(&mut s, &atlas, winit::keyboard::KeyCode::Escape, None),
             vec![Event::Changed]
         );
-        assert_eq!(ui.page(), Page::Foundry Client);
+        assert_eq!(ui.page(), Page::FoundryClient);
     }
 
     /// A Bindings row pressed waits for a controller button: the next click or key cancels the
@@ -7718,8 +7718,8 @@ mod tests {
                 use crate::graphics_ui::{H, Item};
                 let id = match row.item {
                     // Vanilla's Graphics API button sets the same setting.
-                    Item::Foundry Client(H::GraphicsApi) => "graphics-api".to_owned(),
-                    Item::Foundry Client(H::ShaderPacks) => {
+                    Item::FoundryClient(H::GraphicsApi) => "graphics-api".to_owned(),
+                    Item::FoundryClient(H::ShaderPacks) => {
                         ways_in
                             .entry(format!("{:?}", Page::ShaderPacks))
                             .or_default()
@@ -7727,7 +7727,7 @@ mod tests {
                         continue;
                     }
                     Item::Vanilla(o) => format!("{o:?}"),
-                    Item::Foundry Client(h) => format!("graphics:{h:?}"),
+                    Item::FoundryClient(h) => format!("graphics:{h:?}"),
                     Item::Extra(e) => format!("extra:{e:?}"),
                 };
                 graphics_rows.insert(id.clone());
@@ -7853,11 +7853,11 @@ mod tests {
         let main = pushes(&mut ui);
         assert_eq!(
             &main[main.len() - 3..],
-            [Page::Foundry Client, Page::Mods, Page::Credits]
+            [Page::FoundryClient, Page::Mods, Page::Credits]
         );
         // Video Settings... is the graphics screen, as Sodium's.
         assert!(main.contains(&Page::Graphics) && !main.contains(&Page::Video));
-        ui.push(Page::Foundry Client);
+        ui.push(Page::FoundryClient);
         assert_eq!(
             pushes(&mut ui),
             [
@@ -8074,7 +8074,7 @@ mod tests {
         ui.show(Page::Graphics);
         ui.graphics.show(crate::graphics_ui::Page::Performance);
         s.foundry.chunk_updates = 10;
-        let chunk_updates = crate::graphics_ui::Item::Foundry Client(crate::graphics_ui::H::ChunkUpdates);
+        let chunk_updates = crate::graphics_ui::Item::FoundryClient(crate::graphics_ui::H::ChunkUpdates);
         ui.size = size;
         ui.framebuffer = [854, 480];
 
@@ -8331,7 +8331,7 @@ mod tests {
         let size = (960.0, 540.0);
         let mut s = Settings::default();
         let mut ui = OptionsUi::default();
-        ui.show(Page::Foundry Client);
+        ui.show(Page::FoundryClient);
         let (widgets, ..) = ui.layout(&s, size.0, size.1);
         let browse = widgets
             .into_iter()

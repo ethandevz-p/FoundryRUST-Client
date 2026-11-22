@@ -205,7 +205,7 @@ impl Launcher {
                 Some(None) => saved.home.join(instances::PICTURE).is_file(),
                 None => false,
             },
-            foundry: (d.java.kind == NewKind::Foundry Client).then(|| (d.pin.clone(), d.channel)),
+            foundry: (d.java.kind == NewKind::FoundryClient).then(|| (d.pin.clone(), d.channel)),
             plays: self.draft_plays(saved).unwrap_or_else(|| Plays::of(saved)),
             java: (
                 self.servers.value(Field::JavaArgs).trim().to_string(),
@@ -271,7 +271,7 @@ impl Launcher {
             cx.notify();
         });
         let what = match kind {
-            NewKind::Foundry Client => tr("Foundry Client"),
+            NewKind::FoundryClient => tr("Foundry Client"),
             NewKind::Vanilla => tr("Vanilla"),
             NewKind::Modded => tr("Modded"),
         };
@@ -441,7 +441,7 @@ impl Launcher {
             }
             SheetTab::Installation => {
                 pane = pane.children(self.switch_notice(&editing));
-                if kind == NewKind::Foundry Client {
+                if kind == NewKind::FoundryClient {
                     pane = pane.child(self.foundry_versions(cx));
                 } else {
                     self.load_versions(cx);
@@ -1009,7 +1009,7 @@ mod tests {
             icon: None,
             picture: false,
             foundry: Some((None, Channel::Stable)),
-            plays: Plays::Foundry Client,
+            plays: Plays::FoundryClient,
             java: (String::new(), (String::new(), String::new())),
             hooks: None,
             switches: None,

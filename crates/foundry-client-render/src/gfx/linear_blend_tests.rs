@@ -10,7 +10,7 @@ use wgpu::util::DeviceExt;
 /// (`foundry_line_out`).
 #[derive(Clone, Copy)]
 enum Writer {
-    Foundry Client,
+    FoundryClient,
     Pack,
 }
 
@@ -225,7 +225,7 @@ fn translucent_draws_blend_in_the_light_the_frame_holds() {
         (false, [0.3556, 0.1156, 0.1944], [0.3250, 0.0887, 0.3556]),
         (true, [0.4606, 0.2200, 0.1965], [0.4590, 0.1467, 0.4132]),
     ] {
-        let glass = [(Writer::Foundry Client, [0.1, 0.9, 0.4, 0.25])];
+        let glass = [(Writer::FoundryClient, [0.1, 0.9, 0.4, 0.25])];
         let got = stage_input(&gpu, linear, background, &glass);
         assert_near(got, foundry, &format!("Foundry Client's glass, linear {linear}"));
         let glass = [(Writer::Pack, [0.0, 0.5, 1.0, 0.25])];
@@ -247,7 +247,7 @@ fn stages_read_the_same_light_under_either_blend() {
     let clear = [0.8, 0.2, 0.5];
     let cases = [
         (
-            vec![(Writer::Foundry Client, [0.3, 0.7, 1.5, 1.0])],
+            vec![(Writer::FoundryClient, [0.3, 0.7, 1.5, 1.0])],
             [0.0707, 0.4563, 2.4401],
         ),
         (

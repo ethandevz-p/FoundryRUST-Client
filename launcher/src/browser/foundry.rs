@@ -1,5 +1,5 @@
 //! Foundry Client's own registry (docs/modding/src/reference/registry-index.md): mods, modpacks and resource packs made for
-//! Foundry Client, reviewed as pull requests in foundry-rust/foundry-mods. One file lists them all,
+//! FoundryClient, reviewed as pull requests in foundry-rust/foundry-mods. One file lists them all,
 //! `index.json`; every download is checked against it before it reaches the game folder
 //! (`foundry_platform::mod_package::index::check_file`: size, SHA-256, the author's signature, the file's own
 //! manifest), and files the index says were taken down are refused and turned off.
@@ -315,7 +315,7 @@ fn tags_of(index: &Index, kind: Kind) -> Vec<String> {
 /// Where the registry's mod policy is: who owns and answers for a project, takedowns.
 pub const POLICY: &str = "https://playfoundry.dev/mods/policy";
 
-/// Whether the Foundry Client project made `p` (the mod policy's "Official": author Foundry Client, source in
+/// Whether the Foundry Client project made `p` (the mod policy's "Official": author FoundryClient, source in
 /// the foundry-rust organisation).
 pub fn official(p: &index::Project) -> bool {
     p.authors == ["Foundry Client"] && p.source.starts_with("https://github.com/foundry-rust/")
@@ -467,7 +467,7 @@ fn project_of(index: &Index, p: &index::Project) -> Option<Project> {
         Blocked::OtherShaderApi(api) => made_for_other_shader_api(&api),
     });
     Some(Project {
-        source: SourceId::Foundry Client,
+        source: SourceId::FoundryClient,
         id: p.id.clone(),
         slug: p.id.clone(),
         title: p.name.clone(),
@@ -649,7 +649,7 @@ pub struct Registry;
 
 impl Source for Registry {
     fn id(&self) -> SourceId {
-        SourceId::Foundry Client
+        SourceId::FoundryClient
     }
 
     fn search(&self, query: &Query) -> Result<Vec<Project>, String> {
@@ -1148,7 +1148,7 @@ fn install_version_guarded(
         false => relative(project.kind, &p.id, &v.file.name)?,
     };
     let mut list = installed::Installed::load(home);
-    let ours = |e: &installed::Entry| e.source == SourceId::Foundry Client && e.project == p.id;
+    let ours = |e: &installed::Entry| e.source == SourceId::FoundryClient && e.project == p.id;
     let old = list.entries.iter().find(|e| ours(e)).cloned();
     let stale = old
         .as_ref()
@@ -1249,7 +1249,7 @@ fn install_version_guarded(
         let _ = fs::remove_file(old);
     }
     let entry = installed::Entry {
-        source: SourceId::Foundry Client,
+        source: SourceId::FoundryClient,
         project: p.id.clone(),
         slug: p.id.clone(),
         title: p.name.clone(),
@@ -1320,7 +1320,7 @@ pub fn turn_off_revoked(index: &Index, home: &Path) -> Vec<String> {
     let mut out = Vec::new();
     for e in installed::Installed::load(home).entries {
         let hash = e.checksum.strip_prefix("SHA-256:").unwrap_or_default();
-        let Some(r) = (e.source == SourceId::Foundry Client)
+        let Some(r) = (e.source == SourceId::FoundryClient)
             .then(|| index.revoked(&e.project, hash))
             .flatten()
         else {
@@ -1350,7 +1350,7 @@ pub fn before_play(home: &Path) {
     let from_registry = installed::Installed::load(home)
         .entries
         .iter()
-        .any(|e| e.source == SourceId::Foundry Client);
+        .any(|e| e.source == SourceId::FoundryClient);
     if !from_registry {
         return;
     }

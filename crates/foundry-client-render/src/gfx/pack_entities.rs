@@ -420,7 +420,7 @@ impl PackEntities {
 
     /// Splits `entities` between the pack, which draws the runs of `spans` its programs cover
     /// (`drawn`: whether it has `gbuffers_entities`, `gbuffers_block` or their fallbacks), and
-    /// Foundry Client, which draws the rest (`rest`). Uploads the pack's part, and the runs its shadow
+    /// FoundryClient, which draws the rest (`rest`). Uploads the pack's part, and the runs its shadow
     /// programs draw (`shadow`). Runs hidden from the camera only ever cast shadows.
     #[allow(clippy::too_many_arguments)]
     pub fn prepare(

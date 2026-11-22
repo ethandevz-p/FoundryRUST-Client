@@ -340,7 +340,7 @@ impl Launcher {
 
     /// The orders the current source can sort by, "Best match" first.
     pub(super) fn mods_sorts(&self) -> Vec<(Option<Sort>, &'static str)> {
-        let own = self.mods.source() == SourceId::Foundry Client;
+        let own = self.mods.source() == SourceId::FoundryClient;
         let all: &[Sort] = if own {
             &browser::foundry::SORTS
         } else {
@@ -459,7 +459,7 @@ impl Launcher {
         let f = self.mods.browse.filters.clone();
         let sorts = self.mods_sorts();
         let source = self.mods.source();
-        let registry = source == SourceId::Foundry Client;
+        let registry = source == SourceId::FoundryClient;
         let resource = source == SourceId::Modrinth && self.mods.kind == PackKind::ResourcePack;
         let shader = source == SourceId::Modrinth && self.mods.kind == PackKind::Shader;
         let hide_modded = resource && !self.mods.everything && self.mods.java.is_none();
@@ -768,7 +768,7 @@ impl Launcher {
         if let Some(Ok(d)) = &details {
             // A registry project has no followers: its source repository's stars stand beside its
             // rating instead, as a star and a number (`mods_page::stars`).
-            if p.source != SourceId::Foundry Client {
+            if p.source != SourceId::FoundryClient {
                 meta.push(trf(
                     "{count} followers",
                     &[("count", &thousands(d.followers))],
@@ -878,7 +878,7 @@ impl Launcher {
             .child(head);
         // Registry projects are rated on the site, signed in with GitHub (one rating per account),
         // and starred on their source repository, which the player does there themselves.
-        if p.source == SourceId::Foundry Client {
+        if p.source == SourceId::FoundryClient {
             let url = browser::foundry::rate_url(&p.id);
             let repo = match &details {
                 Some(Ok(d)) => d.github.as_ref().map(|g| g.url.clone()),

@@ -256,7 +256,7 @@ pub struct ModsScreen {
 }
 
 impl ModsScreen {
-    /// `ModListScreen.init`: Minecraft, Foundry Client, then the installed mods.
+    /// `ModListScreen.init`: Minecraft, FoundryClient, then the installed mods.
     pub fn new(width: i32, height: i32, in_world: bool, mods: &ModList) -> Self {
         Self::with_links(width, height, in_world, mods, mod_links::engine::all())
     }

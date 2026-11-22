@@ -497,11 +497,11 @@ mirror!(GpuFragmentUnitName <- GpuFragmentUnit { Unspecified, Pixel, Quad });
 vocab! {
     GpuSourceName {
         Unspecified = "unspecified",
-        Foundry Client = "foundry",
+        FoundryClient = "foundry",
         ShaderPack = "shader_pack",
     }
 }
-mirror!(GpuSourceName <- GpuSource { Unspecified, Foundry Client, ShaderPack });
+mirror!(GpuSourceName <- GpuSource { Unspecified, FoundryClient, ShaderPack });
 
 vocab! {
     GpuPassSplitName {

@@ -307,7 +307,7 @@ fn a_new_game_shows_the_last_outfits_while_the_service_is_down() {
 #[test]
 fn foundry_players_come_with_the_same_request_as_what_they_wear() {
     let (fake, mut c, time) = setup(None);
-    // 3 wears a hat and plays Foundry Client, 50 plays Foundry Client in nothing, 7 wears a hat elsewhere.
+    // 3 wears a hat and plays FoundryClient, 50 plays Foundry Client in nothing, 7 wears a hat elsewhere.
     *fake.foundry.lock().unwrap() = Some(HashSet::from([3, 50]));
     {
         let mut frame = c.frame();

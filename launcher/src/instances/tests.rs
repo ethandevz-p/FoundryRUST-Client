@@ -506,9 +506,9 @@ fn a_picture_is_kept_small_and_goes_to_the_trash() {
     fs::remove_dir_all(&root).unwrap();
 }
 
-/// Edit switches what an instance plays (Foundry Client, Vanilla, a loader, another Minecraft version):
+/// Edit switches what an instance plays (FoundryClient, Vanilla, a loader, another Minecraft version):
 /// its folder, with its worlds, mods and options, stays byte for byte as it was, a Java
-/// instance's settings come back after a turn as Foundry Client, and what can't keep working is named
+/// instance's settings come back after a turn as FoundryClient, and what can't keep working is named
 /// first. The game's home plays what it was made with.
 #[test]
 fn switching_what_an_instance_plays_keeps_its_worlds_mods_and_settings() {
@@ -600,8 +600,8 @@ fn switching_what_an_instance_plays_keeps_its_worlds_mods_and_settings() {
         }
     );
 
-    // A turn as Foundry Client, then Vanilla: the Java settings come back, nothing on disk moved.
-    switch::switch_in(&home, &data, &made.id, Plays::Foundry Client).unwrap();
+    // A turn as FoundryClient, then Vanilla: the Java settings come back, nothing on disk moved.
+    switch::switch_in(&home, &data, &made.id, Plays::FoundryClient).unwrap();
     let foundry = find_in(&list_in(&home, &data), &made.id).unwrap();
     assert_eq!(foundry.java, None);
     let vanilla = Plays::Java {
@@ -628,7 +628,7 @@ fn switching_what_an_instance_plays_keeps_its_worlds_mods_and_settings() {
 
     // The game's home can't switch, and is left as it was.
     let home_files = files(&home.join("saves"));
-    let refused = switch::switch_in(&home, &data, DEFAULT, Plays::Foundry Client).unwrap_err();
+    let refused = switch::switch_in(&home, &data, DEFAULT, Plays::FoundryClient).unwrap_err();
     assert!(refused.contains("plays what it was made with"), "{refused}");
     assert_eq!(files(&home.join("saves")), home_files);
     fs::remove_dir_all(&root).unwrap();

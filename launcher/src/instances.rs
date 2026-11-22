@@ -193,7 +193,7 @@ pub struct Meta {
     /// Set for a Minecraft: Java Edition instance: it plays the real game, not Foundry Client.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub java: Option<JavaGame>,
-    /// A Java instance's own settings while it plays Foundry Client, back when it plays Java again
+    /// A Java instance's own settings while it plays FoundryClient, back when it plays Java again
     /// ([`switch`]).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub java_kept: Option<JavaGame>,
@@ -317,7 +317,7 @@ impl Instance {
         (!installed.iter().any(|t| t == pin)).then_some(pin)
     }
 
-    /// It takes Home's Foundry Client update offers: it pins no version and plays Foundry Client, not Java (#18394).
+    /// It takes Home's Foundry Client update offers: it pins no version and plays FoundryClient, not Java (#18394).
     pub fn follows_horizon(&self) -> bool {
         self.version.is_none() && self.java.is_none()
     }

@@ -549,6 +549,6 @@ fn live_modrinth_search_pick_and_download() {
 #[test]
 fn curseforge_is_coming_soon_and_never_searched() {
     let ids: Vec<SourceId> = sources().iter().map(|s| s.id()).collect();
-    assert_eq!(ids, [SourceId::Modrinth, SourceId::Foundry Client]);
+    assert_eq!(ids, [SourceId::Modrinth, SourceId::FoundryClient]);
     assert!(source(SourceId::CurseForge).is_none());
 }

@@ -101,7 +101,7 @@ fn classic(s: &Settings) -> Option<&crate::shader_options::ShaderOptions> {
 /// The picked Foundry Client pack, and its index in `s.shader_packs`.
 fn native(s: &Settings) -> Option<(usize, &crate::shader_pack_list::Entry)> {
     picked(s)
-        .filter(|p| p.1 == Kind::Foundry Client)
+        .filter(|p| p.1 == Kind::FoundryClient)
         .map(|(i, _)| (i, &s.shader_packs[i]))
 }
 
@@ -118,7 +118,7 @@ fn plain(t: Text) -> String {
 fn screens(s: &Settings) -> Vec<PackScreen> {
     match picked(s) {
         Some((_, Kind::Classic)) => classic(s).map_or_else(Vec::new, classic_screens),
-        Some((i, Kind::Foundry Client)) => native_screens(&s.shader_packs[i]),
+        Some((i, Kind::FoundryClient)) => native_screens(&s.shader_packs[i]),
         None => Vec::new(),
     }
 }
@@ -284,7 +284,7 @@ fn switch(item: Item, s: &Settings) -> Option<bool> {
                 .is_some_and(|p| p.key == s.foundry.shader_pack),
         ),
         Item::Option(i) => match picked(s)? {
-            (p, Kind::Foundry Client) => {
+            (p, Kind::FoundryClient) => {
                 let pack = &s.shader_packs[p];
                 let i = usize::from(i);
                 match pack.options.get(i)?.kind {
@@ -308,7 +308,7 @@ fn switch(item: Item, s: &Settings) -> Option<bool> {
 fn slider(item: Item, s: &Settings) -> Option<f32> {
     let Item::Option(i) = item else { return None };
     match picked(s)? {
-        (p, Kind::Foundry Client) => s.shader_packs[p].slider_position(usize::from(i)),
+        (p, Kind::FoundryClient) => s.shader_packs[p].slider_position(usize::from(i)),
         (_, Kind::Classic) => {
             let o = classic(s)?;
             o.slider_position(option_name(o, i)?)
@@ -321,7 +321,7 @@ fn slider(item: Item, s: &Settings) -> Option<f32> {
 fn slider_steps(item: Item, s: &Settings) -> Option<u32> {
     let Item::Option(i) = item else { return None };
     let stops = match picked(s)? {
-        (p, Kind::Foundry Client) => match s.shader_packs[p].options.get(usize::from(i))?.kind {
+        (p, Kind::FoundryClient) => match s.shader_packs[p].options.get(usize::from(i))?.kind {
             OptionKind::Float { min, max, step, .. } => {
                 crate::shader_pack_list::float_steps(min, max, step) as f32
             }
@@ -344,7 +344,7 @@ fn description(item: Item, s: &Settings, screens: &[PackScreen]) -> String {
                 return String::new();
             };
             let kind = lang::get(match pack.kind {
-                Kind::Foundry Client => "A Foundry Client shader pack.",
+                Kind::FoundryClient => "A Foundry Client shader pack.",
                 Kind::Classic => "An OptiFine or Iris shader pack.",
             });
             let what = lang::get(if pack.key == s.foundry.shader_pack {
@@ -911,7 +911,7 @@ mod tests {
 
     #[test]
     fn picking_a_pack_and_picking_it_again_turns_shaders_off() {
-        for (kind, key) in [(Kind::Classic, "B.zip"), (Kind::Foundry Client, "foundry:warm")] {
+        for (kind, key) in [(Kind::Classic, "B.zip"), (Kind::FoundryClient, "foundry:warm")] {
             let mut s = settings();
             s.shader_packs[1].kind = kind;
             s.shader_packs[1].key = key.into();
@@ -1047,7 +1047,7 @@ mod tests {
 
     /// A Foundry Client pack picked, with a float option from 0 to 1 in steps of 0.1 at 0.5.
     fn foundry_pack() -> Settings {
-        let mut pack = entry("H", Kind::Foundry Client);
+        let mut pack = entry("H", Kind::FoundryClient);
         pack.key = "foundry:slider_test".into();
         pack.options = vec![foundry_shader_api::PackOption {
             id: "strength".into(),
@@ -1154,7 +1154,7 @@ mod tests {
         let (_, mut missed) = lang::scoped(lang::Language::load(&[], "de_de"), || {
             let screen = ShaderScreen::default();
             screen.sheets(&s);
-            s.shader_packs[0].kind = Kind::Foundry Client;
+            s.shader_packs[0].kind = Kind::FoundryClient;
             screen.sheets(&s);
             s.shader_packs.clear();
             screen.sheets(&s);

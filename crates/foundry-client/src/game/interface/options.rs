@@ -626,7 +626,7 @@ impl Game<'_> {
             r.set_frame_generation(
                 s.foundry.frame_generation != foundry_client::graphics::FrameGeneration::Off,
             );
-            r.set_hdr_lighting(s.foundry.hdr_look == foundry_client::graphics::HdrLook::Foundry Client);
+            r.set_hdr_lighting(s.foundry.hdr_look == foundry_client::graphics::HdrLook::FoundryClient);
             // Where it is offered (`Renderer::gpu_culling_offer`); unchanged, it does nothing.
             // Auto has it on while its measurements say so (`GpuCullingAuto`), and starts over
             // when the choice is another one.

@@ -261,7 +261,7 @@ fn pass_rows(view: &View, gpu: &GpuPasses, series: &Series) -> Vec<GpuPassRow> {
 
 fn source_order(source: GpuSource) -> u8 {
     match source {
-        GpuSource::Foundry Client => 0,
+        GpuSource::FoundryClient => 0,
         GpuSource::ShaderPack => 1,
         GpuSource::Unspecified => 2,
     }
@@ -284,7 +284,7 @@ pub(crate) fn rows_of(view: &View, sides: &[foundry_perf_format::v1::Side]) -> V
 
 /// The Foundry Client timer's frame totals, the CPU frame times beside them, and which bounds the frames.
 fn summary_row(view: &View, sides: &[Side]) -> GpuSummaryRow {
-    let gpu_frame = ms_stats(&Series::of(view, sides, GpuSource::Foundry Client).totals);
+    let gpu_frame = ms_stats(&Series::of(view, sides, GpuSource::FoundryClient).totals);
     let cpu: Vec<f64> = view
         .capture
         .gpu_frames

@@ -2180,7 +2180,7 @@ pub fn java_game(
 ) -> Result<Command, String> {
     let game = instance.java.as_ref().ok_or_else(|| {
         format!(
-            "{} plays Foundry Client, not Minecraft: Java Edition",
+            "{} plays FoundryClient, not Minecraft: Java Edition",
             instance.name
         )
     })?;
@@ -4601,7 +4601,7 @@ pub struct Settings {
     /// Game asset architecture. Auto preserves the launcher's process-architecture behavior.
     #[serde(default)]
     pub game_architecture: GameArchitecture,
-    /// The instance Play starts (`instances`), by id. Unset means Foundry Client, the game's home.
+    /// The instance Play starts (`instances`), by id. Unset means FoundryClient, the game's home.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub instance: Option<String>,
     pub minecraft_dir: Option<PathBuf>,

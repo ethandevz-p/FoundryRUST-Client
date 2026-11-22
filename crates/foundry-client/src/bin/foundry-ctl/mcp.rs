@@ -6,7 +6,7 @@ use crate::{Session, commands};
 use serde_json::{Value, json};
 
 /// What an agent reads before its first call.
-const INSTRUCTIONS: &str = "Play Foundry Client, a Rust reimplementation of Minecraft Java Edition. Start with launch (it finds the game installed by the Foundry Client launcher and opens or creates a world), then read the world with state, inventory, screen, entities and find_block, and act with goto, look_at_block, break, place, interact, click_slot and click_button. Actions block until they finish and report what happened. Coordinates are block coordinates; yaw 0 faces south (+Z).";
+const INSTRUCTIONS: &str = "Play FoundryClient, a Rust reimplementation of Minecraft Java Edition. Start with launch (it finds the game installed by the Foundry Client launcher and opens or creates a world), then read the world with state, inventory, screen, entities and find_block, and act with goto, look_at_block, break, place, interact, click_slot and click_button. Actions block until they finish and report what happened. Coordinates are block coordinates; yaw 0 faces south (+Z).";
 
 /// The revisions this server advertises: `foundry_mcp` serves them (`2026-07-28` stateless,
 /// `2025-06-18` for the clients that still open with `initialize`).

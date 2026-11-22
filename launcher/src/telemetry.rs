@@ -52,7 +52,7 @@ pub const NEVER: &str = "Never sent: your account name or UUID, world names, ser
 /// first-run welcome and question, in Settings, and once on the Play page to players who
 /// answered before it existed.
 pub const PING_NAME: &str = "\"I'm playing\" ping";
-pub const PING_SUMMARY: &str = "Tells Foundry Client, anonymously, that you're playing, so the launcher can show how many people play right now.";
+pub const PING_SUMMARY: &str = "Tells FoundryClient, anonymously, that you're playing, so the launcher can show how many people play right now.";
 pub const PING: &str = "While you play, the game sends an anonymous \"I'm playing\" ping once a minute, so the launcher can show how many people play Foundry Client right now. It holds: a random number made when the game starts and forgotten when it closes, the Foundry Client version, your OS (Linux, macOS or Windows), and whether you have a world open to LAN or friends. It doesn't hold: your account, your install ID, world or server names, or anything you do in the game, and the server doesn't keep your IP address. It is on unless you turn it off.";
 
 /// The game sends the [`PING`] unless the player turned it off (`Settings::ping_off`).

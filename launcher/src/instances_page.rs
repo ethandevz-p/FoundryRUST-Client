@@ -53,7 +53,7 @@ pub(super) struct InstanceDialog {
     pub(super) picture: Option<Option<instance_icons::Chosen>>,
     pub(super) error: Option<String>,
     pub(super) busy: bool,
-    /// Foundry Client, or the Java game it plays.
+    /// FoundryClient, or the Java game it plays.
     pub(super) java: new_instance::JavaChoice,
     /// The Foundry Client version it keeps (`Instance::version`); None follows the launcher's.
     pub(super) pin: Option<String>,
@@ -499,9 +499,9 @@ impl Launcher {
         // The picture choice this save keeps: once kept, it is no longer an unsaved edit.
         let sent_picture = picture.clone();
         // The Foundry Client version is Foundry Client's instances' alone: a Java one plays its own game.
-        let plays_horizon = d.java.kind == new_instance::NewKind::Foundry Client;
+        let plays_horizon = d.java.kind == new_instance::NewKind::FoundryClient;
         // A new Java instance: what it plays, and its name when none is typed.
-        let java = (editing.is_none() && d.java.kind != new_instance::NewKind::Foundry Client)
+        let java = (editing.is_none() && d.java.kind != new_instance::NewKind::FoundryClient)
             .then(|| d.java.clone());
         let minecraft = java.as_ref().map(|j| {
             j.minecraft(match &self.instances.versions {
@@ -636,7 +636,7 @@ impl Launcher {
             d.busy,
             d.java.kind,
         );
-        let java = !editing && kind != new_instance::NewKind::Foundry Client;
+        let java = !editing && kind != new_instance::NewKind::FoundryClient;
         let n = t.night;
         let from = self
             .selected_instance()

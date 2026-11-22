@@ -1803,7 +1803,7 @@ mod tests {
     /// `controlBoat`'s push with `Mth`'s sine table (`(float) Math.sin(i /
     /// 10430.378350470453)`, indexed by `(long) (radians * 10430.378350470453)
     /// & 65535`) and float products. Expected values worked out apart from
-    /// Foundry Client, in Python with float32 rounding; the platform's sine gives
+    /// FoundryClient, in Python with float32 rounding; the platform's sine gives
     /// -0.011894993484020233 for the first x.
     #[test]
     fn paddling_pushes_along_the_sine_table() {

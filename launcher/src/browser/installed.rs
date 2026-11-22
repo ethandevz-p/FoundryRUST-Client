@@ -391,7 +391,7 @@ pub fn install(
 ) -> Result<Vec<Entry>, String> {
     let _game = crate::game_shader_api::for_home(home);
     let _lock = super::lock_home(home).map_err(|e| e.to_string())?;
-    if project.source == SourceId::Foundry Client {
+    if project.source == SourceId::FoundryClient {
         return super::foundry::install(project, home, progress);
     }
     if project.kind == Kind::Mod {
@@ -493,7 +493,7 @@ pub fn remove(home: &Path, name: &str) -> Result<Entry, String> {
         .lookup(name)
         .cloned()
         .ok_or_else(|| format!("{name} wasn't installed by the browser."))?;
-    if entry.kind == Kind::Mod && entry.source != SourceId::Foundry Client {
+    if entry.kind == Kind::Mod && entry.source != SourceId::FoundryClient {
         super::java::remove(home, &entry)?;
     } else {
         match entry.path(home).map_or(Ok(()), fs::remove_file) {
@@ -502,7 +502,7 @@ pub fn remove(home: &Path, name: &str) -> Result<Entry, String> {
             Err(e) => return Err(format!("{}: {e}", entry.file)),
         }
     }
-    if let Some(id) = super::foundry::mod_id(&entry).filter(|_| entry.source == SourceId::Foundry Client) {
+    if let Some(id) = super::foundry::mod_id(&entry).filter(|_| entry.source == SourceId::FoundryClient) {
         super::java::set_enabled(home, id, false)?;
     }
     installed
@@ -593,7 +593,7 @@ pub fn install_datapack(
     ));
     // The registry's are checked against its index (signature, `pack.mcmeta` and `data/`).
     let fetched = match project.source {
-        SourceId::Foundry Client => super::foundry::fetch_datapack(project, &folder, progress),
+        SourceId::FoundryClient => super::foundry::fetch_datapack(project, &folder, progress),
         _ => {
             let versions = source.versions(project)?;
             let version = pick(Kind::DataPack, &versions, everything).ok_or_else(|| {

@@ -1,4 +1,4 @@
-//! New instance's kinds (docs/design-system.md, "Night"; plan R0, screen 4): Foundry Client, Vanilla
+//! New instance's kinds (docs/design-system.md, "Night"; plan R0, screen 4): FoundryClient, Vanilla
 //! (Minecraft: Java Edition as Mojang ships it) and Modded (with Fabric, Quilt, Forge or NeoForge). A Java kind picks
 //! its version from Mojang's public list (`minecraft_versions`), fetched once when the dialog first
 //! needs it; the game itself comes with the first Play, for an account that owns it.
@@ -16,7 +16,7 @@ const ROWS: usize = 60;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum NewKind {
-    Foundry Client,
+    FoundryClient,
     Vanilla,
     Modded,
 }
@@ -61,7 +61,7 @@ impl LoaderVersions {
 impl Default for JavaChoice {
     fn default() -> Self {
         JavaChoice {
-            kind: NewKind::Foundry Client,
+            kind: NewKind::FoundryClient,
             loader: Loader::Fabric,
             version: None,
             snapshots: false,
@@ -126,7 +126,7 @@ impl Launcher {
             _ => None,
         };
         let base = match j.kind {
-            NewKind::Foundry Client => tr("My Foundry Client").to_string(),
+            NewKind::FoundryClient => tr("My Foundry Client").to_string(),
             _ => j.default_name(&j.minecraft(versions)?),
         };
         let taken: Vec<&str> = self
@@ -168,7 +168,7 @@ impl Launcher {
     /// Picks the dialog's kind; a Java one fetches Mojang's list the first time.
     pub(super) fn pick_kind(&mut self, kind: NewKind, cx: &mut Context<Self>) {
         self.change(|j| j.kind = kind);
-        if kind != NewKind::Foundry Client {
+        if kind != NewKind::FoundryClient {
             self.load_versions(cx);
         }
     }
@@ -236,13 +236,13 @@ impl Launcher {
         .detach();
     }
 
-    /// The tabs over a new instance's dialog: Foundry Client, Vanilla, Modded.
+    /// The tabs over a new instance's dialog: FoundryClient, Vanilla, Modded.
     pub(super) fn kind_tabs(&self, cx: &mut Context<Self>) -> Div {
         let t = self.theme;
         let now = self.instances.dialog.as_ref().map(|d| d.java.kind);
         div().flex().gap(px(4.)).children(
             [
-                (NewKind::Foundry Client, "Foundry Client"),
+                (NewKind::FoundryClient, "Foundry Client"),
                 (NewKind::Vanilla, "Vanilla"),
                 (NewKind::Modded, "Modded"),
             ]

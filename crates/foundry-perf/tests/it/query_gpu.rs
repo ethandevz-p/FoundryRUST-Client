@@ -58,7 +58,7 @@ fn fields(unit: GpuFragmentUnit) -> Vec<Field> {
     fields.push(Field::Gpu(GpuPasses {
         side: CLIENT,
         device: device(unit),
-        source: GpuSource::Foundry Client as i32,
+        source: GpuSource::FoundryClient as i32,
         passes: vec![
             GpuPass {
                 name: id("HUD"),
@@ -162,10 +162,10 @@ fn the_medians_come_back_per_pass_biggest_first_with_the_device() {
     assert_eq!(
         listed,
         [
-            ("World", GpuSourceName::Foundry Client, Some(1.5)),
-            ("HUD", GpuSourceName::Foundry Client, Some(0.5)),
-            ("GPU culling", GpuSourceName::Foundry Client, Some(0.25)),
-            ("Visibility IDs", GpuSourceName::Foundry Client, None),
+            ("World", GpuSourceName::FoundryClient, Some(1.5)),
+            ("HUD", GpuSourceName::FoundryClient, Some(0.5)),
+            ("GPU culling", GpuSourceName::FoundryClient, Some(0.25)),
+            ("Visibility IDs", GpuSourceName::FoundryClient, None),
             ("HUD", GpuSourceName::ShaderPack, Some(4.0)),
         ]
     );
@@ -289,7 +289,7 @@ fn a_capture_from_before_frames_reads_with_empty_statistics_and_no_series() {
 
 fn frame(t: f64, total: f32, world: f32, sky: Option<f32>) -> GpuFrame {
     GpuFrame {
-        source: GpuSource::Foundry Client as i32,
+        source: GpuSource::FoundryClient as i32,
         t,
         total_ms: Some(total),
         passes: vec![
@@ -357,7 +357,7 @@ fn timed_fields() -> Vec<Field> {
     fields.push(Field::Gpu(GpuPasses {
         side: CLIENT,
         device: device(GpuFragmentUnit::Pixel),
-        source: GpuSource::Foundry Client as i32,
+        source: GpuSource::FoundryClient as i32,
         passes: vec![
             GpuPass {
                 name: id("World"),
@@ -449,7 +449,7 @@ fn the_frame_series_is_in_time_order_and_tags_the_frame_inside_a_slow_one() {
         ]
     );
     let slow = got[1];
-    assert_eq!(slow.source, GpuSourceName::Foundry Client);
+    assert_eq!(slow.source, GpuSourceName::FoundryClient);
     assert_eq!(slow.passes[0].name, "World");
     assert_eq!(slow.passes[0].ms, Some(2.0));
     assert_eq!(slow.passes[0].parts[0].name, "cull");

@@ -74,7 +74,7 @@ pub(super) fn tooltip(page: usize, r: usize) -> Option<Text> {
 /// What a button opening one of Foundry Client's pages says on hover.
 pub(super) fn foundry_page_tooltip(page: Page) -> Option<&'static str> {
     Some(match page {
-        Page::Foundry Client => "foundry.pages.settings.tooltip",
+        Page::FoundryClient => "foundry.pages.settings.tooltip",
         Page::Studio => "foundry.pages.studio.tooltip",
         Page::Graphics => "foundry.pages.graphics.tooltip",
         Page::GraphicsAdvanced => "foundry.pages.graphics_advanced.tooltip",
@@ -355,7 +355,7 @@ mod tests {
         let mut s = Settings::default();
         TEST_PAGES.set(Some(&PAGES));
         let mut ui = OptionsUi::default();
-        ui.show(Page::Foundry Client);
+        ui.show(Page::FoundryClient);
         press(&mut ui, &mut s, Act::Push(Page::Added(0)), false);
         assert_eq!(ui.page(), Page::Added(0));
         // Rows: the heading (0), the switch (1), the step (2), the key (3).

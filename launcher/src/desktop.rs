@@ -84,7 +84,7 @@ pub fn launcher_entry(exe: &Path) -> String {
          Type=Application\n\
          Name=Foundry Client\n\
          GenericName=Game launcher\n\
-         Comment=Install, prepare and play Foundry Client, Minecraft: Java Edition {minecraft} rewritten in Rust\n\
+         Comment=Install, prepare and play FoundryClient, Minecraft: Java Edition {minecraft} rewritten in Rust\n\
          Exec={}\n\
          TryExec={}\n\
          Icon=foundry\n\

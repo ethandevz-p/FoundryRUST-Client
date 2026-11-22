@@ -22,7 +22,7 @@ fn calibrates(ui: &mut OptionsUi, s: &mut Settings, atlas: &HudAtlas) -> bool {
     ui.graphics.show(crate::graphics_ui::Page::Hdr);
     let (x, y) = ui
         .graphics
-        .point_at(s, ui.size, Item::Foundry Client(H::HdrCalibrate));
+        .point_at(s, ui.size, Item::FoundryClient(H::HdrCalibrate));
     ui.click(s, atlas, x, y, ui.size, ui.framebuffer, false, false);
     ui.page() == Page::HdrCalibration
 }
@@ -39,7 +39,7 @@ fn look_is_the_packs_only_over_a_world() {
     s.foundry.hdr = crate::graphics::HdrMode::On;
     s.foundry.shader_pack = "Sunny.zip".into();
     let (caps, reading) = window(Some(crate::gfx::HdrOutput::Pq), Some(true));
-    let look = Item::Foundry Client(H::HdrLook);
+    let look = Item::FoundryClient(H::HdrLook);
     let mut ui = OptionsUi::default();
     for (shaders_pack, name, reason) in [
         (
@@ -162,7 +162,7 @@ fn the_graphics_shaders_page_opens_the_shader_pack_list() {
     };
     ui.show(Page::Graphics);
     ui.graphics.show(crate::graphics_ui::Page::Shaders);
-    let packs = Item::Foundry Client(H::ShaderPacks);
+    let packs = Item::FoundryClient(H::ShaderPacks);
     assert!(
         (0..40).any(|_| {
             ui.key(&mut s, &atlas, KeyCode::Tab, None);
@@ -194,7 +194,7 @@ fn the_graphics_screens_wheel_scrolls_even_over_a_slider_being_changed() {
     ui.graphics.show(crate::graphics_ui::Page::Performance);
     let size = (640.0, 360.0);
     s.foundry.chunk_updates = 16;
-    let chunk_updates = Item::Foundry Client(H::ChunkUpdates);
+    let chunk_updates = Item::FoundryClient(H::ChunkUpdates);
     // Tab onto it: the arrows change it.
     while ui.graphics.focused_row() != Some(chunk_updates) {
         shell::Hosted::key(&mut ui.graphics, &mut s, K::Tab, None, false, size);
@@ -296,7 +296,7 @@ fn a_tracing_pack_says_why_it_draws_without_ray_tracing() {
         file: key.into(),
         key: key.into(),
         title: key.into(),
-        kind: Kind::Foundry Client,
+        kind: Kind::FoundryClient,
         options: Vec::new(),
         values: Vec::new(),
         pages: Vec::new(),

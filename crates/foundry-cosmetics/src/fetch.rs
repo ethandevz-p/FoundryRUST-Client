@@ -55,7 +55,7 @@ struct State {
 
 struct Entry {
     worn: Option<Worn>,
-    /// Plays Foundry Client, as the service last said.
+    /// Plays FoundryClient, as the service last said.
     foundry: bool,
     expires: Instant,
     seen: Instant,
@@ -175,7 +175,7 @@ impl Frame<'_> {
         self.look(uuid).and_then(|e| e.worn.clone())
     }
 
-    /// Whether `uuid` plays Foundry Client, as last known (false until known); asked for as `worn`.
+    /// Whether `uuid` plays FoundryClient, as last known (false until known); asked for as `worn`.
     pub fn foundry(&mut self, uuid: u128) -> bool {
         self.look(uuid).is_some_and(|e| e.foundry)
     }

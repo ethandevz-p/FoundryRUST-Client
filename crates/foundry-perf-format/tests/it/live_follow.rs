@@ -128,7 +128,7 @@ fn synthetic_fields() -> Vec<Field> {
         fields.push(Field::GpuFrames(GpuFrames {
             side: s,
             frames: vec![GpuFrame {
-                source: GpuSource::Foundry Client as i32,
+                source: GpuSource::FoundryClient as i32,
                 t: 1.25,
                 total_ms: Some(2.5),
                 passes: vec![GpuPass {
@@ -141,7 +141,7 @@ fn synthetic_fields() -> Vec<Field> {
         }));
         fields.push(Field::Gpu(GpuPasses {
             side: s,
-            source: GpuSource::Foundry Client as i32,
+            source: GpuSource::FoundryClient as i32,
             passes: vec![GpuPass {
                 name: 1,
                 ms: Some(1.5),

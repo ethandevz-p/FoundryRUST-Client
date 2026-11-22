@@ -74,7 +74,7 @@ pub fn in_pack(home: &Path) -> bool {
 /// Whether `entry` updates automatically, and to what.
 pub fn decide<'a>(index: &'a Index, entry: &installed::Entry, ctx: &Context) -> Decision<'a> {
     let skip_native = crate::native_status::is_native_file(&entry.file);
-    if entry.source != SourceId::Foundry Client
+    if entry.source != SourceId::FoundryClient
         || ctx.in_pack
         || skip_native
         || entry.kind == Kind::DataPack
@@ -178,7 +178,7 @@ fn save_kept(home: &Path, list: &[Kept]) -> Result<(), String> {
 /// Whether the browser's list has `kept`'s project at a newer version whose file is in place.
 fn finished(home: &Path, kept: &Kept) -> bool {
     let list = installed::Installed::load(home);
-    let Some(now) = list.find(SourceId::Foundry Client, &kept.entry.project) else {
+    let Some(now) = list.find(SourceId::FoundryClient, &kept.entry.project) else {
         return false;
     };
     let hash = now.checksum.strip_prefix("SHA-256:").unwrap_or_default();
@@ -197,7 +197,7 @@ fn restore(home: &Path, kept: &Kept) -> Result<(), String> {
     fs::copy(&copy, &target).map_err(|e| format!("{}: {e}", target.display()))?;
     let mut list = installed::Installed::load(home);
     let ours =
-        |e: &installed::Entry| e.source == SourceId::Foundry Client && e.project == kept.entry.project;
+        |e: &installed::Entry| e.source == SourceId::FoundryClient && e.project == kept.entry.project;
     if let Some(now) = list.entries.iter().find(|e| ours(e)) {
         if now.file != kept.entry.file {
             if let Some(path) = now.path(home) {

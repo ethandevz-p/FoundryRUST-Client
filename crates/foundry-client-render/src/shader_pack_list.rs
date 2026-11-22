@@ -11,7 +11,7 @@ pub const DIR: &str = "shaderpacks";
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Kind {
     /// A folder with `foundry-shaders.toml`, or a `.hshader`.
-    Foundry Client,
+    FoundryClient,
     /// A folder with a `shaders` folder, or a `.zip`.
     Classic,
 }
@@ -136,7 +136,7 @@ fn entry(path: &Path) -> Option<Entry> {
             key,
             file,
             title,
-            kind: Kind::Foundry Client,
+            kind: Kind::FoundryClient,
             options,
             values: Vec::new(),
             pages,
@@ -612,7 +612,7 @@ mod tests {
         assert_eq!(
             listed,
             [
-                ("warm", "Warm Light", Kind::Foundry Client),
+                ("warm", "Warm Light", Kind::FoundryClient),
                 ("archive.zip", "archive.zip", Kind::Classic),
                 ("Classic Folder", "Classic Folder", Kind::Classic),
             ]
@@ -693,7 +693,7 @@ mod tests {
             file: "p".into(),
             key: "foundry:p".into(),
             title: "P".into(),
-            kind: Kind::Foundry Client,
+            kind: Kind::FoundryClient,
             options: vec![
                 option("a", float(1.0, 2.0, 0.05)),
                 option("b", int),
@@ -742,7 +742,7 @@ mod tests {
             file: "p".into(),
             key: "foundry:p".into(),
             title: "P".into(),
-            kind: Kind::Foundry Client,
+            kind: Kind::FoundryClient,
             options: vec![foundry_shader_api::PackOption {
                 id: "d".into(),
                 name: "D".into(),

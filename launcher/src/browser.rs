@@ -75,7 +75,7 @@ pub enum SourceId {
     Modrinth,
     CurseForge,
     /// Foundry Client's own registry of reviewed mods, modpacks and resource packs ([`foundry`]).
-    Foundry Client,
+    FoundryClient,
 }
 
 impl SourceId {
@@ -83,7 +83,7 @@ impl SourceId {
         match self {
             SourceId::Modrinth => "Modrinth",
             SourceId::CurseForge => "CurseForge",
-            SourceId::Foundry Client => "Foundry Client",
+            SourceId::FoundryClient => "Foundry Client",
         }
     }
 
@@ -92,7 +92,7 @@ impl SourceId {
     /// ([`foundry::official`]), so a contributor's project reads "by <author>" alone.
     pub fn shown_for(self, id: &str) -> Option<&'static str> {
         match self {
-            SourceId::Foundry Client if !foundry::is_official(id) => None,
+            SourceId::FoundryClient if !foundry::is_official(id) => None,
             _ => Some(self.label()),
         }
     }

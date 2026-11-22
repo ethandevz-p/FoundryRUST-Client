@@ -666,7 +666,7 @@ mod tests {
         .unwrap();
         installed::Installed {
             entries: vec![installed::Entry {
-                source: SourceId::Foundry Client,
+                source: SourceId::FoundryClient,
                 project: "registry".into(),
                 slug: "registry".into(),
                 title: "Registry mod".into(),

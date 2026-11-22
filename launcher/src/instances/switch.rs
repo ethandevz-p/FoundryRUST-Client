@@ -1,15 +1,15 @@
 //! Switching what an instance plays (Edit's kinds, the mockup's `InstanceModal` for an existing
-//! instance): Foundry Client, or Minecraft: Java Edition of one version with or without a loader. Only
+//! instance): FoundryClient, or Minecraft: Java Edition of one version with or without a loader. Only
 //! its entry in `instances.json` changes. Its folder, with its worlds, mods and options, is never
 //! touched, and a Java instance's own settings (memory, Java, arguments, window) are put aside
-//! while it plays Foundry Client, to come back with Java.
+//! while it plays FoundryClient, to come back with Java.
 use super::*;
 use crate::loaders::Loader;
 
 /// What an instance plays.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Plays {
-    Foundry Client,
+    FoundryClient,
     Java {
         minecraft: String,
         loader: Option<Loader>,
@@ -20,7 +20,7 @@ impl Plays {
     /// What `instance` plays now.
     pub fn of(instance: &Instance) -> Plays {
         match &instance.java {
-            None => Plays::Foundry Client,
+            None => Plays::FoundryClient,
             Some(j) => Plays::Java {
                 minecraft: j.minecraft.clone(),
                 loader: j.loader.clone(),
@@ -31,7 +31,7 @@ impl Plays {
     /// The Minecraft version its worlds are saved by; `foundry` is the one Foundry Client plays.
     fn minecraft<'a>(&'a self, foundry: &'a str) -> &'a str {
         match self {
-            Plays::Foundry Client => foundry,
+            Plays::FoundryClient => foundry,
             Plays::Java { minecraft, .. } => minecraft,
         }
     }
@@ -39,7 +39,7 @@ impl Plays {
     /// Whose mods it loads: Foundry Client's, a loader's, or none (Vanilla).
     fn mods_for(&self) -> Option<(&'static str, &'static str)> {
         match self {
-            Plays::Foundry Client => Some(("foundry", "Foundry Client")),
+            Plays::FoundryClient => Some(("foundry", "Foundry Client")),
             Plays::Java { loader, .. } => loader.as_ref().map(|l| (l.kind.id(), l.kind.name())),
         }
     }
@@ -47,7 +47,7 @@ impl Plays {
     /// Whether it loads mods made for `id` (a Quilt instance takes Fabric's too).
     fn loads(&self, id: &str) -> bool {
         match (self, self.mods_for()) {
-            (Plays::Foundry Client, _) => id == "foundry",
+            (Plays::FoundryClient, _) => id == "foundry",
             (_, Some((own, _))) => own == id || (own == "quilt" && id == "fabric"),
             (_, None) => false,
         }
@@ -58,7 +58,7 @@ impl Plays {
 /// player to read before it applies.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Unkept {
-    /// `count` mods made for `made_for` (Foundry Client, Fabric…), which the new game doesn't load.
+    /// `count` mods made for `made_for` (FoundryClient, Fabric…), which the new game doesn't load.
     Mods { count: usize, made_for: String },
     /// `count` mods made for Minecraft `from`: some may not load in `to`.
     ModsVersion {
@@ -153,7 +153,7 @@ pub(super) fn switch_in(
         return Err(format!("{} plays what it was made with.", instance.name));
     }
     edit_in(game_home, data, query, |m| match to {
-        Plays::Foundry Client => {
+        Plays::FoundryClient => {
             if let Some(java) = m.java.take() {
                 m.java_kept = Some(java);
             }

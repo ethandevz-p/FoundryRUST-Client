@@ -100,7 +100,7 @@ impl FrameLog {
         strings: &mut Interner,
     ) {
         for (source, list, times) in [
-            (GpuSource::Foundry Client, &frames.own, &mut self.own),
+            (GpuSource::FoundryClient, &frames.own, &mut self.own),
             (GpuSource::ShaderPack, &frames.pack, &mut self.pack),
         ] {
             for frame in list {
@@ -281,7 +281,7 @@ pub fn gpu_passes(
     strings: &mut Interner,
 ) -> Vec<GpuPasses> {
     [
-        (GpuSource::Foundry Client, &readout.own, &log.own),
+        (GpuSource::FoundryClient, &readout.own, &log.own),
         (GpuSource::ShaderPack, &readout.pack, &log.pack),
     ]
     .into_iter()
@@ -358,7 +358,7 @@ mod tests {
         let got = gpu_passes(&readout, &FrameLog::default(), Side::Client, &mut strings);
         assert_eq!(got.len(), 1);
         let g = &got[0];
-        assert_eq!((g.side(), g.source()), (Side::Client, GpuSource::Foundry Client));
+        assert_eq!((g.side(), g.source()), (Side::Client, GpuSource::FoundryClient));
         let d = g.device.as_ref().unwrap();
         assert_eq!(d.adapter, "Test GPU");
         assert_eq!(d.backend(), GpuBackend::Vulkan);

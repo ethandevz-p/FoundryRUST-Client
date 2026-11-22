@@ -587,15 +587,15 @@ pub enum HdrLook {
     /// Foundry Client's lift: light sources and the sun shine above paper white; lit surfaces stay at
     /// it.
     #[default]
-    Foundry Client,
+    FoundryClient,
     /// Nothing lifted: HDR output shows the same picture as SDR.
     Vanilla,
 }
 impl HdrLook {
-    pub const ALL: [Self; 2] = [Self::Foundry Client, Self::Vanilla];
+    pub const ALL: [Self; 2] = [Self::FoundryClient, Self::Vanilla];
     pub fn name(self) -> &'static str {
         match self {
-            Self::Foundry Client => "foundry",
+            Self::FoundryClient => "foundry",
             Self::Vanilla => "vanilla",
         }
     }
@@ -1023,7 +1023,7 @@ impl Default for Graphics {
             hdr_black_level: 0,
             hdr_ui_nits: 0,
             hdr_color_boost: 0,
-            hdr_look: HdrLook::Foundry Client,
+            hdr_look: HdrLook::FoundryClient,
             hdr_failed_start: None,
             safe_start: None,
             battery: false,
@@ -1238,7 +1238,7 @@ impl Graphics {
         });
         g.hdr_look = look.unwrap_or(match lighting {
             Some(false) => HdrLook::Vanilla,
-            _ => HdrLook::Foundry Client,
+            _ => HdrLook::FoundryClient,
         });
         // 4x MSAA replaces FXAA and TAA, and TAA's upscaling with it: a file naming them too
         // (edited by hand) keeps it, as the Anti-aliasing button would.
@@ -1479,19 +1479,19 @@ mod tests {
     /// choice, and only the new key is written.
     #[test]
     fn hdr_look_reads_an_older_files_hdr_lighting() {
-        use HdrLook::{Foundry Client, Vanilla};
+        use HdrLook::{FoundryClient, Vanilla};
         for (file, look) in [
-            ("", Foundry Client),
-            ("hdrLighting:true\n", Foundry Client),
+            ("", FoundryClient),
+            ("hdrLighting:true\n", FoundryClient),
             ("hdrLighting:false\n", Vanilla),
             ("hdrLook:vanilla\n", Vanilla),
-            ("hdrLook:foundry\n", Foundry Client),
+            ("hdrLook:foundry\n", FoundryClient),
             // The new key wins wherever the old one stands; a look this build doesn't know
             // doesn't.
-            ("hdrLook:foundry\nhdrLighting:false\n", Foundry Client),
+            ("hdrLook:foundry\nhdrLighting:false\n", FoundryClient),
             ("hdrLighting:true\nhdrLook:vanilla\n", Vanilla),
             ("hdrLighting:false\nhdrLook:filmic\n", Vanilla),
-            ("hdrLook:filmic\n", Foundry Client),
+            ("hdrLook:filmic\n", FoundryClient),
             // A value that is neither keeps the one before it, as every switch does.
             ("hdrLighting:false\nhdrLighting:unknown\n", Vanilla),
         ] {
